@@ -1,0 +1,16 @@
+{
+  "name": "everest-personal-os",
+  "owner": {
+    "name": "Jhonatan Piña",
+    "email": "jpina@everestintelligent.com.co"
+  },
+  "plugins": [
+    {
+      "name": "personal-os",
+      "source": "./plugins/personal-os",
+      "description": "Chief of Staff digital: protege la ejecución (riesgos, compromisos, prioridades) sobre Jira/Outlook/Teams. Brief diario + tablero HTML.",
+      "version": "1.0.0",
+      "author": { "name": "Jhonatan Piña" }
+    }
+  ]
+}
