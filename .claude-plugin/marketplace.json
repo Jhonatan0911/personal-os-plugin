@@ -9,7 +9,7 @@
       "name": "personal-os",
       "source": "./plugins/personal-os",
       "description": "Chief of Staff digital: protege la ejecución (riesgos, compromisos, prioridades) sobre Jira/Outlook/Teams. Brief diario + tablero HTML.",
-      "version": "1.3.0",
+      "version": "1.4.0",
       "author": { "name": "Jhonatan Piña" }
     }
   ]
