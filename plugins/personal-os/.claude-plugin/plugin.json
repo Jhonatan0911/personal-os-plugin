@@ -1,7 +1,7 @@
 {
   "name": "personal-os",
   "displayName": "Personal OS — Chief of Staff",
-  "version": "1.2.0",
+  "version": "1.3.0",
   "description": "Sistema operativo ejecutivo: brief diario, registro de riesgos/compromisos/decisiones, tablero HTML, recordatorios automáticos locales (Windows), sobre Jira/Outlook/Teams. Activación con toggle (/os-on, /os-off).",
   "author": {
     "name": "Jhonatan Piña",
