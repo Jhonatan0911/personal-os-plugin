@@ -13,3 +13,6 @@ Onboarding de un usuario nuevo del Personal OS. Objetivo: dejar su carpeta de es
 3. Escribe `~/.claude/personal-os/config.json` con `{ "owner": "<nombre>", "stateDir": "<ruta absoluta a estado>" }`.
 4. Escribe `active` en `~/.claude/personal-os/state.flag`.
 5. Explica en 3 líneas: que conecte los MCP de Atlassian y Microsoft 365, que su estado es privado (no se comparte), y que arranque con "brief". NO siembres datos de clientes: cada quien los trae de su propio Jira/PITS.
+6. **(Opcional · solo Windows) Recordatorios automáticos.** Pregunta con **AskUserQuestion** si quiere recordatorios diarios (L–V): 8:00 a.m. (brief matutino que lanza Claude, regenera el tablero y lo abre) y 5:00 p.m. (recordatorio de dejar el comentario de avances). Si acepta, ejecuta `python "<ruta del plugin>/scripts/reminders/setup_reminders.py"` (registra 2 tareas en el Programador de Windows; `--uninstall` para quitarlas, `--status` para verlas).
+   - Explica los límites con franqueza: corre **solo con la sesión de Windows iniciada** (no en PC apagado); lanzar Claude consume tokens; la entrega es **local** (notificación + abrir tablero) porque no depende del permiso de envío de correo.
+   - En **Mac/Linux** aún no está soportado (pendiente cron/launchd); en ese caso, sugiérele crear un recordatorio recurrente manual mientras tanto.
