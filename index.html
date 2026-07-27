@@ -1,0 +1,507 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Personal OS — Plugin para Claude Code</title>
+<meta name="description" content="Tu jefe de gabinete dentro de la terminal. Brief diario, consola neuronal, bitácora y ledger de riesgos sobre Jira, Outlook y Teams.">
+<style>
+  :root{
+    --bg:#f3f5fb; --panel:#ffffff; --panel-2:#f7f9fe; --ink:#141b2b;
+    --muted:#586074; --line:#e2e7f1; --line-strong:#cfd6e6;
+    --accent:#3b46d1; --accent-soft:#e9ebfd; --accent-ink:#2a33ad;
+    --amber:#b45309; --amber-soft:#fbeecf; --ok:#0e8f63;
+    --term-bg:#0f1526; --term-ink:#e7ecfb; --term-dim:#8892b8; --term-line:#232c47;
+    --shadow:0 1px 2px rgba(20,30,60,.05), 0 14px 40px rgba(20,30,60,.08);
+    --radius:16px; --term-accent:#8b9bff;
+    /* consola neuronal */
+    --n-lab:#4c9bff; --n-per:#a97bff; --n-core:#35e0d0; --n-r3:#ff5f7e; --n-r2:#ff9a52; --n-r1:#f6c760;
+    --mono:ui-monospace,"Cascadia Code","JetBrains Mono","SF Mono",Menlo,Consolas,monospace;
+    --sans:-apple-system,BlinkMacSystemFont,"Segoe UI",system-ui,Roboto,Helvetica,Arial,sans-serif;
+  }
+  @media (prefers-color-scheme:dark){
+    :root{
+      --bg:#0a0e18; --panel:#111827; --panel-2:#0f1524; --ink:#eef1fa; --muted:#9aa4be;
+      --line:#212a44; --line-strong:#2c3757; --accent:#8b9bff; --accent-soft:#1a2140;
+      --accent-ink:#aab6ff; --amber:#fbbf24; --amber-soft:#31280f; --ok:#34d399;
+      --term-bg:#0c1120; --term-ink:#e7ecfb; --term-dim:#7b86ab; --term-line:#1e2740;
+      --shadow:0 1px 2px rgba(0,0,0,.4), 0 18px 50px rgba(0,0,0,.5);
+    }
+  }
+  :root[data-theme="light"]{
+    --bg:#f3f5fb; --panel:#ffffff; --panel-2:#f7f9fe; --ink:#141b2b; --muted:#586074;
+    --line:#e2e7f1; --line-strong:#cfd6e6; --accent:#3b46d1; --accent-soft:#e9ebfd;
+    --accent-ink:#2a33ad; --amber:#b45309; --amber-soft:#fbeecf; --ok:#0e8f63;
+    --term-bg:#0f1526; --term-ink:#e7ecfb; --term-dim:#8892b8; --term-line:#232c47;
+    --shadow:0 1px 2px rgba(20,30,60,.05), 0 14px 40px rgba(20,30,60,.08);
+  }
+  :root[data-theme="dark"]{
+    --bg:#0a0e18; --panel:#111827; --panel-2:#0f1524; --ink:#eef1fa; --muted:#9aa4be;
+    --line:#212a44; --line-strong:#2c3757; --accent:#8b9bff; --accent-soft:#1a2140;
+    --accent-ink:#aab6ff; --amber:#fbbf24; --amber-soft:#31280f; --ok:#34d399;
+    --term-bg:#0c1120; --term-ink:#e7ecfb; --term-dim:#7b86ab; --term-line:#1e2740;
+    --shadow:0 1px 2px rgba(0,0,0,.4), 0 18px 50px rgba(0,0,0,.5);
+  }
+
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--sans);
+    line-height:1.55;-webkit-font-smoothing:antialiased;letter-spacing:-.005em}
+  .wrap{max-width:860px;margin:0 auto;padding:clamp(28px,6vw,72px) 20px 72px}
+  a{color:var(--accent-ink);text-decoration:none}
+  a:hover{text-decoration:underline}
+  img{max-width:100%}
+  ::selection{background:var(--accent);color:#fff}
+
+  .eyebrow{font-family:var(--mono);font-size:.72rem;letter-spacing:.22em;text-transform:uppercase;
+    color:var(--accent);font-weight:600;display:inline-flex;align-items:center;gap:9px}
+  .eyebrow::before{content:"";width:22px;height:1px;background:var(--accent);display:inline-block}
+
+  header.hero{margin-bottom:56px}
+  .brandmark{width:52px;height:52px;border-radius:14px;background:linear-gradient(150deg,var(--accent),color-mix(in srgb,var(--accent) 55%,#000 0%));
+    display:grid;place-items:center;font-size:1.6rem;box-shadow:var(--shadow);margin-bottom:22px}
+  .hero h1{font-size:clamp(2.6rem,8vw,4.1rem);line-height:.98;margin:16px 0 0;font-weight:800;
+    letter-spacing:-.04em;text-wrap:balance}
+  .hero .lede{font-size:clamp(1.05rem,2.4vw,1.28rem);color:var(--muted);max-width:38ch;margin:20px 0 0;
+    text-wrap:balance;line-height:1.5}
+  .hero .lede b{color:var(--ink);font-weight:600}
+
+  .term{background:var(--term-bg);border:1px solid var(--term-line);border-radius:var(--radius);
+    box-shadow:var(--shadow);overflow:hidden;margin-top:34px}
+  .term .chrome{display:flex;align-items:center;gap:8px;padding:12px 16px;border-bottom:1px solid var(--term-line)}
+  .term .chrome i{width:11px;height:11px;border-radius:50%;background:#39415f;display:block}
+  .term .chrome i:nth-child(1){background:#ff5f57}.term .chrome i:nth-child(2){background:#febc2e}.term .chrome i:nth-child(3){background:#28c840}
+  .term .chrome span{margin-left:8px;font-family:var(--mono);font-size:.74rem;color:var(--term-dim);letter-spacing:.04em}
+  .term .body{padding:18px 18px 20px;font-family:var(--mono);font-size:.88rem;line-height:1.9}
+  .term .ln{white-space:pre-wrap;word-break:break-word;color:var(--term-ink)}
+  .term .pr{color:var(--term-accent);user-select:none}
+  .term .cm{color:#8ad0a6}
+  .term .arg{color:#f0c674}
+  .term .cmt{color:var(--term-dim)}
+  .term .cursor{display:inline-block;width:9px;height:1.05em;background:var(--term-accent);vertical-align:-2px;
+    margin-left:3px;animation:blink 1.1s steps(1) infinite}
+  @keyframes blink{50%{opacity:0}}
+  @media (prefers-reduced-motion:reduce){.term .cursor{animation:none}}
+
+  section{margin-top:60px}
+  h2{font-size:1.5rem;font-weight:800;letter-spacing:-.03em;margin:0 0 6px}
+  .sec-sub{color:var(--muted);margin:0 0 24px;font-size:.98rem}
+  .sec-sub code{font-family:var(--mono);font-size:.85em;background:var(--accent-soft);color:var(--accent-ink);padding:1px 6px;border-radius:5px}
+  .caps{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}
+  .cap{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:16px 17px;box-shadow:var(--shadow)}
+  .cap .k{font-family:var(--mono);font-size:.7rem;letter-spacing:.14em;text-transform:uppercase;color:var(--accent);font-weight:600}
+  .cap p{margin:7px 0 0;font-size:.92rem;color:var(--ink)}
+
+  .steps{list-style:none;margin:0;padding:0;position:relative}
+  .steps::before{content:"";position:absolute;left:17px;top:12px;bottom:12px;width:2px;background:var(--line);border-radius:2px}
+  .step{position:relative;padding:0 0 22px 52px}
+  .step:last-child{padding-bottom:0}
+  .step .num{position:absolute;left:0;top:0;width:36px;height:36px;border-radius:50%;background:var(--panel);
+    border:2px solid var(--line-strong);color:var(--accent-ink);font-family:var(--mono);font-weight:700;
+    font-size:.9rem;display:grid;place-items:center;z-index:1}
+  .step h3{margin:6px 0 0;font-size:1.02rem;font-weight:700;letter-spacing:-.02em}
+  .step .desc{margin:5px 0 0;color:var(--muted);font-size:.9rem}
+  .step .desc code{font-family:var(--mono);font-size:.85em;background:var(--accent-soft);color:var(--accent-ink);
+    padding:1px 6px;border-radius:5px}
+
+  .cmd{display:flex;align-items:center;gap:12px;margin-top:12px;background:var(--term-bg);
+    border:1px solid var(--term-line);border-radius:10px;padding:11px 12px 11px 15px;font-family:var(--mono);
+    font-size:.86rem;color:var(--term-ink);overflow-x:auto}
+  .cmd .pr{color:var(--term-accent);user-select:none;flex:none}
+  .cmd code{white-space:nowrap}
+  .cmd .cm{color:#8ad0a6}.cmd .arg{color:#f0c674}
+  .cmd button{margin-left:auto;flex:none;background:transparent;border:1px solid var(--term-line);color:var(--term-dim);
+    font-family:var(--mono);font-size:.68rem;letter-spacing:.08em;text-transform:uppercase;padding:5px 10px;
+    border-radius:7px;cursor:pointer;transition:.15s}
+  .cmd button:hover{color:var(--term-ink);border-color:var(--accent)}
+  .cmd button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+  .cmd button.ok{color:#28c840;border-color:#28c840}
+
+  .note{margin-top:14px;display:flex;gap:11px;align-items:flex-start;background:var(--amber-soft);
+    border:1px solid color-mix(in srgb,var(--amber) 30%,transparent);border-radius:10px;padding:12px 14px;
+    font-size:.87rem;color:var(--ink)}
+  .note b{color:var(--amber)}
+  .note .ic{flex:none;font-size:1rem;line-height:1.4}
+  .note.accent{background:var(--accent-soft);border-color:color-mix(in srgb,var(--accent) 30%,transparent)}
+  .note.accent b{color:var(--accent-ink)}
+
+  .ref{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
+  .ref .row{display:flex;align-items:baseline;gap:12px;background:var(--panel);border:1px solid var(--line);
+    border-radius:11px;padding:13px 15px;box-shadow:var(--shadow)}
+  .ref .row code{font-family:var(--mono);font-weight:700;color:var(--accent-ink);font-size:.9rem;flex:none}
+  .ref .row span{color:var(--muted);font-size:.86rem}
+
+  .lanes{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+  .lane{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:20px;box-shadow:var(--shadow)}
+  .lane.author{border-color:color-mix(in srgb,var(--amber) 34%,var(--line))}
+  .lane .tag{font-family:var(--mono);font-size:.68rem;letter-spacing:.14em;text-transform:uppercase;font-weight:600}
+  .lane.user .tag{color:var(--accent)} .lane.author .tag{color:var(--amber)}
+  .lane h3{margin:8px 0 3px;font-size:1.1rem;letter-spacing:-.02em}
+  .lane p.small{margin:0 0 14px;color:var(--muted);font-size:.86rem}
+  .lane ol{margin:0;padding-left:0;list-style:none;counter-reset:s}
+  .lane ol li{counter-increment:s;position:relative;padding:7px 0 7px 26px;font-size:.9rem;border-top:1px solid var(--line)}
+  .lane ol li:first-child{border-top:none}
+  .lane ol li::before{content:counter(s);position:absolute;left:0;top:7px;font-family:var(--mono);font-weight:700;
+    font-size:.78rem;color:var(--muted)}
+  .lane code{font-family:var(--mono);font-size:.83em;background:var(--panel-2);border:1px solid var(--line);
+    padding:1px 6px;border-radius:5px;color:var(--ink);white-space:nowrap}
+
+  footer.foot{margin-top:64px;padding-top:26px;border-top:1px solid var(--line);color:var(--muted);font-size:.85rem}
+  footer.foot .repo{font-family:var(--mono);font-size:.9rem}
+  footer.foot .priv{margin-top:12px;display:flex;gap:9px;align-items:flex-start}
+  footer.foot .priv b{color:var(--ink);font-weight:600}
+
+  .why-grid{display:flex;flex-direction:column;gap:13px}
+  .scn{display:grid;grid-template-columns:1fr 1fr;background:var(--panel);border:1px solid var(--line);
+    border-radius:14px;overflow:hidden;box-shadow:var(--shadow)}
+  .scn>div{padding:17px 19px}
+  .scn .drift{background:var(--panel-2);border-right:1px solid var(--line)}
+  .scn .catch{border-left:3px solid var(--accent)}
+  .scn .lbl{font-family:var(--mono);font-size:.66rem;letter-spacing:.13em;text-transform:uppercase;font-weight:600;
+    display:flex;align-items:center;gap:8px;margin-bottom:10px}
+  .scn .drift .lbl{color:var(--amber)}
+  .scn .catch .lbl{color:var(--accent)}
+  .scn p{margin:0;font-size:.93rem;line-height:1.5}
+  .scn .drift p{color:var(--muted)}
+  .scn .catch p{color:var(--ink)}
+
+  .brief-out .h1p{color:var(--term-accent);font-weight:700}
+  .brief-out .crit{color:#ff6b6b;font-weight:700}
+  .brief-out .med{color:#f0c674;font-weight:700}
+  .brief-out .low{color:#7b86ab;font-weight:700}
+  .brief-out .rec{color:#8ad0a6}
+  .brief-out .lblrow{color:var(--term-dim)}
+  .brief-out .per{color:#c4a7ff;font-weight:700}
+
+  /* consola neuronal */
+  .scopebar{display:inline-flex;gap:4px;background:var(--term-line);border-radius:10px;padding:3px;margin:2px 0 4px}
+  .scopebar b{font-family:var(--mono);font-size:.68rem;letter-spacing:.08em;text-transform:uppercase;padding:6px 12px;border-radius:7px;color:var(--term-dim);font-weight:600}
+  .scopebar b.on{background:var(--term-accent);color:#06101f}
+  .neural{display:block;width:100%;height:auto;margin-top:4px}
+  .neural text{font-family:var(--mono);font-size:11px;fill:var(--term-dim)}
+  .neural .risk{transform-box:fill-box;transform-origin:center;animation:npulse 1.9s ease-in-out infinite}
+  .neural .r2{animation-duration:2.4s}.neural .r1{animation-duration:3s}
+  @keyframes npulse{0%,100%{opacity:1}50%{opacity:.35}}
+  @media (prefers-reduced-motion:reduce){.neural .risk{animation:none}}
+  .nlegend{display:flex;flex-wrap:wrap;gap:14px;padding:12px 18px 16px;font-family:var(--mono);font-size:.72rem;color:var(--term-dim)}
+  .nlegend span{display:inline-flex;align-items:center;gap:7px}
+  .nlegend i{width:9px;height:9px;border-radius:50%;display:inline-block}
+
+  .dlbtn{margin-top:20px;font-family:var(--mono);font-size:.8rem;background:var(--panel);
+    border:1px solid var(--line-strong);color:var(--ink);padding:10px 16px;border-radius:9px;cursor:pointer;transition:.15s}
+  .dlbtn:hover{border-color:var(--accent);color:var(--accent-ink)}
+  .dlbtn:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+
+  @media (max-width:680px){
+    .caps,.ref,.lanes{grid-template-columns:1fr}
+    .cmd button{display:none}
+    .scn{grid-template-columns:1fr}
+    .scn .drift{border-right:none;border-bottom:1px solid var(--line)}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="hero">
+    <div class="brandmark">🧭</div>
+    <div class="eyebrow">Plugin para Claude Code</div>
+    <h1>Personal&nbsp;OS</h1>
+    <p class="lede">Tu <b>jefe de gabinete</b> dentro de la terminal. Protege tu ejecución —
+      riesgos, compromisos y prioridades— y te devuelve la memoria de lo que hiciste, cruzando
+      <b>Jira, Outlook y Teams</b> cada mañana.</p>
+
+    <div class="term" aria-label="Instalación en dos comandos">
+      <div class="chrome"><i></i><i></i><i></i><span>claude-code — personal-os</span></div>
+      <div class="body">
+<div class="ln"><span class="cmt"># 1 · registra el marketplace</span></div>
+<div class="ln"><span class="pr">&gt; </span><span class="cm">/plugin marketplace add</span> <span class="arg">Jhonatan0911/personal-os-plugin</span></div>
+<div class="ln"><span class="cmt"># 2 · instala el plugin</span></div>
+<div class="ln"><span class="pr">&gt; </span><span class="cm">/plugin install</span> <span class="arg">personal-os@everest-personal-os</span></div>
+<div class="ln"><span class="pr">&gt; </span><span class="cm">brief</span><span class="cursor"></span></div>
+      </div>
+    </div>
+  </header>
+
+  <section aria-labelledby="que">
+    <h2 id="que">Qué hace</h2>
+    <p class="sec-sub">No es un chat: es una red de seguridad operativa que corre sola al abrir sesión.</p>
+    <div class="caps">
+      <div class="cap"><div class="k">Brief</div><p>Resumen ejecutivo del día, reconciliado en vivo con tus fuentes.</p></div>
+      <div class="cap"><div class="k">Ledger</div><p>Registro de riesgos, compromisos y decisiones con IDs estables.</p></div>
+      <div class="cap"><div class="k">Consola</div><p>Mapa neuronal de tus proyectos, riesgos y pendientes — un cerebro navegable.</p></div>
+      <div class="cap"><div class="k">Bitácora</div><p>Memoria reciente: qué hiciste en las últimas horas, lista para cuando tu jefe pregunte.</p></div>
+      <div class="cap"><div class="k">Tablero</div><p>Vista visual del día en HTML, generada desde tu estado.</p></div>
+      <div class="cap"><div class="k">Toggle</div><p>Enciéndelo o pásalo a pausa en todas tus sesiones cuando quieras.</p></div>
+    </div>
+  </section>
+
+  <section aria-labelledby="why">
+    <h2 id="why">Por qué importa</h2>
+    <p class="sec-sub">Todos derivamos bajo presión. El OS no te juzga: nombra la señal y te devuelve al foco.</p>
+    <div class="why-grid">
+
+      <div class="scn">
+        <div class="drift"><div class="lbl">▬ tu tendencia</div><p>Llevas la mañana puliendo un detalle que ya cumple. Se siente productivo.</p></div>
+        <div class="catch"><div class="lbl">◆ personal os</div><p>«Eso ya cumple el objetivo. Tu #1 vence en 6 días y hoy no avanzó — el costo de seguir puliendo es real.»</p></div>
+      </div>
+
+      <div class="scn">
+        <div class="drift"><div class="lbl">▬ tu tendencia</div><p>Entra un correo con «URGENTE» y lo tomas de inmediato.</p></div>
+        <div class="catch"><div class="lbl">◆ personal os</div><p>«Esa incidencia ya tiene dueño y no es tu punto. Toca la ventana de tu entrega — quédate en lo #1.»</p></div>
+      </div>
+
+      <div class="scn">
+        <div class="drift"><div class="lbl">▬ tu tendencia</div><p>Le prometes una fecha al cliente sobre la marcha.</p></div>
+        <div class="catch"><div class="lbl">◆ personal os</div><p>«Estimaste para 2 personas y vas con 1. Valida el esfuerzo antes de aceptar — y avisa hoy, no el día de la entrega.»</p></div>
+      </div>
+
+      <div class="scn">
+        <div class="drift"><div class="lbl">▬ tu tendencia</div><p>Tu jefe te pregunta en el pasillo qué avanzaste esta semana. Titubeas.</p></div>
+        <div class="catch"><div class="lbl">◆ personal os</div><p>«Aquí está, sale de la bitácora: 3 avances en tu #1, el riesgo que comunicaste el martes y el compromiso que sigues esperando del cliente.»</p></div>
+      </div>
+
+    </div>
+  </section>
+
+  <section aria-labelledby="ej">
+    <h2 id="ej">Un brief de verdad</h2>
+    <p class="sec-sub">Esto es lo que ves al escribir <code>brief</code> por la mañana. Ejemplo con datos ficticios.</p>
+    <div class="term" aria-label="Ejemplo de salida del brief">
+      <div class="chrome"><i></i><i></i><i></i><span>claude-code — brief del día</span></div>
+      <div class="body brief-out">
+<div class="ln"><span class="pr">&gt; </span><span class="cm">brief</span></div>
+<div class="ln"> </div>
+<div class="ln"><span class="cmt"># re-poniendo el estado — martes 12 ago · semana 9/13</span></div>
+<div class="ln"> </div>
+<div class="ln"><span class="h1p">⬤ PRIORIDAD #1</span></div>
+<div class="ln">  PROY-142 · Portal de pagos — <span class="arg">vence en 5 días (17/ago)</span></div>
+<div class="ln">  <span class="lblrow">estimado 2 devs, ejecutando con 1 · riesgo R-03</span></div>
+<div class="ln"> </div>
+<div class="ln"><span class="crit">⚠ RIESGOS ABIERTOS (3)</span></div>
+<div class="ln">  <span class="crit">crítico</span>  PROY-142  alcance ampliado sin ajustar la fecha</div>
+<div class="ln">           <span class="rec">→ acordar mínimo de salida + reporte diario</span></div>
+<div class="ln">  <span class="med">medio</span>    API-88    dependencia externa sin confirmar</div>
+<div class="ln">  <span class="low">bajo</span>     DOC-12    documentación pendiente hace 2 semanas</div>
+<div class="ln"> </div>
+<div class="ln"><span class="med">⏰ VENCIDO / VENCE HOY</span></div>
+<div class="ln">  INT-30 vencido hace 4 días · PROY-142 vence en 5 días</div>
+<div class="ln"> </div>
+<div class="ln"><span class="cm">📨 COMPROMISOS ESPERANDO RESPUESTA (2)</span></div>
+<div class="ln">  C-01 certificación del cliente — 11 días sin respuesta</div>
+<div class="ln">  C-04 definición de alcance — bloquea la fase 3</div>
+<div class="ln"> </div>
+<div class="ln"><span class="h1p">Mi recomendación para hoy:</span></div>
+<div class="ln">  1. comunica hoy el riesgo de fecha de PROY-142 (5 min, preventivo)</div>
+<div class="ln">  2. bloque real en el #1 — nada compite con él</div>
+<div class="ln">  3. no absorbas INT-30: ya tiene dueño</div>
+      </div>
+    </div>
+    <div class="note accent"><span class="ic">📄</span><div>Ese mismo brief regenera un <b>tablero visual en HTML</b> (<code>/tablero</code>): lo abres con doble clic o lo compartes. Vive local — nunca se publica.</div></div>
+  </section>
+
+  <section aria-labelledby="cerebro">
+    <h2 id="cerebro">El cerebro</h2>
+    <p class="sec-sub">Tu día completo como una red neuronal navegable: escribe <code>/consola</code> y se abre sola.</p>
+    <div class="term" aria-label="Consola neuronal — mapa de proyectos y riesgos">
+      <div class="chrome"><i></i><i></i><i></i><span>personal os — consola neuronal</span></div>
+      <div class="body" style="padding-bottom:6px">
+        <div class="scopebar" role="img" aria-label="Filtro de ámbito: ambas, laboral, personal">
+          <b class="on">Ambas</b><b>Laboral</b><b>Personal</b>
+        </div>
+        <svg class="neural" viewBox="0 0 680 300" role="img" aria-label="Grafo neuronal: núcleo al centro, proyectos laborales a la derecha, personales a la izquierda, con riesgos que pulsan por nivel">
+          <!-- edges -->
+          <g stroke-width="1.4" fill="none" opacity=".5">
+            <line x1="340" y1="150" x2="470" y2="80"  stroke="#4c9bff"/>
+            <line x1="340" y1="150" x2="545" y2="150" stroke="#4c9bff"/>
+            <line x1="340" y1="150" x2="470" y2="222" stroke="#4c9bff"/>
+            <line x1="340" y1="150" x2="205" y2="92"  stroke="#a97bff"/>
+            <line x1="340" y1="150" x2="205" y2="210" stroke="#a97bff"/>
+          </g>
+          <g stroke-width="1.2" fill="none" opacity=".55">
+            <line x1="545" y1="150" x2="620" y2="118" stroke="#ff5f7e"/>
+            <line x1="470" y1="80"  x2="560" y2="46"  stroke="#ff9a52"/>
+            <line x1="205" y1="92"  x2="96"  y2="66"  stroke="#f6c760"/>
+            <line x1="205" y1="210" x2="96"  y2="238" stroke="#ff9a52"/>
+          </g>
+          <!-- halos + nodes -->
+          <circle cx="340" cy="150" r="30" fill="#35e0d0" opacity=".14"/>
+          <circle cx="340" cy="150" r="15" fill="#35e0d0"/>
+          <circle cx="340" cy="150" r="6" fill="#0c1120"/>
+          <g fill="#4c9bff">
+            <circle cx="470" cy="80"  r="11"/><circle cx="545" cy="150" r="11"/><circle cx="470" cy="222" r="11"/>
+          </g>
+          <g fill="#a97bff">
+            <circle cx="205" cy="92"  r="11"/><circle cx="205" cy="210" r="11"/>
+          </g>
+          <!-- risk / pendiente satellites (pulse) -->
+          <circle class="risk"    cx="620" cy="118" r="7" fill="#ff5f7e"/>
+          <circle class="risk r2" cx="560" cy="46"  r="6" fill="#ff9a52"/>
+          <circle class="risk r1" cx="96"  cy="66"  r="6" fill="#f6c760"/>
+          <circle class="risk r2" cx="96"  cy="238" r="6" fill="#ff9a52"/>
+          <!-- labels -->
+          <text x="340" y="186" text-anchor="middle" fill="#8ad0d0">CEREBRO</text>
+          <text x="470" y="66"  text-anchor="middle" fill="#8fb6ff">Cliente A</text>
+          <text x="573" y="153" text-anchor="start"  fill="#8fb6ff">Cliente B</text>
+          <text x="470" y="246" text-anchor="middle" fill="#8fb6ff">Cliente C</text>
+          <text x="205" y="78"  text-anchor="middle" fill="#c4a7ff">Proyecto propio</text>
+          <text x="205" y="234" text-anchor="middle" fill="#c4a7ff">Proyecto propio</text>
+        </svg>
+      </div>
+      <div class="nlegend">
+        <span><i style="background:#4c9bff"></i>Laboral</span>
+        <span><i style="background:#a97bff"></i>Personal</span>
+        <span><i style="background:#35e0d0"></i>Núcleo</span>
+        <span><i style="background:#ff5f7e"></i>Riesgo n3</span>
+        <span><i style="background:#ff9a52"></i>n2</span>
+        <span><i style="background:#f6c760"></i>n1</span>
+      </div>
+    </div>
+    <p class="sec-sub" style="margin-top:18px">Los proyectos orbitan el núcleo; los riesgos y pendientes cuelgan de cada uno y <b>pulsan según su nivel</b>. El toggle <b>Personal / Laboral / Ambas</b> filtra todo el cerebro de golpe — para separar lo de la empresa de lo tuyo. Pasa el mouse por un nodo y ves su detalle.</p>
+    <div class="cmd"><span class="pr">&gt;</span><code><span class="cm">/consola</span></code><button type="button" data-copy="/consola">Copiar</button></div>
+    <div class="note"><span class="ic">🔒</span><div>La consola es una <b>vista local</b>, igual que el tablero: se genera desde tu estado y <b>nunca se publica</b>.</div></div>
+  </section>
+
+  <section aria-labelledby="memoria">
+    <h2 id="memoria">Memoria reciente</h2>
+    <p class="sec-sub">Cuando tu jefe pregunta «¿qué avanzaste?», no improvisas: lo lees de la bitácora.</p>
+    <div class="term" aria-label="Ejemplo de la bitácora respondiendo qué se hizo">
+      <div class="chrome"><i></i><i></i><i></i><span>claude-code — bitácora</span></div>
+      <div class="body brief-out">
+<div class="ln"><span class="pr">&gt; </span>¿qué hice en las últimas 2 horas?</div>
+<div class="ln"> </div>
+<div class="ln"><span class="cmt"># antes de responder, el OS resuelve el ámbito</span></div>
+<div class="ln">  ¿laboral, personal o ambas?   <span class="arg">→ laboral</span></div>
+<div class="ln">  ¿detalle o resumen?           <span class="arg">→ resumen</span></div>
+<div class="ln"> </div>
+<div class="ln"><span class="h1p">⬤ LABORAL — últimas 2h</span></div>
+<div class="ln">  10:05  Portal de pagos: diagnóstico del error de facturación</div>
+<div class="ln">  10:40  Confirmación contra BD del parámetro faltante</div>
+<div class="ln">  11:15  Reporte de avance publicado en el ticket PROY-142</div>
+<div class="ln"> </div>
+<div class="ln"><span class="lblrow"># lo personal (proyectos propios) queda fuera de este recuento</span></div>
+<div class="ln"><span class="rec">listo para tu 1:1 — sin inventar, sale de la bitácora</span></div>
+      </div>
+    </div>
+    <div class="note accent"><span class="ic">🧠</span><div>Un hook registra <b>cada prompt con su hora</b> automáticamente; el OS anexa el resumen de lo que hizo al cerrar cada turno. Al preguntar, primero separa <b>laboral</b> (solo trabajo) de <b>personal</b> — así a tu jefe le muestras exactamente lo que le corresponde.</div></div>
+  </section>
+
+  <section aria-labelledby="inst">
+    <h2 id="inst">Instalar y arrancar</h2>
+    <p class="sec-sub">Cinco pasos. Los dos primeros son la instalación; el resto, tu puesta a punto.</p>
+    <ol class="steps">
+
+      <li class="step">
+        <div class="num">1</div>
+        <h3>Registra el marketplace</h3>
+        <p class="desc">Le dice a Claude Code <em>dónde</em> viven los plugins. No instala nada todavía.</p>
+        <div class="cmd"><span class="pr">&gt;</span><code><span class="cm">/plugin marketplace add</span> <span class="arg">Jhonatan0911/personal-os-plugin</span></code><button type="button" data-copy="/plugin marketplace add Jhonatan0911/personal-os-plugin">Copiar</button></div>
+      </li>
+
+      <li class="step">
+        <div class="num">2</div>
+        <h3>Instala el plugin</h3>
+        <p class="desc">Formato <code>plugin@marketplace</code> — baja y activa el Personal OS.</p>
+        <div class="cmd"><span class="pr">&gt;</span><code><span class="cm">/plugin install</span> <span class="arg">personal-os@everest-personal-os</span></code><button type="button" data-copy="/plugin install personal-os@everest-personal-os">Copiar</button></div>
+      </li>
+
+      <li class="step">
+        <div class="num">3</div>
+        <h3>Configura tu instancia</h3>
+        <p class="desc">Crea tu carpeta de estado <b>privada y vacía</b>. Nadie comparte sus datos: cada quien siembra el suyo.</p>
+        <div class="cmd"><span class="pr">&gt;</span><code><span class="cm">/os-setup</span></code><button type="button" data-copy="/os-setup">Copiar</button></div>
+      </li>
+
+      <li class="step">
+        <div class="num">4</div>
+        <h3>Conecta tus fuentes</h3>
+        <p class="desc">Activa en Claude Code los MCP de <b>Atlassian</b> (Jira) y <b>Microsoft&nbsp;365</b> (Outlook/Teams).</p>
+        <div class="note"><span class="ic">⚠️</span><div>Sin estos MCP conectados el OS funciona, pero <b>el brief no puede leer</b> Jira, Outlook ni Teams.</div></div>
+      </li>
+
+      <li class="step">
+        <div class="num">5</div>
+        <h3>Arranca el día</h3>
+        <p class="desc">Pide el brief. El OS lee tu estado, cruza tus fuentes y te pone enfrente lo #1, lo vencido y los riesgos.</p>
+        <div class="cmd"><span class="pr">&gt;</span><code><span class="cm">brief</span></code><button type="button" data-copy="brief">Copiar</button></div>
+      </li>
+
+    </ol>
+  </section>
+
+  <section aria-labelledby="cmds">
+    <h2 id="cmds">Comandos</h2>
+    <p class="sec-sub">Lo que tienes disponible una vez instalado.</p>
+    <div class="ref">
+      <div class="row"><code>brief</code><span>Brief operativo del día</span></div>
+      <div class="row"><code>/consola</code><span>Cerebro neuronal de proyectos y riesgos</span></div>
+      <div class="row"><code>/tablero</code><span>Regenera el tablero visual HTML</span></div>
+      <div class="row"><code>/os-setup</code><span>Configuración inicial (una sola vez)</span></div>
+      <div class="row"><code>/os-on</code><span>Reactiva el OS en todas tus sesiones</span></div>
+      <div class="row"><code>/os-off</code><span>Pausa el OS (con doble confirmación)</span></div>
+    </div>
+  </section>
+
+  <section aria-labelledby="upd">
+    <h2 id="upd">Actualizar</h2>
+    <p class="sec-sub">Dos caminos según de qué lado estás: quien usa el plugin, o quien lo mantiene.</p>
+    <div class="lanes">
+
+      <div class="lane user">
+        <div class="tag">Como usuario</div>
+        <h3>Traer la última versión</h3>
+        <p class="small">Cuando el autor publica una mejora.</p>
+        <ol>
+          <li>Refresca el catálogo: <code>/plugin marketplace update</code></li>
+          <li>Reinstala el plugin: <code>/plugin install personal-os@everest-personal-os</code></li>
+          <li>Reinicia la sesión para cargar los cambios.</li>
+        </ol>
+      </div>
+
+      <div class="lane author">
+        <div class="tag">Como autor</div>
+        <h3>Publicar una mejora</h3>
+        <p class="small">Cuando cambias un comando, skill o el núcleo.</p>
+        <ol>
+          <li>Edita el archivo en su carpeta (<code>commands/</code>, <code>skills/</code>…).</li>
+          <li>Sube el número en <code>plugin.json</code> (<code>version</code>).</li>
+          <li>Confirma: <code>git commit -am "..."</code></li>
+          <li>Publica: <code>git push</code> — y tus usuarios corren <em>marketplace update</em>.</li>
+        </ol>
+      </div>
+
+    </div>
+  </section>
+
+  <footer class="foot">
+    <div class="repo">📦 <a href="https://github.com/Jhonatan0911/personal-os-plugin">github.com/Jhonatan0911/personal-os-plugin</a></div>
+    <div class="priv"><span>🔒</span><div><b>Tu estado es tuyo.</b> El plugin solo reparte comportamiento (núcleo, skills, comandos). Tu carpeta <code>estado/</code> con datos reales —y las vistas que genera, tablero y consola— es privada y local: nunca se comparte ni se sube.</div></div>
+    <button type="button" id="dl" class="dlbtn">⬇ Descargar esta página (.html)</button>
+  </footer>
+
+</div>
+
+<script>
+  document.querySelectorAll('.cmd button[data-copy]').forEach(function(btn){
+    btn.addEventListener('click', function(){
+      var text = btn.getAttribute('data-copy');
+      var done = function(){ var o=btn.textContent; btn.textContent='Copiado'; btn.classList.add('ok');
+        setTimeout(function(){ btn.textContent=o; btn.classList.remove('ok'); }, 1400); };
+      if(navigator.clipboard && navigator.clipboard.writeText){ navigator.clipboard.writeText(text).then(done).catch(done); }
+      else { done(); }
+    });
+  });
+
+  var dl = document.getElementById('dl');
+  if(dl){ dl.addEventListener('click', function(){
+    var html = '<!doctype html>\n' + document.documentElement.outerHTML;
+    var blob = new Blob([html], {type:'text/html'});
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement('a');
+    a.href = url; a.download = 'personal-os-landing.html';
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    setTimeout(function(){ URL.revokeObjectURL(url); }, 1500);
+  }); }
+</script>
+
+</body>
+</html>
