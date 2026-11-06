@@ -1,0 +1,613 @@
+<title>__TITULO_HTML__</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<style>
+/* Cronograma de historias a la izquierda/arriba, panel de la historia seleccionada a la derecha/abajo; vinotinto = pendiente de definición. */
+:root{
+  --bg:#FFFFFF; --panel:#F1F5F9; --card:#FFFFFF; --ink:#222222; --muted:#5A6275; --soft:#9CA3AF; --line:#E2E8F0;
+  --brand:#2B3240; --deep:#2B3240; --action:#3D5A80; --mid:#56708F; --onb:#FFFFFF;
+  --ok:#2A6349; --ok-bg:#E1EFE7; --warn:#B26B00; --warn-bg:#FBEFD9; --crit:#A8322D; --crit-bg:#F6E3E2;
+  --vino:#7B1E2E; --vino-bg:#F5E4E7; --prop:#E8EEF8; --today:#FFF6D6;
+  --f-body:"Segoe UI",system-ui,-apple-system,Arial,sans-serif; --f-mono:Consolas,"Cascadia Mono",ui-monospace,monospace;
+  --colw:46px; --lab:250px;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#15171B; --panel:#1C1F24; --card:#22262C; --ink:#E7E9EC; --muted:#A6ABB3; --soft:#71777F; --line:#30353D;
+  --brand:#2A2F37; --deep:#D6DAE0; --action:#6F8DB5; --mid:#7891B0;
+  --ok:#6CC097; --ok-bg:#16322A; --warn:#E3A847; --warn-bg:#3A2E17; --crit:#E07A74; --crit-bg:#3A1F25;
+  --vino:#E58A9A; --vino-bg:#3A1A22; --prop:#262C35; --today:#2B2A1F; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#15171B; --panel:#1C1F24; --card:#22262C; --ink:#E7E9EC; --muted:#A6ABB3; --soft:#71777F; --line:#30353D;
+  --brand:#2A2F37; --deep:#D6DAE0; --action:#6F8DB5; --mid:#7891B0;
+  --ok:#6CC097; --ok-bg:#16322A; --warn:#E3A847; --warn-bg:#3A2E17; --crit:#E07A74; --crit-bg:#3A1F25;
+  --vino:#E58A9A; --vino-bg:#3A1A22; --prop:#262C35; --today:#2B2A1F; color-scheme:dark}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html,body{min-height:100%}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:14px;line-height:1.45;margin:0}
+button,input,select,textarea{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:2px solid var(--action);outline-offset:2px}
+.band{background:var(--brand);color:#fff}
+.band .in{padding:14px max(16px,env(safe-area-inset-right,0px)) 14px max(16px,env(safe-area-inset-left,0px));display:flex;flex-wrap:wrap;gap:10px 24px;align-items:center;justify-content:space-between}
+.band img{height:26px;width:auto;display:block}
+.band h1{margin:4px 0 0;font-size:21px;text-wrap:balance}
+.band .sub{color:#D6DAE0;font-size:13px}
+.acts{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.btn{border:1px solid var(--line);background:var(--card);border-radius:6px;padding:6px 11px}
+.btn.pri{background:var(--action);border-color:var(--action);color:#fff}
+.band .btn{background:transparent;color:#fff;border-color:rgba(255,255,255,.4)}
+.band .btn.pri{background:#fff;color:var(--brand);border-color:#fff;font-weight:600}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+.btn.sm{padding:3px 8px;font-size:12.5px}
+.pill{display:inline-block;font-size:12px;padding:1px 8px;border-radius:99px;background:var(--panel);color:var(--muted);white-space:nowrap}
+.pill.ok{background:var(--ok-bg);color:var(--ok)} .pill.warn{background:var(--warn-bg);color:var(--warn)} .pill.crit{background:var(--crit-bg);color:var(--crit)}
+.pill.vino{background:var(--vino);color:#fff} .pill.vline{background:transparent;border:1.5px solid var(--vino);color:var(--vino)}
+.kpis{display:flex;flex-wrap:wrap;gap:6px 18px;padding:10px max(16px,env(safe-area-inset-right,0px)) 10px max(16px,env(safe-area-inset-left,0px));border-bottom:1px solid var(--line);font-size:13px;color:var(--muted)}
+.kpis b{color:var(--ink);font-variant-numeric:tabular-nums} .kpis .v b{color:var(--vino)} .kpis .c b{color:var(--crit)}
+.layout{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,440px);gap:0;min-height:calc(100vh - 130px)}
+@media (max-width:980px){.layout{grid-template-columns:minmax(0,1fr);min-height:0}.gwrap{border-right:0;border-bottom:1px solid var(--line)}.gscroll{max-height:65vh}}
+@media (max-width:640px){:root{--lab:132px;--colw:34px}.band h1{font-size:18px}.band .sub{font-size:12px}.acts{width:100%}.acts .btn{flex:1 1 auto}
+  .rl{padding:5px 6px 5px 8px}.rl .t{white-space:normal;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;font-size:12px}.rl .m .pill{font-size:11px;padding:0 6px}
+  .bar{font-size:10.5px;padding:3px 4px}.kpis{font-size:12px;gap:4px 12px}.legend{font-size:11.5px}
+  .it input[type=date]{width:100%}.it .r2>*{flex:1 1 auto}.modal{padding:12px}}
+.gwrap{min-width:0;border-right:1px solid var(--line);display:flex;flex-direction:column}
+.gscroll{overflow:auto;flex:1}
+.grid{display:grid;grid-template-columns:var(--lab) repeat(var(--nd),var(--colw));min-width:max-content}
+.ph{position:sticky;top:0;z-index:4;font-size:11px;text-align:center;padding:3px 2px;color:#fff;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ph.dev{background:var(--action)} .ph.qa{background:var(--mid)} .ph.pru{background:#6B7686} .ph.hol{background:var(--muted)} .ph.ali{background:var(--ok)}
+.ph.corner{left:0;z-index:5;background:var(--deep);color:var(--bg);text-align:left;padding-left:10px}
+.dh{position:sticky;top:20px;z-index:3;background:var(--deep);color:var(--bg);font-size:11px;text-align:center;padding:3px 0;border-left:1px solid rgba(255,255,255,.12)}
+.dh b{display:block;font-size:12.5px}.dh.today{background:var(--action)}.dh.fest{background:var(--soft)}
+.dh.corner{left:0;z-index:5;text-align:left;padding-left:10px}
+.grid.dos .dh{top:40px}
+.ph.orig{opacity:.55}
+.ph.gap{background:var(--panel)}
+.ph.gap.r2{top:20px}
+.ph.rep{top:20px;background:var(--crit)!important;color:#fff}
+.ph.corner.rep{left:0;z-index:5;text-align:left;padding-left:10px}
+.rl{position:sticky;left:0;z-index:2;background:var(--card);border-top:1px solid var(--line);padding:6px 8px 6px 10px;cursor:pointer;display:flex;flex-direction:column;gap:2px;min-width:0}
+.rl .k{font-family:var(--f-mono);font-size:12px;color:var(--mid)} .rl .t{font-size:13px;line-height:1.2;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.rl .m{display:flex;gap:4px;flex-wrap:wrap;align-items:center}
+.mv{display:inline-flex;gap:2px}.mv .btn{padding:0 6px;font-size:10px;line-height:16px}
+.rl.sel{box-shadow:inset 4px 0 0 var(--action);background:var(--panel)}
+.rl.vino{box-shadow:inset 4px 0 0 var(--vino)} .rl.vino.sel{box-shadow:inset 4px 0 0 var(--vino),inset 0 0 0 1px var(--vino)}
+.lane{grid-column:2 / -1;position:relative;border-top:1px solid var(--line);min-height:48px;cursor:pointer;
+  background-image:linear-gradient(to right,var(--line) 1px,transparent 1px);background-size:var(--colw) 100%}
+.lane.sel{background-color:color-mix(in srgb,var(--action) 6%,transparent)}
+.lane .tc{position:absolute;top:0;bottom:0;width:var(--colw);background:var(--today);pointer-events:none}
+.lane .fc{position:absolute;top:0;bottom:0;width:var(--colw);background:color-mix(in srgb,var(--soft) 18%,transparent);pointer-events:none}
+.bar{position:absolute;top:9px;height:30px;border-radius:5px;font-size:11.5px;line-height:16px;padding:3px 7px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;color:#fff;background:var(--action)}
+.bar.enjira{background:var(--ok)}
+.bar.otro{background:repeating-linear-gradient(135deg,var(--mid) 0 8px,color-mix(in srgb,var(--mid) 70%,#fff) 8px 16px)}
+.hint{position:absolute;left:8px;font-size:12px;color:var(--soft);white-space:nowrap}
+.bar.mix{background:linear-gradient(90deg,var(--action) 0 60%,var(--prop) 60%);color:#fff}
+.bar.vino{background:repeating-linear-gradient(135deg,var(--vino-bg) 0 7px,color-mix(in srgb,var(--vino) 22%,var(--vino-bg)) 7px 14px);color:var(--vino);border:1.5px solid var(--vino)}
+.bar .x{font-family:var(--f-mono);font-weight:600}
+.load{grid-column:2 / -1;display:grid;grid-template-columns:repeat(var(--nd),var(--colw));border-top:2px solid var(--line)}
+.lc{font-family:var(--f-mono);font-size:11px;text-align:center;padding:4px 0;border-left:1px solid var(--line)}
+.lc.lo{background:var(--warn-bg);color:var(--warn)}.lc.full{background:var(--ok-bg);color:var(--ok)}.lc.over{background:var(--crit-bg);color:var(--crit);font-weight:700}.lc.none{color:var(--soft)}
+.ll{position:sticky;left:0;z-index:2;background:var(--card);border-top:2px solid var(--line);font-size:12px;color:var(--muted);padding:4px 10px}
+.legend{display:flex;flex-wrap:wrap;gap:6px 14px;font-size:12px;color:var(--muted);padding:8px 10px;border-top:1px solid var(--line)}
+.sw{display:inline-block;width:12px;height:12px;border-radius:3px;vertical-align:-2px;margin-right:4px}
+aside{min-width:0;display:flex;flex-direction:column;background:var(--bg)}
+.side{padding:14px max(16px,env(safe-area-inset-right,0px)) 30px max(16px,env(safe-area-inset-left,0px));display:flex;flex-direction:column;gap:12px;overflow:auto}
+.side h2{margin:0;font-size:17px;color:var(--deep);text-wrap:balance}
+.side h2 .k{font-family:var(--f-mono);color:var(--mid);font-size:14px;margin-right:6px}
+.side h3{margin:4px 0 0;font-size:12px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted)}
+.chips{display:flex;flex-wrap:wrap;gap:5px}
+.esc{font-size:12px;padding:1px 8px;border-radius:99px;white-space:nowrap}
+.esc.ok{background:var(--ok-bg);color:var(--ok)} .esc.dif{border:1.5px solid var(--vino);color:var(--vino)} .esc.nueva{background:var(--vino);color:#fff}
+.note{background:var(--panel);border-radius:6px;padding:8px 10px;font-size:13px}
+.note.vino{border-left:4px solid var(--vino)}
+.it{border:1px solid var(--line);border-radius:8px;padding:8px;display:grid;grid-template-columns:minmax(0,1fr);gap:6px;background:var(--card)}
+.it.propuesta{border-style:dashed;border-color:var(--mid)} .it.espera{border-color:var(--vino);background:var(--vino-bg)} .it.descartada{opacity:.5}
+.it.creada{border-color:var(--ok)}
+.it .r1{display:flex;gap:6px;align-items:center}
+.it .r1 input{flex:1;min-width:0}
+.it .r2{display:flex;flex-wrap:wrap;gap:6px;align-items:center;font-size:12px;color:var(--muted)}
+.it input,.it select,textarea{border:1px solid var(--line);border-radius:5px;padding:4px 6px;background:var(--bg);min-width:0}
+.it input[type=number]{width:62px} .it input[type=date]{width:132px}
+.it .r3{display:flex;flex-wrap:wrap;gap:5px}
+textarea{width:100%;min-height:68px;resize:vertical}
+.obs{display:flex;flex-direction:column;gap:3px;font-size:12px;color:var(--vino);font-weight:600}
+.obs textarea{min-height:52px;font-weight:400;color:var(--ink)}
+.row{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.empty{color:var(--muted);font-size:13px}
+.jlist{font-size:12.5px;display:flex;flex-direction:column;gap:3px}
+a{color:var(--action)}
+.overlay{position:fixed;inset:0;background:rgba(15,18,24,.45);z-index:60;display:flex;align-items:center;justify-content:center;padding:16px}
+.modal{background:var(--card);border-radius:10px;max-width:640px;width:100%;max-height:88vh;overflow:auto;padding:16px;display:flex;flex-direction:column;gap:10px;box-shadow:0 10px 30px rgba(0,0,0,.3)}
+.modal h2{margin:0;font-size:17px;color:var(--deep)}
+.op{display:flex;gap:8px;align-items:flex-start;font-size:13px;border-top:1px solid var(--line);padding-top:6px}
+.op .res{margin-left:auto;font-size:12px;white-space:nowrap}
+.modal.wide{max-width:900px}
+.op.opx{flex-direction:column;align-items:stretch;gap:5px}
+.opl{display:flex;gap:8px;align-items:flex-start}
+.opx>.res{margin-left:0;white-space:normal}
+textarea.dsc{width:100%;min-height:150px;font:12.5px/1.45 ui-monospace,Consolas,monospace;resize:vertical;box-sizing:border-box}
+details.desc{font-size:12px}
+details.desc summary{cursor:pointer;color:var(--deep);font-weight:600;display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+details.desc[open] summary{margin-bottom:5px}
+details.desc .row{margin-top:4px}
+.res.ok{color:var(--ok)} .res.bad{color:var(--crit)}
+.ro{font-size:12px;color:var(--warn)}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+
+<div class="band"><div class="in">
+  <div><h1>__TITULO_HTML__</h1>
+    <div class="sub">__SUBTITULO_HTML__</div></div>
+  <div class="acts"><span class="pill" id="jstat">Jira: sin consultar</span><span class="pill" id="sstat">Guardado: conectando…</span><button class="btn" id="bBackup" title="Descargar o copiar todo lo planeado como respaldo">Respaldo</button><button class="btn pri" id="bExport">Cambios para Jira</button></div>
+</div></div>
+<div class="kpis" id="kpis"></div>
+<div class="layout">
+  <section class="gwrap" aria-label="Cronograma">
+    <div class="gscroll"><div class="grid" id="grid"></div></div>
+    <div class="legend">
+      <span><i class="sw" style="background:var(--action)"></i>Subtareas aceptadas</span>
+      <span><i class="sw" style="background:var(--ok)"></i>Ya creada en Jira</span>
+      <span>Las propuestas de Claude no se pintan hasta que las aceptes</span>
+      <span><i class="sw" style="background:var(--vino)"></i>Pendiente de definición (lo define __QUIEN_DEFINE_HTML__)</span>
+      <span id="leyCarga">Fila de carga: horas de desarrollo por día</span>
+    </div>
+  </section>
+  <aside aria-label="Historia seleccionada"><div class="side" id="side"></div></aside>
+</div>
+<div id="modal"></div>
+
+<script>
+(function(){
+"use strict";
+const CFG=__CFG__;
+const J=CFG.jira||{};
+const CLOUD=J.cloud_id||"", SERVER=J.servidor_mcp||"Atlassian Rovo", SITIO=String(J.sitio||"").replace(/^https?:\/\//,"").replace(/\/+$/,""),
+  TIPO_SUB=J.tipo_subtarea||"Subtarea", CAMPO_INI=J.campo_inicio||null, DUENO_CTA=(CFG.asignado&&CFG.asignado.accountId)||null,
+  PROYECTO=CFG.proyecto, FIN_DEV=CFG.fin_desarrollo, DESC_SUB=CFG.descripcion_subtarea, LIDER=CFG.lider||"el líder",
+  CAP_LJ=Number(CFG.capacidad[0]), CAP_V=Number(CFG.capacidad[1]);
+const urlIssue=k=>SITIO?"https://"+SITIO+"/browse/"+encodeURIComponent(k):"";
+const FEST=new Set(CFG.festivos||[]);
+const PHASES=CFG.fases;
+const PHASES2=CFG.fases_replan||[]; // fases replaneadas (rojo), debajo de las del cliente para no perder lo prometido
+const DAYS=[];(function(){const d=new Date(CFG.inicio+"T12:00:00");const e=new Date(CFG.fin+"T12:00:00");while(d<=e){if(d.getDay()>0&&d.getDay()<6)DAYS.push(iso(d));d.setDate(d.getDate()+1);}})();
+function iso(d){return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");}
+const TODAY=iso(new Date());
+const DN=["dom","lun","mar","mié","jue","vie","sáb"];
+function di(s){if(!s)return -1;let i=DAYS.indexOf(s);if(i>=0)return i;for(let k=0;k<DAYS.length;k++)if(DAYS[k]>=s)return k;return DAYS.length-1;}
+function jor(s){if(FEST.has(s))return 0;return new Date(s+"T12:00:00").getDay()===5?CAP_V:CAP_LJ;}
+function fmt(s){if(!s)return"—";const p=s.split("-");return p[2]+"/"+p[1];}
+function h(n){return(Math.round(n*10)/10).toString().replace(".",",");}
+function esc(s){return String(s==null?"":s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));}
+const $=id=>document.getElementById(id);
+let uid=0; const nid=()=>"n"+Date.now().toString(36)+(uid++);
+
+// Propuesta de Claude. El líder la acepta, la cambia o la descarta.
+const P=(t,h,a,b,e)=>({titulo:t,horas:h,ini:a||null,fin:b||null,estado:e||"propuesta",autor:"claude"});
+const PO=(t,h,a,b,o)=>Object.assign(P(t,h,a,b),{obs:o});
+const W=(t,h,o)=>({titulo:t,horas:h,ini:null,fin:null,estado:"espera",autor:"claude",obs:o||""});
+const ONEW=CFG.texto_nueva;
+const HUS=CFG.historias;
+// Orden: por clave (= orden de creación en Jira); el dueño lo cambia con las flechas y queda en db `orden/actual`
+const cmpKey=(a,b)=>{const [pa,na]=a.split("-"),[pb,nb]=b.split("-");return pa===pb?(+na)-(+nb):(pa<pb?-1:1);};
+let KEYS=HUS.map(x=>x.key).sort(cmpKey);
+function aplicarOrden(lista){const vis=(lista||[]).filter(k=>HMAP[k]);KEYS=vis.concat(KEYS.filter(k=>!vis.includes(k)).sort(cmpKey));}
+const HMAP=Object.fromEntries(HUS.map(x=>[x.key,x]));
+
+// ---- Estado ----
+const ST={}; // key -> {items, comentarios, transicion}
+function defaults(hu){return{items:hu.items.map(it=>Object.assign({id:nid(),jira:null},it)),comentarios:hu.coment?[{id:nid(),texto:hu.coment,enviado:null,aceptado:false,autor:"claude"}]:[],transicion:null};}
+HUS.forEach(hu=>ST[hu.key]=defaults(hu));
+let SEL=KEYS[0], db=null, canWrite=false, LIVE={}, SUBS={}, mcp=null, sample=null, EXPD=null;
+const saveTimers={}, INFLIGHT={};
+// Nunca redibujar el panel mientras se escribe en él: borraría lo que no se ha guardado
+function editando(){const a=document.activeElement;return !!(a&&a.closest&&(a.closest("#side")||a.closest("#modal"))&&a.matches("input,textarea,select"));}
+function softRender(){renderKpis();renderGrid();if(!editando())renderSide();}
+function save(key){ if(!db||!canWrite)return; clearTimeout(saveTimers[key]); saveTimers[key]=setTimeout(()=>{ saveTimers[key]=null; INFLIGHT[key]=true; db.collection("plan").doc(key).set(JSON.parse(JSON.stringify(Object.assign({},ST[key],{actualizado:new Date().toISOString()})))).finally(()=>{INFLIGHT[key]=false;}).then(()=>{$("sstat").textContent="Guardado";$("sstat").className="pill ok";}).catch(e=>{$("sstat").textContent="No se guardó: "+(e&&e.code||"error");$("sstat").className="pill crit";}); },500); }
+
+// ---- Cálculos ----
+const vivo=it=>it.estado!=="descartada"&&it.estado!=="espera";
+function huHoras(k){let a=0,p=0,w=0;ST[k].items.forEach(it=>{const n=Number(it.horas)||0;if(it.estado==="aceptada"||it.jira)a+=n;else if(it.estado==="propuesta")p+=n;else if(it.estado==="espera")w+=n;});return{a,p,w};}
+function huVino(k){const x=huHoras(k);return x.w>0&&x.w>=x.a+x.p;}
+// ---- Responsable por subtarea: por defecto el dueño del cronograma; otra persona no suma a su carga ----
+const MAIN=CFG.asignado.nombre, GENTE=CFG.personas||[], CUENTAS=Object.assign({},CFG.cuentas||{},DUENO_CTA?{[MAIN]:DUENO_CTA}:{});
+const esMain=n=>n===MAIN||String(n).startsWith(MAIN+" ")||MAIN.startsWith(String(n)+" ");
+const respOf=it=>(it.resp&&it.resp.nombre&&!esMain(it.resp.nombre))?it.resp:null;
+const enCarga=it=>(it.estado==="aceptada"||it.jira)&&it.ini&&!respOf(it);
+// Reparto real por día: cada subtarea toma la capacidad que queda desde su inicio y lo que no cabe pasa al día siguiente (no se duplica)
+function reparto(){
+  const cap=DAYS.map(d=>jor(d)), por={}, sobra={};
+  const orden=[];KEYS.forEach((k,ki)=>ST[k].items.forEach((it,ii)=>{if(enCarga(it))orden.push({k,it,ki,ii});}));
+  orden.sort((a,b)=>(a.it.ini<b.it.ini?-1:a.it.ini>b.it.ini?1:a.ki-b.ki||a.ii-b.ii));
+  orden.forEach(({it})=>{let r=Number(it.horas)||0;const m={};for(let i=Math.max(0,di(it.ini));i<DAYS.length&&r>1e-9;i++){const t=Math.min(r,cap[i]);if(t>0){cap[i]-=t;m[i]=t;r-=t;}}
+    por[it.id]=m;if(r>1e-9)sobra[it.id]=r;});
+  const load=DAYS.map((d,i)=>jor(d)-cap[i]);return{por,sobra,load};}
+// Programar en secuencia desde una fecha: en el orden de las historias y de sus subtareas, llenando la capacidad diaria y arrastrando lo que no cabe
+function programar(desde){
+  const tocadas=new Set(), cal={};
+  const quien=it=>respOf(it)?respOf(it).nombre:MAIN;
+  KEYS.forEach(k=>ST[k].items.forEach(it=>{if(it.estado!=="aceptada"||it.jira)return;
+    const p=quien(it);if(!cal[p])cal[p]={cap:DAYS.map(d=>jor(d)),i:Math.max(0,di(desde))};const c=cal[p];
+    let r=Number(it.horas)||0,ini=null,fin=null;
+    while(c.i<DAYS.length&&c.cap[c.i]<=1e-9)c.i++;
+    let i=c.i;while(r>1e-9&&i<DAYS.length){const t=Math.min(r,c.cap[i]);if(t>0){if(ini===null)ini=i;fin=i;c.cap[i]-=t;r-=t;}if(c.cap[i]<=1e-9)i++;}
+    c.i=Math.min(i,DAYS.length-1);
+    if(ini===null){ini=fin=DAYS.length-1;}
+    const a=DAYS[ini],b=DAYS[fin];if(it.ini!==a||it.fin!==b){it.ini=a;it.fin=b;tocadas.add(k);}}));
+  return tocadas;}
+// Las columnas de días se estiran para llenar el ancho disponible (mínimo 34-46 px según pantalla)
+function colW(){const sc=document.querySelector(".gscroll");const cs=getComputedStyle(document.documentElement);
+  const lab=parseFloat(cs.getPropertyValue("--lab"))||250, min=parseFloat(cs.getPropertyValue("--colw"))||46;
+  const w=sc?sc.clientWidth:0; return w?Math.max(min,Math.floor((w-lab-2)/DAYS.length)):min;}
+let rzT=null; window.addEventListener("resize",()=>{clearTimeout(rzT);rzT=setTimeout(()=>renderGrid(),120);});
+function render(){renderKpis();renderGrid();renderSide();}
+function sigHabil(){const d=new Date(TODAY+"T12:00:00");do{d.setDate(d.getDate()+1);}while(d.getDay()===0||d.getDay()===6||FEST.has(iso(d)));return iso(d);}
+document.addEventListener("click",ev=>{const b=ev.target.closest&&ev.target.closest("#bProg");if(!b||!canWrite)return;
+  const desde=($("pDesde")&&$("pDesde").value)||sigHabil();
+  if(!confirm(`Reprogramar todas las subtareas aceptadas (sin clave de Jira) desde el ${fmt(desde)}, en el orden de las historias, a ${h(CAP_LJ)} h por día? Cada persona lleva su propio calendario.`))return;
+  const t=programar(desde);t.forEach(k=>save(k));render();
+  anotar([{texto:`Reprogramó el sprint en secuencia desde el ${fmt(desde)} (${t.size} historias movidas), a ${h(CAP_LJ)} h por día y ${h(CAP_V)} el viernes`,fuente:"cronograma"}],[],`Reprogramado desde ${desde}`);});
+function renderKpis(){
+  let a=0,p=0,w=0,fin="";KEYS.forEach(k=>{const x=huHoras(k);a+=x.a;p+=x.p;w+=x.w;ST[k].items.forEach(it=>{if(vivo(it)&&it.fin&&it.fin>fin)fin=it.fin;});});
+  let cap=0;DAYS.forEach(d=>{if(d<=FIN_DEV)cap+=jor(d);});
+  const pend=countOps();
+  $("kpis").innerHTML=`<span>Aceptadas: <b>${h(a)} h</b></span><span>Propuestas sin aceptar: <b>${h(p)} h</b></span><span class="v">Pendiente de definición: <b>${h(w)} h</b> <button class="btn sm" id="bPend">Ver pendientes por definir</button></span>
+  <span>Capacidad de desarrollo (${fmt(DAYS[0])} al ${fmt(FIN_DEV)}): <b>${h(cap)} h</b></span><span class="${fin>FIN_DEV?"c":""}">Fin de desarrollo según el plan: <b>${fmt(fin)}</b> (cronograma ${fmt(FIN_DEV)})</span><span>Cambios por exportar: <b>${pend}</b></span>
+  ${canWrite?`<span><label>Programar desde <input type="date" id="pDesde" value="${($("pDesde")&&$("pDesde").value)||sigHabil()}"></label> <button class="btn sm" id="bProg" title="Reparte las subtareas aceptadas en el orden de las historias, llenando ${h(CAP_LJ)} h por día (viernes ${h(CAP_V)}) y pasando al día siguiente lo que no cabe">Programar en secuencia</button></span>`:""}`;
+}
+function renderGrid(){
+  const g=$("grid"), cw=colW(); g.style.setProperty("--nd",DAYS.length); g.style.setProperty("--colw",cw+"px");
+  g.classList.toggle("dos",PHASES2.length>0);
+  // Cada fila del encabezado va en su propia línea y sin huecos: si una fila de fases no cubre todos los días,
+  // la cuadrícula metería ahí los encabezados de los días o la primera historia.
+  const fila=(lista,row,cls,pref)=>{let out="",col=0;
+    lista.map(([c,n,a,b])=>[c,n,a,b,di(a),Math.max(di(a),di(b))]).sort((x,y)=>x[4]-y[4]).forEach(([c,n,a,b,i,j])=>{
+      if(i>col)out+=`<div class="ph gap ${row===2?"r2":""}" style="grid-row:${row};grid-column:${col+2} / ${i+2}"></div>`;
+      out+=`<div class="ph ${c} ${cls}" style="grid-row:${row};grid-column:${i+2} / ${j+3}" title="${esc(pref+n+": "+fmt(a)+" al "+fmt(b))}">${n}</div>`;col=Math.max(col,j+1);});
+    if(col<DAYS.length)out+=`<div class="ph gap ${row===2?"r2":""}" style="grid-row:${row};grid-column:${col+2} / -1"></div>`;return out;};
+  let html=`<div class="ph corner" style="grid-row:1;grid-column:1">${PHASES2.length?"Cronograma del cliente":"Fases del sprint"}</div>`+fila(PHASES,1,PHASES2.length?"orig":"","");
+  if(PHASES2.length)html+=`<div class="ph corner rep" style="grid-row:2;grid-column:1">Replaneado · entrega ${fmt(PHASES2[PHASES2.length-1][3])}</div>`+fila(PHASES2,2,"rep","Replaneado · ");
+  const rd=PHASES2.length?3:2;
+  html+=`<div class="dh corner" style="grid-row:${rd};grid-column:1">Historia</div>`+DAYS.map((d,i)=>{const dt=new Date(d+"T12:00:00");return`<div class="dh ${d===TODAY?"today":""} ${FEST.has(d)?"fest":""}" style="grid-row:${rd};grid-column:${i+2}" title="${FEST.has(d)?"Festivo":""}"><b>${dt.getDate()}</b>${DN[dt.getDay()]}</div>`;}).join("");
+  const R=reparto(), load=R.load;
+  KEYS.forEach(k=>{
+    const hu=HMAP[k], s=ST[k], x=huHoras(k), lv=LIVE[k], v=huVino(k);
+    const its=s.items.filter(it=>(it.estado==="aceptada"||it.jira)&&it.ini&&it.fin); // en el Gantt solo lo aceptado
+    const nprop=s.items.filter(it=>it.estado==="propuesta"&&!it.jira).length;
+    const st=lv?`<span class="pill ${/listo|implement|cerrado|final/i.test(lv.status)?"ok":/desarrollo|revisi/i.test(lv.status)?"warn":""}">${esc(lv.status)}</span>`:"";
+    const subs=(SUBS[k]||[]).length;
+    html+=`<div class="rl ${k===SEL?"sel":""} ${v?"vino":""}" data-k="${k}" tabindex="0" role="button" aria-pressed="${k===SEL}"><span class="k">${k}</span><span class="t" title="${esc(hu.t)}">${esc(hu.t)}</span>
+      <span class="m">${canWrite?`<span class="mv"><button class="btn sm" data-mv="-1" data-mk="${k}" aria-label="Subir ${k}" title="Subir">▲</button><button class="btn sm" data-mv="1" data-mk="${k}" aria-label="Bajar ${k}" title="Bajar">▼</button></span>`:""}${st}${nprop?`<span class="pill">${nprop} propuesta${nprop>1?"s":""} por revisar</span>`:""}${x.w?`<span class="pill vline">+${h(x.w)} h por definir</span>`:""}${subs?`<span class="pill">${subs} en Jira</span>`:""}</span></div>`;
+    const nrows=Math.max(1,its.length+(x.w?1:0));
+    html+=`<div class="lane ${k===SEL?"sel":""}" data-k="${k}" style="height:${nrows*26+12}px">`;
+    const ti=DAYS.indexOf(TODAY); if(ti>=0)html+=`<div class="tc" style="left:${ti*cw}px"></div>`;
+    DAYS.forEach((d,i)=>{if(FEST.has(d))html+=`<div class="fc" style="left:${i*cw}px"></div>`;});
+    its.forEach((it,r)=>{const a=di(it.ini),b=Math.max(a,di(it.fin)),o=respOf(it),m=R.por[it.id]||{},sb=R.sobra[it.id];
+      const dias=Object.keys(m).map(i=>fmt(DAYS[i])+": "+h(m[i])+" h").join(" · ");
+      html+=`<div class="bar ${it.jira?"enjira":""} ${o?"otro":""}" style="top:${6+r*26}px;height:22px;left:${a*cw+2}px;width:${(b-a+1)*cw-4}px" title="${esc((it.jira?it.jira+" · ":"")+it.titulo+" · "+h(it.horas||0)+" h · "+fmt(it.ini)+"–"+fmt(it.fin)+(o?" · "+o.nombre+" (no suma a la carga de "+MAIN+")":dias?" · reparto: "+dias:"")+(sb?" · no caben "+h(sb)+" h":""))}"><span class="x">${it.jira?esc(it.jira)+" · ":""}${h(it.horas||0)} h</span>${o?` <b>${esc(o.nombre.split(" ")[0])}</b> ·`:""} ${esc(it.titulo)}</div>`;});
+    if(!its.length&&!x.w&&nprop)html+=`<div class="hint" style="top:14px">Sin subtareas aceptadas · ${nprop} propuesta${nprop>1?"s":""} en el panel</div>`;
+    if(x.w){html+=`<div class="bar vino" style="top:${6+its.length*26}px;height:22px;left:2px;width:${Math.min(DAYS.length,6)*cw-4}px">Pendiente de definición · ${h(x.w)} h</div>`;}
+    html+=`</div>`;
+  });
+  html+=`<div class="ll">Carga de ${esc(MAIN)} (h/día)</div><div class="load">`+DAYS.map((d,i)=>{const j=jor(d),v=load[i];if(!j)return`<div class="lc none">fest.</div>`;const c=v===0?"none":(v>j*1.05?"over":(v>=j*.85?"full":"lo"));const det=[];KEYS.forEach(k=>ST[k].items.forEach(it=>{const m=R.por[it.id];if(m&&m[i])det.push(k+" "+h(m[i])+" h · "+it.titulo.slice(0,50));}));return`<div class="lc ${c}" title="${esc(fmt(d)+": "+h(v)+" de "+h(j)+" h"+(det.length?"\n"+det.join("\n"):""))}">${v?h(v):"·"}</div>`;}).join("")+`</div>`;
+  const sobra=Object.values(R.sobra).reduce((s,x)=>s+x,0); if(sobra>1e-9)html+=`<div class="ll" style="grid-column:1 / -1;color:var(--crit)">No caben ${h(sobra)} h de ${esc(MAIN)} antes del ${fmt(DAYS[DAYS.length-1])}: desbordan el sprint.</div>`;
+  g.innerHTML=html;
+}
+function itemHtml(k,it){
+  const ro=!canWrite||!!it.jira;
+  const est=it.jira?`<span class="pill ok">En Jira: ${SITIO?`<a href="${esc(urlIssue(it.jira))}" target="_blank" rel="noopener">${esc(it.jira)}</a>`:esc(it.jira)}</span>`
+    :it.estado==="espera"?`<span class="pill vino">Pendiente de definición</span>`:it.estado==="aceptada"?`<span class="pill ok">Aceptada · sale a Jira</span>`:it.estado==="descartada"?`<span class="pill">Descartada</span>`:`<span class="pill">Propuesta de Claude</span>`;
+  const btns=ro?"":[
+    it.estado!=="aceptada"?`<button class="btn sm pri" data-a="acc" data-id="${it.id}">Aceptar</button>`:`<button class="btn sm" data-a="prop" data-id="${it.id}">Quitar aceptación</button>`,
+    it.estado!=="espera"?`<button class="btn sm" data-a="esp" data-id="${it.id}">Pendiente de definición</button>`:"",
+    it.estado!=="descartada"?`<button class="btn sm" data-a="des" data-id="${it.id}">Descartar</button>`:`<button class="btn sm" data-a="prop" data-id="${it.id}">Recuperar</button>`].join("");
+  return`<div class="it ${it.jira?"creada":it.estado}" data-id="${it.id}">
+    <div class="r1"><input aria-label="Título de la subtarea" data-f="titulo" data-id="${it.id}" value="${esc(it.titulo)}" ${ro?"disabled":""}></div>
+    <div class="r2">${est}<label>h <input type="number" min="0" step="0.5" data-f="horas" data-id="${it.id}" value="${it.horas??""}" ${ro?"disabled":""}></label>
+      <label>inicio <input type="date" data-f="ini" data-id="${it.id}" value="${it.ini||""}" ${ro?"disabled":""}></label>
+      <label>vence <input type="date" data-f="fin" data-id="${it.id}" value="${it.fin||""}" ${ro?"disabled":""}></label>
+      <label>responsable <select data-f="resp" data-id="${it.id}" ${ro?"disabled":""}>${[MAIN].concat(GENTE.filter(n=>!esMain(n))).concat(respOf(it)&&!GENTE.includes(respOf(it).nombre)?[respOf(it).nombre]:[]).map(n=>`<option ${(respOf(it)?respOf(it).nombre:MAIN)===n?"selected":""}>${esc(n)}</option>`).join("")}<option value="__otro">Otra persona…</option></select></label></div>
+    ${respOf(it)?`<div class="ro">No suma a la carga de ${esc(MAIN)}: la hace ${esc(respOf(it).nombre)}.</div>`:""}
+    ${it.estado==="espera"||it.obs?`<label class="obs"><span>Observación · qué falta para destrabarla</span><textarea data-f="obs" data-id="${it.id}" ${ro?"disabled":""} placeholder="Qué se espera, de quién y desde cuándo">${esc(it.obs||"")}</textarea></label>`:""}
+    ${it.jira?"":`<details class="desc" ${OPEN.has(it.id)?"open":""}><summary>Descripción para Jira ${it.desc&&it.desc.trim().length>=DESC_MIN?`<span class="pill ok">redactada</span>`:`<span class="pill warn">sin redactar · se redacta al exportar</span>`}</summary>
+      <textarea class="dsc" aria-label="Descripción para Jira" data-f="desc" data-id="${it.id}" ${ro?"disabled":""} placeholder="Contexto, qué hacer, dónde, criterios de aceptación…">${esc(it.desc||"")}</textarea>
+      ${ro?"":`<div class="row"><button class="btn sm" data-a="redac" data-id="${it.id}">${it.desc?"Mejorar con el analista":"Redactar con el analista"}</button><span class="res" id="rd-${it.id}"></span></div>`}</details>`}
+    <div class="r3">${btns}</div></div>`;
+}
+function openPend(){
+  const L=[];KEYS.forEach(k=>ST[k].items.forEach(it=>{if(it.estado==="espera")L.push({k,it});}));
+  const tot=L.reduce((s,o)=>s+(Number(o.it.horas)||0),0);
+  $("modal").innerHTML=`<div class="overlay"><div class="modal" role="dialog" aria-label="Pendientes por definir"><h2>Pendientes por definir · ${L.length} · ${h(tot)} h</h2>
+    <div class="empty">Lo que espera una definición de afuera. Abre la historia para destrabar: ponle fechas y acéptala, o descártala.</div>
+    ${L.map(o=>`<div class="op" style="flex-direction:column;gap:3px"><div><b>${o.k}</b> · ${esc(o.it.titulo)} · ${h(o.it.horas||0)} h <button class="btn sm" data-goto="${o.k}">Abrir historia</button></div>
+      <div style="color:var(--muted)">${o.it.obs?esc(o.it.obs):"<i>Sin observación todavía</i>"}</div></div>`).join("")||`<div class="empty">No hay pendientes por definir.</div>`}
+    <div class="row" style="justify-content:flex-end"><button class="btn" data-close="1">Cerrar</button></div></div></div>`;
+}
+document.addEventListener("click",ev=>{
+  const g=ev.target.closest&&ev.target.closest("[data-goto]"); if(g){SEL=g.dataset.goto;$("modal").innerHTML="";renderGrid();renderSide();return;}
+  if(ev.target.closest&&ev.target.closest("[data-close]")){$("modal").innerHTML="";return;}
+  if(ev.target.closest&&ev.target.closest("#bPend"))openPend();
+});
+function renderSide(){
+  const k=SEL,hu=HMAP[k],s=ST[k],x=huHoras(k),lv=LIVE[k];
+  const subs=SUBS[k]||[];
+  const tr=s.transicion;
+  $("side").innerHTML=`<div><h2><span class="k">${k}</span>${esc(hu.t)}</h2>
+    <div class="row" style="margin-top:6px">${hu.ficticia?`<span class="pill warn">Historia de ejemplo: aún no existe en Jira, no se consulta ni se exporta</span>`:`${lv?`<span class="pill">Jira: ${esc(lv.status)}</span>`:`<span class="pill">Jira: sin consultar</span>`}${SITIO?`<a href="${esc(urlIssue(k))}" target="_blank" rel="noopener">Abrir en Jira</a>`:""}`}</div></div>
+    ${!canWrite?`<div class="ro">Vista de solo lectura: solo el líder edita y exporta.</div>`:""}
+    <div class="note ${huVino(k)?"vino":""}">${esc(hu.nota)}</div>
+    ${hu.esc.length?`<div><h3>Piezas del requerimiento</h3><div class="chips">${hu.esc.map(([n,c])=>`<span class="esc ${c}">${esc(n)}</span>`).join("")}</div></div>`:""}
+    <div class="row"><h3 style="margin:0">Subtareas · ${h(x.a)} h aceptadas · ${h(x.p)} h propuestas${x.w?` · <span style="color:var(--vino)">${h(x.w)} h por definir</span>`:""}</h3></div>
+    ${canWrite&&s.items.some(it=>it.estado==="propuesta")?`<div><button class="btn sm pri" data-a="accAll">Aceptar todas las propuestas de esta historia</button></div>`:""}
+    ${s.items.map(it=>itemHtml(k,it)).join("")||`<div class="empty">Sin subtareas todavía.</div>`}
+    ${canWrite?`<div><button class="btn sm" data-a="add">+ Agregar subtarea</button></div>`:""}
+    ${subs.length?`<div><h3>Ya en Jira bajo ${k}</h3><div class="jlist">${subs.map(u=>`<span>${SITIO?`<a href="${esc(urlIssue(u.key))}" target="_blank" rel="noopener">${esc(u.key)}</a>`:esc(u.key)} · ${esc(u.summary)} · ${esc(u.status)}${u.est?` · ${h(u.est)} h`:""}</span>`).join("")}</div></div>`:""}
+    <div><h3>Comentario en la historia</h3>
+      ${s.comentarios.map(c=>`<div class="it ${c.enviado?"creada":"propuesta"}" data-cid="${c.id}"><textarea aria-label="Comentario" data-c="${c.id}" ${!canWrite||c.enviado?"disabled":""}>${esc(c.texto)}</textarea>
+        <div class="r2">${c.enviado?`<span class="pill ok">Publicado ${fmt(c.enviado.slice(0,10))}</span>`:c.aceptado===false?`<span class="pill">Propuesta de Claude</span>`:`<span class="pill ok">Aceptado · sale a Jira al exportar</span>`}
+        ${canWrite&&!c.enviado?(c.aceptado===false?`<button class="btn sm pri" data-a="accc" data-cid="${c.id}">Aceptar</button>`:`<button class="btn sm" data-a="propc" data-cid="${c.id}">Quitar aceptación</button>`)+`<button class="btn sm" data-a="delc" data-cid="${c.id}">Quitar</button>`:""}</div></div>`).join("")}
+      ${canWrite?`<button class="btn sm" data-a="addc">+ Comentario</button>`:""}</div>
+    <div><h3>Estado de la historia</h3>
+      <div class="row">${tr?`<span class="pill ${tr.aplicada?"ok":"warn"}">${tr.aplicada?"Pasó a":"Pasa a"} «${esc(tr.nombre)}»${tr.aplicada?"":" al exportar"}</span>${canWrite&&!tr.aplicada?`<button class="btn sm" data-a="delt">Quitar</button>`:""}`:`<span class="empty">Sin cambio de estado.</span>`}
+      ${canWrite&&(!tr||tr.aplicada)?`<button class="btn sm" data-a="trs">Cambiar estado…</button>`:""}</div><div id="trbox"></div></div>`;
+}
+
+// ---- Interacción ----
+// pointerdown sobre un botón del panel: evita que el blur de un campo (que guarda) dispare un redibujo antes del clic
+document.addEventListener("pointerdown",ev=>{if(ev.target.closest&&ev.target.closest("#side button"))ev.preventDefault();});
+document.addEventListener("click",ev=>{
+  const mv=ev.target.closest("button[data-mv]");
+  if(mv&&canWrite){const k=mv.dataset.mk,i=KEYS.indexOf(k),j=i+Number(mv.dataset.mv);if(j<0||j>=KEYS.length)return;
+    KEYS.splice(i,1);KEYS.splice(j,0,k);renderGrid();if(db)db.collection("orden").doc("actual").set({keys:KEYS.slice()}).catch(()=>{});return;}
+  const r=ev.target.closest("[data-k]");
+  if(r&&r.closest("#grid")){SEL=r.dataset.k;renderGrid();renderSide();return;}
+  const b=ev.target.closest("button[data-a]"); if(!b||!canWrite)return;
+  const fe=document.activeElement; if(fe&&fe.closest&&fe.closest("#side")&&fe.dataset&&(fe.dataset.f||fe.dataset.c))fe.dispatchEvent(new Event("change",{bubbles:true})); // confirma lo que estabas escribiendo
+  const k=SEL,s=ST[k],a=b.dataset.a,it=b.dataset.id&&s.items.find(x=>x.id===b.dataset.id);
+  if(a==="acc"&&it){it.estado="aceptada";}
+  else if(a==="prop"&&it){it.estado="propuesta";}
+  else if(a==="esp"&&it){it.estado="espera";anotar([{texto:`Dejó «${it.titulo}» (${h(it.horas||0)} h) pendiente de definición${it.obs?": "+it.obs:""}`,fuente:k}],[],`Pendiente de definición en ${k}`);}
+  else if(a==="des"&&it){it.estado="descartada";anotar([{texto:`Descartó «${it.titulo}» (${h(it.horas||0)} h) de ${k}`,fuente:k}],[],`Descarte en ${k}`);}
+  else if(a==="accAll"){s.items.forEach(x=>{if(x.estado==="propuesta")x.estado="aceptada";});}
+  else if(a==="add"){s.items.push({id:nid(),titulo:"Nueva subtarea",horas:1,ini:TODAY>=DAYS[0]?TODAY:DAYS[0],fin:TODAY>=DAYS[0]?TODAY:DAYS[0],estado:"aceptada",autor:"lider",jira:null});}
+  else if(a==="addc"){s.comentarios.push({id:nid(),texto:"",enviado:null,autor:"lider"});}
+  else if(a==="accc"||a==="propc"){const cm=s.comentarios.find(c=>c.id===b.dataset.cid);if(cm)cm.aceptado=(a==="accc");}
+  else if(a==="delc"){s.comentarios=s.comentarios.filter(c=>c.id!==b.dataset.cid);}
+  else if(a==="delt"){s.transicion=null;}
+  else if(a==="trs"){loadTransitions(k);return;}
+  else if(a==="pickt"){s.transicion={id:b.dataset.tid,nombre:b.dataset.tn,aplicada:null};}
+  else if(a==="redac"&&it){redactarUna(k,it,$("rd-"+it.id),b);return;}
+  else return;
+  save(k);render();
+});
+document.addEventListener("change",ev=>{
+  const f=ev.target.dataset&&ev.target.dataset.f, c=ev.target.dataset&&ev.target.dataset.c;
+  if(!canWrite)return; const s=ST[SEL];
+  if(f==="resp"){const it=s.items.find(x=>x.id===ev.target.dataset.id);if(!it)return;let n=ev.target.value;
+    if(n==="__otro"){n=(prompt("Nombre de la persona, tal como aparece en Jira:")||"").trim();if(!n){renderSide();return;}}
+    const antes=respOf(it)?respOf(it).nombre:MAIN;
+    it.resp=esMain(n)?null:{nombre:n,accountId:CUENTAS[n]||null};
+    save(SEL);render();if(antes!==n)anotar([{texto:`«${it.titulo}» pasa de ${antes} a ${n}${n!==MAIN?` (no suma a la carga de ${MAIN})`:""}`,fuente:SEL}],[],`Responsable en ${SEL}`);return;}
+  if(f){const it=s.items.find(x=>x.id===ev.target.dataset.id);if(!it)return;let v=ev.target.value;if(f==="horas")v=v===""?null:Number(v);it[f]=v||null;if(f==="titulo")it[f]=ev.target.value;save(SEL);renderKpis();renderGrid();}
+  if(c){const cm=s.comentarios.find(x=>x.id===c);if(cm){cm.texto=ev.target.value;save(SEL);renderKpis();}}
+});
+// Guardado mientras se escribe (texto): el cambio queda en el almacén aunque no se salga del campo
+document.addEventListener("input",ev=>{
+  if(!canWrite||!ev.target.closest||!ev.target.closest("#side"))return;
+  const f=ev.target.dataset&&ev.target.dataset.f, c=ev.target.dataset&&ev.target.dataset.c, s=ST[SEL];
+  if(f&&(f==="titulo"||f==="obs"||f==="desc")){const it=s.items.find(x=>x.id===ev.target.dataset.id);if(it){it[f]=ev.target.value;save(SEL);}}
+  else if(c){const cm=s.comentarios.find(x=>x.id===c);if(cm){cm.texto=ev.target.value;save(SEL);}}
+});
+// Recordar qué descripciones están abiertas entre redibujos
+const OPEN=new Set();
+document.addEventListener("toggle",ev=>{const d=ev.target;if(d&&d.matches&&d.matches("details.desc")){const id=d.querySelector("[data-id]");if(id){if(d.open)OPEN.add(id.dataset.id);else OPEN.delete(id.dataset.id);}}},true);
+document.addEventListener("keydown",ev=>{const r=ev.target.closest&&ev.target.closest(".rl");if(r&&(ev.key==="Enter"||ev.key===" ")){ev.preventDefault();SEL=r.dataset.k;renderGrid();renderSide();}});
+
+function errMsg(e){const c=e&&e.code;return c==="needs_reauth"?"Reconecta Atlassian en claude.ai → Configuración → Conectores.":c==="server_not_connected"?"Agrega el conector de Atlassian en claude.ai → Configuración → Conectores.":c==="not_in_manifest"||c==="approval_required"?"Falta tu permiso para usar Jira desde esta página.":c==="tool_error"?("Jira respondió con error: "+(e.message||"").slice(0,180)):c==="server_unavailable"?"Jira no respondió. Revisa en Jira antes de repetir.":"No se pudo ("+(c||"error")+").";}
+async function loadTransitions(k){
+  const box=$("trbox"); if(!mcp){box.innerHTML=`<div class="ro">Sin conexión con Jira en esta vista.</div>`;return;}
+  box.innerHTML=`<div class="empty">Consultando estados disponibles…</div>`;
+  try{const r=await mcp.callTool(SERVER,"getTransitionsForJiraIssue",{cloudId:CLOUD,issueIdOrKey:k});
+    const ts=(r.payload&&r.payload.transitions)||[];
+    box.innerHTML=ts.length?`<div class="row">${ts.map(t=>`<button class="btn sm" data-a="pickt" data-tid="${esc(t.id)}" data-tn="${esc((t.to&&t.to.name)||t.name)}">${esc((t.to&&t.to.name)||t.name)}</button>`).join("")}</div>`:`<div class="empty">Jira no ofrece transiciones para esta historia.</div>`;
+  }catch(e){box.innerHTML=`<div class="ro">${esc(errMsg(e))}</div>`;}
+}
+
+// ---- Exportar a Jira ----
+function ops(){const L=[];KEYS.forEach(k=>{const s=ST[k];if(HMAP[k].ficticia)return; // de ejemplo: no se exporta hasta que exista en Jira
+  s.items.forEach(it=>{if(it.estado==="aceptada"&&!it.jira)L.push({tipo:"sub",k,it});});
+  s.comentarios.forEach(c=>{if(!c.enviado&&c.aceptado!==false&&c.texto.trim())L.push({tipo:"com",k,c});});
+  if(s.transicion&&!s.transicion.aplicada)L.push({tipo:"tr",k,t:s.transicion});});return L;}
+function countOps(){return ops().length;}
+function durH(n){n=Number(n)||0;const hh=Math.floor(n),mm=Math.round((n-hh)*60);return(hh?hh+"h":"")+(mm?(hh?" ":"")+mm+"m":"")||"0m";}
+// accountId del responsable: el conocido, o el que tenga en Jira (busca issues asignados recientes y toma el de ese nombre)
+const CACHE_CTA={};
+async function cuentaDe(it){const o=respOf(it);if(!o){if(DUENO_CTA)return DUENO_CTA;o={nombre:MAIN};}if(o.accountId)return o.accountId;
+  const norm=s=>String(s||"").normalize("NFD").replace(/[̀-ͯ]/g,"").toLowerCase();
+  const pal=norm(o.nombre).split(/\s+/).filter(Boolean);
+  if(CACHE_CTA[o.nombre])return(o.accountId=CACHE_CTA[o.nombre]);
+  const r=await mcp.callTool(SERVER,"searchJiraIssuesUsingJql",{cloudId:CLOUD,jql:"assignee is not EMPTY AND updated >= -180d ORDER BY updated DESC",fields:["assignee"],maxResults:100,responseContentFormat:"markdown"});
+  const ns=(r.payload&&r.payload.issues&&r.payload.issues.nodes)||[];
+  for(const n of ns){const a=n.fields&&n.fields.assignee;if(a&&a.accountId&&pal.every(p=>norm(a.displayName).includes(p))){CACHE_CTA[o.nombre]=a.accountId;o.accountId=a.accountId;return a.accountId;}}
+  throw{code:"tool_error",message:`no encontré a «${o.nombre}» entre los responsables de Jira de los últimos 6 meses; escribe su nombre como aparece en Jira`};}
+function opLabel(o){return o.tipo==="sub"?`Crear subtarea en <b>${o.k}</b>: ${esc(o.it.titulo)} · ${h(o.it.horas||0)} h · ${fmt(o.it.ini)}–${fmt(o.it.fin)} · ${esc(respOf(o.it)?respOf(o.it).nombre:MAIN)}`
+  :o.tipo==="com"?`Comentar en <b>${o.k}</b>: «${esc(o.c.texto.slice(0,140))}${o.c.texto.length>140?"…":""}»`:`Cambiar <b>${o.k}</b> a «${esc(o.t.nombre)}»`;}
+
+// ---- Descripción de la subtarea: se interpreta la solución, nunca sale solo el título ----
+const DESC_MIN=120;
+function ctxSub(k,it){const hu=HMAP[k];return{historia:{clave:k,titulo:hu.t,que_hay_hoy:hu.nota,escalas:hu.esc},
+  subtarea:{titulo:it.titulo,horas:it.horas,inicio:it.ini,vence:it.fin,observacion:it.obs||null,tipo_matriz:it.tipo||null,borrador:it.desc||null},
+  otras_subtareas_de_la_historia:ST[k].items.filter(x=>x!==it&&x.estado!=="descartada").map(x=>x.titulo),
+  descripcion_base_del_sprint:DESC_SUB,responsable:respOf(it)?respOf(it).nombre:MAIN};}
+function expRel(){if(!EXPD)return{};const E=EXPD;return{resumen:E.resumen,decisiones:E.decisiones,pendientes:(E.pendientes||[]).filter(p=>p.estado!=="resuelto"),riesgos:E.riesgos,hallazgos_codigo:E.hallazgos_codigo};}
+async function redactarDesc(k,it,signal){
+  const prompt=`Eres el analista técnico del requerimiento «${document.title}». Redacta la DESCRIPCIÓN de una SUBTAREA de Jira (no de una historia de usuario) que va a ejecutar ${respOf(it)?respOf(it).nombre:MAIN}, un desarrollador que usa Claude de copiloto. Debe ser corta, puntual y técnica: que sepa exactamente qué tocar y no se pierda. El contexto de negocio y los criterios funcionales ya están en la historia padre: no los repitas.
+Reglas:
+- Una subtarea aceptada y con horas ya no tiene nada pendiente: NO escribas «Por confirmar», «pendiente de definir», preguntas ni opciones. Si el borrador trae algo así, quítalo. Lo único permitido es una dependencia de orden con otra subtarea («necesita el script de PROY-142»).
+- Conserva del borrador lo técnico útil: rutas, archivo:línea, nombres de tablas, columnas, SP, endpoints y decisiones ya tomadas. Recorta lo demás.
+- Usa SOLO lo que está en el CONTEXTO y el EXPEDIENTE; nunca inventes nombres, valores ni fechas.
+Markdown en español, sin títulos de nivel 1, máximo unas 150 palabras, con estas secciones:
+**Objetivo** — una línea.
+**Qué hacer** — de 2 a 6 pasos técnicos numerados.
+**Dónde** — repo y archivos, tablas o endpoints.
+**Criterios técnicos** — de 1 a 3, verificables por el dev o en el PR (no criterios funcionales).
+**Depende de** — solo si hay dependencia de orden.
+No pongas horas, fechas ni responsable: se agregan aparte. Devuelve SOLO el markdown.
+CONTEXTO: ${JSON.stringify(ctxSub(k,it))}
+EXPEDIENTE: ${JSON.stringify(expRel()).slice(0,60000)}`;
+  const {text}=await sample([{role:"user",content:prompt}],{signal,modelTier:"complex",cache:false});
+  return String(text||"").trim();}
+function pieDesc(k,it){return `\n\n---\n*Historia:* ${k} · *Estimación:* ${h(it.horas||0)} h · *Del* ${fmt(it.ini)} *al* ${fmt(it.fin)} · *Responsable:* ${respOf(it)?respOf(it).nombre:MAIN}\n*Planeada en el cronograma «${document.title}» el ${fmt(TODAY)}.*`;}
+async function redactarUna(k,it,out,btn){
+  if(!sample){if(out){out.textContent="El analista necesita abrir la página con tu sesión de claude.ai.";out.className="res bad";}return;}
+  btn.disabled=true;if(out){out.textContent="Interpretando la solución…";out.className="res";}
+  try{it.desc=await redactarDesc(k,it);save(k);renderSide();}
+  catch(e){if(out){out.textContent=e.code==="cancelled"?"Detenido.":"No pude redactar ("+(e.code||"error")+").";out.className="res bad";}btn.disabled=false;}}
+
+// ---- Respaldo: todo lo planeado en JSON (para restaurar) y en Markdown (para leer) ----
+let dl=null;
+const ESTN={aceptada:"Aceptada",propuesta:"Propuesta",espera:"Pendiente de definición",descartada:"Descartada"};
+function respaldoJSON(){return JSON.stringify({cronograma:document.title,generado:new Date().toISOString(),orden:KEYS.slice(),plan:ST,expediente:EXPD},null,1);}
+function respaldoMD(){
+  let s=`# ${document.title}\n\nRespaldo del ${fmt(TODAY)}. Fases del cliente: ${PHASES.map(p=>p[1]+" "+fmt(p[2])+"–"+fmt(p[3])).join(" · ")}.`;
+  if(PHASES2.length)s+=`\nReplaneado: ${PHASES2.map(p=>p[1]+" "+fmt(p[2])+"–"+fmt(p[3])).join(" · ")}.`;
+  KEYS.forEach(k=>{const hu=HMAP[k],x=huHoras(k);s+=`\n\n## ${k} · ${hu.t}\n${hu.ficticia?"_Historia de ejemplo, aún no existe en Jira._\n":""}${hu.nota?hu.nota+"\n":""}Aceptadas ${h(x.a)} h · propuestas ${h(x.p)} h · pendientes ${h(x.w)} h\n`;
+    ST[k].items.forEach(it=>{const r=respOf(it);s+=`\n### [${ESTN[it.estado]||it.estado}] ${it.titulo}\n${h(it.horas||0)} h · ${it.ini?fmt(it.ini)+"–"+fmt(it.fin):"sin fecha"} · ${r?r.nombre:MAIN}${it.jira?" · Jira "+it.jira:""}\n`;
+      if(it.obs)s+=`\n> ${String(it.obs).replace(/\n/g,"\n> ")}\n`;if(it.desc)s+=`\n${it.desc}\n`;});
+    ST[k].comentarios.forEach(c=>{if(c.texto)s+=`\n**Comentario para Jira${c.enviado?" (publicado)":""}:** ${c.texto}\n`;});});
+  if(EXPD){const E=EXPD;s+=`\n\n## Expediente del analista (v${E.version||1})\n\n${E.resumen||""}\n`;
+    const L=(t,a,f)=>{if(a&&a.length)s+=`\n### ${t}\n`+a.map(f).join("\n")+"\n";};
+    L("Decisiones del líder",E.decisiones_lider,d=>`- ${d.fecha||""} · ${d.texto}`);
+    L("Pendientes abiertos",(E.pendientes||[]).filter(p=>p.estado!=="resuelto"),p=>`- ${p.id}: ${p.texto}${p.a_quien?" · "+p.a_quien:""}`);
+    L("Riesgos",E.riesgos,r=>`- ${r.id}: ${r.texto}`);
+    L("Hallazgos del código",E.hallazgos_codigo,x=>`- ${x.id}: ${x.texto}`);}
+  return s+"\n";}
+async function guardarArchivo(nombre,data,out){
+  if(!dl){out.textContent="Esta vista no permite descargar: usa «Copiar».";out.className="res bad";return;}
+  try{await dl.save({filename:nombre,data});out.textContent="Guardado";out.className="res ok";}
+  catch(e){out.textContent=e&&e.code==="declined"?"Cancelado":"No se pudo ("+(e&&e.code||"error")+")";out.className="res bad";}}
+async function copiar(txt,out){
+  try{await navigator.clipboard.writeText(txt);out.textContent="Copiado";out.className="res ok";}
+  catch(e){const ta=document.getElementById("bkTxt");ta.hidden=false;ta.value=txt;ta.select();out.textContent="Selecciona y copia con Ctrl+C";out.className="res";}}
+$("bBackup").addEventListener("click",()=>{
+  const base=document.title.replace(/[^\wáéíóúñÁÉÍÓÚÑ ·-]/g,"").replace(/\s+/g," ").trim()+" · respaldo "+TODAY;
+  $("modal").innerHTML=`<div class="overlay"><div class="modal" role="dialog" aria-label="Respaldo"><h2>Respaldo de lo planeado</h2>
+    <div class="empty">Todo lo que ves (subtareas, descripciones, responsables, fechas, comentarios y el expediente del analista) se guarda solo en la base de la página y no se borra al recargar ni al republicar. Este respaldo es una copia extra en tu equipo.</div>
+    <div class="op opx"><b>Completo (JSON)</b> · sirve para restaurar
+      <div class="row"><button class="btn sm pri" id="bkJ">Descargar .json</button><button class="btn sm" id="bkJc">Copiar</button><span class="res" id="bkJo"></span></div></div>
+    <div class="op opx"><b>Para leer (Markdown)</b> · historias, subtareas con su descripción, decisiones y pendientes
+      <div class="row"><button class="btn sm pri" id="bkM">Descargar .md</button><button class="btn sm" id="bkMc">Copiar</button><span class="res" id="bkMo"></span></div></div>
+    <textarea id="bkTxt" class="dsc" hidden></textarea>
+    <div class="row" style="justify-content:flex-end"><button class="btn" data-close="1">Cerrar</button></div></div></div>`;
+  $("bkJ").onclick=()=>guardarArchivo(base+".json",respaldoJSON(),$("bkJo"));
+  $("bkJc").onclick=()=>copiar(respaldoJSON(),$("bkJo"));
+  $("bkM").onclick=()=>guardarArchivo(base+".md",respaldoMD(),$("bkMo"));
+  $("bkMc").onclick=()=>copiar(respaldoMD(),$("bkMo"));
+});
+
+// ---- Memoria del analista: lo que decide el líder y los tiempos acordados quedan en el expediente ----
+function horasClaude(k,it){if(it.autor!=="claude")return null;const d=HMAP[k].items.find(y=>y.titulo===it.titulo);return d&&d.horas!=null?Number(d.horas):null;}
+let anotQ=Promise.resolve();
+function anotar(dec,est,resumen){ if(!db||!canWrite||(!dec.length&&!est.length))return anotQ;
+  anotQ=anotQ.then(async()=>{const E=JSON.parse(JSON.stringify(EXPD||{})), hoy=TODAY;
+    E.decisiones_lider=(E.decisiones_lider||[]).concat(dec.map((d,i)=>Object.assign({id:"DL-"+hoy.replace(/-/g,"")+"-"+((E.decisiones_lider||[]).length+i+1),quien:LIDER,fecha:hoy},d)));
+    est.forEach(e=>{const L=E.estimaciones=E.estimaciones||[];const j=L.findIndex(x=>(e.clave&&x.clave===e.clave)||(x.historia===e.historia&&x.titulo===e.titulo));if(j>=0)L[j]=Object.assign(L[j],e);else L.push(e);});
+    E.version=(E.version||1)+1;E.actualizado=hoy;E.historial=(E.historial||[]).concat([{fecha:hoy,resumen}]);
+    await db.collection("expediente").doc("actual").set(E); EXPD=E;}).catch(e=>{$("sstat").textContent="No se anotó en el expediente: "+(e&&e.code||"error");$("sstat").className="pill warn";});
+  return anotQ;}
+
+$("bExport").addEventListener("click",()=>{
+  const L=ops(), nsub=L.filter(o=>o.tipo==="sub").length;
+  $("modal").innerHTML=`<div class="overlay" id="ov"><div class="modal wide" role="dialog" aria-label="Cambios para Jira"><h2>Cambios para Jira (${L.length})</h2>
+    ${!canWrite?`<div class="ro">Solo el líder puede exportar.</div>`:""}
+    ${L.length?`<div class="empty">Revisa cada cambio. Se escriben en Jira solo los marcados, uno por uno, con tu cuenta.${nsub?` Ninguna subtarea sale solo con su título: el paso 1 interpreta la solución y redacta su descripción; la revisas y la corriges aquí antes del paso 2.`:""}</div>`+L.map((o,i)=>`<div class="op opx"><label class="opl"><input type="checkbox" data-op="${i}" checked ${canWrite?"":"disabled"}><span>${opLabel(o)}</span><span class="res" id="res${i}"></span></label>
+      ${o.tipo==="sub"?`<textarea class="dsc" data-od="${i}" aria-label="Descripción de ${esc(o.it.titulo)}" ${canWrite?"":"disabled"} placeholder="Sin descripción todavía: el paso 1 la redacta.">${esc(o.it.desc||"")}</textarea><span class="res" id="rdx${i}"></span>`:""}</div>`).join(""):`<div class="empty">No hay nada pendiente: acepta subtareas, escribe un comentario o elige un cambio de estado.</div>`}
+    <div class="row" style="justify-content:flex-end"><button class="btn" id="bClose">Cerrar</button>${L.length&&canWrite&&nsub?`<button class="btn pri" id="bPrep">1 · Interpretar y redactar descripciones</button>`:""}${L.length&&canWrite?`<button class="btn ${nsub?"":"pri"}" id="bRun">${nsub?"2 · ":""}Escribir en Jira</button>`:""}</div></div></div>`;
+  $("bClose").onclick=()=>{$("modal").innerHTML="";};
+  const run=$("bRun"); if(run)run.onclick=()=>runOps(L,run);
+  const prep=$("bPrep"); if(prep)prep.onclick=()=>prepDescs(L,prep);
+});
+async function prepDescs(L,btn){
+  if(!sample){alertBox("Para redactar las descripciones hay que abrir la página con tu sesión de claude.ai. Puedes escribirlas a mano en cada recuadro.");return;}
+  btn.disabled=true; const touched=new Set();
+  for(let i=0;i<L.length;i++){const o=L[i]; if(o.tipo!=="sub")continue;
+    const cb=document.querySelector(`[data-op="${i}"]`), ta=document.querySelector(`[data-od="${i}"]`), out=$("rdx"+i); if(!cb||!cb.checked||!ta)continue;
+    btn.textContent=`Redactando ${o.it.titulo.slice(0,40)}…`; out.textContent="Interpretando la solución…"; out.className="res";
+    o.it.desc=ta.value; // lo que el líder ya escribió es el borrador
+    try{const d=await redactarDesc(o.k,o.it); ta.value=d; o.it.desc=d; touched.add(o.k); out.textContent="Redactada: revísala"; out.className="res ok";}
+    catch(e){out.textContent="No pude redactarla ("+(e.code||"error")+"): escríbela a mano"; out.className="res bad";}}
+  touched.forEach(k=>save(k)); btn.textContent="1 · Volver a redactar"; btn.disabled=false;
+}
+async function runOps(L,btn){
+  if(!mcp){alertBox("Sin conexión con Jira en esta vista.");return;}
+  btn.disabled=true; btn.textContent="Escribiendo…";
+  const touched=new Set(), DEC=[], EST=[];
+  for(let i=0;i<L.length;i++){
+    const cb=document.querySelector(`[data-op="${i}"]`); if(!cb||!cb.checked)continue;
+    const o=L[i], out=$("res"+i);
+    if(o.tipo==="sub"){const ta=document.querySelector(`[data-od="${i}"]`); o.it.desc=ta?ta.value.trim():(o.it.desc||"").trim(); touched.add(o.k);
+      if(o.it.desc.length<DESC_MIN){out.textContent="No sale: falta la descripción (paso 1 o escríbela)"; out.className="res bad"; continue;}}
+    cb.disabled=true; out.textContent="…";
+    try{
+      if(o.tipo==="sub"){
+        const add={timetracking:{originalEstimate:durH(o.it.horas)}}; if(o.it.fin)add.duedate=o.it.fin; if(o.it.ini&&CAMPO_INI)add[CAMPO_INI]=o.it.ini;
+        const quien=await cuentaDe(o.it);
+        const r=await mcp.callTool(SERVER,"createJiraIssue",{cloudId:CLOUD,projectKey:PROYECTO,issueTypeName:TIPO_SUB,parent:o.k,assignee_account_id:quien,summary:o.it.titulo,contentFormat:"markdown",description:o.it.desc+pieDesc(o.k,o.it),additional_fields:add,responseContentFormat:"markdown"});
+        const p=r.payload; let key=p&&p.issues&&p.issues.nodes&&p.issues.nodes[0]&&p.issues.nodes[0].key; if(!key){const m=JSON.stringify(p||r).match(/"key"\s*:\s*"([A-Z][A-Z0-9]+-\d+)"/);key=m&&m[1];}
+        o.it.jira=key||"creada"; out.textContent=key||"creada"; out.className="res ok";
+        const hc=horasClaude(o.k,o.it), hh=Number(o.it.horas)||0;
+        EST.push({clave:key||null,historia:o.k,titulo:o.it.titulo,horas:hh,horas_claude:hc,ini:o.it.ini,fin:o.it.fin,responsable:respOf(o.it)?respOf(o.it).nombre:MAIN,tipo:o.it.tipo||null,fecha:TODAY,fuente:key||o.k});
+        DEC.push({texto:hc!=null&&hc!==hh?`Aceptó «${o.it.titulo}» ajustando de ${h(hc)} a ${h(hh)} h (${key||"creada"})`:o.it.autor==="claude"?`Aceptó «${o.it.titulo}» con ${h(hh)} h (${key||"creada"})`:`Agregó «${o.it.titulo}» con ${h(hh)} h (${key||"creada"})`,fuente:key||o.k});
+      }else if(o.tipo==="com"){
+        await mcp.callTool(SERVER,"addCommentToJiraIssue",{cloudId:CLOUD,issueIdOrKey:o.k,commentBody:o.c.texto,contentFormat:"markdown"});
+        o.c.enviado=new Date().toISOString(); out.textContent="publicado"; out.className="res ok";
+        DEC.push({texto:`Comentó en ${o.k}: «${o.c.texto.slice(0,400)}${o.c.texto.length>400?"…":""}»`,fuente:o.k});
+      }else{
+        await mcp.callTool(SERVER,"transitionJiraIssue",{cloudId:CLOUD,issueIdOrKey:o.k,transition:{id:o.t.id}});
+        o.t.aplicada=new Date().toISOString(); out.textContent="hecho"; out.className="res ok";
+        DEC.push({texto:`Pasó ${o.k} a «${o.t.nombre}»`,fuente:o.k});
+      }
+      touched.add(o.k);
+    }catch(e){out.textContent=errMsg(e);out.className="res bad";if(e&&(e.code==="needs_reauth"||e.code==="server_not_connected"||e.code==="not_in_manifest"||e.code==="approval_required"))break;}
+  }
+  touched.forEach(k=>save(k));
+  if(DEC.length||EST.length)anotar(DEC,EST,`Exportado a Jira: ${EST.length} subtareas (${h(EST.reduce((s,e)=>s+e.horas,0))} h), ${DEC.length-EST.length} cambios más`);
+  btn.textContent="Listo"; render();
+  if(mcp&&mcp.invalidate)mcp.invalidate(SERVER,"searchJiraIssuesUsingJql").catch(()=>{});
+}
+function alertBox(t){$("modal").innerHTML=`<div class="overlay"><div class="modal"><div>${esc(t)}</div><div class="row" style="justify-content:flex-end"><button class="btn" onclick="this.closest('.overlay').remove()">Cerrar</button></div></div></div>`;}
+
+// ---- Arranque ----
+$("leyCarga").textContent=`Fila de carga: horas de desarrollo por día de ${MAIN} (${h(CAP_LJ)} h; viernes ${h(CAP_V)} h)`;
+render();
+(async()=>{
+  const C=window.claude; if(!C||!C.use){$("sstat").textContent="Guardado: no disponible";$("jstat").textContent="Jira: no disponible";return;}
+  const [dbx,user,m,smp,dls]=await Promise.all([C.use("db"),C.use("user"),C.use("mcp"),C.use("sample"),C.use("downloads")]);
+  mcp=m; sample=smp; dl=dls; canWrite=!!(user&&user.isOwner&&user.isOwner()); db=dbx;
+  if(db)db.collection("expediente").doc("actual").onSnapshot(s=>{const v=s&&s.data?s.data():null;EXPD=v?JSON.parse(JSON.stringify(v)):null;},()=>{});
+  let first=true;
+  if(db)db.collection("orden").doc("actual").onSnapshot(s=>{const v=s&&s.data?s.data():null;if(v&&Array.isArray(v.keys)){aplicarOrden(v.keys);renderGrid();}},()=>{});
+  if(db){db.collection("plan").onSnapshot(snap=>{let changed=false;snap.docs.forEach(d=>{const v=d.data();
+  if(!v||!HMAP[d.id]||saveTimers[d.id]||INFLIGHT[d.id]||(d.metadata&&d.metadata.hasPendingWrites))return;
+  if(d.id===SEL&&editando())return; // la historia que se está editando no se pisa con lo remoto
+  const remote=JSON.parse(JSON.stringify({items:v.items||[],comentarios:v.comentarios||[],transicion:v.transicion||null})); // el almacén entrega objetos congelados: se clonan para poder editarlos
+  remote.items.forEach(x=>{if(!x.desc){const m=HMAP[d.id].items.find(y=>y.desc&&y.titulo===x.titulo);if(m)x.desc=m.desc;}}); // borradores del plan para lo guardado antes de que existieran
+  if(JSON.stringify(remote)===JSON.stringify({items:ST[d.id].items,comentarios:ST[d.id].comentarios,transicion:ST[d.id].transicion}))return; // eco de nuestro guardado: no redibujar
+  ST[d.id]=remote; changed=true;});$("sstat").textContent=canWrite?"Guardado":"Solo lectura";$("sstat").className="pill "+(canWrite?"ok":"");if(changed||first){first=false;softRender();}},()=>{$("sstat").textContent="Guardado: sin acceso";$("sstat").className="pill warn";});}
+  else{$("sstat").textContent="Guardado: no disponible (inicia sesión)";$("sstat").className="pill warn";canWrite=false;}
+  render();
+  if(!mcp){$("jstat").textContent="Jira: no disponible";return;}
+  const REALES=KEYS.filter(k=>!HMAP[k].ficticia); // una historia de ejemplo (aún sin crear en Jira) rompería la consulta
+  if(!REALES.length||!CLOUD){$("jstat").textContent="Jira: "+(CLOUD?"sin historias reales":"sin cloud_id");return;}
+  const jql="key in ("+REALES.join(",")+") OR parent in ("+REALES.join(",")+")";
+  mcp.watchTool(SERVER,"searchJiraIssuesUsingJql",{cloudId:CLOUD,jql,fields:["summary","status","parent","timeoriginalestimate"],maxResults:100,responseContentFormat:"markdown"},ev=>{
+    if(ev.type==="error"){const c=ev.error&&ev.error.code;$("jstat").textContent="Jira: "+(c==="needs_reauth"?"reconecta Atlassian":c==="server_not_connected"?"agrega el conector":c==="not_in_manifest"||c==="approval_required"?"falta tu permiso":"sin respuesta");$("jstat").className="pill warn";if(c==="needs_reauth"||c==="server_not_connected"||c==="not_in_manifest"){LIVE={};SUBS={};softRender();}return;}
+    const nodes=(ev.result.payload&&ev.result.payload.issues&&ev.result.payload.issues.nodes)||[];
+    const L={},S={};
+    nodes.forEach(n=>{const f=n.fields||{};const st=(f.status&&f.status.name)||"";if(HMAP[n.key])L[n.key]={status:st};else if(f.parent&&HMAP[f.parent.key])(S[f.parent.key]=S[f.parent.key]||[]).push({key:n.key,summary:f.summary||"",status:st,est:f.timeoriginalestimate?f.timeoriginalestimate/3600:null});});
+    LIVE=L;SUBS=S;
+    const at=ev.result.cache?new Date(ev.result.cache.storedAt):new Date();
+    $("jstat").textContent="Jira: "+String(at.getHours()).padStart(2,"0")+":"+String(at.getMinutes()).padStart(2,"0");$("jstat").className="pill ok";
+    softRender(); // la consulta periódica a Jira no puede redibujar el panel con el cursor adentro
+  },{refetchInterval:120000});
+})();
+})();
+</script>

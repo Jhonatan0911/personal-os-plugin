@@ -1,0 +1,209 @@
+<style>
+/* «hidden» manda sobre los display de las clases (.chatp, .layout, .upd): sin esto el chat oculto tapa la página */
+[hidden]{display:none!important}
+/* Pestañas Cronograma | Requerimiento bajo los indicadores; chat del analista como botón flotante */
+.tabs{display:flex;gap:2px;padding:0 max(16px,env(safe-area-inset-right,0px)) 0 max(16px,env(safe-area-inset-left,0px));border-bottom:1px solid var(--line);background:var(--bg);position:sticky;top:env(safe-area-inset-top,0px);z-index:20;overflow-x:auto}
+.tab{border:0;background:transparent;padding:10px 14px;font-weight:600;color:var(--muted);border-bottom:3px solid transparent;white-space:nowrap}
+.tab[aria-selected=true]{color:var(--deep);border-bottom-color:var(--action)}
+/* Cronograma 60 % y panel 40 %: cada uno con su propio scroll (el cronograma en X y en Y) */
+.layout{grid-template-columns:minmax(0,3fr) minmax(340px,2fr)!important;height:calc(100vh - 210px);min-height:460px}
+.gwrap{min-height:0}.gscroll{overflow:auto!important;min-height:0}
+aside{min-height:0;overflow:hidden}.side{height:100%;overflow:auto}
+@media (max-width:980px){.layout{grid-template-columns:minmax(0,1fr)!important;height:auto;min-height:0}.gscroll{max-height:65vh}aside{overflow:visible}.side{height:auto}}
+.an{padding-block:16px 96px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));background:var(--panel);min-height:60vh}
+.an-h{display:flex;flex-wrap:wrap;gap:8px 16px;align-items:center;justify-content:space-between;margin-bottom:12px}
+.an-h h2{margin:0;font-size:19px;color:var(--deep)}
+.an-h .meta{font-size:12.5px;color:var(--muted)}
+.an-res{background:var(--card);border:1px solid var(--line);border-left:4px solid var(--brand);border-radius:8px;padding:12px 14px;font-size:14px;margin-bottom:12px;max-width:110ch}
+.an-g{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,380px),1fr));gap:12px;align-items:start}
+.card{background:var(--card);border:1px solid var(--line);border-radius:8px;padding:12px;min-width:0}
+.card h3{margin:0 0 8px;font-size:12px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);display:flex;justify-content:space-between;gap:8px}
+.card ul{margin:0;padding-left:18px;display:flex;flex-direction:column;gap:6px;font-size:13px}
+.src{font-family:var(--f-mono);font-size:11.5px;color:var(--mid)}
+.who{color:var(--muted);font-size:12px}
+.pd-res{text-decoration:line-through;color:var(--muted)}
+.card.pend{border-top:3px solid var(--vino)} .card.ries{border-top:3px solid var(--crit)} .card.deci{border-top:3px solid var(--ok)}
+.fab{position:fixed;right:calc(18px + env(safe-area-inset-right,0px));bottom:calc(18px + env(safe-area-inset-bottom,0px));z-index:70;border:0;border-radius:99px;padding:12px 18px;background:var(--action);color:#fff;font-weight:600;box-shadow:0 6px 18px rgba(15,18,24,.35);display:flex;gap:8px;align-items:center}
+.fab .dot{width:9px;height:9px;border-radius:50%;background:#7CE0A8}
+.chatp{position:fixed;right:calc(18px + env(safe-area-inset-right,0px));bottom:calc(76px + env(safe-area-inset-bottom,0px));z-index:71;width:min(420px,calc(100vw - 36px));height:min(620px,calc(100vh - 120px));background:var(--card);border:1px solid var(--line);border-radius:12px;box-shadow:0 14px 40px rgba(0,0,0,.28);display:flex;flex-direction:column;overflow:hidden}
+.chatp header{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:10px 12px;background:var(--brand);color:#fff}
+.chatp header b{font-size:14px} .chatp header .x{background:transparent;border:0;color:#fff;font-size:20px;line-height:1;padding:2px 6px}
+.chatp .body{flex:1;display:flex;flex-direction:column;gap:8px;padding:10px;min-height:0}
+@media (max-width:640px){.chatp{inset:env(safe-area-inset-top,0px) 0 0 0;width:100%;height:auto;border-radius:0}.fab{padding:12px 14px}.fab .lbl{display:none}}
+.msgs{flex:1;overflow:auto;display:flex;flex-direction:column;gap:8px;padding-right:2px;min-height:0}
+.msg{border-radius:8px;padding:8px 10px;font-size:13.5px;white-space:pre-wrap;overflow-wrap:anywhere}
+.msg.u{align-self:flex-end;background:var(--action);color:#fff;max-width:88%}
+.msg.a{align-self:flex-start;background:var(--panel);max-width:96%}
+.msg.a.err{background:var(--crit-bg);color:var(--crit)}
+.ask{display:flex;gap:6px;align-items:flex-end}
+.ask textarea{flex:1;min-height:44px;max-height:140px;border:1px solid var(--line);border-radius:6px;padding:6px 8px;background:var(--bg)}
+.sugs{display:flex;flex-wrap:wrap;gap:5px}
+.sug{font-size:12px;border:1px solid var(--line);background:var(--bg);border-radius:99px;padding:2px 9px}
+.upd{display:flex;flex-direction:column;gap:8px;margin-bottom:12px}
+.step{font-size:12.5px;color:var(--muted)}
+.chg{border:1px solid var(--line);border-radius:7px;padding:8px;display:grid;grid-template-columns:auto minmax(0,1fr);gap:4px 8px;font-size:13px;background:var(--card)}
+.chg.rech{opacity:.65;border-style:dashed}
+.chg .deb{grid-column:2;font-size:12px;color:var(--muted)}
+.chg .deb b{color:var(--ink)}
+</style>
+
+<section class="an" id="analista" aria-label="Requerimiento" hidden>
+  <div class="an-h">
+    <div><h2>Requerimiento · lo que sabe el analista</h2><div class="meta" id="anMeta">Expediente: cargando…</div></div>
+    <div class="acts"><button class="btn pri" id="anUpd">Actualizar requerimiento</button></div>
+  </div>
+  <div class="card upd" id="anUpdBox" hidden></div>
+  <div id="anExp"><p class="empty">El expediente aparece aquí: historias, decisiones del cliente con su fuente, pendientes, hallazgos del código y riesgos.</p></div>
+</section>
+
+<button class="fab" id="anFab" type="button" aria-expanded="false" aria-controls="anChat"><span class="dot"></span><span class="lbl">Preguntar al analista</span><span aria-hidden="true">💬</span></button>
+<div class="chatp" id="anChat" hidden role="dialog" aria-label="Chat con el analista">
+  <header><b>Analista del requerimiento</b><button class="x" id="anClose" aria-label="Cerrar">×</button></header>
+  <div class="body">
+    <div class="msgs" id="anMsgs"><div class="msg a">Pregúntame sobre el requerimiento. Respondo con lo que está en el expediente y cito la fuente; si no lo sé, lo digo. También puedo consultar Jira en vivo.</div></div>
+    <div class="sugs" id="anSugs"></div>
+    <div class="ask"><textarea id="anQ" placeholder="Ej.: ¿qué decidió el cliente sobre el formato del reporte?" aria-label="Pregunta al analista"></textarea>
+      <div style="display:flex;flex-direction:column;gap:4px"><button class="btn pri" id="anSend">Enviar</button><button class="btn sm" id="anStop" hidden>Detener</button></div></div>
+  </div>
+</div>
+<script>
+(function(){
+"use strict";
+const META=__EXP_META__, CLOUD=META.cloud_id||"", JIRA=META.servidor_jira||"Atlassian Rovo", M365=META.servidor_correo||"", LIDER=META.lider||"el líder";
+const $=id=>document.getElementById(id);
+const esc=s=>String(s==null?"":s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+let db=null, sample=null, mcp=null, owner=false, EXP=null, turns=[], ctl=null, PROP=null;
+const SUGS=["¿Qué está pendiente y de quién?","¿Qué decidió el cliente y cuándo?","¿Cuál es el mayor riesgo para la fecha?","¿En qué estado están las historias en Jira?"];
+$("anSugs").innerHTML=SUGS.map(s=>`<button class="sug" type="button">${esc(s)}</button>`).join("");
+$("anSugs").addEventListener("click",e=>{const b=e.target.closest(".sug");if(b){$("anQ").value=b.textContent;ask();}});
+
+function li(arr,f){return arr&&arr.length?"<ul>"+arr.map(f).join("")+"</ul>":'<p class="empty">Nada registrado.</p>';}
+function srcs(x){return x.fuente?` <span class="src">${esc(x.fuente)}</span>`:"";}
+function renderExp(){
+  if(!EXP){$("anMeta").textContent="Expediente: vacío";return;}
+  $("anMeta").textContent=`Expediente v${EXP.version||1} · actualizado ${EXP.actualizado||"—"} · ${(EXP.fuentes||[]).length} fuentes`;
+  const pend=(EXP.pendientes||[]), ab=pend.filter(p=>p.estado!=="resuelto"), rs=pend.filter(p=>p.estado==="resuelto");
+  const pli=p=>`<li class="${p.estado==="resuelto"?"pd-res":""}">${esc(p.texto)} <span class="who">· ${esc(p.a_quien||"")}${p.desde?" desde "+esc(p.desde):""}</span>${p.resolucion?` → <b>${esc(p.resolucion)}</b>`:""}${srcs(p)}</li>`;
+  $("anExp").innerHTML=`<div class="an-res">${esc(EXP.resumen||"")}</div><div class="an-g">
+   <div class="card pend"><h3><span>Pendientes abiertos</span><span>${ab.length}</span></h3>${li(ab,pli)}</div>
+   <div class="card ries"><h3><span>Riesgos</span><span>${(EXP.riesgos||[]).length}</span></h3>${li(EXP.riesgos,r=>`<li>${esc(r.texto)}${srcs(r)}</li>`)}</div>
+   <div class="card deci"><h3><span>Decisiones del cliente</span><span>${(EXP.decisiones||[]).length}</span></h3>${li(EXP.decisiones,d=>`<li>${esc(d.texto)} <span class="who">· ${esc(d.quien||"")} ${esc(d.fecha||"")}</span>${srcs(d)}</li>`)}</div>
+   <div class="card deci"><h3><span>Decisiones del líder en el cronograma</span><span>${(EXP.decisiones_lider||[]).length}</span></h3>${li((EXP.decisiones_lider||[]).slice().reverse(),d=>`<li>${esc(d.texto)} <span class="who">· ${esc(d.quien||"")} ${esc(d.fecha||"")}</span>${srcs(d)}</li>`)}</div>
+   <div class="card"><h3><span>Tiempos acordados</span><span>${String((EXP.estimaciones||[]).reduce((s,e)=>s+(Number(e.horas)||0),0)).replace(".",",")} h</span></h3>${li(EXP.estimaciones,e=>`<li><span class="src">${esc(e.clave||e.historia)}</span> ${esc(e.titulo)} · <b>${esc(String(e.horas).replace(".",","))} h</b>${e.horas_claude!=null&&e.horas_claude!==e.horas?` <span class="who">(Claude propuso ${esc(String(e.horas_claude).replace(".",","))} h)</span>`:""} <span class="who">· ${esc(e.ini||"")} → ${esc(e.fin||"")} · ${esc(e.historia||"")} · ${esc(e.fecha||"")}</span></li>`)}</div>
+   <div class="card"><h3><span>Pendientes resueltos</span><span>${rs.length}</span></h3>${li(rs,pli)}</div>
+   <div class="card"><h3><span>Hallazgos del código</span><span>${(EXP.hallazgos_codigo||[]).length}</span></h3>${li(EXP.hallazgos_codigo,h=>`<li>${esc(h.texto)}${srcs(h)}</li>`)}</div>
+   <div class="card"><h3><span>Historias</span><span>${(EXP.historias||[]).length}</span></h3>${li(EXP.historias,h=>`<li><span class="src">${esc(h.key)}</span> <b>${esc(h.titulo)}</b> — ${esc(h.resumen||"")}</li>`)}</div>
+   <div class="card"><h3><span>Cronograma</span></h3><p style="margin:0;font-size:13px">${esc(EXP.cronograma||"")}</p></div>
+   <div class="card"><h3><span>Fuentes</span><span>${(EXP.fuentes||[]).length}</span></h3>${li(EXP.fuentes,f=>`<li><span class="src">${esc(f.id)}</span> ${esc(f.titulo||"")} <span class="who">${esc(f.tipo||"")} ${esc(f.fecha||"")} · ${esc(f.ref||"")}</span></li>`)}</div>
+   ${(EXP.historial||[]).length?`<div class="card"><h3><span>Historial de actualizaciones</span><span>${EXP.historial.length}</span></h3>${li(EXP.historial,h=>`<li>${esc(h.fecha)} · ${esc(h.resumen)}</li>`)}</div>`:""}</div>`;
+}
+// ---- Pestañas y chat flotante ----
+(function(){const lay=document.querySelector(".layout"), kp=document.getElementById("kpis"), an=$("analista");
+  const bar=document.createElement("div");bar.className="tabs";bar.setAttribute("role","tablist");
+  bar.innerHTML='<button class="tab" role="tab" data-tab="crono" aria-selected="true">Cronograma</button><button class="tab" role="tab" data-tab="req" aria-selected="false">Requerimiento</button>';
+  kp.after(bar);lay.after(an);
+  function ver(v){bar.querySelectorAll(".tab").forEach(b=>b.setAttribute("aria-selected",b.dataset.tab===v));lay.hidden=v!=="crono";an.hidden=v!=="req";if(v==="crono")window.dispatchEvent(new Event("resize"));try{localStorage.setItem("crono-tab",v);}catch(e){}}
+  bar.onclick=e=>{const b=e.target.closest(".tab");if(b)ver(b.dataset.tab);};
+  let ini="crono";try{ini=localStorage.getItem("crono-tab")||"crono";}catch(e){}ver(location.hash==="#requerimiento"?"req":ini);
+  const fab=$("anFab"),cp=$("anChat");
+  function chat(o){cp.hidden=!o;fab.setAttribute("aria-expanded",o);if(o)setTimeout(()=>$("anQ").focus(),30);}
+  fab.onclick=()=>chat(cp.hidden);$("anClose").onclick=()=>chat(false);
+  document.addEventListener("keydown",e=>{if(e.key==="Escape"&&!cp.hidden)chat(false);});})();
+// ---- Herramientas de solo lectura que el analista puede usar ----
+function compactIssues(p){const n=(p&&p.issues&&p.issues.nodes)||[];return n.slice(0,30).map(i=>{const f=i.fields||{};const cs=(f.comment&&f.comment.comments)||[];
+  return {key:i.key,titulo:f.summary,estado:f.status&&f.status.name,responsable:f.assignee&&f.assignee.displayName,actualizado:f.updated,
+   comentarios:cs.slice(-4).map(c=>({autor:c.author&&c.author.displayName,fecha:c.created,texto:String(c.body||"").slice(0,900)}))};});}
+async function jira(jql,conComentarios,signal){
+  const fields=["summary","status","assignee","updated"];if(conComentarios)fields.push("comment");
+  const r=await mcp.callTool(JIRA,"searchJiraIssuesUsingJql",{cloudId:CLOUD,jql:String(jql),fields,maxResults:30,responseContentFormat:"markdown"},{signal});
+  return compactIssues(r.payload);}
+const T_JIRA={name:"consultar_jira",description:"Busca issues en Jira (solo lectura) con una JQL. Devuelve clave, título, estado, responsable, fecha de actualización y, si conComentarios es true, los últimos 4 comentarios. Úsalo para estados actuales o novedades.",
+  inputSchema:{type:"object",properties:{jql:{type:"string"},conComentarios:{type:"boolean"}},required:["jql"]},
+  execute:async(i,c)=>{if(!mcp)throw new Error("Jira no disponible en esta vista");return await jira(i.jql,!!i.conComentarios,c.signal);}};
+const T_CORREOS={name:"buscar_correos",description:"Busca correos (solo lectura) por texto y fecha mínima (ISO). Devuelve asunto, remitente, fecha, vista previa y la uri para leerlo.",
+  inputSchema:{type:"object",properties:{texto:{type:"string"},desde:{type:"string"}},required:["texto"]},
+  execute:async(i,c)=>{if(!mcp)throw new Error("Correo no disponible");const inp={query:String(i.texto),limit:15};if(i.desde)inp.afterDateTime=String(i.desde);
+    const r=await mcp.callTool(M365,"outlook_email_search",inp,{signal:c.signal});return bloques(r).slice(0,7000);}};
+const T_LEER={name:"leer_correo",description:"Lee un correo por su uri (mail:///messages/...). Devuelve el contenido recortado a 5000 caracteres.",
+  inputSchema:{type:"object",properties:{uri:{type:"string"}},required:["uri"]},
+  execute:async(i,c)=>{if(!mcp)throw new Error("Correo no disponible");const r=await mcp.callTool(M365,"read_resource",{uri:String(i.uri)},{signal:c.signal});
+    return bloques(r).slice(0,5000);}};
+// El conector de correo devuelve un bloque de texto por correo: se juntan todos (payload solo trae el primero)
+function bloques(r){const c=(r&&r.content)||[];const t=c.filter(b=>b&&b.type==="text").map(b=>{try{const o=JSON.parse(b.text);delete o.webLink;delete o.id;delete o.internetMessageId;return JSON.stringify(o);}catch(e){return b.text;}});return t.length?t.join("\n"):JSON.stringify(r&&r.payload);}
+
+// ---- Chat ----
+function rules(){return `Eres el analista del requerimiento "${META.titulo}". Respondes al líder técnico (${LIDER}) en español, breve y directo.
+Reglas: responde SOLO con lo que está en el EXPEDIENTE o con lo que consultes en Jira con la herramienta. Cita la fuente de cada afirmación entre corchetes (id de fuente, clave de Jira o correo con fecha). Si algo no está, di "No está en el expediente" y sugiere a quién preguntarlo. No inventes fechas, horas ni decisiones. Nombra las issues con su clave y de qué tratan.
+En el expediente, "decisiones_lider" es lo que decidió el líder en el cronograma (aceptar, ajustar horas, descartar, dejar pendiente, comentar, cambiar de estado) y "estimaciones" son los tiempos acordados de cada subtarea, con su clave de Jira y lo que Claude había propuesto. Para preguntas de horas o de quién decidió qué, cítalos.
+Historias del requerimiento: ${META.keys.join(", ")}${META.epica?" (épica "+META.epica+")":""}.
+EXPEDIENTE (JSON):
+${JSON.stringify(EXP||{}).slice(0,150000)}`;}
+function addMsg(cls,txt){const d=document.createElement("div");d.className="msg "+cls;d.textContent=txt;$("anMsgs").append(d);$("anMsgs").scrollTop=$("anMsgs").scrollHeight;return d;}
+async function ask(){
+  const q=$("anQ").value.trim();if(!q||ctl)return;
+  if(!sample){addMsg("a err","El chat necesita abrir la página con tu sesión de claude.ai.");return;}
+  $("anQ").value="";addMsg("u",q);turns.push({role:"user",content:q});if(turns.length>12)turns=turns.slice(-12);
+  const out=addMsg("a","Pensando…");ctl=new AbortController();$("anStop").hidden=false;$("anSend").disabled=true;
+  try{const opts={signal:ctl.signal,onText:({text})=>{out.textContent=text;$("anMsgs").scrollTop=$("anMsgs").scrollHeight;}};
+    if(mcp)opts.tools=[T_JIRA];else opts.cache=false;
+    const {text}=await sample([{role:"user",content:rules()},{role:"assistant",content:"Entendido."},...turns],opts);
+    turns.push({role:"assistant",content:text});}
+  catch(e){out.className="msg a err";out.textContent=e.text||msgErr(e.code);turns.pop();}
+  finally{ctl=null;$("anStop").hidden=true;$("anSend").disabled=false;}}
+function msgErr(c){return ({not_granted:"No autorizaste a esta página a usar Claude. Puedes habilitarlo en los permisos de la página.",rate_limited:"Demasiadas consultas seguidas. Intenta en un momento.",cancelled:"Detenido.",prompt_too_large:"El expediente es muy grande para una pregunta. Pide a Claude que lo resuma.",session_expired:"Tu sesión venció: vuelve a iniciar sesión.",tools_unavailable:"Esta vista no puede consultar Jira; pregunta sobre el expediente."})[c]||"No pude responder ("+c+"). Intenta de nuevo.";}
+$("anSend").onclick=ask;$("anStop").onclick=()=>ctl&&ctl.abort();
+$("anQ").addEventListener("keydown",e=>{if(e.key==="Enter"&&!e.shiftKey){e.preventDefault();ask();}});
+
+// ---- Actualizar requerimiento: investigar → debatir → aplicar ----
+function box(html){$("anUpdBox").hidden=false;$("anUpdBox").innerHTML=html;}
+async function actualizar(){
+  if(!owner){box('<p class="ro">Solo el dueño de la página puede actualizar el expediente.</p>');return;}
+  if(!sample||!mcp){box('<p class="ro">Para actualizar se necesita Claude y el conector de Jira en esta vista (y el de correo, si lo configuraste).</p>');return;}
+  const desde=(EXP&&EXP.actualizado)||new Date(Date.now()-30*864e5).toISOString().slice(0,10);ctl=new AbortController();$("anUpd").disabled=true;
+  box(`<div class="step" id="anStep">1/2 · El analista busca novedades en Jira${M365?" y el correo":""} desde ${esc(desde)}…</div><button class="btn sm" id="anCancel">Cancelar</button>`);
+  $("anCancel").onclick=()=>ctl&&ctl.abort();
+  try{
+    const nov=await sample.json(`Eres el analista del requerimiento "${META.titulo}". Busca lo NUEVO desde ${desde} que no esté ya en el expediente.
+1) consultar_jira con conComentarios=true: key in (${META.keys.join(",")})${META.epica?` OR parent = ${META.epica}`:""} AND updated >= "${desde}".
+${M365?`2) buscar_correos con cada término de ${JSON.stringify(META.correos||[META.titulo])} y desde=${desde}; lee con leer_correo solo los que parezcan traer decisiones, respuestas del cliente, cambios de fecha o bloqueos.`:"2) No hay conector de correo: revisa solo Jira."}
+Devuelve SOLO JSON: {"novedades":[{"tipo":"decision|pendiente_resuelto|pendiente_nuevo|cambio_estado|riesgo|fecha|otro","texto":"...","quien":"...","fecha":"YYYY-MM-DD","fuente":"clave de Jira o 'Correo <asunto> <fecha>'"}],"sin_novedad":["qué revisaste sin encontrar nada"]}
+EXPEDIENTE ACTUAL: ${JSON.stringify(EXP||{}).slice(0,90000)}`,{signal:ctl.signal,tools:M365?[T_JIRA,T_CORREOS,T_LEER]:[T_JIRA]});
+    const n=(nov&&nov.novedades)||[];
+    $("anStep").textContent=`2/2 · ${n.length} novedades. El revisor las debate contra el expediente…`;
+    if(!n.length){box(`<p class="step">Sin novedades desde ${esc(desde)}.</p><p class="step">${esc(((nov&&nov.sin_novedad)||[]).join(" · "))}</p>`);return;}
+    const deb=await sample.json(`Debate de expediente. Hay dos roles: el ANALISTA propone cómo incorporar cada novedad; el REVISOR la ataca: ¿contradice algo ya decidido?, ¿la fuente es suficiente (un comentario de un dev no cierra nada; el estado de Jira sí)?, ¿es repetida?, ¿quién la decidió realmente? Sólo se acepta lo que sobrevive al revisor.
+EXPEDIENTE: ${JSON.stringify(EXP||{}).slice(0,90000)}
+NOVEDADES: ${JSON.stringify(n).slice(0,40000)}
+Devuelve SOLO JSON: {"resumen":"2 líneas de qué cambió","resumen_expediente":"resumen actualizado del requerimiento o null","cambios":[{"accion":"agregar|modificar|resolver_pendiente","seccion":"decisiones|pendientes|riesgos|hallazgos_codigo|fuentes","id":"id existente si modifica o resuelve, si no null","item":{"texto":"...","quien":"...","fecha":"...","a_quien":"...","desde":"...","fuente":"...","resolucion":"..."},"veredicto":"aceptado|rechazado","analista":"argumento","revisor":"objeción o conformidad"}]}`,{signal:ctl.signal,modelTier:"complex",cache:false});
+    PROP=deb;renderProp();
+  }catch(e){box(`<p class="ro">${esc(e.code==="invalid_json"?"La respuesta no vino en el formato esperado; intenta de nuevo.":msgErr(e.code))}</p>`);}
+  finally{ctl=null;$("anUpd").disabled=false;}}
+function renderProp(){const cs=(PROP&&PROP.cambios)||[];
+  box(`<h3 style="margin:0;font-size:15px;color:var(--deep)">Propuesta de actualización</h3><p class="step">${esc(PROP.resumen||"")}</p>
+   ${cs.map((c,i)=>`<label class="chg ${c.veredicto==="rechazado"?"rech":""}"><input type="checkbox" data-i="${i}" ${c.veredicto==="aceptado"?"checked":""}>
+     <span><b>${esc(c.accion)} · ${esc(c.seccion)}</b> — ${esc(c.item&&c.item.texto)} <span class="src">${esc(c.item&&c.item.fuente)}</span></span>
+     <span class="deb"><b>Analista:</b> ${esc(c.analista)}<br><b>Revisor:</b> ${esc(c.revisor)} · <b>${esc(c.veredicto)}</b></span></label>`).join("")}
+   <div class="row"><button class="btn pri" id="anApply">Aplicar lo marcado al expediente</button><button class="btn" id="anDiscard">Descartar</button></div>`);
+  $("anApply").onclick=aplicar;$("anDiscard").onclick=()=>{PROP=null;$("anUpdBox").hidden=true;};}
+async function aplicar(){
+  const marcados=[...document.querySelectorAll('#anUpdBox input[type=checkbox]:checked')].map(x=>PROP.cambios[+x.dataset.i]);
+  const E=JSON.parse(JSON.stringify(EXP||{}));const hoy=new Date().toISOString().slice(0,10);let n=0;
+  for(const c of marcados){const sec=c.seccion;if(!Array.isArray(E[sec]))E[sec]=[];const it=Object.assign({},c.item||{});
+    if(c.accion==="agregar"){it.id=it.id||(sec.slice(0,2).toUpperCase()+"-"+(E[sec].length+1)+"-"+hoy.replace(/-/g,""));E[sec].push(it);n++;}
+    else{const t=E[sec].find(x=>x.id===c.id);if(!t)continue;
+      if(c.accion==="resolver_pendiente"){t.estado="resuelto";t.resolucion=it.resolucion||it.texto;if(it.fuente)t.fuente=(t.fuente?t.fuente+" · ":"")+it.fuente;}
+      else Object.assign(t,it,{id:t.id});n++;}}
+  if(PROP.resumen_expediente)E.resumen=PROP.resumen_expediente;
+  E.version=(E.version||1)+1;E.actualizado=hoy;E.historial=(E.historial||[]).concat([{fecha:hoy,resumen:(PROP.resumen||"")+` (${n} cambios aplicados)`}]);
+  try{await db.collection("expediente").doc("actual").set(E);box(`<p class="step">Listo: ${n} cambios aplicados. Expediente v${E.version}.</p>`);PROP=null;}
+  catch(e){box(`<p class="ro">No se pudo guardar (${esc(e.code||e.message)}).</p>`);}}
+$("anUpd").onclick=actualizar;
+
+(async()=>{const C=window.claude;if(!C||!C.use){$("anMeta").textContent="Expediente: abre la página en claude.ai";return;}
+  const [d,s,m,u]=await Promise.all([C.use("db"),C.use("sample"),C.use("mcp"),C.use("user")]);
+  db=d;sample=s;mcp=m;owner=!!(u&&u.isOwner&&u.isOwner());if(!owner)$("anUpd").hidden=true;
+  if(!sample){$("anSend").disabled=true;$("anQ").placeholder="El chat no está disponible en esta vista.";}
+  if(db)db.collection("expediente").doc("actual").onSnapshot(snap=>{const v=snap&&snap.data?snap.data():null;EXP=v?JSON.parse(JSON.stringify(v)):null;renderExp();},()=>{$("anMeta").textContent="Expediente: sin acceso";});
+  else $("anMeta").textContent="Expediente: inicia sesión para verlo";})();
+})();
+</script>

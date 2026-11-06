@@ -1,0 +1,144 @@
+{
+  "corte": "2026-03-10",
+  "desde": "2026-03-01",
+  "hasta": "2026-04-24",
+  "titulo": "Status de la célula (ejemplo)",
+  "kicker": "PERSONAL OS · STATUS DE LA CÉLULA · DATOS FICTICIOS",
+  "festivos": ["2026-03-23"],
+  "capacidad_factor": 0.8,
+  "sla_revision": 2,
+  "sla_implementacion": 5,
+  "limite_wip": 3,
+  "proyectos_propios": ["PROY"],
+  "personas": [
+    { "slug": "ana", "nombre": "Ana", "jira": "Ana", "lider": true },
+    { "slug": "luis", "nombre": "Luis", "jira": "Luis" },
+    { "slug": "marta", "nombre": "Marta", "jira": "Marta" },
+    { "slug": "p4", "nombre": "Persona 4", "jira": "Persona 4", "prestamo": "otra célula" }
+  ],
+  "frentes": [
+    { "clave": "FAC", "nombre": "Facturación", "titular": "marta", "backup": "luis" },
+    { "clave": "POR", "nombre": "Portal", "titular": "luis", "backup": "p4" },
+    { "clave": "INT", "nombre": "Integraciones", "titular": "p4", "backup": "marta" }
+  ],
+  "reparto": { "titular": 1, "backup": 1 },
+  "items": [
+    { "id": "PROY-142", "titulo": "Formulario de registro del portal", "persona": "luis", "frente": "POR", "proyecto": "PROY", "inicio": "2026-03-09", "fin": "2026-03-13", "horas": 12, "trabajado": 4, "estado": "En Desarrollo" },
+    { "id": "PROY-150", "titulo": "Conector con el sistema de pagos", "persona": "luis", "frente": "INT", "proyecto": "PROY", "inicio": "2026-03-11", "fin": "2026-03-12", "horas": 20, "trabajado": 0, "estado": "Listo para desarrollo" },
+    { "id": "PROY-180", "titulo": "Panel de consultas", "persona": "luis", "frente": "POR", "proyecto": "PROY", "inicio": "2026-03-16", "fin": "2026-03-20", "horas": 10, "estado": "Listo para desarrollo" },
+    { "id": "PROY-131", "titulo": "Validación de correos", "persona": "luis", "frente": "POR", "proyecto": "PROY", "inicio": "2026-03-02", "fin": "2026-03-04", "cierre": "2026-03-05", "horas": 6, "trabajado": 7, "estado": "Cerrado", "cerrada": true },
+    { "id": "PROY-140", "titulo": "Plantilla de factura", "persona": "luis", "frente": "FAC", "proyecto": "PROY", "inicio": "2026-03-04", "fin": "2026-03-06", "horas": 5, "trabajado": 5, "estado": "Listo para implementación", "entrada_cola": "2026-03-06" },
+    { "id": "OTRO-77", "titulo": "Ajuste del servicio compartido", "persona": "luis", "frente": "INT", "proyecto": "OTRO", "inicio": "2026-03-12", "fin": "2026-03-17", "horas": 6, "estado": "En Desarrollo" },
+    { "id": "PROY-155", "titulo": "Reglas de descuento", "persona": "marta", "frente": "FAC", "proyecto": "PROY", "inicio": "2026-03-02", "fin": "2026-03-06", "horas": 6, "trabajado": 3, "estado": "En Desarrollo", "nota": "Bloqueada por una definición pendiente del cliente." },
+    { "id": "PROY-120", "titulo": "Migración de tarifas antiguas", "persona": "marta", "frente": "FAC", "proyecto": "PROY", "inicio": "2026-02-16", "fin": "2026-02-20", "horas": 8, "estado": "Sin iniciar" },
+    { "id": "PROY-118", "titulo": "Corrección de redondeo", "persona": "marta", "frente": "FAC", "proyecto": "PROY", "inicio": "2026-02-23", "fin": "2026-02-25", "horas": 3, "estado": "Sin iniciar" },
+    { "id": "PROY-160", "titulo": "Búsqueda de clientes", "persona": "marta", "frente": "POR", "proyecto": "PROY", "inicio": "2026-03-03", "fin": "2026-03-10", "horas": 4, "trabajado": 4, "estado": "Listo para revisión", "entrada_cola": "2026-03-04" },
+    { "id": "PROY-133", "titulo": "Encabezado del portal", "persona": "marta", "frente": "POR", "proyecto": "PROY", "inicio": "2026-03-02", "fin": "2026-03-05", "cierre": "2026-03-03", "horas": 3, "trabajado": 2.5, "estado": "Cerrado", "cerrada": true },
+    { "id": "PROY-128", "titulo": "Exportación antigua a hoja de cálculo", "persona": "marta", "frente": "FAC", "proyecto": "PROY", "fin": "2026-03-04", "cierre": "2026-03-04", "horas": 2, "estado": "Redefinido" },
+    { "id": "OTRO-80", "titulo": "Soporte a la integración compartida", "persona": "p4", "frente": "INT", "proyecto": "OTRO", "inicio": "2026-03-10", "fin": "2026-03-20", "horas": 24, "trabajado": 2, "estado": "En Desarrollo" },
+    { "id": "PROY-170", "titulo": "Notificaciones por correo", "persona": "p4", "frente": "INT", "proyecto": "PROY", "inicio": "2026-03-16", "fin": "2026-03-20", "horas": 8, "estado": "Pausado" },
+    { "id": "PROY-175", "titulo": "Revisión de arquitectura del portal", "persona": "ana", "frente": "POR", "proyecto": "PROY", "inicio": "2026-03-10", "fin": "2026-03-13", "horas": 0, "estado": "En Desarrollo", "nota": "Sin estimación: se marca, no se rellena." },
+    { "id": "PROY-200", "titulo": "Refinamiento quincenal", "persona": "ana", "frente": "POR", "proyecto": "PROY", "tipo": "reunion", "inicio": "2026-03-11", "fin": "2026-03-11", "horas": 1.5, "estado": "Por hacer", "nota": "Reunión: la estimación es la duración agendada." },
+    { "id": "C-003", "titulo": "Enviar el plan de la fase 2 al Cliente A", "persona": "ana", "tipo": "compromiso", "inicio": "2026-03-12", "fin": "2026-03-12", "estado": "abierto" }
+  ],
+  "sin_programar": [
+    { "id": "PROY-190", "titulo": "Exportar reporte mensual", "frente": "FAC", "proyecto": "PROY", "horas": 6 },
+    { "id": "PROY-191", "titulo": "Ajuste de permisos", "frente": "POR", "proyecto": "PROY", "horas": 0, "persona": "marta" },
+    { "id": "OTRO-90", "titulo": "Documentar el servicio compartido", "frente": "INT", "proyecto": "OTRO", "horas": 4 }
+  ],
+  "bloqueos_cliente": [
+    { "titulo": "Cliente A: definición de las reglas de descuento", "detalle": "Pedida el 02/03 a su analista; sin respuesta. Bloquea PROY-155.", "dias": 6, "etiquetas": [{ "txt": "bloquea una entrega", "tipo": "c" }] }
+  ],
+  "bloqueos_equipo": [
+    { "titulo": "Accesos al repositorio para Persona 4", "detalle": "Solicitados el 05/03 a soporte interno.", "dias": 3, "etiquetas": [{ "txt": "accesos", "tipo": "a" }] }
+  ],
+  "recursos": [],
+  "requerimientos": [
+    { "titulo": "Cliente B pide un reporte nuevo", "detalle": "Entró el 09/03; falta decidir prioridad y estimación.", "etiquetas": [{ "txt": "por decidir", "tipo": "a" }] }
+  ],
+  "frentes_status": [
+    { "titulo": "Portal: entrega el 20/03", "detalle": "5 de 8 puntos en QA; el conector de pagos no alcanza con la fecha actual.", "etiquetas": [{ "txt": "al filo", "tipo": "a" }] },
+    { "titulo": "Facturación: esperando al cliente", "detalle": "Reglas de descuento sin definir desde el 02/03.", "etiquetas": [{ "txt": "bloqueo de cliente", "tipo": "c" }] },
+    { "titulo": "Integraciones: en curso", "detalle": "Sin novedades que requieran a la mesa.", "etiquetas": [] }
+  ],
+  "resuelto": [
+    { "titulo": "Ambiente de QA restablecido", "detalle": "Confirmado el 09/03; ya no se discute." }
+  ],
+  "lider": {
+    "prioridad": "Cerrar la fase 1 del portal (PROY-142 y PROY-150) antes del 20/03",
+    "fecha_brief": "2026-03-10",
+    "compromisos": [
+      { "id": "C-003", "titulo": "Enviar el plan de la fase 2 al Cliente A", "con": "Cliente A", "fecha": "2026-03-12" }
+    ],
+    "terceros": [
+      { "titulo": "Reglas de descuento", "de": "Cliente A", "desde": "2026-03-02", "dias": 6 }
+    ],
+    "riesgos": [
+      { "id": "R-002", "titulo": "El conector de pagos no alcanza con la fecha actual", "nivel": 2 }
+    ],
+    "alcances": [
+      { "nombre": "Portal fase 1 (Cliente A)", "entrega": "2026-03-20", "verificado_el": "2026-03-10", "resumen": "8 puntos: 5 en QA, 2 en desarrollo, 1 sin estimar" }
+    ]
+  },
+  "jira": {
+    "proyectos": [{ "clave": "PROY", "nombre": "Proyecto principal" }],
+    "externos": [{ "nombre": "Persona externa", "jira": "Persona Externa" }],
+    "issues": [
+      { "clave": "PROY-142", "titulo": "Formulario de registro del portal", "proyecto": "PROY", "persona": "Luis", "estado": "En Desarrollo", "categoria": "indeterminate", "fin": "2026-03-13", "estimado": 12, "trabajado": 4, "actualizado": "2026-03-09" },
+      { "clave": "PROY-150", "titulo": "Conector con el sistema de pagos", "proyecto": "PROY", "persona": "Luis", "estado": "Listo para desarrollo", "categoria": "new", "fin": "2026-03-12", "estimado": 20, "actualizado": "2026-03-05" },
+      { "clave": "PROY-180", "titulo": "Panel de consultas", "proyecto": "PROY", "persona": "Luis", "estado": "Listo para desarrollo", "categoria": "new", "fin": "2026-03-20", "estimado": 10, "actualizado": "2026-03-06" },
+      { "clave": "PROY-140", "titulo": "Plantilla de factura", "proyecto": "PROY", "persona": "Luis", "estado": "Listo para implementación", "categoria": "indeterminate", "fin": "2026-03-06", "estimado": 5, "actualizado": "2026-03-06" },
+      { "clave": "OTRO-77", "titulo": "Ajuste del servicio compartido", "proyecto": "OTRO", "persona": "Luis", "estado": "En Desarrollo", "categoria": "indeterminate", "fin": "2026-03-17", "estimado": 6, "actualizado": "2026-03-09" },
+      { "clave": "PROY-199", "titulo": "Issue que el filtro dejó por fuera", "proyecto": "PROY", "persona": "Luis", "estado": "Sin iniciar", "categoria": "new", "fin": "2026-03-18", "actualizado": "2026-01-20" },
+      { "clave": "PROY-155", "titulo": "Reglas de descuento", "proyecto": "PROY", "persona": "Marta", "estado": "En Desarrollo", "categoria": "indeterminate", "fin": "2026-03-06", "estimado": 6, "actualizado": "2026-03-02" },
+      { "clave": "PROY-120", "titulo": "Migración de tarifas antiguas", "proyecto": "PROY", "persona": "Marta", "estado": "Sin iniciar", "categoria": "new", "fin": "2026-02-20", "estimado": 8, "actualizado": "2026-01-30" },
+      { "clave": "PROY-118", "titulo": "Corrección de redondeo", "proyecto": "PROY", "persona": "Marta", "estado": "Sin iniciar", "categoria": "new", "fin": "2026-02-25", "estimado": 3, "actualizado": "2026-02-10" },
+      { "clave": "PROY-160", "titulo": "Búsqueda de clientes", "proyecto": "PROY", "persona": "Marta", "estado": "Listo para revisión", "categoria": "indeterminate", "fin": "2026-03-10", "estimado": 4, "actualizado": "2026-03-04" },
+      { "clave": "PROY-191", "titulo": "Ajuste de permisos", "proyecto": "PROY", "persona": "Marta", "estado": "Sin iniciar", "categoria": "new", "actualizado": "2026-03-01" },
+      { "clave": "OTRO-80", "titulo": "Soporte a la integración compartida", "proyecto": "OTRO", "persona": "Persona 4", "estado": "En Desarrollo", "categoria": "indeterminate", "fin": "2026-03-20", "estimado": 24, "actualizado": "2026-03-10" },
+      { "clave": "PROY-170", "titulo": "Notificaciones por correo", "proyecto": "PROY", "persona": "Persona 4", "estado": "Pausado", "categoria": "indeterminate", "fin": "2026-03-20", "estimado": 8, "actualizado": "2026-02-27" },
+      { "clave": "PROY-175", "titulo": "Revisión de arquitectura del portal", "proyecto": "PROY", "persona": "Ana", "estado": "En Desarrollo", "categoria": "indeterminate", "fin": "2026-03-13", "actualizado": "2026-03-10" },
+      { "clave": "PROY-200", "titulo": "Refinamiento quincenal", "proyecto": "PROY", "persona": "Ana", "estado": "Por hacer", "categoria": "new", "fin": "2026-03-11", "estimado": 1.5, "actualizado": "2026-03-09" },
+      { "clave": "PROY-195", "titulo": "Error en el pie de página", "proyecto": "PROY", "persona": "", "estado": "Sin iniciar", "categoria": "new", "actualizado": "2026-02-01" },
+      { "clave": "PROY-196", "titulo": "Ajuste pedido por otra célula", "proyecto": "PROY", "persona": "Persona Externa", "estado": "En Desarrollo", "categoria": "indeterminate", "fin": "2026-03-09", "estimado": 3, "actualizado": "2026-03-03" },
+      { "clave": "PROY-131", "titulo": "Validación de correos", "proyecto": "PROY", "persona": "Luis", "estado": "Cerrado", "categoria": "done", "fin": "2026-03-04", "estimado": 6, "actualizado": "2026-03-05" }
+    ]
+  },
+  "timesheets": {
+    "desde": "2026-03-02",
+    "hasta": "2026-03-10",
+    "personas": [
+      {
+        "nombre": "Luis",
+        "envios": [
+          { "id": "l-0306", "fecha_correo": "2026-03-06T18:00", "asunto": "Timesheet semana", "fuente": "adjunto", "leido": true },
+          { "id": "l-0309", "fecha_correo": "2026-03-09T18:10", "asunto": "Timesheet", "fuente": "adjunto", "leido": true }
+        ],
+        "filas": [
+          { "fecha": "2026-03-02", "envio": "l-0306", "categoria": "Desarrollo", "jira": "PROY-131", "tarea": "Validación de correos", "horas": 6 },
+          { "fecha": "2026-03-02", "envio": "l-0306", "categoria": "Reuniones", "jira": "", "tarea": "Daily", "horas": 0.5 },
+          { "fecha": "2026-03-03", "envio": "l-0306", "categoria": "Desarrollo", "jira": "PROY-131", "tarea": "Validación de correos", "horas": 7 },
+          { "fecha": "2026-03-04", "envio": "l-0306", "categoria": "Desarrollo", "jira": "PROY-140", "tarea": "Plantilla de factura", "horas": 7.5 },
+          { "fecha": "2026-03-05", "envio": "l-0306", "categoria": "Otros", "jira": "", "tarea": "En espera de asignación", "horas": 2 },
+          { "fecha": "2026-03-05", "envio": "l-0306", "categoria": "Desarrollo", "jira": "PROY-140", "tarea": "Plantilla de factura", "horas": 5 },
+          { "fecha": "2026-03-06", "envio": "l-0306", "categoria": "Desarrollo", "jira": "PROY-142", "tarea": "Formulario de registro", "horas": 8 },
+          { "fecha": "2026-03-09", "envio": "l-0309", "categoria": "Desarrollo", "jira": "PROY-142", "tarea": "Formulario de registro", "horas": 7 }
+        ]
+      },
+      {
+        "nombre": "Marta",
+        "envios": [
+          { "id": "m-0305", "fecha_correo": "2026-03-05T17:00", "asunto": "Timesheet", "fuente": "enlace", "leido": true }
+        ],
+        "filas": [
+          { "fecha": "2026-03-02", "envio": "m-0305", "categoria": "Desarrollo", "jira": "PROY-155", "tarea": "Reglas de descuento", "horas": 4 },
+          { "fecha": "2026-03-02", "envio": "m-0305", "categoria": "Desarrollo", "jira": "PROY-133", "tarea": "Encabezado", "horas": 4 },
+          { "fecha": "2026-03-03", "envio": "m-0305", "categoria": "Desarrollo", "jira": "", "tarea": "Ajustes varios", "horas": 8 },
+          { "fecha": "2026-03-04", "envio": "m-0305", "categoria": "Desarrollo", "jira": "PROY-160", "tarea": "Búsqueda de clientes", "horas": 8 },
+          { "fecha": "2026-03-05", "envio": "m-0305", "categoria": "Desarrollo", "jira": "PROY-160", "tarea": "Búsqueda de clientes", "horas": 8 },
+          { "fecha": "2026-03-06", "envio": "m-0305", "categoria": "Desarrollo", "jira": "PROY-155", "tarea": "Reglas de descuento", "horas": 8 }
+        ]
+      }
+    ]
+  }
+}

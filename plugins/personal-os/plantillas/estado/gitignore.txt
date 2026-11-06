@@ -1,0 +1,10 @@
+# Personal OS — lo que NUNCA se versiona aunque la carpeta de estado viva en git
+# (os-setup.js copia este archivo como .gitignore si no existe)
+personas/*
+!personas/README.md
+_datos/*
+!_datos/README.md
+bitacora/*.md
+!bitacora/README.md
+timesheet/
+*.html

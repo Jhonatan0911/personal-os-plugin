@@ -1,0 +1,32 @@
+{
+  "owner": "Tu Nombre",
+  "stateDir": "/ruta/absoluta/a/tu/estado",
+  "zonaHoraria": "America/Bogota",
+  "festivos": [],
+  "bitacora": { "retencionDias": 30 },
+  "busqueda": {
+    "fuentes": [
+      { "etiqueta": "documentos del equipo (acuerdos, actas, políticas)", "ruta": "/ruta/a/tus/docs", "recursivo": true, "ext": [".md", ".txt"] }
+    ],
+    "binarios": [
+      { "etiqueta": "carpeta sincronizada de documentos (solo nombre de archivo)", "ruta": "/ruta/a/tu/carpeta/sincronizada" }
+    ]
+  },
+  "timesheet": {
+    "jornada": { "lun": 8, "mar": 8, "mie": 8, "jue": 8, "vie": 8, "sab": 0, "dom": 0 },
+    "inicioJornada": "08:00",
+    "pausas": [{ "desde": "12:00", "hasta": "13:00" }],
+    "planeacionInicial": null,
+    "formatoEnvio": "csv",
+    "categorias": ["Reuniones", "Planning", "Análisis", "Desarrollo", "Revisión técnica", "Pruebas (QA)", "Soporte", "Gestión del proyecto", "Otros"],
+    "aliasCategorias": { "Daily": "Reuniones", "Estimación": "Planning", "Revisión de código": "Revisión técnica" },
+    "categoriasReunion": ["Reuniones"],
+    "clientes": ["Cliente A", "Cliente B", "Interno"],
+    "clienteInterno": "Interno",
+    "categoriasSinIssuePermitidas": ["Otros", "Reuniones"],
+    "reunionesExigenIssueDesde": null,
+    "formatoClave": "^[A-Z][A-Z0-9]{1,9}-\\d+$",
+    "prohibidoEnTarea": ["claude", "prompt", "skill", "subagente", "asistido por ia"],
+    "metaCoberturaIssue": 0.9
+  }
+}

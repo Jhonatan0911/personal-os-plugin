@@ -1,0 +1,117 @@
+# Matriz de tiempos POR DEFECTO de planear-sprint.
+#
+# Se usa solo cuando <stateDir>/config/fuentes.yaml → planeacion.matriz_tiempos no trae tipos con `base`.
+# Cópiala a esa sección y ajústala con tus datos: estas cifras son un punto de partida, no una verdad.
+#
+# Base: desarrollador SENIOR que trabaja con un asistente de IA como copiloto. Es el autor principal:
+# entiende qué va a hacer, escribe un buen prompt, revisa, adapta a los patrones del proyecto y prueba.
+# Sin colchón: la incertidumbre se expresa con `rango`, no inflando la base. La cifra final la pone el líder.
+#
+# Uso: horas = (base + unidad_horas × cantidad) × factor_nivel × factor_familiaridad, redondeo a 0,5 h.
+# `calibrado: false` = cifra de referencia sin contraste con horas reales todavía.
+
+version: 1
+base_nivel: senior
+
+# Capacidad para poner fechas: horas de desarrollo por día (el resto de la jornada se va en daily,
+# reuniones y soporte). Las horas de cada tarea NO se inflan por esto.
+capacidad_diaria: { lunes_a_jueves: 7.5, viernes: 7 }
+
+# Factor final = nivel × familiaridad. Son dos ejes distintos: un júnior que conoce todo el negocio
+# puede rendir más que un sénior nuevo. Modelo: multiplicadores de COCOMO II (experiencia en la aplicación).
+niveles: { junior: 1.6, semi_senior: 1.25, senior: 1.0, master: 0.85 }
+familiaridad:
+  alta: 0.9    # conoce el flujo de punta a punta y ya tocó ese código
+  media: 1.0   # conoce el producto, no ese módulo
+  nula: 1.3    # nuevo en el negocio, el repo o el cliente
+
+# Ajuste de traslados y refactors de código existente frente a la cifra «a mano».
+ajuste_refactor_vs_mano: -0.30
+
+tipos:
+  # ---------- Referencias base ----------
+  componente_nuevo_con_logica:
+    descripcion: "Componente nuevo con ítems, reglas o puntaje (pantalla + lógica acotada)"
+    base: 2
+    rango: [1.5, 3]
+    calibrado: false
+  mostrar_resultado_calculado:
+    descripcion: "Mostrar en pantalla un dato o clasificación que ya se calcula con lo que hay"
+    base: 1
+    rango: [0.5, 1]
+    calibrado: false
+  refactor_o_traslado:
+    descripcion: "Traslado o refactor de código existente: la cifra a mano menos 30 % (ajuste_refactor_vs_mano)"
+    base: null        # se calcula: estimación a mano × (1 + ajuste_refactor_vs_mano); dilo en la observación
+    calibrado: false
+
+  # ---------- Front ----------
+  extraer_componente_embebido:
+    descripcion: "Sacar una sección embebida en una plantilla grande a un componente propio reutilizable"
+    base: 2
+    unidad: componente
+    rango: [1.5, 3]
+    calibrado: false
+  unificar_codigo_duplicado:
+    descripcion: "Unificar N copias de la misma UI o lógica en un componente y reemplazar los usos"
+    base: 0
+    unidad_horas: 1.25
+    unidad: copia
+    calibrado: false
+  formulario_nuevo:
+    descripcion: "Formulario nuevo (preguntas con opciones, validación y guardado)"
+    base: 0.5
+    unidad_horas: 0.035   # ~2 min por pregunta
+    unidad: pregunta
+    calibrado: false
+  validacion_obligatoria_front:
+    descripcion: "Volver obligatorio un bloque al guardar, con mensaje que nombra lo que falta"
+    base: 1.5
+    calibrado: false
+
+  # ---------- Reutilización ----------
+  traer_de_otro_cliente_o_rama:
+    descripcion: "Portar lógica que ya existe en otro cliente, rama o commit (revisarla, traerla y adaptarla)"
+    base: 2
+    unidad: pieza
+    rango: [1, 2]
+    calibrado: false
+
+  # ---------- Back / BD ----------
+  script_bd_simple:
+    descripcion: "Script DDL/DML sencillo con su rollback: tabla catálogo, columna nueva, FK, datos semilla"
+    base: 0.5
+    sin_factor: true      # igual para cualquier nivel: con IA de copiloto no cambia
+    calibrado: false
+  campos_modelo_backend_bd:
+    descripcion: "Agregar campos al modelo del backend y a la BD para que persista lo nuevo"
+    base: 1
+    unidad: grupo de campos
+    calibrado: false
+  sp_mediano:
+    descripcion: "Procedimiento almacenado de complejidad media (nuevo o modificación con lógica)"
+    base: 4
+    calibrado: false
+
+  # ---------- Análisis y pruebas ----------
+  barrido_identificacion_ia:
+    descripcion: "Barrido con IA para identificar todos los casos de algo en el código (lista de salida)"
+    base: 0.5
+    calibrado: false
+  prueba_funcional_logica:
+    descripcion: "Revisar lo generado y probar una lógica caso por caso (roles, estados, clientes)"
+    base: 1
+    calibrado: false
+
+  # ---------- Por definir (el líder da la cifra o se calibra con el próximo sprint) ----------
+  pantalla_nueva_consulta: { base: null, descripcion: "Pantalla nueva para consultar o descargar datos de una entidad existente", calibrado: false }
+  crud_completo: { base: null, descripcion: "CRUD completo (API + pantalla) de una entidad nueva", calibrado: false }
+  endpoint_nuevo: { base: null, descripcion: "Endpoint nuevo con lógica de negocio", calibrado: false }
+  integracion_externa: { base: null, descripcion: "Integración con un sistema externo (API de tercero)", calibrado: false }
+
+reglas:
+  - "Lo que el cliente no ha aprobado (nuevo o con otra versión) se estima pero queda PENDIENTE DE DEFINICIÓN, sin fecha."
+  - "Antes de estimar como nuevo, buscar si existe en otro cliente, otra rama o el historial de git: traerlo cuesta mucho menos."
+  - "Reuniones: estimación = duración agendada."
+  - "Ningún tipo lleva colchón; la incertidumbre se expresa con `rango`."
+  - "Un script de BD sencillo es script_bd_simple sin factores; solo los complejos (SP con lógica, migración de datos, tablas grandes) llevan más horas y factores."

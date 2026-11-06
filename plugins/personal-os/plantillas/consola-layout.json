@@ -1,0 +1,46 @@
+{
+  "_comentario": [
+    "LAYOUT de EJEMPLO de la consola neuronal (nodos ficticios). Cópialo a <estado>/config/consola-layout.json",
+    "y cámbialo por tus proyectos: el build usa ese y, si no existe, este ejemplo (y lo avisa).",
+    "Es DISEÑO, no datos: fx/fy (fracciones 0-1 del lienzo), r (radio), label (chip del mapa), full (nombre",
+    "completo), scope (laboral | personal) y parent (sub-nodo que cuelga de otro nodo) se ajustan a mano y el",
+    "build NO los regenera nunca: solo les cuelga los ítems vivos (riesgos, compromisos y alcances abiertos).",
+    "Convención de posición: laboral a la DERECHA (fx > .5), personal a la IZQUIERDA (fx < .5), núcleo al centro.",
+    "Si una nota apunta a un proyecto sin nodo, el build lo avisa: no inventa posiciones, porque una posición",
+    "inventada rompe la lectura del mapa."
+  ],
+  "hito": {
+    "_comentario": "Opcional. Fecha que el pie de la consola cuenta como 'en Nd'. Bórralo si no tienes un hito duro.",
+    "etiqueta": "Entrega Cliente A",
+    "fecha": "2026-12-15"
+  },
+  "mapa_proyecto_a_nodo": {
+    "_comentario": "Traduce el campo `proyecto` (o `cliente`) de las notas al id del nodo. No distingue mayúsculas ni tildes. Si el valor ya es el id, el label o el nombre completo de un nodo, no hace falta declararlo.",
+    "Cliente A": "CLA",
+    "Cliente B": "CLB",
+    "PROY": "PROY",
+    "transversal": "TRANS",
+    "curso": "CURSO"
+  },
+  "nodo_por_defecto": "TRANS",
+  "nodos": [
+    { "id": "brain", "label": "CEREBRO", "full": "Personal OS", "kind": "core", "scope": "both", "fx": 0.50, "fy": 0.50, "r": 15 },
+
+    { "id": "CLA", "label": "CLIENTE A", "full": "Cliente A · plataforma principal", "scope": "laboral", "fx": 0.74, "fy": 0.26, "r": 12 },
+    { "id": "CLB", "label": "CLIENTE B", "full": "Cliente B · integración", "scope": "laboral", "fx": 0.80, "fy": 0.66, "r": 10 },
+    { "id": "PROY", "label": "PROY", "full": "PROY · producto interno", "scope": "laboral", "fx": 0.60, "fy": 0.16, "r": 9 },
+    { "id": "TRANS", "label": "TRANSV", "full": "Transversal · lo que no cuelga de un solo cliente", "scope": "laboral", "fx": 0.86, "fy": 0.45, "r": 10 },
+
+    { "id": "LADO", "label": "proyecto-lado", "full": "Proyecto personal", "scope": "personal", "fx": 0.26, "fy": 0.22, "r": 10 },
+    { "id": "CURSO", "label": "curso", "full": "Curso · certificación", "scope": "personal", "fx": 0.34, "fy": 0.70, "r": 11 },
+    { "id": "MOD1", "label": "Módulo 1", "full": "Curso · módulo 1", "scope": "personal", "parent": "CURSO", "fx": 0.20, "fy": 0.62, "r": 8 },
+    { "id": "MOD2", "label": "Módulo 2", "full": "Curso · módulo 2", "scope": "personal", "parent": "CURSO", "fx": 0.22, "fy": 0.84, "r": 8 }
+  ],
+  "sinapsis_personal": {
+    "_comentario": [
+      "La bitácora no marca ámbito por entrada. Si el resumen contiene alguno de estos términos (o el label/id",
+      "de un nodo personal), la sinapsis se pinta como personal; si no, como laboral. Heurística declarada, no exacta."
+    ],
+    "terminos": ["personal os", "proyecto personal", "curso", "certificación"]
+  }
+}

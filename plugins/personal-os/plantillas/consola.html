@@ -1,0 +1,466 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="comando-build" content="__COMANDO_BUILD__">
+<title>Personal OS — Consola Neuronal</title>
+<!--
+  VISTA LOCAL · NUNCA PUBLICAR. Muestra datos operativos del usuario (riesgos, compromisos, alcances,
+  bitácora): no se sube a ningún servicio ni se publica como Artifact.
+
+  PLANTILLA SIN DATOS. Este archivo no trae datos dentro: carga _datos/datos.js con <script src> y lee
+  window.ESTADO. Ambos los escribe build-consola.js (scripts/ del plugin) en la carpeta de estado.
+  Regenerar = correr el build; nunca editar el HTML generado. Si quieres personalizar el diseño, copia
+  esta plantilla a <estado>/config/consola.html: el build la usará en lugar de la del plugin.
+
+  El layout del mapa (fx/fy/r/label/full/scope/parent) es diseño del usuario y vive en
+  <estado>/config/consola-layout.json.
+
+  DISEÑO: 3 vistas a pantalla completa con pestañas —
+    · Mapa: grafo neuronal ocupando todo el viewport (etiquetas tipo chip, legibles).
+    · Tarjetas: signos vitales + una tarjeta por proyecto con sus ítems (lectura detallada).
+    · Bitácora: log del día, MÁS RECIENTE ARRIBA (SINAPSIS se guarda cronológico y se pinta invertido).
+  Consola oscura a propósito (es una pantalla, no un documento). Respeta prefers-reduced-motion.
+-->
+<style>
+  :root{
+    --ground:#070b12; --panel:#0f1622; --panel-2:#111a29;
+    --line:rgba(120,150,200,.12); --line-strong:rgba(120,150,200,.22);
+    --ink:#e6ecf7; --muted:#7688a4; --muted-2:#4d5c76;
+    --synapse:#35e0d0; --laboral:#4c9bff; --personal:#a97bff;
+    --r1:#f6c760; --r2:#ff9a52; --r3:#ff5f7e;
+    --mono:ui-monospace,'Cascadia Code','Cascadia Mono','SF Mono',Consolas,'Liberation Mono',Menlo,monospace;
+    --sans:system-ui,-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;
+    color-scheme:dark;
+  }
+  *{box-sizing:border-box}
+  html,body{height:100%}
+  body{
+    margin:0;color:var(--ink);font-family:var(--sans);-webkit-font-smoothing:antialiased;line-height:1.5;
+    display:flex;flex-direction:column;height:100dvh;overflow:hidden;
+    background:
+      radial-gradient(1200px 700px at 78% -10%, rgba(76,155,255,.10), transparent 60%),
+      radial-gradient(1000px 620px at 12% 8%, rgba(169,123,255,.09), transparent 60%),
+      radial-gradient(900px 900px at 50% 120%, rgba(53,224,208,.06), transparent 55%),
+      var(--ground);
+  }
+
+  header{display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap;
+    padding:12px clamp(14px,3vw,26px);border-bottom:1px solid var(--line);flex:none}
+  .brand{display:flex;align-items:center;gap:12px}
+  .sigil{width:38px;height:38px;flex:none;filter:drop-shadow(0 0 10px rgba(53,224,208,.5))}
+  .brand h1{font-family:var(--mono);font-size:clamp(15px,2vw,20px);font-weight:600;margin:0;letter-spacing:.14em;text-transform:uppercase;
+    background:linear-gradient(92deg,var(--ink),#a9c7ff 60%,var(--synapse));-webkit-background-clip:text;background-clip:text;color:transparent}
+  .brand .sub{font-family:var(--mono);font-size:10px;letter-spacing:.3em;text-transform:uppercase;color:var(--muted);margin-top:2px}
+
+  .seg{display:inline-flex;background:var(--panel);border:1px solid var(--line-strong);border-radius:12px;padding:4px;gap:2px;font-family:var(--mono)}
+  .seg button{appearance:none;border:0;background:transparent;color:var(--muted);font:inherit;font-size:12px;letter-spacing:.1em;text-transform:uppercase;padding:7px 14px;border-radius:9px;cursor:pointer;transition:.22s}
+  .seg button:hover{color:var(--ink)}
+  .seg button:focus-visible{outline:2px solid var(--ink);outline-offset:2px}
+  .seg.scope button[aria-pressed="true"]{color:#04121a;background:var(--synapse);box-shadow:0 0 18px rgba(53,224,208,.35)}
+  .seg.scope button[data-scope="laboral"][aria-pressed="true"]{background:var(--laboral);color:#04101f;box-shadow:0 0 18px rgba(76,155,255,.4)}
+  .seg.scope button[data-scope="personal"][aria-pressed="true"]{background:var(--personal);color:#120726;box-shadow:0 0 18px rgba(169,123,255,.4)}
+  .seg.tabs button[aria-pressed="true"]{color:var(--ink);background:var(--panel-2);border-radius:9px;box-shadow:inset 0 0 0 1px var(--line-strong),0 0 14px rgba(53,224,208,.12)}
+  .seg.tabs button .n{color:var(--muted-2);font-size:10px;margin-left:6px;font-variant-numeric:tabular-nums}
+
+  main{flex:1 1 auto;min-height:0;position:relative}
+  .view{position:absolute;inset:0;display:none;min-height:0}
+  .view.active{display:flex;flex-direction:column}
+
+  /* ===== vista MAPA (pantalla completa) ===== */
+  #view-mapa{overflow:hidden}
+  .canvas-shell{position:relative;flex:1 1 auto;min-height:0;overflow:hidden}
+  canvas{position:absolute;inset:0;width:100%;height:100%;display:block}
+  .tip{position:absolute;pointer-events:none;transform:translate(-50%,-135%);z-index:5;background:rgba(6,10,18,.94);border:1px solid var(--line-strong);border-radius:9px;padding:9px 12px;font-family:var(--mono);font-size:12.5px;opacity:0;transition:opacity .12s;box-shadow:0 8px 24px rgba(0,0,0,.5);max-width:300px}
+  .tip .lb{color:var(--ink);font-weight:600}
+  .tip .mt{color:var(--muted);font-size:10.5px;letter-spacing:.06em;text-transform:uppercase;margin-top:3px}
+  .tip .xd{color:var(--muted);font-size:12px;margin-top:4px;line-height:1.45}
+  .float{position:absolute;z-index:4;background:rgba(9,14,23,.82);border:1px solid var(--line);border-radius:12px;backdrop-filter:blur(6px)}
+  .legend{left:14px;bottom:14px;display:flex;gap:13px;flex-wrap:wrap;padding:9px 14px;font-family:var(--mono);font-size:11px;color:var(--muted)}
+  .legend span{display:inline-flex;align-items:center;gap:7px}
+  .dot{width:9px;height:9px;border-radius:50%;box-shadow:0 0 8px currentColor}
+  .map-prio{right:14px;bottom:14px;padding:10px 14px;max-width:320px}
+  .map-prio .k{font-family:var(--mono);font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:var(--muted)}
+  .map-prio .v{font-family:var(--mono);font-size:13.5px;font-weight:600;margin-top:4px}
+  .map-prio .note{font-size:11.5px;color:var(--r2);margin-top:3px}
+  .map-scope{left:14px;top:14px;padding:7px 12px;font-family:var(--mono);font-size:10.5px;letter-spacing:.18em;text-transform:uppercase;color:var(--muted)}
+  .map-empty{left:50%;top:14px;transform:translateX(-50%);padding:8px 14px;font-family:var(--mono);font-size:11.5px;color:var(--muted);display:none;text-align:center;max-width:min(560px,80vw)}
+
+  /* ===== vista TARJETAS ===== */
+  #view-tarjetas{overflow-y:auto;padding:18px clamp(14px,3vw,26px) 26px;gap:16px}
+  #view-tarjetas::-webkit-scrollbar{width:8px}
+  #view-tarjetas::-webkit-scrollbar-thumb{background:var(--line-strong);border-radius:8px}
+  .vitals{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;flex:none}
+  .vital{background:linear-gradient(180deg,var(--panel-2),var(--panel));border:1px solid var(--line);border-radius:14px;padding:14px 16px;position:relative;overflow:hidden}
+  .vital::before{content:"";position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--synapse);opacity:.85}
+  .vital.risk::before{background:var(--r3)}
+  .vital.prio::before{background:var(--laboral)}
+  .vital .k{font-family:var(--mono);font-size:10.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--muted)}
+  .vital .v{font-family:var(--mono);font-size:29px;font-weight:600;margin-top:6px;font-variant-numeric:tabular-nums;line-height:1}
+  .vital .note{font-size:12px;color:var(--muted);margin-top:6px;min-height:16px}
+  .vital.prio .v{font-size:14.5px;line-height:1.35;font-weight:600;color:var(--ink)}
+  .vital.prio .note{color:var(--r2)}
+  .cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(330px,1fr));gap:14px}
+  .pcard{background:linear-gradient(180deg,rgba(17,26,41,.75),rgba(15,22,34,.75));border:1px solid var(--line);border-radius:16px;overflow:hidden;display:flex;flex-direction:column}
+  .pcard-h{display:flex;align-items:center;gap:10px;padding:12px 15px;border-bottom:1px solid var(--line)}
+  .pcard-h .dot{flex:none}
+  .pcard-h .t{font-family:var(--mono);font-size:13px;font-weight:600;letter-spacing:.06em}
+  .pcard-h .full{font-size:11.5px;color:var(--muted);margin-left:2px;flex:1 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .pcard-h .count{font-family:var(--mono);font-size:10.5px;color:var(--muted);border:1px solid var(--line-strong);border-radius:20px;padding:1px 8px;flex:none}
+  .pcard .issues{font-family:var(--mono);font-size:11px;color:var(--muted-2);padding:8px 15px 0;line-height:1.5}
+  .pcard ul{list-style:none;margin:0;padding:8px 6px 10px}
+  .pcard li{display:grid;grid-template-columns:auto 1fr;gap:10px;padding:8px 9px;border-radius:10px}
+  .pcard li:hover{background:rgba(120,150,200,.06)}
+  .lvl{font-family:var(--mono);font-size:10px;font-weight:600;letter-spacing:.08em;border:1px solid currentColor;border-radius:6px;padding:1px 6px;height:fit-content;margin-top:2px}
+  .lvl.n3{color:var(--r3)} .lvl.n2{color:var(--r2)} .lvl.n1{color:var(--r1)}
+  .pcard li .lb{font-size:13px;color:var(--ink);line-height:1.45}
+  .pcard li .meta{font-family:var(--mono);font-size:10.5px;color:var(--muted-2);margin-top:3px;letter-spacing:.04em}
+  .pcard li .meta b{color:var(--muted);font-weight:500}
+
+  /* ===== vista BITÁCORA (log pantalla completa, más reciente ARRIBA) ===== */
+  #view-log{overflow:hidden;align-items:center}
+  .log-col{width:min(920px,100%);flex:1 1 auto;min-height:0;display:flex;flex-direction:column;padding:0 clamp(14px,3vw,26px)}
+  .log-h{display:flex;align-items:baseline;justify-content:space-between;padding:16px 4px 10px;flex:none}
+  .log-h .t{font-family:var(--mono);font-size:11px;letter-spacing:.2em;text-transform:uppercase;color:var(--muted)}
+  .log-h .t b{color:var(--ink);font-weight:600}
+  .stream-body{flex:1;min-height:0;overflow-y:auto;padding:2px 4px 18px}
+  .stream-body::-webkit-scrollbar{width:8px}
+  .stream-body::-webkit-scrollbar-thumb{background:var(--line-strong);border-radius:8px}
+  .syn{display:grid;grid-template-columns:auto 1fr;gap:14px;padding:10px 6px;position:relative}
+  .syn .rail{display:flex;flex-direction:column;align-items:center;width:5ch}
+  .syn .time{font-family:var(--mono);font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums}
+  .syn .node{width:9px;height:9px;border-radius:50%;margin-top:6px;box-shadow:0 0 9px currentColor;flex:none}
+  .syn::after{content:"";position:absolute;left:calc(6px + 2.5ch);top:34px;bottom:-10px;width:1px;background:var(--line);opacity:.7}
+  .syn:last-child::after{display:none}
+  .syn .body .lb{font-size:14px;color:var(--ink)}
+  .syn .tag{display:inline-block;font-family:var(--mono);font-size:9.5px;letter-spacing:.12em;text-transform:uppercase;padding:1px 7px;border-radius:20px;margin-top:5px;border:1px solid currentColor}
+  .tag.laboral{color:var(--laboral)} .tag.personal{color:var(--personal)}
+  .empty{padding:26px 16px;color:var(--muted);font-family:var(--mono);font-size:12px;text-align:center}
+
+  footer{display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px;font-family:var(--mono);font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted-2);
+    padding:9px clamp(14px,3vw,26px);border-top:1px solid var(--line);flex:none}
+  .live{display:inline-flex;align-items:center;gap:7px}
+  .live b{width:7px;height:7px;border-radius:50%;background:var(--synapse);box-shadow:0 0 8px var(--synapse);animation:blink 2.4s infinite}
+  @keyframes blink{0%,100%{opacity:1}50%{opacity:.25}}
+  @media (max-width:900px){
+    .vitals{grid-template-columns:repeat(2,1fr)}
+    .cards{grid-template-columns:1fr}
+    header{gap:10px}
+    .seg button{padding:6px 10px;font-size:11px}
+    .map-prio{display:none}
+  }
+  @media (prefers-reduced-motion:reduce){.live b{animation:none}}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="brand">
+    <svg class="sigil" viewBox="0 0 48 48" fill="none" aria-hidden="true">
+      <circle cx="24" cy="24" r="6" fill="#35e0d0"/>
+      <g stroke="#4c9bff" stroke-width="1.5" opacity=".9"><line x1="24" y1="24" x2="40" y2="12"/><line x1="24" y1="24" x2="42" y2="30"/><line x1="24" y1="24" x2="34" y2="42"/></g>
+      <g stroke="#a97bff" stroke-width="1.5" opacity=".9"><line x1="24" y1="24" x2="8" y2="14"/><line x1="24" y1="24" x2="6" y2="30"/><line x1="24" y1="24" x2="16" y2="42"/></g>
+      <g fill="#e6ecf7"><circle cx="40" cy="12" r="2.6"/><circle cx="42" cy="30" r="2.6"/><circle cx="34" cy="42" r="2.6"/><circle cx="8" cy="14" r="2.6"/><circle cx="6" cy="30" r="2.6"/><circle cx="16" cy="42" r="2.6"/></g>
+    </svg>
+    <div><h1>Personal&nbsp;OS</h1><div class="sub">Consola Neuronal</div></div>
+  </div>
+  <div class="seg tabs" role="group" aria-label="Vista">
+    <button data-view="mapa" aria-pressed="true">Mapa</button>
+    <button data-view="tarjetas" aria-pressed="false">Tarjetas<span class="n" id="tab-items"></span></button>
+    <button data-view="log" aria-pressed="false">Bitácora<span class="n" id="tab-syn"></span></button>
+  </div>
+  <div class="seg scope" role="group" aria-label="Filtro de ámbito">
+    <button data-scope="ambas" aria-pressed="true">Ambas</button>
+    <button data-scope="laboral" aria-pressed="false">Laboral</button>
+    <button data-scope="personal" aria-pressed="false">Personal</button>
+  </div>
+</header>
+
+<main>
+  <!-- ===== MAPA: grafo a pantalla completa ===== -->
+  <section class="view active" id="view-mapa" aria-label="Mapa sináptico">
+    <div class="canvas-shell">
+      <canvas id="brain"></canvas>
+      <div class="tip" id="tip"><div class="lb"></div><div class="mt"></div><div class="xd"></div></div>
+      <div class="float map-scope" id="graph-scope">ámbito · ambas</div>
+      <div class="float map-empty" id="map-empty">Sin ítems activos en este ámbito. Los riesgos, compromisos y alcances abiertos aparecen aquí colgando de su proyecto.</div>
+      <div class="float legend">
+        <span><i class="dot" style="color:var(--laboral)"></i>Laboral</span>
+        <span><i class="dot" style="color:var(--personal)"></i>Personal</span>
+        <span><i class="dot" style="color:var(--synapse)"></i>Núcleo</span>
+        <span><i class="dot" style="color:var(--r3)"></i>n3</span>
+        <span><i class="dot" style="color:var(--r2)"></i>n2</span>
+        <span><i class="dot" style="color:var(--r1)"></i>n1</span>
+      </div>
+      <div class="float map-prio"><div class="k">Prioridad #1</div><div class="v" id="map-prio-v">—</div><div class="note" id="map-prio-note"></div></div>
+    </div>
+  </section>
+
+  <!-- ===== TARJETAS: signos vitales + una tarjeta por proyecto ===== -->
+  <section class="view" id="view-tarjetas" aria-label="Tarjetas por proyecto">
+    <div class="vitals" aria-label="Signos vitales">
+      <div class="vital risk"><div class="k" id="m-risk-k">Ítems activos</div><div class="v" id="m-risk">—</div><div class="note" id="m-risk-note"></div></div>
+      <div class="vital"><div class="k" id="m-cli-k">Proyectos en foco</div><div class="v" id="m-cli">—</div><div class="note" id="m-cli-note"></div></div>
+      <div class="vital"><div class="k">Sinapsis hoy</div><div class="v" id="m-syn">—</div><div class="note" id="m-syn-note">resúmenes de la bitácora</div></div>
+      <div class="vital prio"><div class="k">Prioridad #1</div><div class="v" id="m-prio">—</div><div class="note" id="m-prio-note"></div></div>
+    </div>
+    <div class="cards" id="cards"></div>
+  </section>
+
+  <!-- ===== BITÁCORA: log del día, más reciente ARRIBA ===== -->
+  <section class="view" id="view-log" aria-label="Bitácora del día">
+    <div class="log-col">
+      <div class="log-h"><div class="t"><b>Bitácora</b> del día · más reciente arriba</div><div class="t" id="stream-count"></div></div>
+      <div class="stream-body" id="stream"></div>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <span class="live"><b></b>Vista local · derivada del estado · nunca publicada</span>
+  <span id="stamp"></span>
+</footer>
+
+<!-- Los datos los genera build-consola.js desde las notas del estado. Es un <script src> y no un
+     fetch() a propósito: con protocolo file:// el navegador bloquea fetch de archivos locales, pero
+     una etiqueta script sí carga. Así la consola se abre con doble clic, sin levantar ningún servidor. -->
+<script src="_datos/datos.js" charset="utf-8"></script>
+<script>
+(() => {
+  const COL={laboral:'#4c9bff',personal:'#a97bff',core:'#35e0d0',r1:'#f6c760',r2:'#ff9a52',r3:'#ff5f7e',ink:'#e6ecf7'};
+  const riskColor=n=>n>=3?COL.r3:n===2?COL.r2:COL.r1;
+  const pad=n=>String(n).padStart(2,'0');
+  const hoyLocal=()=>{const d=new Date();return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate());};
+  const daysTo=iso=>{const t=new Date();t.setHours(0,0,0,0);const d=new Date(iso+'T00:00:00');return Math.round((d-t)/864e5);};
+  const esc=s=>String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  const metaCmd=document.querySelector('meta[name="comando-build"]');
+  const CMD=(metaCmd&&metaCmd.content&&metaCmd.content.indexOf('__')!==0)?metaCmd.content:'node "<raíz del plugin>/scripts/build-consola.js"';
+
+  // ===== DATOS =====
+  // No viven aquí: los escribe build-consola.js en _datos/datos.js (window.ESTADO).
+  const E = window.ESTADO;
+  if(!E){
+    document.body.innerHTML =
+      '<div style="padding:48px;max-width:760px;margin:auto;font:15px/1.7 system-ui;color:#e6ecf7">'+
+      '<h1 style="color:#ff5f7e;font-size:22px;margin:0 0 12px">No se cargaron los datos</h1>'+
+      '<p style="color:#9fb0cc">Falta <code>_datos/datos.js</code> junto a este archivo. La consola no trae '+
+      'datos pegados dentro: los lee de las notas del estado. Genéralos con:</p>'+
+      '<pre style="background:#0d1220;border:1px solid #223;padding:14px;border-radius:10px;overflow:auto">'+esc(CMD)+'</pre>'+
+      '<p style="color:#6f819c;font-size:13px">Si el archivo existe y sigues viendo esto, el '+
+      'navegador puede haberlo bloqueado: revisa la consola del navegador (F12).</p></div>';
+    return;
+  }
+  const NODES=Array.isArray(E.NODES)?E.NODES:[], ITEMS=Array.isArray(E.ITEMS)?E.ITEMS:[], SINAPSIS=Array.isArray(E.SINAPSIS)?E.SINAPSIS:[];
+  const sinFijar={v:'sin fijar',note:''};
+  const PRIO=Object.assign({laboral:sinFijar,ambas:sinFijar,personal:sinFijar},E.PRIO||{});
+
+  let scope='ambas';
+  const inScope=s=>scope==='ambas'||s==='both'||s===scope;
+  const byId=Object.fromEntries(NODES.map(n=>[n.id,n]));
+  // El núcleo es el nodo kind:'core'. Si faltara, se crea uno al centro para no dejar el mapa sin ancla.
+  let CORE=NODES.find(n=>n.kind==='core');
+  if(!CORE){CORE={id:'__core',label:'NÚCLEO',full:'Personal OS',kind:'core',scope:'both',fx:.5,fy:.5,r:15};NODES.unshift(CORE);byId[CORE.id]=CORE;}
+  const projsInScope=()=>NODES.filter(n=>n.kind!=='core'&&inScope(n.scope));
+  // Los sub-nodos (con `parent`) no cuentan como proyecto propio en los signos vitales: cuelgan de su padre.
+  const topProjsInScope=()=>projsInScope().filter(n=>!n.parent);
+  const itemsInScope=()=>ITEMS.filter(it=>byId[it.cli]&&inScope(byId[it.cli].scope));
+  const set=(id,v)=>{document.getElementById(id).textContent=v;};
+
+  function refresh(){
+    const its=itemsInScope();
+    const worst=its.reduce((a,r)=>Math.max(a,r.nivel),0);
+    const projs=projsInScope();
+    const projsWithItems=new Set(its.map(i=>i.cli)).size;
+    const isPers=scope==='personal';
+    document.getElementById('m-risk-k').textContent=isPers?'Pendientes activos':'Ítems activos';
+    document.getElementById('m-cli-k').textContent=isPers?'Proyectos personales':'Proyectos en foco';
+    set('m-risk',its.length); document.getElementById('m-risk-note').textContent=its.length?`máx nivel ${worst}`:'sin ítems en este ámbito';
+    const tops=topProjsInScope();
+    set('m-cli',isPers?tops.length:projsWithItems);
+    document.getElementById('m-cli-note').textContent=isPers?tops.map(p=>p.label).join(' · '):[...new Set(its.map(i=>byId[i.cli].label))].join(' · ');
+    const st=SINAPSIS.filter(s=>inScope(s.scope)); set('m-syn',st.length);
+    const p=PRIO[scope]||sinFijar; set('m-prio',p.v||'sin fijar'); document.getElementById('m-prio-note').textContent=p.note||'';
+    set('map-prio-v',p.v||'sin fijar'); document.getElementById('map-prio-note').textContent=p.note||'';
+    document.getElementById('graph-scope').textContent='ámbito · '+scope;
+    document.getElementById('map-empty').style.display=its.length?'none':'block';
+    document.getElementById('stream-count').textContent=st.length+' hoy';
+    set('tab-items',its.length); set('tab-syn',st.length);
+    renderCards(projs,its);
+    renderLog(st);
+  }
+
+  // Tarjetas: una por proyecto en ámbito, con TODOS sus ítems legibles.
+  function renderCards(projs,its){
+    const box=document.getElementById('cards');
+    box.innerHTML=projs.length?'':'<div class="empty">sin proyectos en este ámbito · decláralos en config/consola-layout.json</div>';
+    const order=[...projs].sort((a,b)=>{
+      const wa=Math.max(0,...its.filter(i=>i.cli===a.id).map(i=>i.nivel));
+      const wb=Math.max(0,...its.filter(i=>i.cli===b.id).map(i=>i.nivel));
+      return wb-wa;
+    });
+    for(const p of order){
+      const col=p.scope==='personal'?COL.personal:COL.laboral;
+      const rows=its.filter(i=>i.cli===p.id).sort((a,b)=>b.nivel-a.nivel);
+      const lis=rows.map(it=>
+        `<li><span class="lvl n${esc(it.nivel)}">n${esc(it.nivel)}</span>`+
+        `<div><div class="lb">${esc(it.label)}</div>`+
+        `<div class="meta"><b>${esc(it.id)}</b> · ${esc(it.tag)} · ${esc(it.estado)}</div></div></li>`).join('');
+      const el=document.createElement('div');el.className='pcard';
+      el.innerHTML=`<div class="pcard-h"><i class="dot" style="color:${col}"></i>`+
+        `<span class="t" style="color:${col}">${esc(p.label)}</span><span class="full">${esc(p.full)}</span>`+
+        `<span class="count">${rows.length} ítem${rows.length===1?'':'s'}</span></div>`+
+        (p.issues?`<div class="issues">${esc(p.issues)}</div>`:'')+
+        (rows.length?`<ul>${lis}</ul>`:'<div class="empty">sin ítems activos</div>');
+      box.appendChild(el);
+    }
+  }
+
+  // Bitácora: SINAPSIS invertido → lo MÁS RECIENTE ARRIBA.
+  function renderLog(st){
+    const box=document.getElementById('stream');
+    box.innerHTML=st.length?'':'<div class="empty">sin sinapsis en este ámbito</div>';
+    for(const s of [...st].reverse()){
+      const sc=s.scope==='personal'?'personal':'laboral';
+      const col=sc==='laboral'?COL.laboral:COL.personal;
+      const el=document.createElement('div');el.className='syn';
+      el.innerHTML=`<div class="rail"><span class="time">${esc(s.t)}</span><span class="node" style="background:${col};color:${col}"></span></div>`+
+        `<div class="body"><div class="lb">${esc(s.label)}</div><span class="tag ${sc}">${sc}</span></div>`;
+      box.appendChild(el);
+    }
+  }
+
+  // ===== pestañas de vista =====
+  document.querySelectorAll('.seg.tabs button').forEach(b=>b.addEventListener('click',()=>{
+    document.querySelectorAll('.seg.tabs button').forEach(x=>x.setAttribute('aria-pressed',x===b));
+    document.querySelectorAll('.view').forEach(v=>v.classList.toggle('active',v.id==='view-'+b.dataset.view));
+    if(b.dataset.view==='mapa')resize();
+  }));
+  document.querySelectorAll('.seg.scope button').forEach(b=>b.addEventListener('click',()=>{
+    scope=b.dataset.scope;
+    document.querySelectorAll('.seg.scope button').forEach(x=>x.setAttribute('aria-pressed',x===b));
+    refresh();
+  }));
+
+  // ===== canvas (pantalla completa) =====
+  const cv=document.getElementById('brain'),ctx=cv.getContext('2d'),tip=document.getElementById('tip');
+  const reduce=matchMedia('(prefers-reduced-motion:reduce)').matches;
+  let W=0,H=0,dpr=1,hover=null;
+  const ip=ITEMS.map(()=>Math.random());   // partícula por arista nodo→ítem
+  const np=NODES.map(()=>Math.random());   // partícula por arista núcleo→nodo
+  const nodeCol=n=>n.kind==='core'?COL.core:(n.scope==='personal'?COL.personal:COL.laboral);
+  // Jerarquía: un nodo cuelga de su `parent` si lo tiene; si no, del núcleo.
+  const anchorOf=n=>(n.parent&&byId[n.parent])?byId[n.parent]:CORE;
+
+  function resize(){
+    const rect=cv.getBoundingClientRect();
+    if(rect.width===0||rect.height===0)return;                        // vista oculta
+    if(Math.abs(rect.width-W)<1&&Math.abs(rect.height-H)<1)return;    // guarda anti-bucle de resize
+    dpr=Math.min(window.devicePixelRatio||1,2);
+    W=rect.width;H=rect.height;cv.width=W*dpr;cv.height=H*dpr;ctx.setTransform(dpr,0,0,dpr,0,0);
+    for(const n of NODES){n.bx=n.fx*W;n.by=n.fy*H;}
+    const groups={};ITEMS.forEach(it=>{if(byId[it.cli])(groups[it.cli]=groups[it.cli]||[]).push(it);});
+    Object.entries(groups).forEach(([cid,rs])=>{
+      // Los ítems se abren en abanico ALEJÁNDOSE del ancla del nodo (núcleo o nodo padre).
+      const c=byId[cid],a0=anchorOf(c);let ang=Math.atan2(c.by-a0.by,c.bx-a0.bx);
+      if(c===a0)ang=-Math.PI/2;
+      const spread=Math.min(1.5,0.5+rs.length*0.18);const gap=Math.min(Math.max(W,H)*0.11,72)+(rs.length>3?18:0);
+      rs.forEach((r,i)=>{const off=rs.length===1?0:(i/(rs.length-1)-0.5)*spread;const a=ang+off;
+        r.bx=c.bx+Math.cos(a)*gap;r.by=c.by+Math.sin(a)*gap;r.ref=c;});
+    });
+  }
+  function drift(o,t,amp,i){return {x:o.bx+Math.cos(t*0.5+(i||0)+o.bx*0.01)*amp,y:o.by+Math.sin(t*0.6+(i||0)+o.by*0.01)*amp};}
+
+  // Etiqueta legible: chip con fondo oscuro + borde del color del nodo.
+  function drawChip(x,y,text,col,size){
+    ctx.font=`600 ${size}px ui-monospace,Consolas,monospace`;ctx.textAlign='center';ctx.textBaseline='middle';
+    const w=ctx.measureText(text).width+16,h=size+10,rx=x-w/2,ry=y-h/2;
+    ctx.globalAlpha=.92;ctx.fillStyle='rgba(6,10,18,.85)';ctx.strokeStyle=col+'59';ctx.lineWidth=1;
+    ctx.beginPath();
+    if(ctx.roundRect)ctx.roundRect(rx,ry,w,h,h/2);else ctx.rect(rx,ry,w,h);
+    ctx.fill();ctx.stroke();
+    ctx.globalAlpha=1;ctx.fillStyle=COL.ink;ctx.fillText(text,x,y+0.5);
+    ctx.textBaseline='alphabetic';
+  }
+
+  function draw(ts){
+    if(W===0||H===0){requestAnimationFrame(draw);return;}
+    const t=ts*0.001;ctx.clearRect(0,0,W,H);
+    const brain=CORE,pb=drift(brain,t,0,0);
+    const projs=NODES.filter(n=>n.kind!=='core');
+    const phase=Object.fromEntries(projs.map((c,i)=>[c.id,i]));   // fase de deriva por nodo, para que padre e hijo coincidan
+    // ancla → nodo (núcleo → proyecto · nodo padre → sub-nodo)
+    projs.forEach((c,i)=>{
+      const vis=inScope(c.scope),pc=drift(c,t,4.5,i),col=nodeCol(c);
+      const a0=anchorOf(c);
+      const pa=a0.kind==='core'?pb:drift(a0,t,4.5,phase[a0.id]);
+      ctx.globalAlpha=vis?0.28:0.05;ctx.strokeStyle=col;ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(pa.x,pa.y);ctx.lineTo(pc.x,pc.y);ctx.stroke();
+      if(vis){if(!reduce){np[i]+=0.005;if(np[i]>1)np[i]-=1;}const p=np[i]||0;ctx.globalAlpha=.9;ctx.fillStyle=col;ctx.shadowBlur=8;ctx.shadowColor=col;ctx.beginPath();ctx.arc(pa.x+(pc.x-pa.x)*p,pa.y+(pc.y-pa.y)*p,1.6,0,7);ctx.fill();ctx.shadowBlur=0;}
+    });
+    // proyecto → ítems
+    ITEMS.forEach((it,i)=>{
+      const c=it.ref;if(!c)return;const vis=inScope(c.scope);const pc=drift(c,t,4.5,0);
+      const pr={x:it.bx+Math.cos(t*0.5+i)*3,y:it.by+Math.sin(t*0.6+i)*3};const col=riskColor(it.nivel);
+      ctx.globalAlpha=vis?0.30:0.04;ctx.strokeStyle=col;ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(pc.x,pc.y);ctx.lineTo(pr.x,pr.y);ctx.stroke();
+      if(vis){if(!reduce){ip[i]+=0.006+it.nivel*0.002;if(ip[i]>1)ip[i]-=1;}const p=ip[i];ctx.globalAlpha=.95;ctx.fillStyle=col;ctx.shadowBlur=8;ctx.shadowColor=col;ctx.beginPath();ctx.arc(pc.x+(pr.x-pc.x)*p,pc.y+(pr.y-pc.y)*p,1.7,0,7);ctx.fill();ctx.shadowBlur=0;}
+      let rr=5+(it.estado==='abierto'?1:0);rr+=((Math.sin(t*(1.6+it.nivel*0.5)+i)+1)/2)*(1.5+it.nivel);
+      drawNode(pr.x,pr.y,rr,col,vis?1:.06,false);it._sx=pr.x;it._sy=pr.y;it._sr=rr;
+      // los n3 llevan su ID visible (los demás, al pasar el mouse)
+      if(vis&&it.nivel>=3){ctx.globalAlpha=.95;ctx.fillStyle=col;ctx.font='600 10.5px ui-monospace,Consolas,monospace';ctx.textAlign='center';ctx.fillText(it.id,pr.x,pr.y+rr+13);}
+    });
+    // proyectos (etiqueta tipo chip, legible sobre las aristas)
+    projs.forEach((c,i)=>{const vis=inScope(c.scope),p=drift(c,t,4.5,i),col=nodeCol(c);
+      drawNode(p.x,p.y,c.r,col,vis?1:.06,false);c._sx=p.x;c._sy=p.y;c._sr=c.r;
+      if(vis)drawChip(p.x,p.y+c.r+19,c.label,col,12.5);
+    });
+    // núcleo
+    drawNode(pb.x,pb.y,brain.r,COL.core,1,true);
+    ctx.fillStyle='#04121a';ctx.beginPath();ctx.arc(pb.x,pb.y,brain.r*0.42,0,7);ctx.fill();
+    drawChip(pb.x,pb.y+brain.r+20,brain.label||'NÚCLEO',COL.core,12.5);
+    brain._sx=pb.x;brain._sy=pb.y;brain._sr=brain.r;
+    ctx.globalAlpha=1;requestAnimationFrame(draw);
+  }
+  function drawNode(x,y,r,col,a,core){
+    ctx.globalAlpha=a;const g=ctx.createRadialGradient(x,y,0,x,y,r*2.6);g.addColorStop(0,col+'66');g.addColorStop(1,col+'00');
+    ctx.fillStyle=g;ctx.beginPath();ctx.arc(x,y,r*2.6,0,7);ctx.fill();
+    ctx.globalAlpha=a;ctx.fillStyle=col;ctx.shadowBlur=core?18:10;ctx.shadowColor=col;ctx.beginPath();ctx.arc(x,y,r,0,7);ctx.fill();ctx.shadowBlur=0;
+  }
+
+  cv.addEventListener('mousemove',ev=>{
+    const rect=cv.getBoundingClientRect(),mx=ev.clientX-rect.left,my=ev.clientY-rect.top;hover=null;
+    for(const it of ITEMS){if(byId[it.cli]&&inScope(byId[it.cli].scope)&&Math.hypot(mx-(it._sx||0),my-(it._sy||0))<(it._sr||6)+7){hover={t:'i',o:it};break;}}
+    if(!hover)for(const n of NODES){if(inScope(n.scope)&&Math.hypot(mx-(n._sx||0),my-(n._sy||0))<(n._sr||6)+8){hover={t:'n',o:n};break;}}
+    if(hover){const o=hover.o;tip.style.left=o._sx+'px';tip.style.top=o._sy+'px';tip.style.opacity=1;
+      if(hover.t==='i'){tip.querySelector('.lb').textContent=o.id+' · '+o.tag;tip.querySelector('.mt').textContent=byId[o.cli].label+' · nivel '+o.nivel+' · '+o.estado;tip.querySelector('.xd').textContent=o.label;}
+      else if(o.kind==='core'){tip.querySelector('.lb').textContent=o.label||'NÚCLEO';tip.querySelector('.mt').textContent='núcleo · '+(o.full||'Personal OS');tip.querySelector('.xd').textContent='Segundo cerebro ejecutivo';}
+      else{const nr=ITEMS.filter(it=>it.cli===o.id).length;
+        const kind=o.parent?('sub-nodo de '+byId[o.parent].label):(o.scope==='personal'?'proyecto personal':'proyecto laboral');
+        tip.querySelector('.lb').textContent=o.full;tip.querySelector('.mt').textContent=kind+' · '+nr+' ítem(s)';tip.querySelector('.xd').textContent=o.issues||'';}
+      cv.style.cursor='pointer';
+    }else{tip.style.opacity=0;cv.style.cursor='default';}
+  });
+  cv.addEventListener('mouseleave',()=>{tip.style.opacity=0;});
+
+  new ResizeObserver(resize).observe(cv.parentElement);
+  resize();refresh();requestAnimationFrame(draw);
+
+  // El pie declara SIEMPRE de qué día son los datos, y avisa si no son de hoy: un dato viejo
+  // mostrado como actual es justo el defecto que esta consola existe para evitar.
+  const hoy=hoyLocal();
+  let hito='';
+  if(E.hito&&E.hito.fecha){
+    const dd=daysTo(E.hito.fecha);
+    const cuenta=dd===0?'HOY':dd>0?('en '+dd+'d'):('hace '+(-dd)+'d');
+    hito=' · '+esc(E.hito.etiqueta||'Hito')+' '+cuenta;
+  }
+  const avisos=Array.isArray(E.avisos)?E.avisos:[];
+  document.getElementById('stamp').innerHTML=
+    (E.fecha!==hoy
+      ? '<b style="color:#ff9a52">⚠ DATOS DEL '+esc(E.fecha)+', NO DE HOY ('+hoy+') — corre '+esc(CMD)+'</b>'
+      : 'datos de hoy · '+esc(E.fecha))
+    + hito
+    + (avisos.length ? ' · <span style="color:#f6c760" title="'+esc(avisos.join(' | '))+'">'+avisos.length+' aviso(s) del build</span>' : '');
+})();
+</script>
+</body>
+</html>

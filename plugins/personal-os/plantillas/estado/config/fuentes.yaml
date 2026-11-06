@@ -1,0 +1,76 @@
+# Personal OS — fuentes externas (lo leen las skills; los scripts leen ~/.claude/personal-os/config.json)
+# Rellena los <placeholders>. Nada de credenciales aquí: los MCP de Atlassian y Microsoft 365
+# se autentican por su cuenta. Este archivo es PRIVADO: vive en tu carpeta de estado.
+
+owner:
+  nombre: "<Tu nombre>"
+  correo: "<tu.correo@empresa.com>"
+  zona_horaria: "America/Bogota"        # IANA; debe coincidir con config.json → zonaHoraria
+
+jira:
+  sitio: "<tu-sitio>.atlassian.net"
+  cloud_id: "<cloudId>"                 # sale de getAccessibleAtlassianResources
+  mi_account_id: "<accountId>"          # sale de atlassianUserInfo; nunca adivinarlo
+  proyectos:                            # claves de proyecto que el brief y el timesheet cruzan
+    - clave: "PROY"
+      cliente: "Cliente A"
+    - clave: "INT"
+      cliente: "Interno"
+  campo_aprobador: "Aprobadores"        # nombre del campo de personas "aprobador" en TU instancia
+  filtro_pendiente: "resolution IS EMPTY"   # cómo distingue tu Jira lo que sigue abierto
+  tipo_subtarea: "Subtarea"             # tipo de issue que usa planear-sprint al exportar
+  campo_inicio: null                    # id del campo "fecha de inicio" si tu Jira lo tiene (p. ej. customfield_XXXXX)
+  consultas_extra:
+    aprobador: 'Aprobadores = currentUser() AND statusCategory != Done'
+    sin_fecha: 'assignee = currentUser() AND duedate IS EMPTY AND statusCategory != Done'
+    proximos_a_vencer: 'assignee = currentUser() AND duedate <= 3d AND statusCategory != Done'
+  estados_que_parecen_cerrados: ["Redefinido", "Won't Do", "Duplicado"]   # Jira los cuenta como Done
+
+roles:
+  responsable: "ejecuto"
+  lider: "superviso"
+  aprobador: "doy el visto bueno"
+
+m365:
+  outlook: true
+  teams: true
+  calendario: true
+
+equipo:                                  # tu célula; el detalle por persona vive en estado/personas/
+  - nombre: "<Persona 1>"
+    rol: "Desarrollador"
+    account_id: "<accountId>"
+    capacidad_horas_dia: 8
+    nivel: "semi"                        # junior | semi | senior
+    familiaridad: { "<frente>": "alta" } # alta | media | nula, por frente
+  - nombre: "<Persona 2>"
+    rol: "QA"
+    account_id: "<accountId>"
+    capacidad_horas_dia: 8
+    nivel: "senior"
+    familiaridad: {}
+
+tareas_externas: []                     # p. ej. un seguimiento en Excel compartido:
+# - nombre: "Seguimiento del cliente"
+#   tipo: "excel"
+#   web_url: "<url o ruta sincronizada>"
+#   hoja: "Pendientes"
+#   mi_nombre_en_fuente: "<como apareces ahí>"
+#   columnas: { id: "A", tarea: "B", responsable: "C", lider: "D", fecha: "E", estado: "F" }
+
+# status_celula:                         # opcional; sin él valen los valores por defecto de /status-celula
+#   capacidad_factor: 0.8                # la capacidad no es la jornada completa
+#   sla_revision: 2                      # días hábiles para revisar
+#   sla_implementacion: 5                # días hábiles para publicar
+#   limite_wip: null
+#   estados: { revision: "En revisión", implementacion: "Listo para implementación", pausa: "Pausado", desarrollo: "En curso" }
+#   reparto: { titulares: 2, backups: 2 }
+#   campo_inicio: null
+
+planeacion:
+  capacidad_diaria: { lunes_a_jueves: 8, viernes: 8 }
+  matriz_tiempos:                        # referencias cortas; la forma completa (niveles, familiaridad,
+    componente_nuevo_con_logica: "1.5-3 h"   # tipos con base/rango) está en
+    mostrar_dato_ya_calculado: "<= 1 h"      # skills/planear-sprint/matriz-tiempos-ejemplo.yaml del plugin
+    refactor_o_traslado: "-30 % frente a la cifra a mano"
+  niveles: ["junior", "semi", "senior"]

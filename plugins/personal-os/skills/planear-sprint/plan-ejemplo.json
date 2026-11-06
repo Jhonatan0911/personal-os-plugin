@@ -1,0 +1,61 @@
+{
+  "titulo": "Sprint 12 · Reportes de Cliente A",
+  "subtitulo": "Épica PROY-140 · exportación y filtros del reporte mensual",
+  "asignado": {"nombre": "Ana", "accountId": null},
+  "proyecto": "PROY",
+  "jira": {
+    "sitio": "tu-sitio.atlassian.net",
+    "cloud_id": "",
+    "servidor_mcp": "Atlassian Rovo",
+    "tipo_subtarea": "Subtarea",
+    "campo_inicio": null
+  },
+  "correo": {"servidor_mcp": ""},
+  "lider": "Persona 1",
+  "quien_define": "el cliente",
+  "inicio": "2026-03-02",
+  "fin": "2026-03-13",
+  "fin_desarrollo": "2026-03-10",
+  "festivos": ["2026-03-09"],
+  "fases": [
+    ["dev", "Desarrollo", "2026-03-02", "2026-03-10"],
+    ["qa", "QA", "2026-03-11", "2026-03-12"],
+    ["ali", "Alistamiento", "2026-03-13", "2026-03-13"]
+  ],
+  "texto_nueva": "Nuevo: entra solo si el cliente lo confirma.",
+  "descripcion_subtarea": "Subtarea del sprint 12 (PROY-140).",
+  "personas": ["Ana", "Luis"],
+  "cuentas": {},
+  "capacidad": [7.5, 7],
+  "epica": "PROY-140",
+  "correos_busqueda": ["Reportes Cliente A"],
+  "historias": [
+    {
+      "key": "PROY-142",
+      "t": "Exportar el reporte mensual a Excel",
+      "nota": "Hoy el reporte solo se ve en pantalla; el botón de exportar existe en el módulo de facturación.",
+      "esc": [["Exportar a Excel", "dif"], ["Filtro por sede", "ok"]],
+      "coment": "Propuesta: reutilizar el exportador del módulo de facturación en lugar de escribir uno nuevo.",
+      "items": [
+        {"titulo": "Traer el exportador de facturación y adaptarlo al reporte", "horas": 2, "ini": "2026-03-02", "fin": "2026-03-02",
+         "estado": "propuesta", "tipo": "traer_de_otro_cliente_o_rama",
+         "obs": "Tipo traer_de_otro_cliente_o_rama · cantidad 1 · confianza media.",
+         "desc": "**Objetivo** — Exportar el reporte mensual a Excel reutilizando el exportador existente.\n\n**Qué hacer**\n1. Extraer el servicio de exportación a un módulo compartido.\n2. Llamarlo desde el reporte mensual con sus columnas.\n\n**Dónde** — repo `app-web`, `reportes/mensual.component.ts`.\n\n**Criterios técnicos**\n- El archivo abre en Excel con las mismas columnas de la tabla."},
+        {"titulo": "Revisión y pruebas de la exportación", "horas": 1, "ini": "2026-03-03", "fin": "2026-03-03",
+         "estado": "propuesta", "tipo": "prueba_funcional_logica"}
+      ]
+    },
+    {
+      "key": "PROY-143",
+      "t": "Filtro por rango de fechas",
+      "nota": "El filtro solo admite un mes; la historia pide rango libre.",
+      "esc": [["Rango de fechas", "nueva"]],
+      "items": [
+        {"titulo": "Filtro de rango en la pantalla y el endpoint", "horas": 3, "ini": "2026-03-03", "fin": "2026-03-04",
+         "estado": "propuesta", "tipo": "componente_nuevo_con_logica"},
+        {"titulo": "Totales por semana dentro del rango", "horas": 2, "estado": "espera",
+         "obs": "Solo aparece en el mockup, no en la historia. Lo define el cliente; preguntado por Luis el 2026-02-27."}
+      ]
+    }
+  ]
+}

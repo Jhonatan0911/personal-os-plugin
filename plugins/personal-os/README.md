@@ -1,26 +1,32 @@
-# Personal OS — plugin
+# Personal OS — plugin (v2.0.0)
 
-Chief of Staff digital para Claude Code: protege tu ejecución (riesgos, compromisos, prioridades) sobre
-Jira/Outlook/Teams, con brief diario y tablero HTML.
+Chief of Staff digital para Claude Code: protege tu ejecución (compromisos punto por punto, riesgos,
+prioridades, horas trazables) sobre Jira/Outlook/Teams. Documentación completa en el
+[README del repositorio](../../README.md) y novedades en el [CHANGELOG](../../CHANGELOG.md).
 
-## Cómo funciona
-- Un hook `SessionStart` corre `scripts/session-init.js`, que lee `~/.claude/personal-os/state.flag`:
-  - `active` → inyecta `preamble.md` (persona + protocolo) como contexto de la sesión.
-  - `paused` → no inyecta nada (sesión limpia).
-- El contenido del comportamiento (`CORE.md`, `preamble.md`) viaja con el plugin y se actualiza al actualizarlo.
-- El **estado** del usuario (bandera, `config.json`, y su carpeta `estado/`) vive en `~/.claude/personal-os/`
-  y en la `stateDir` que configure — nunca dentro del plugin, nunca compartido.
+## Dónde vive cada cosa
+- **Código** (este directorio): núcleo (`CORE.md`, `preamble.md`), `hooks/`, `scripts/`, `commands/`,
+  `skills/`, `agents/` y `plantillas/`. Se actualiza al actualizar el plugin.
+- **Configuración del usuario**: `~/.claude/personal-os/` → `config.json` (carpeta de estado, zona
+  horaria, festivos, timesheet, carpetas de búsqueda), `state.flag` (`active` · `paused`) y
+  `exigencia.json`. Se puede mover con la variable de entorno `PERSONAL_OS_HOME`.
+- **Estado del usuario**: la carpeta `stateDir` que siembra `/os-setup` (notas-objeto, bitácora,
+  `config/fuentes.yaml`). Nunca dentro del plugin, nunca compartido.
 
-## Comandos
-| Comando | Qué hace |
-|---|---|
-| `/os-setup` | Configura la carpeta de estado la primera vez |
-| `/os-on` · `/os-off` | Activa / pausa (doble confirmación) el OS en todas las sesiones |
-| `/brief` | Brief operativo del día |
-| `/tablero` | Regenera el tablero visual HTML |
+## Hooks
+`SessionStart` → `session-init.js` + `alcances-scan.js` · `UserPromptSubmit` → `prompt-logger.js` +
+`alcances-scan.js --hitos` · `Stop` → `verificar-ausencia.js`. Todos con `node` portable, respetan
+`/os-off` y nunca rompen la sesión.
 
-## Skills incluidos
-`brief-diario` · `cerrar-tarea` · `reconciliar` · `tablero-diario`.
+## Probar los scripts sin tocar tu instalación
+```
+PERSONAL_OS_HOME=/tmp/os-prueba node scripts/os-setup.js --estado /tmp/os-prueba/estado --zona America/Bogota
+PERSONAL_OS_HOME=/tmp/os-prueba node scripts/alcances-scan.js --hoy 2026-12-04
+```
 
 ## Seguridad
 Leer Jira/Outlook/Teams es libre; **toda escritura o envío se confirma antes**. El estado es privado y local.
+
+## Agentes de solo lectura
+
+Los exploradores del brief (`brief-jira`, `brief-outlook`, `brief-teams`) y `redactor-correos` declaran en su frontmatter `tools:` solo herramientas de lectura de los conectores de claude.ai (`claude_ai_Atlassian_MCP`, `claude_ai_Atlassian_Rovo`, `claude_ai_Microsoft_365`). Si tu servidor MCP de Jira u Outlook tiene otro nombre, cambia el prefijo `mcp__<servidor>__` en esa línea; no agregues herramientas de escritura.

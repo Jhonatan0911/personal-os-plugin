@@ -1,38 +1,53 @@
 #!/usr/bin/env node
 /*
- * Personal OS — hook SessionStart (versión plugin, cross-platform).
- * El CONTENIDO (preamble/CORE) viaja con el plugin (CLAUDE_PLUGIN_ROOT).
- * El ESTADO del usuario (bandera + config) vive en ~/.claude/personal-os/, ruta estable
- * conocida también por los comandos /os-on /os-off /os-setup, así el toggle no depende de
- * variables de entorno dentro de los comandos.
- * Regla de oro: si algo falla, no romper el arranque de sesión (salir con 0, sin ruido).
+ * Personal OS — hook SessionStart (versión plugin, multiplataforma).
+ *
+ * Inyecta como contexto de la sesión:
+ *   · el preámbulo (persona + protocolo) que viaja con el plugin;
+ *   · la ruta del estado del usuario (fuente de verdad) y la raíz de los scripts del plugin;
+ *   · el nivel de exigencia vigente (el dial) con su tono.
+ * Si la bandera dice `paused`, no inyecta nada. Sin bandera (instalación nueva) = activo.
+ * Regla de oro: si algo falla, no romper el arranque de la sesión (salir con 0, sin ruido).
  */
+'use strict';
 const fs = require('fs');
 const path = require('path');
-const os = require('os');
-
-const root = process.env.CLAUDE_PLUGIN_ROOT || __dirname;
-const home = path.join(os.homedir(), '.claude', 'personal-os');
-
-function readFlag() {
-  try { return fs.readFileSync(path.join(home, 'state.flag'), 'utf8').trim().toLowerCase(); }
-  catch (e) { return 'active'; } // instalación nueva → activo por defecto
-}
 
 try {
-  if (readFlag() !== 'active') process.exit(0);
-  let out = fs.readFileSync(path.join(root, 'preamble.md'), 'utf8');
-  try {
-    const cfg = JSON.parse(fs.readFileSync(path.join(home, 'config.json'), 'utf8'));
-    if (cfg && cfg.stateDir) {
-      out += `\n\n**Ruta del estado (fuente de verdad):** \`${cfg.stateDir}\`\n`
-           + `Cuando el usuario abra trabajo operativo o pida "brief", lee ahí tablero.md / riesgos.md / compromisos.md antes de responder.`;
-    } else {
-      out += `\n\n⚠️ Aún no hay carpeta de estado configurada. Sugiere al usuario correr **/os-setup**.`;
-    }
-  } catch (e) {
-    out += `\n\n⚠️ Primera vez: sugiere al usuario correr **/os-setup** para configurar su carpeta de estado.`;
+  const C = require('./lib/comun.js');
+  if (!C.activo()) process.exit(0);
+
+  let out = fs.readFileSync(path.join(C.PLUGIN_ROOT, 'preamble.md'), 'utf8');
+  const raiz = C.PLUGIN_ROOT.replace(/\\/g, '/');
+  out += `\n\n**Scripts del plugin:** \`${raiz}/scripts\` — se invocan como \`node "${raiz}/scripts/<script>.js"\`. `
+       + `Núcleo completo: \`${raiz}/CORE.md\`.`;
+
+  const cfg = C.config();
+  const estado = C.stateDir();
+  if (estado && fs.existsSync(estado)) {
+    out += `\n\n**Ruta del estado (fuente de verdad):** \`${estado.replace(/\\/g, '/')}\`\n`
+         + 'Cuando el usuario abra trabajo operativo o pida "brief", lee ahí `tablero.md` y las notas de '
+         + '`riesgos/`, `compromisos/` y `alcances/` antes de responder.';
+    if (cfg.owner && cfg.owner !== 'Tu Nombre') out += `\nUsuario: **${cfg.owner}**.`;
+    if (cfg.zonaHoraria) out += ` Zona horaria: \`${cfg.zonaHoraria}\`.`;
+  } else if (estado) {
+    out += `\n\n⚠️ La carpeta de estado configurada (\`${estado}\`) no existe. Sugiere al usuario correr **/os-setup**.`;
+  } else {
+    out += '\n\n⚠️ Primera vez: aún no hay carpeta de estado. Sugiere al usuario correr **/os-setup**.';
   }
+
+  // Dial de exigencia: se inyecta SIEMPRE. Si el usuario lo bajó a `fácil`, insistir igual sería
+  // ignorar su decisión; si lo subió a `cuartel`, ser blando sería incumplir lo que pidió.
+  try {
+    const ex = require('./exigencia.js').leer();
+    out += `\n\n**Nivel de exigencia: \`${ex.etiqueta}\`** (se cambia con \`/exigencia\`).`
+         + (ex.aviso ? ` ⚠️ ${ex.aviso}; se usa el nivel por defecto.` : '') + `\n${ex.tono}\n`;
+    if (ex.nivel === 'cuartel') {
+      out += '\n> En `cuartel` el vigía manda: sus CRÍTICOS se atienden antes que la petición que '
+           + 'traiga el usuario, y posponerlos requiere que él lo diga explícitamente.\n';
+    }
+  } catch (e) { /* sin dial: comportamiento por defecto */ }
+
   process.stdout.write(out);
 } catch (e) { /* nunca romper el arranque */ }
 process.exit(0);
