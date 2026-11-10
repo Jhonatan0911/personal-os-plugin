@@ -1,6 +1,6 @@
 ---
 name: tablero-diario
-description: Regenera el tablero visual HTML del día (estado/tablero.html) desde el estado reconciliado del Personal OS. Úsala al cerrar el brief o cuando el usuario pida "/tablero" o "muéstrame el tablero".
+description: Regenera el tablero visual HTML del día (estado/tablero.html), con la pestaña de riesgos y la de orden, desde el estado reconciliado del Personal OS. Úsala al cerrar el brief o cuando el usuario pida "/tablero", "muéstrame el tablero" o "ábreme el tablero del día". No es para el tablero del equipo en la mesa de líderes (eso es status-celula) ni para la consola neuronal.
 ---
 
 # Skill: tablero-diario
@@ -40,9 +40,25 @@ Mantén estos nombres y campos; el render depende de ellos:
 - `timeline[]`: `{d (día), wd (día de la semana abreviado), t, p}` (actividad reciente).
 - `propuesta[]`: textos (disponibilidad o plan del día).
 - `semana[]`: `{b (cifra), s (etiqueta)}` (indicadores de la semana).
+- `orden[]`: `{k (cifra o etiqueta), t (qué está desordenado), fix (qué lo ordena, en una línea)}`. Alimenta
+  la **pestaña ORDEN** (ver abajo): todo lo que el brief del terminal ya no muestra.
 
 Los indicadores de la cabecera se calculan solos desde estos arrays (días a la #1, riesgos críticos,
 vencidos, compromisos).
+
+## Pestaña ORDEN
+El brief del terminal se mantiene corto para que se lea. Lo que no cabe ahí **no se elimina: vive aquí**,
+en una pestaña propia del `.html`, junto a la de riesgos.
+- **Se llama `ORDEN`** y su subtítulo es *«alertas de orden del tablero, no de incumplimiento»*.
+- **Qué va dentro:** brechas de inventario (issues que existen en Jira y no en el estado, o al revés),
+  issues sin fecha y sin estimación, proyectos que no están en `fuentes.yaml`, colas de aprobación ajenas
+  con la antigüedad de la más vieja, y las correcciones al brief del día anterior.
+- **Cómo se redacta:** cada fila dice **qué está desordenado** y **qué lo ordena**, en una línea y en tono
+  neutro. Nunca como reproche ni como deuda personal del usuario: casi siempre es ruido contable de Jira o
+  trabajo de otros.
+- **Navegación:** dos botones arriba (`RIESGOS` / `ORDEN`) que alternan la sección visible con un `hidden`
+  conmutado por JS, sin librerías. **RIESGOS** abre por defecto.
+- Si el `tablero.html` del usuario todavía no tiene la pestaña, agrégala sin tocar el resto del diseño.
 
 ## Pasos para regenerar
 1. Asegura el estado reconciliado: si no hubo `brief-diario` hoy, córrelo primero.
@@ -60,4 +76,5 @@ vencidos, compromisos).
 - No inventes datos: si una fuente no respondió, no la pintes.
 - Un riesgo delegado (nivel 0) se muestra en gris, sin acción del usuario.
 - Un alcance que no se cruzó hoy no se pinta «en verde»: se pinta como «sin vigilancia hoy».
+- Lo que salió del brief y tampoco está en la pestaña ORDEN se perdió: eso es un defecto, no una simplificación.
 - Regla de origen: «regenerar el tablero al cerrar el brief» vive en el núcleo (`CORE.md`); aquí solo el CÓMO.
