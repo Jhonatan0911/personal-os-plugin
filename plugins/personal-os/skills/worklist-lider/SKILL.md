@@ -7,7 +7,9 @@ argument-hint: "[publicar | cargar | jira]"
 # worklist-lider — la cabina del líder
 
 Una página privada (Artifact) con todos los casos en curso: lista a la izquierda, el expediente del caso a la
-derecha y un chat que responde con el expediente y, en solo lectura, con Jira y el correo. **La copia local del
+derecha (un **Resumen** primero —paso actual, compromiso, dudas, cola y avance en Jira— y el resto en pestañas:
+Ficha e impacto, Dudas, Plan, Técnica, Historias, Calidad) y un **botón flotante** por caso que abre el chat de un
+analista que responde con el expediente y, en solo lectura, con Jira y el correo. **La copia local del
 expediente manda**; la página es una vista con las marcas del líder encima.
 
 ## Dónde está cada cosa

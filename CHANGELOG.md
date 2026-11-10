@@ -1,5 +1,18 @@
 # Changelog
 
+## 3.1.1
+
+La Worklist del líder se lee más fácil:
+
+- El expediente abre en un **Resumen**: tarjetas con el paso actual, el compromiso con el cliente, las dudas
+  abiertas, lo que está por revisar y el avance en Jira, y debajo los pasos, «Lo que está frenando» y las notas.
+- El resto va en **pestañas** con su conteo (Ficha e impacto, Dudas, Plan, Técnica, Historias, Calidad). El
+  detalle corto de los niveles que lo usan no cambia.
+- El **chat del analista** pasa a un botón flotante por caso, con su propio hilo y borrador; en el celular
+  ocupa la pantalla.
+- Lista lateral más limpia (punto de criticidad y una línea de estado; etiquetas solo cuando importan) y
+  filtros plegados. Tablas con encabezado claro y más aire.
+
 ## 3.1.0
 
 Cada célula adapta el flujo del líder sin copiar el de otra: niveles de caso, normas por país y
