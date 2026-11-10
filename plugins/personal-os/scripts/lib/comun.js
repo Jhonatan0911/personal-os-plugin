@@ -3,7 +3,8 @@
  * Personal OS — utilidades comunes de los scripts del plugin.
  *
  * Dónde vive cada cosa:
- *   · El CÓDIGO viaja con el plugin (esta carpeta). Se actualiza al actualizar el plugin.
+ *   · El CÓDIGO viaja con el plugin (esta carpeta). Se actualiza al actualizar el plugin. También
+ *     funciona copiado suelto a ~/.claude/personal-os/ (con su lib/), invocado desde settings.json.
  *   · La CONFIGURACIÓN y la bandera del usuario viven en ~/.claude/personal-os/
  *     (config.json, state.flag, exigencia.json). Se puede mover con la variable
  *     de entorno PERSONAL_OS_HOME (útil para pruebas o para varias identidades).
@@ -21,9 +22,23 @@ const OS_HOME = process.env.PERSONAL_OS_HOME
   ? path.resolve(process.env.PERSONAL_OS_HOME)
   : path.join(os.homedir(), '.claude', 'personal-os');
 
-const PLUGIN_ROOT = process.env.CLAUDE_PLUGIN_ROOT
-  ? path.resolve(process.env.CLAUDE_PLUGIN_ROOT)
-  : path.resolve(__dirname, '..', '..');
+/*
+ * Carpeta de los scripts (la que contiene lib/). Dos formas de instalación:
+ *   · como plugin:  <plugin>/scripts/lib/comun.js  → SCRIPTS_DIR = <plugin>/scripts
+ *   · suelta:       ~/.claude/personal-os/lib/comun.js (los scripts copiados junto al config.json,
+ *                   invocados desde settings.json) → SCRIPTS_DIR = ~/.claude/personal-os
+ * PLUGIN_ROOT es donde viven preamble.md, CORE.md, skills/ y plantillas/: la raíz del plugin
+ * si los scripts están dentro de uno; si no, la misma carpeta de los scripts.
+ */
+const SCRIPTS_DIR = path.resolve(__dirname, '..');
+
+function raizPlugin() {
+  if (process.env.CLAUDE_PLUGIN_ROOT) return path.resolve(process.env.CLAUDE_PLUGIN_ROOT);
+  const padre = path.resolve(SCRIPTS_DIR, '..');
+  try { if (fs.existsSync(path.join(padre, '.claude-plugin'))) return padre; } catch (e) { /* sigue */ }
+  return SCRIPTS_DIR;
+}
+const PLUGIN_ROOT = raizPlugin();
 
 /** Lee un archivo de texto quitando el BOM (PowerShell y Notepad lo escriben). */
 function leerTexto(ruta, porDefecto = null) {
@@ -144,12 +159,27 @@ function diasHabiles(desdeISO, hastaISO) {
 /** Minúsculas y sin tildes: para comparar texto que pasa por consolas que manglan acentos. */
 const sinTildes = (s) => String(s).normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().trim();
 
-/** Comando portable para citar un script del plugin en mensajes al modelo. */
+/** Comando portable para citar un script en mensajes al modelo (sirve en las dos instalaciones). */
 function comandoScript(nombre) {
-  return `node "${path.join(PLUGIN_ROOT, 'scripts', nombre).replace(/\\/g, '/')}"`;
+  return `node "${path.join(SCRIPTS_DIR, nombre).replace(/\\/g, '/')}"`;
+}
+
+/** Payload JSON de un hook por stdin ({} si no llega o no es JSON). Quita el BOM. */
+function leerStdin() {
+  let raw = '';
+  try { raw = fs.readFileSync(0, 'utf8'); } catch (e) { return {}; }
+  if (raw.charCodeAt(0) === 0xFEFF) raw = raw.slice(1);
+  try { return JSON.parse(raw || '{}') || {}; } catch (e) { return {}; }
+}
+
+/** Nombre corto del dueño para los mensajes ("el usuario" si no está configurado). */
+function nombreCorto() {
+  const o = String(config().owner || '').trim();
+  return o && o !== 'Tu Nombre' ? o.split(/\s+/)[0] : 'el usuario';
 }
 
 module.exports = {
-  OS_HOME, PLUGIN_ROOT, leerTexto, leerJson, arg, config, flag, activo, stateDir, zona,
+  OS_HOME, PLUGIN_ROOT, SCRIPTS_DIR, leerTexto, leerJson, arg, config, flag, activo, stateDir, zona,
   ahora, hoyISO, diasEntre, diasHabiles, esHabil, festivos, sinTildes, comandoScript, pad,
+  leerStdin, nombreCorto,
 };

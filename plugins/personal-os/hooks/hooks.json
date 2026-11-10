@@ -29,6 +29,11 @@
             "type": "command",
             "command": "node \"${CLAUDE_PLUGIN_ROOT}/scripts/alcances-scan.js\" --hitos",
             "timeout": 5
+          },
+          {
+            "type": "command",
+            "command": "node \"${CLAUDE_PLUGIN_ROOT}/scripts/reunion-detector.js\"",
+            "timeout": 3
           }
         ]
       }

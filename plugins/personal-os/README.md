@@ -15,8 +15,9 @@ prioridades, horas trazables) sobre Jira/Outlook/Teams. Documentación completa 
 
 ## Hooks
 `SessionStart` → `session-init.js` + `alcances-scan.js` · `UserPromptSubmit` → `prompt-logger.js` +
-`alcances-scan.js --hitos` · `Stop` → `verificar-ausencia.js`. Todos con `node` portable, respetan
-`/os-off` y nunca rompen la sesión.
+`alcances-scan.js --hitos` + `reunion-detector.js` (solo si `timesheet.reunionesExigenIssueDesde` tiene
+fecha) · `Stop` → `verificar-ausencia.js`. Todos con `node` portable, respetan `/os-off` y nunca rompen
+la sesión. Los scripts también funcionan copiados sueltos a `~/.claude/personal-os/` (con su `lib/`).
 
 ## Probar los scripts sin tocar tu instalación
 ```

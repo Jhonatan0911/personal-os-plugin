@@ -13,10 +13,17 @@
  * NO se escribe (exit 1) para que el error salte en el momento y no dos semanas después.
  *
  *   rango      HH:MM-HH:MM (no cruza medianoche)
- *   clave      PROY-123 (formato en timesheet.formatoClave) o SIN-ISSUE (alias aceptado: SIN-JIRA)
+ *   clave      PROY-123 (formato en timesheet.formatoClave) o la marca sin issue: se aceptan
+ *              SIN-ISSUE / SIN-JIRA / "SIN ISSUE" y se escribe timesheet.claveSinIssue (SIN-ISSUE
+ *              por defecto; quien ya tiene bitácoras con SIN-JIRA pone "SIN-JIRA")
  *   categoría  una de timesheet.categorias (las de timesheet.aliasCategorias se reescriben y se avisa)
  *   cliente    uno de timesheet.clientes
  *   est        est=4h (leída de la issue) o SIN-EST
+ *
+ * Otras claves opcionales de config.json → timesheet:
+ *   codigosInternos         prefijos de códigos internos que no pueden ir en la tarea (D-01, C-12…)
+ *   reunionIssueRecurrente  cómo encontrar la issue de reuniones del periodo (texto; {hoy} = fecha)
+ *   reunionIssueNueva       dónde se crea una issue de reunión nueva (texto)
  *
  * No pone hora propia: queda asociado a la última entrada "## HH:MM" del prompt en curso.
  */
@@ -35,11 +42,16 @@ const POR_DEFECTO = {
   categoriasSinIssuePermitidas: ['Otros', 'Reuniones'],
   reunionesExigenIssueDesde: null,
   formatoClave: '^[A-Z][A-Z0-9]{1,9}-\\d+$',
-  prohibidoEnTarea: ['claude', 'prompt', 'skill', 'subagente', 'asistido por ia'],
+  prohibidoEnTarea: ['claude', 'prompt', 'skill', 'subagente', 'agente ia', 'asistido por ia'],
+  codigosInternos: ['D', 'C', 'R', 'P', 'A'],
+  claveSinIssue: 'SIN-ISSUE',
+  reunionIssueRecurrente: null,
+  reunionIssueNueva: null,
 };
 const TS = Object.assign({}, POR_DEFECTO, C.config().timesheet || {});
-const SIN_ISSUE = 'SIN-ISSUE';
 const ALIAS_SIN_ISSUE = ['SIN-JIRA', 'SIN-ISSUE', 'SIN ISSUE'];
+const SIN_ISSUE = ALIAS_SIN_ISSUE.includes(String(TS.claveSinIssue || '').toUpperCase())
+  ? String(TS.claveSinIssue).toUpperCase() : 'SIN-ISSUE';
 
 function fail(msg) {
   process.stdout.write('error: ' + msg + '\n');
@@ -94,9 +106,13 @@ function parseTs(raw) {
   const esReunion = (TS.categoriasReunion || []).includes(categoria);
   const desde = TS.reunionesExigenIssueDesde;
   if (clave === SIN_ISSUE && esReunion && desde && C.hoyISO() >= desde) {
+    const recurrente = TS.reunionIssueRecurrente
+      ? String(TS.reunionIssueRecurrente).split('{hoy}').join('<día>')
+      : 'la issue de reuniones recurrentes del periodo';
+    const nueva = TS.reunionIssueNueva ? String(TS.reunionIssueNueva) : 'una issue de reunión nueva';
     fail(`reunión [${categoria}] sin issue. Desde el ${desde} toda reunión cuelga de una issue: la del `
-      + 'proyecto que se trató, la issue de reuniones recurrentes del periodo, o una nueva creada con el OK '
-      + 'del usuario y estimación igual a la duración agendada');
+      + `proyecto que se trató, ${recurrente}, o ${nueva} creada con el OK de ${C.nombreCorto()} y `
+      + 'estimación igual a la duración agendada');
   }
   if (clave === SIN_ISSUE
       && (cliente !== TS.clienteInterno || !(TS.categoriasSinIssuePermitidas || []).includes(categoria))) {
@@ -111,8 +127,13 @@ function parseTs(raw) {
   if (prohibidas.length && new RegExp(`\\b(${prohibidas.map(escaparRegex).join('|')})\\b`, 'i').test(tarea)) {
     fail('la tarea no menciona herramientas internas ni de IA: tradúcela a su equivalente de negocio');
   }
-  if (/\b([DCRPA]-\d{2,}|punto \d+ del MVP|fase \d+)\b/i.test(tarea)) {
-    fail('la tarea no lleva códigos internos (D-01, C-12, "punto N del MVP", "fase N"): escribe QUÉ era');
+  const prefijos = (Array.isArray(TS.codigosInternos) ? TS.codigosInternos : POR_DEFECTO.codigosInternos)
+    .map(String).filter(Boolean).map(escaparRegex);
+  const reCodigos = new RegExp(`\\b(${prefijos.length ? `(?:${prefijos.join('|')})-\\d+|` : ''}`
+    + 'punto \\d+ del MVP|fase \\d+)\\b', 'i');
+  if (reCodigos.test(tarea)) {
+    fail(`la tarea no lleva códigos internos (${prefijos.map((p) => `${p}-n`).join(', ')}, "punto N del MVP", `
+      + '"fase N"): escribe QUÉ era');
   }
   if (!evidencia) fail('falta la evidencia (commit, script, endpoint, acta, id, etc.)');
 

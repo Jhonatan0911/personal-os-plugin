@@ -10,7 +10,8 @@
     ],
     "binarios": [
       { "etiqueta": "carpeta sincronizada de documentos (solo nombre de archivo)", "ruta": "/ruta/a/tu/carpeta/sincronizada" }
-    ]
+    ],
+    "saltar": []
   },
   "timesheet": {
     "jornada": { "lun": 8, "mar": 8, "mie": 8, "jue": 8, "vie": 8, "sab": 0, "dom": 0 },
@@ -25,8 +26,12 @@
     "clienteInterno": "Interno",
     "categoriasSinIssuePermitidas": ["Otros", "Reuniones"],
     "reunionesExigenIssueDesde": null,
+    "reunionIssueRecurrente": null,
+    "reunionIssueNueva": null,
+    "claveSinIssue": "SIN-ISSUE",
     "formatoClave": "^[A-Z][A-Z0-9]{1,9}-\\d+$",
-    "prohibidoEnTarea": ["claude", "prompt", "skill", "subagente", "asistido por ia"],
+    "prohibidoEnTarea": ["claude", "prompt", "skill", "subagente", "agente ia", "asistido por ia"],
+    "codigosInternos": ["D", "C", "R", "P", "A"],
     "metaCoberturaIssue": 0.9
   }
 }

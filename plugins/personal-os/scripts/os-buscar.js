@@ -10,7 +10,7 @@
  * Fuentes que barre:
  *   · el estado del usuario (stateDir), recursivo;
  *   · el núcleo y las skills del plugin;
- *   · ~/.claude/personal-os (config, notas sueltas);
+ *   · ~/.claude/personal-os (config, notas sueltas) y sus skills/;
  *   · las instrucciones globales (~/.claude/*.md) y la memoria persistente (~/.claude/projects/<x>/memory);
  *   · las carpetas extra declaradas en config.json → busqueda.fuentes (texto) y busqueda.binarios
  *     (PDF/Office: solo se compara el NOMBRE del archivo).
@@ -34,16 +34,20 @@ const TXT = ['.md', '.yaml', '.yml', '.json', '.txt'];
 const TEXTO = [];
 const estado = C.stateDir();
 if (estado) TEXTO.push(['estado (fuente de verdad)', estado, true, TXT]);
-TEXTO.push(['núcleo del plugin (CORE, preámbulo)', C.PLUGIN_ROOT, false, ['.md']]);
-TEXTO.push(['skills del plugin', path.join(C.PLUGIN_ROOT, 'skills'), true, ['.md']]);
-TEXTO.push(['configuración del OS', C.OS_HOME, false, ['.md', '.json']]);
+// Instalado como plugin, el núcleo vive en el plugin; instalado suelto, vive en ~/.claude/personal-os.
+if (path.resolve(C.PLUGIN_ROOT) !== path.resolve(C.OS_HOME)) {
+  TEXTO.push(['núcleo del plugin (CORE, preámbulo)', C.PLUGIN_ROOT, false, ['.md']]);
+  TEXTO.push(['skills del plugin', path.join(C.PLUGIN_ROOT, 'skills'), true, ['.md']]);
+}
+TEXTO.push(['núcleo y configuración del OS', C.OS_HOME, false, ['.md', '.json']]);
+TEXTO.push(['skills del OS', path.join(C.OS_HOME, 'skills'), true, ['.md']]);
 TEXTO.push(['instrucciones globales', CLAUDE, false, ['.md']]);
 try {
   for (const p of fs.readdirSync(path.join(CLAUDE, 'projects'))) {
     const mem = path.join(CLAUDE, 'projects', p, 'memory');
     let n = 0;
     try { n = fs.readdirSync(mem).filter((f) => f.endsWith('.md')).length; } catch (e) { /* no existe */ }
-    if (n) TEXTO.push([`memoria persistente (${p.length > 48 ? '…' + p.slice(-47) : p})`, mem, false, ['.md']]);
+    if (n) TEXTO.push([`memoria persistente (${p.length > 48 ? '…' + p.slice(-47) : p})`, mem, false, ['.md'], 'memoria']);
   }
 } catch (e) { /* sin memoria persistente */ }
 
@@ -57,7 +61,9 @@ for (const b of Array.isArray(busq.binarios) ? busq.binarios : []) {
   if (b && b.ruta) BINARIOS.push([b.etiqueta || b.ruta, b.ruta]);
 }
 const EXT_BIN = ['.pdf', '.docx', '.doc', '.pptx', '.xlsx', '.xls'];
-const SALTAR = new Set(['node_modules', '.git', '_archivo', '.obsidian', '_datos']);
+// Carpetas que nunca se recorren; config.json → busqueda.saltar suma otras (p. ej. cachés pesadas).
+const SALTAR = new Set(['node_modules', '.git', '_archivo', '.obsidian']
+  .concat(Array.isArray(busq.saltar) ? busq.saltar.map(String) : []));
 
 const args = process.argv.slice(2);
 const usarRegex = args.includes('--regex');
@@ -94,8 +100,11 @@ const MAX_POR_ARCHIVO = todo ? Infinity : 3;
 const barridas = [];
 const vistos = new Set();
 let total = 0;
+// Las carpetas de memoria sin coincidencias se resumen en una sola línea (con muchos proyectos,
+// listarlas una por una llena la salida de ceros).
+const memVacia = { carpetas: 0, archivos: 0 };
 
-for (const [etiqueta, dir, rec, exts] of TEXTO) {
+for (const [etiqueta, dir, rec, exts, grupo] of TEXTO) {
   if (!fs.existsSync(dir)) { barridas.push(`  ✗ ${etiqueta} — no existe la ruta`); continue; }
   const archivos = listar(dir, rec, (n) => exts.includes(path.extname(n).toLowerCase()))
     .filter((f) => !vistos.has(f));
@@ -115,8 +124,12 @@ for (const [etiqueta, dir, rec, exts] of TEXTO) {
     }
   }
   total += hits;
-  barridas.push(`  ✓ ${etiqueta} — ${archivos.length} archivos, ${hits} coincidencias`);
+  if (grupo === 'memoria' && !hits) { memVacia.carpetas++; memVacia.archivos += archivos.length; }
+  else barridas.push(`  ✓ ${etiqueta} — ${archivos.length} archivos, ${hits} coincidencias`);
   if (salida.length) { console.log(`\n## ${etiqueta}`); console.log(salida.join('\n')); }
+}
+if (memVacia.carpetas) {
+  barridas.push(`  ✓ memoria persistente de otros ${memVacia.carpetas} proyecto(s) — ${memVacia.archivos} archivos, 0 coincidencias`);
 }
 
 for (const [etiqueta, dir] of BINARIOS) {
@@ -140,6 +153,6 @@ if (!busq.fuentes || !busq.fuentes.length) {
 if (total === 0) {
   console.log('\n0 coincidencias. Se dice "no lo encontré en <fuentes barridas>", NUNCA "no existe" ni');
   console.log('"no está escrito". Antes de afirmarlo: probar sinónimos, y si el tema puede vivir en un');
-  console.log('PDF, un correo o Jira, buscar ahí o preguntarle al usuario.');
+  console.log(`PDF, un correo o Jira, buscar ahí o preguntarle a ${C.nombreCorto()}.`);
 }
 process.exit(0);

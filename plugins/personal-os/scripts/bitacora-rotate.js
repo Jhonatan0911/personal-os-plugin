@@ -1,7 +1,8 @@
 #!/usr/bin/env node
 /*
  * Personal OS — rotación de la bitácora.
- * Política: los diarios más viejos que config.json → bitacora.retencionDias (30 por defecto) se borran.
+ * Política: los diarios con config.json → bitacora.retencionDias días de antigüedad o más (30 por defecto)
+ * se borran; se conservan hoy y los (retencionDias - 1) días anteriores.
  * Los resúmenes (resumen-*.md) y cualquier otro archivo se respetan.
  * Uso:  node bitacora-rotate.js         → borra los vencidos
  *       node bitacora-rotate.js --dry   → solo lista lo que borraría
@@ -26,7 +27,7 @@ try {
     const m = f.match(/^(\d{4}-\d{2}-\d{2})\.md$/); // solo diarios
     if (!m) continue;
     const edad = C.diasEntre(m[1], hoy);
-    if (edad !== null && edad > reten) {
+    if (edad !== null && edad >= reten) {
       if (dry) console.log('[dry] borraría', f, `(${edad} d)`);
       else { fs.unlinkSync(path.join(dir, f)); console.log('borrado', f, `(${edad} d)`); borrados++; }
     }
