@@ -93,3 +93,13 @@ planeacion:
     mostrar_dato_ya_calculado: "<= 1 h"      # skills/planear-sprint/matriz-tiempos-ejemplo.yaml del plugin
     refactor_o_traslado: "-30 % frente a la cifra a mano"
   niveles: ["junior", "semi", "senior"]
+  # Opcionales de planear-sprint (detalle en skills/planear-sprint/references/configuracion.md):
+  # matriz_archivo: "<stateDir>/config/estimaciones/matriz-tiempos.yaml"   # matriz completa (manda sobre matriz_tiempos)
+  # perfil: "<stateDir>/config/perfil-planear-sprint.json"   # defaults del plan: jira, lider, quien_define, personas…
+  # marca: "<stateDir>/config/marca/marca-cronograma.json"   # colores y logo del cronograma; sin ella sale neutro
+  # carpeta_trabajo: "<stateDir>/estimaciones"              # plan.json, expediente.json y HTML por sprint
+  # tablero_central: { url: "<url del artefacto>", coleccion: "cronogramas" }
+  # mineria_dir: "<stateDir>/estimaciones/mineria"          # salidas de la calibración (privado)
+  # minero_dir: "<carpeta con tus encargos o scripts del minero>"
+  # catalogo_matriz_url: "<url de la página de la matriz>"
+  # investigacion: "<documento con la base de las reglas de estimación>"

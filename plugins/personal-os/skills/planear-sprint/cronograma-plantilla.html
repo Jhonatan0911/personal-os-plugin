@@ -9,6 +9,7 @@
   --vino:#7B1E2E; --vino-bg:#F5E4E7; --prop:#E8EEF8; --today:#FFF6D6;
   --f-body:"Segoe UI",system-ui,-apple-system,Arial,sans-serif; --f-mono:Consolas,"Cascadia Mono",ui-monospace,monospace;
   --colw:46px; --lab:250px;
+  --band-sub:#D6DAE0; --ph-pru:#6B7686; --shade-rgb:15,18,24;
 }
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
   --bg:#15171B; --panel:#1C1F24; --card:#22262C; --ink:#E7E9EC; --muted:#A6ABB3; --soft:#71777F; --line:#30353D;
@@ -20,6 +21,8 @@
   --brand:#2A2F37; --deep:#D6DAE0; --action:#6F8DB5; --mid:#7891B0;
   --ok:#6CC097; --ok-bg:#16322A; --warn:#E3A847; --warn-bg:#3A2E17; --crit:#E07A74; --crit-bg:#3A1F25;
   --vino:#E58A9A; --vino-bg:#3A1A22; --prop:#262C35; --today:#2B2A1F; color-scheme:dark}
+/* Marca opcional (generar_cronograma.py --marca): sobrescribe las variables de arriba; sin marca queda neutra */
+/*__MARCA_CSS__*/
 *{box-sizing:border-box}
 [hidden]{display:none!important}
 html,body{min-height:100%}
@@ -31,7 +34,7 @@ button{cursor:pointer}
 .band .in{padding:14px max(16px,env(safe-area-inset-right,0px)) 14px max(16px,env(safe-area-inset-left,0px));display:flex;flex-wrap:wrap;gap:10px 24px;align-items:center;justify-content:space-between}
 .band img{height:26px;width:auto;display:block}
 .band h1{margin:4px 0 0;font-size:21px;text-wrap:balance}
-.band .sub{color:#D6DAE0;font-size:13px}
+.band .sub{color:var(--band-sub);font-size:13px}
 .acts{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
 .btn{border:1px solid var(--line);background:var(--card);border-radius:6px;padding:6px 11px}
 .btn.pri{background:var(--action);border-color:var(--action);color:#fff}
@@ -54,7 +57,7 @@ button{cursor:pointer}
 .gscroll{overflow:auto;flex:1}
 .grid{display:grid;grid-template-columns:var(--lab) repeat(var(--nd),var(--colw));min-width:max-content}
 .ph{position:sticky;top:0;z-index:4;font-size:11px;text-align:center;padding:3px 2px;color:#fff;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.ph.dev{background:var(--action)} .ph.qa{background:var(--mid)} .ph.pru{background:#6B7686} .ph.hol{background:var(--muted)} .ph.ali{background:var(--ok)}
+.ph.dev{background:var(--action)} .ph.qa{background:var(--mid)} .ph.pru{background:var(--ph-pru)} .ph.hol{background:var(--muted)} .ph.ali{background:var(--ok)}
 .ph.corner{left:0;z-index:5;background:var(--deep);color:var(--bg);text-align:left;padding-left:10px}
 .dh{position:sticky;top:20px;z-index:3;background:var(--deep);color:var(--bg);font-size:11px;text-align:center;padding:3px 0;border-left:1px solid rgba(255,255,255,.12)}
 .dh b{display:block;font-size:12.5px}.dh.today{background:var(--action)}.dh.fest{background:var(--soft)}
@@ -115,7 +118,7 @@ textarea{width:100%;min-height:68px;resize:vertical}
 .empty{color:var(--muted);font-size:13px}
 .jlist{font-size:12.5px;display:flex;flex-direction:column;gap:3px}
 a{color:var(--action)}
-.overlay{position:fixed;inset:0;background:rgba(15,18,24,.45);z-index:60;display:flex;align-items:center;justify-content:center;padding:16px}
+.overlay{position:fixed;inset:0;background:rgba(var(--shade-rgb),.45);z-index:60;display:flex;align-items:center;justify-content:center;padding:16px}
 .modal{background:var(--card);border-radius:10px;max-width:640px;width:100%;max-height:88vh;overflow:auto;padding:16px;display:flex;flex-direction:column;gap:10px;box-shadow:0 10px 30px rgba(0,0,0,.3)}
 .modal h2{margin:0;font-size:17px;color:var(--deep)}
 .op{display:flex;gap:8px;align-items:flex-start;font-size:13px;border-top:1px solid var(--line);padding-top:6px}
@@ -135,7 +138,7 @@ details.desc .row{margin-top:4px}
 </style>
 
 <div class="band"><div class="in">
-  <div><h1>__TITULO_HTML__</h1>
+  <div>__LOGO_HTML__<h1>__TITULO_HTML__</h1>
     <div class="sub">__SUBTITULO_HTML__</div></div>
   <div class="acts"><span class="pill" id="jstat">Jira: sin consultar</span><span class="pill" id="sstat">Guardado: conectando…</span><button class="btn" id="bBackup" title="Descargar o copiar todo lo planeado como respaldo">Respaldo</button><button class="btn pri" id="bExport">Cambios para Jira</button></div>
 </div></div>

@@ -23,7 +23,7 @@ aside{min-height:0;overflow:hidden}.side{height:100%;overflow:auto}
 .who{color:var(--muted);font-size:12px}
 .pd-res{text-decoration:line-through;color:var(--muted)}
 .card.pend{border-top:3px solid var(--vino)} .card.ries{border-top:3px solid var(--crit)} .card.deci{border-top:3px solid var(--ok)}
-.fab{position:fixed;right:calc(18px + env(safe-area-inset-right,0px));bottom:calc(18px + env(safe-area-inset-bottom,0px));z-index:70;border:0;border-radius:99px;padding:12px 18px;background:var(--action);color:#fff;font-weight:600;box-shadow:0 6px 18px rgba(15,18,24,.35);display:flex;gap:8px;align-items:center}
+.fab{position:fixed;right:calc(18px + env(safe-area-inset-right,0px));bottom:calc(18px + env(safe-area-inset-bottom,0px));z-index:70;border:0;border-radius:99px;padding:12px 18px;background:var(--action);color:#fff;font-weight:600;box-shadow:0 6px 18px rgba(var(--shade-rgb,15,18,24),.35);display:flex;gap:8px;align-items:center}
 .fab .dot{width:9px;height:9px;border-radius:50%;background:#7CE0A8}
 .chatp{position:fixed;right:calc(18px + env(safe-area-inset-right,0px));bottom:calc(76px + env(safe-area-inset-bottom,0px));z-index:71;width:min(420px,calc(100vw - 36px));height:min(620px,calc(100vh - 120px));background:var(--card);border:1px solid var(--line);border-radius:12px;box-shadow:0 14px 40px rgba(0,0,0,.28);display:flex;flex-direction:column;overflow:hidden}
 .chatp header{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:10px 12px;background:var(--brand);color:#fff}
@@ -94,7 +94,7 @@ function renderExp(){
    <div class="card"><h3><span>Hallazgos del código</span><span>${(EXP.hallazgos_codigo||[]).length}</span></h3>${li(EXP.hallazgos_codigo,h=>`<li>${esc(h.texto)}${srcs(h)}</li>`)}</div>
    <div class="card"><h3><span>Historias</span><span>${(EXP.historias||[]).length}</span></h3>${li(EXP.historias,h=>`<li><span class="src">${esc(h.key)}</span> <b>${esc(h.titulo)}</b> — ${esc(h.resumen||"")}</li>`)}</div>
    <div class="card"><h3><span>Cronograma</span></h3><p style="margin:0;font-size:13px">${esc(EXP.cronograma||"")}</p></div>
-   <div class="card"><h3><span>Fuentes</span><span>${(EXP.fuentes||[]).length}</span></h3>${li(EXP.fuentes,f=>`<li><span class="src">${esc(f.id)}</span> ${esc(f.titulo||"")} <span class="who">${esc(f.tipo||"")} ${esc(f.fecha||"")} · ${esc(f.ref||"")}</span></li>`)}</div>
+   <div class="card"><h3><span>Fuentes</span><span>${(EXP.fuentes||[]).length}</span></h3>${li(EXP.fuentes,f=>`<li><span class="src">${esc(f.id)}</span> ${esc(f.titulo||"")} <span class="who">${esc(f.tipo||"")} ${esc(f.fecha||"")} · ${esc(f.ref||f.referencia||"")}</span></li>`)}</div>
    ${(EXP.historial||[]).length?`<div class="card"><h3><span>Historial de actualizaciones</span><span>${EXP.historial.length}</span></h3>${li(EXP.historial,h=>`<li>${esc(h.fecha)} · ${esc(h.resumen)}</li>`)}</div>`:""}</div>`;
 }
 // ---- Pestañas y chat flotante ----
