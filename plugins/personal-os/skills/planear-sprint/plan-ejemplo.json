@@ -29,6 +29,7 @@
   "capacidad": [7.5, 7],
   "epica": "PROY-140",
   "correos_busqueda": ["Reportes Cliente A"],
+  "expediente": "expediente-ejemplo.json",
   "historias": [
     {
       "key": "PROY-142",
@@ -52,7 +53,14 @@
       "esc": [["Rango de fechas", "nueva"]],
       "items": [
         {"titulo": "Filtro de rango en la pantalla y el endpoint", "horas": 3, "ini": "2026-03-03", "fin": "2026-03-04",
-         "estado": "propuesta", "tipo": "componente_nuevo_con_logica"},
+         "estado": "propuesta", "tipo": "componente_nuevo_con_logica",
+         "contexto": "La historia PROY-143 pide filtrar el reporte mensual por un rango libre de fechas (CA-1 y CA-2).",
+         "que_hacer": ["Agregar desde y hasta al filtro de la pantalla, con validación de que desde ≤ hasta.",
+                       "Recibir el rango en el endpoint del reporte y usarlo en la consulta con parámetros."],
+         "donde": "repo `app-web`, `reportes/mensual.component.ts` · repo `api-reportes`, `ReporteMensualController` (patrón: el filtro por sede).",
+         "no_tocar": "El filtro por sede y el formato del archivo exportado.",
+         "criterios": ["CA-1", "CA-2"], "entregables": ["tests", "docs"],
+         "corte": "2026-03-04: PR parcial con los tests de CA-1 y CA-2 en verde."},
         {"titulo": "Totales por semana dentro del rango", "horas": 2, "estado": "espera",
          "obs": "Solo aparece en el mockup, no en la historia. Lo define el cliente; preguntado por Luis el 2026-02-27."}
       ]

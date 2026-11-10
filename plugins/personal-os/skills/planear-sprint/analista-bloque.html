@@ -84,7 +84,10 @@ function renderExp(){
   $("anMeta").textContent=`Expediente v${EXP.version||1} · actualizado ${EXP.actualizado||"—"} · ${(EXP.fuentes||[]).length} fuentes`;
   const pend=(EXP.pendientes||[]), ab=pend.filter(p=>p.estado!=="resuelto"), rs=pend.filter(p=>p.estado==="resuelto");
   const pli=p=>`<li class="${p.estado==="resuelto"?"pd-res":""}">${esc(p.texto)} <span class="who">· ${esc(p.a_quien||"")}${p.desde?" desde "+esc(p.desde):""}</span>${p.resolucion?` → <b>${esc(p.resolucion)}</b>`:""}${srcs(p)}</li>`;
-  $("anExp").innerHTML=`<div class="an-res">${esc(EXP.resumen||"")}</div><div class="an-g">
+  const p0=((EXP.chequeos||{}).p0)||null, P0N={aceptado:"Aceptado",parcial:"Aceptado parcial",por_entender:"Por entender",pendiente:"Pendiente"};
+  const rli=r=>`<li><b>${esc(r.punto||"")}</b>${r.refuta?` · refuta: ${esc(r.refuta)}`:""}${r.alternativa?` → <b>${esc(r.alternativa)}</b>`:""} <span class="who">· ${esc(r.regla||"")} · ${esc(r.estado||"")}${r.costo?" · "+esc(r.costo):""}</span></li>`;
+  $("anExp").innerHTML=`<div class="an-res">${esc(EXP.resumen||((EXP.cabecera||{}).descripcion_corta)||"")}</div><div class="an-g">
+   ${p0||(EXP.refutacion||[]).length?`<div class="card ries"><h3><span>Paso 0 · ${esc(P0N[p0&&p0.estado]||"sin chequeo")}</span><span>${(EXP.refutacion||[]).length}</span></h3>${p0&&p0.nota?`<p style="margin:0 0 6px;font-size:13px">${esc(p0.nota)}</p>`:""}${li(EXP.refutacion,rli)}</div>`:""}
    <div class="card pend"><h3><span>Pendientes abiertos</span><span>${ab.length}</span></h3>${li(ab,pli)}</div>
    <div class="card ries"><h3><span>Riesgos</span><span>${(EXP.riesgos||[]).length}</span></h3>${li(EXP.riesgos,r=>`<li>${esc(r.texto)}${srcs(r)}</li>`)}</div>
    <div class="card deci"><h3><span>Decisiones del cliente</span><span>${(EXP.decisiones||[]).length}</span></h3>${li(EXP.decisiones,d=>`<li>${esc(d.texto)} <span class="who">· ${esc(d.quien||"")} ${esc(d.fecha||"")}</span>${srcs(d)}</li>`)}</div>
@@ -92,7 +95,7 @@ function renderExp(){
    <div class="card"><h3><span>Tiempos acordados</span><span>${String((EXP.estimaciones||[]).reduce((s,e)=>s+(Number(e.horas)||0),0)).replace(".",",")} h</span></h3>${li(EXP.estimaciones,e=>`<li><span class="src">${esc(e.clave||e.historia)}</span> ${esc(e.titulo)} · <b>${esc(String(e.horas).replace(".",","))} h</b>${e.horas_claude!=null&&e.horas_claude!==e.horas?` <span class="who">(Claude propuso ${esc(String(e.horas_claude).replace(".",","))} h)</span>`:""} <span class="who">· ${esc(e.ini||"")} → ${esc(e.fin||"")} · ${esc(e.historia||"")} · ${esc(e.fecha||"")}</span></li>`)}</div>
    <div class="card"><h3><span>Pendientes resueltos</span><span>${rs.length}</span></h3>${li(rs,pli)}</div>
    <div class="card"><h3><span>Hallazgos del código</span><span>${(EXP.hallazgos_codigo||[]).length}</span></h3>${li(EXP.hallazgos_codigo,h=>`<li>${esc(h.texto)}${srcs(h)}</li>`)}</div>
-   <div class="card"><h3><span>Historias</span><span>${(EXP.historias||[]).length}</span></h3>${li(EXP.historias,h=>`<li><span class="src">${esc(h.key)}</span> <b>${esc(h.titulo)}</b> — ${esc(h.resumen||"")}</li>`)}</div>
+   <div class="card"><h3><span>Historias</span><span>${(EXP.historias||[]).length}</span></h3>${li(EXP.historias,h=>`<li><span class="src">${esc(h.key||h.clave)}</span> <b>${esc(h.titulo)}</b> — ${esc(h.resumen||"")}</li>`)}</div>
    <div class="card"><h3><span>Cronograma</span></h3><p style="margin:0;font-size:13px">${esc(EXP.cronograma||"")}</p></div>
    <div class="card"><h3><span>Fuentes</span><span>${(EXP.fuentes||[]).length}</span></h3>${li(EXP.fuentes,f=>`<li><span class="src">${esc(f.id)}</span> ${esc(f.titulo||"")} <span class="who">${esc(f.tipo||"")} ${esc(f.fecha||"")} · ${esc(f.ref||f.referencia||"")}</span></li>`)}</div>
    ${(EXP.historial||[]).length?`<div class="card"><h3><span>Historial de actualizaciones</span><span>${EXP.historial.length}</span></h3>${li(EXP.historial,h=>`<li>${esc(h.fecha)} · ${esc(h.resumen)}</li>`)}</div>`:""}</div>`;
@@ -134,7 +137,7 @@ function bloques(r){const c=(r&&r.content)||[];const t=c.filter(b=>b&&b.type==="
 // ---- Chat ----
 function rules(){return `Eres el analista del requerimiento "${META.titulo}". Respondes al líder técnico (${LIDER}) en español, breve y directo.
 Reglas: responde SOLO con lo que está en el EXPEDIENTE o con lo que consultes en Jira con la herramienta. Cita la fuente de cada afirmación entre corchetes (id de fuente, clave de Jira o correo con fecha). Si algo no está, di "No está en el expediente" y sugiere a quién preguntarlo. No inventes fechas, horas ni decisiones. Nombra las issues con su clave y de qué tratan.
-En el expediente, "decisiones_lider" es lo que decidió el líder en el cronograma (aceptar, ajustar horas, descartar, dejar pendiente, comentar, cambiar de estado) y "estimaciones" son los tiempos acordados de cada subtarea, con su clave de Jira y lo que Claude había propuesto. Para preguntas de horas o de quién decidió qué, cítalos.
+En el expediente, "decisiones_lider" es lo que decidió el líder en el cronograma (aceptar, ajustar horas, descartar, dejar pendiente, comentar, cambiar de estado) y "estimaciones" son los tiempos acordados de cada subtarea, con su clave de Jira y lo que Claude había propuesto. Para preguntas de horas o de quién decidió qué, cítalos. Si existen, "chequeos.p0" es el estado de aceptación del requerimiento (aceptado, parcial, por entender) y "refutacion" lo que el refutador objetó con su regla y su alternativa; "historias[].criterios" son los criterios CA-n y "cortes" las fechas de revisión del líder.
 Historias del requerimiento: ${META.keys.join(", ")}${META.epica?" (épica "+META.epica+")":""}.
 EXPEDIENTE (JSON):
 ${JSON.stringify(EXP||{}).slice(0,150000)}`;}

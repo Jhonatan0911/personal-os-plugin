@@ -57,6 +57,14 @@ plan.json (campos):
   ]
 }
 Los ítems salen como «propuesta» (el líder los acepta en la página) o «espera» (pendiente de definición).
+
+Subtarea-instrucción (opcional, en vez de «desc»): si el ítem trae «contexto», «que_hacer», «donde»,
+«no_tocar», «criterios» (["CA-1"] o [{"id","texto","como_verificar"}]), «entregables» y «corte», y no trae
+«desc», el generador compone «desc» con la plantilla de references/especificacion.md §3. Los CA citados por
+id se buscan en las historias del expediente v2.
+
+Expediente: v1 (sin «esquema») o v2 («esquema»: 2, references/expediente.md). En v2 se avisa si falta el
+chequeo del paso 0 o la refutación: sin ellos no se exporta.
 """
 import base64
 import html
@@ -68,6 +76,12 @@ import sys
 AQUI = os.path.dirname(os.path.abspath(__file__))
 SECCIONES_EXPEDIENTE = ("resumen", "historias", "decisiones", "pendientes", "riesgos", "hallazgos_codigo",
                         "cronograma", "fuentes", "historial")
+SECCIONES_V2 = ("id", "titulo", "cabecera", "chequeos", "refutacion", "impacto", "historias", "pendientes",
+                "fuentes", "historial")
+ESTADOS_P0 = ("aceptado", "parcial", "por_entender")
+CAMPOS_INSTRUCCION = ("contexto", "que_hacer", "donde", "no_tocar", "criterios", "entregables", "corte")
+NOMBRE_ENTREGABLE = {"tests": "tests unitarios de cada CA", "docs": "documentación del cambio",
+                     "script_bd+rollback": "script de BD de publicación y de rollback, idempotentes"}
 MIME_LOGO = {".png": "image/png", ".svg": "image/svg+xml", ".jpg": "image/jpeg", ".jpeg": "image/jpeg",
              ".webp": "image/webp"}
 VAR_CSS = re.compile(r"^--[a-z][a-z0-9-]*$")
@@ -182,20 +196,82 @@ def logo_html(ruta, alt):
     return f'<img src="data:{MIME_LOGO[ext]};base64,{datos}" alt="{html.escape(alt)}">'
 
 
-def revisar_expediente(ref, base, avisos):
+def cargar_expediente(ref, base, avisos):
+    """Devuelve (ruta, expediente) o (None, {}) si no existe. Valida v1 o v2 y deja avisos."""
     ruta = ref if os.path.isabs(ref) else os.path.join(base, ref)
     if not os.path.exists(ruta):
         avisos.append(f"el plan nombra el expediente «{ref}» pero no existe en {ruta}")
-        return None
+        return None, {}
     exp = leer_json(ruta, "el expediente")
-    faltan = [s for s in SECCIONES_EXPEDIENTE if s not in exp]
+    v2 = exp.get("esquema") == 2 or "chequeos" in exp
+    faltan = [s for s in (SECCIONES_V2 if v2 else SECCIONES_EXPEDIENTE) if s not in exp]
     if faltan:
-        avisos.append("al expediente le faltan secciones: " + ", ".join(faltan))
+        avisos.append(f"al expediente {'v2' if v2 else 'v1'} le faltan secciones: " + ", ".join(faltan))
     sin_fuente = sum(1 for s in ("decisiones", "pendientes", "riesgos", "hallazgos_codigo")
                      for x in (exp.get(s) or []) if isinstance(x, dict) and not x.get("fuente"))
     if sin_fuente:
         avisos.append(f"{sin_fuente} afirmaciones del expediente no traen «fuente»")
-    return ruta
+    if v2:
+        p0 = ((exp.get("chequeos") or {}).get("p0") or {}).get("estado")
+        if p0 not in ESTADOS_P0:
+            avisos.append("el expediente no tiene el chequeo del paso 0 (chequeos.p0): no exportes sin él")
+        elif p0 == "por_entender":
+            avisos.append("paso 0 «por_entender»: publica para decidir, no para exportar")
+        if not exp.get("refutacion"):
+            avisos.append("el expediente no trae «refutacion»: corre el refutador antes de exportar")
+        sin_ca = [h.get("clave") or h.get("key") for h in exp.get("historias") or []
+                  if isinstance(h, dict) and not h.get("criterios")]
+        if sin_ca:
+            avisos.append("historias sin criterios CA-n: " + ", ".join(str(x) for x in sin_ca))
+        abiertos = [p for p in exp.get("pendientes") or [] if isinstance(p, dict) and p.get("estado") != "resuelto"]
+        sin_bloquea = sum(1 for p in abiertos if "bloquea" not in p)
+        if sin_bloquea:
+            avisos.append(f"{sin_bloquea} pendientes abiertos no dicen qué CA bloquean («bloquea»)")
+    return ruta, exp
+
+
+def criterios_del_expediente(exp):
+    out = {}
+    for h in exp.get("historias") or []:
+        for c in (h.get("criterios") or []) if isinstance(h, dict) else []:
+            if isinstance(c, dict) and c.get("id"):
+                out[(h.get("clave") or h.get("key"), c["id"])] = c
+                out.setdefault((None, c["id"]), c)
+    return out
+
+
+def componer_desc(it, historia, cas):
+    """Arma la subtarea-instrucción (references/especificacion.md §3) desde los campos sueltos."""
+    lineas = []
+    if it.get("contexto"):
+        lineas.append(f"**Contexto:** {it['contexto']}")
+    pasos = it.get("que_hacer")
+    if pasos:
+        if isinstance(pasos, list):
+            lineas.append("**Qué hacer:**\n" + "\n".join(f"{i}. {p}" for i, p in enumerate(pasos, 1)))
+        else:
+            lineas.append(f"**Qué hacer:** {pasos}")
+    if it.get("donde"):
+        lineas.append(f"**Dónde:** {it['donde']}")
+    if it.get("no_tocar"):
+        lineas.append(f"**Qué NO tocar:** {it['no_tocar']}")
+    crit = []
+    for c in it.get("criterios") or []:
+        if isinstance(c, str):
+            c = cas.get((historia, c)) or cas.get((None, c)) or {"id": c}
+        txt = f"- {c.get('id', '')}: {(c.get('texto') or '(ver la historia)').rstrip()}"
+        if c.get("como_verificar"):
+            txt += ("" if txt[-1] in ".:;)" else ".") + f" Cómo verificar: {c['como_verificar'].rstrip('.')}."
+        crit.append(txt)
+    if crit:
+        lineas.append("**Criterios de aceptación:**\n" + "\n".join(crit))
+    ent = [NOMBRE_ENTREGABLE.get(e, e) for e in it.get("entregables") or []]
+    if ent:
+        lineas.append("**Entregables:** " + " · ".join(ent) + ".")
+    if it.get("corte"):
+        lineas.append(f"**Corte:** {it['corte']}")
+    lineas.append("**Si dudas, pregunta:** si algo de esto no está claro, detente y pregunta al líder; no inventes.")
+    return "\n".join(lineas)
 
 
 def main(argv):
@@ -224,6 +300,12 @@ def main(argv):
     if isinstance(festivos, str):
         festivos = [festivos]
 
+    avisos = []
+    exp_ruta, exp = (cargar_expediente(plan["expediente"], base_plan, avisos) if plan.get("expediente")
+                     else (None, {}))
+    cas = criterios_del_expediente(exp)
+    compuestas = 0
+
     hus = []
     for h in plan["historias"]:
         if not h.get("key") or not h.get("t"):
@@ -237,6 +319,9 @@ def main(argv):
             for campo in ("obs", "desc", "tipo"):
                 if it.get(campo):
                     x[campo] = it[campo]
+            if not x.get("desc") and any(it.get(c) for c in CAMPOS_INSTRUCCION):
+                x["desc"] = componer_desc(it, h["key"], cas)
+                compuestas += 1
             if x["estado"] == "espera":
                 x["ini"] = x["fin"] = None   # lo pendiente de definición no lleva fecha
             items.append(x)
@@ -304,15 +389,18 @@ def main(argv):
               if it.get("estado", "propuesta") != "espera")
     pen = sum((it.get("horas") or 0) for h in plan["historias"] for it in h.get("items", [])
               if it.get("estado") == "espera")
-    avisos = []
     if not cfg["jira"]["cloud_id"]:
         avisos.append("sin jira.cloud_id: la página no consultará ni exportará a Jira (pásalo en el plan o con --perfil)")
     if not cfg["jira"]["sitio"]:
         avisos.append("sin jira.sitio: no habrá enlaces «Abrir en Jira»")
-    exp = revisar_expediente(plan["expediente"], base_plan, avisos) if plan.get("expediente") else None
+    p0 = ((exp.get("chequeos") or {}).get("p0") or {}).get("estado") if exp else None
     print(f"ok {out} · {len(hus)} historias · propuesto {tot:g} h · pendiente de definición {pen:g} h"
           + (f" · marca «{alt}»" if marca or logo else " · marca neutra")
-          + (f"\nexpediente: {exp} → tras publicar, cárgalo con ArtifactData set en expediente/actual" if exp else "")
+          + (f" · {compuestas} subtareas compuestas como instrucción" if compuestas else "")
+          + (f"\npaso 0: {p0} · refutaciones: {len(exp.get('refutacion') or [])} · cortes: {len(exp.get('cortes') or [])}"
+             if p0 else "")
+          + (f"\nexpediente: {exp_ruta} → tras publicar, cárgalo con ArtifactData set en expediente/actual"
+             if exp_ruta else "")
           + "".join("\naviso: " + a for a in avisos))
 
 

@@ -1,0 +1,125 @@
+{
+  "_que_es": "Tabla de normas de EJEMPLO para el agente refutador-requerimiento (salud en Colombia, verificada el 2026-11-10). Cópiala a <stateDir>/criticidad/normas.json y mantenla tú: cada regla con su URL oficial, su estado y la fecha en que la verificaste. El refutador avisa cuando usa esta tabla sin verificar.",
+  "version": 1,
+  "actualizado": "2026-11-10",
+  "revision": "mensual",
+  "estados": {
+    "vigente": "Obliga hoy. El refutador la cita como regla.",
+    "en_tramite": "Proyecto publicado, sin expedir. El refutador la cita como riesgo o cambio previsible, nunca como prohibición.",
+    "derogada": "Ya no obliga. Solo sirve de historia; el refutador no la cita como regla y avisa si el requerimiento la cita."
+  },
+  "como_se_verifico": "verificacion = 'texto' (se leyó el texto oficial el 10/11/2026), 'url' (la URL oficial respondió el 10/11/2026 y el contenido viene de la investigación del mismo día) o 'parcial' (ver nota).",
+  "plantilla_regla": {
+    "id": "slug-corto",
+    "norma": "",
+    "articulo": "",
+    "regla_verificable": "",
+    "disparador": "",
+    "alternativa_estandar": "",
+    "aplica_a": [],
+    "estado": "vigente|en_tramite|derogada",
+    "verificado_el": "AAAA-MM-DD",
+    "verificacion": "texto|url|parcial",
+    "url": "",
+    "nota": ""
+  },
+  "reglas": [
+    {
+      "id": "hc-sin-enmiendas",
+      "norma": "Resolución 1995 de 1999 (manejo de la historia clínica)",
+      "articulo": "art. 5 (generalidades) y art. 18 (medios técnicos)",
+      "regla_verificable": "Un registro clínico guardado no se edita ni se borra en el lugar. Cada anotación lleva fecha, hora, nombre completo y firma del autor. Los programas que manejan la HC deben impedir modificaciones una vez se registran y guardan los datos (art. 18).",
+      "disparador": "El requerimiento edita, reemplaza o borra un registro clínico ya guardado (incluido el resultado de una escala o tamizaje).",
+      "alternativa_estandar": "Nota aclaratoria nueva, con fecha, hora y autor, que referencia el registro original; o anulación con trazabilidad sin borrar.",
+      "aplica_a": [
+        "hc",
+        "tamizaje",
+        "auditoria"
+      ],
+      "estado": "vigente",
+      "verificado_el": "2026-11-10",
+      "verificacion": "texto",
+      "url": "https://www.minsalud.gov.co/Normatividad_Nuevo/RESOLUCI%C3%93N%201995%20DE%201999.pdf",
+      "nota": "El art. 15 (20 años de conservación) lo modificó la Res. 839 de 2017; ver hc-conservacion."
+    },
+    {
+      "id": "hc-proyecto-unificacion-2026",
+      "norma": "Proyecto de resolución de historia clínica (memoria justificativa del 22/07/2026)",
+      "articulo": "todo el proyecto",
+      "regla_verificable": "Unificaría la 1995 de 1999 y la 839 de 2017 en una sola norma de HC física y electrónica, interoperable y con el RDA, y daría 18 meses a los prestadores sin sistema electrónico. No se confirmó que esté expedido.",
+      "disparador": "El requerimiento rediseña el modelo de la HC, su conservación o su interoperabilidad.",
+      "alternativa_estandar": "Diseñar con margen para el cambio previsible (HC electrónica interoperable, RDA) y decirlo como riesgo, no como obligación.",
+      "aplica_a": [
+        "hc",
+        "interoperabilidad"
+      ],
+      "estado": "en_tramite",
+      "verificado_el": "2026-11-10",
+      "verificacion": "parcial",
+      "url": "https://www.minsalud.gov.co/Normativa/anexosproyectos/ANEXO2MEMJUSTIFICATIVAHISTORIA%20CLINICA%2022%20JUL%2026_20260722151201.pdf",
+      "nota": "El texto del proyecto (…/proyactadm/PR HISTORIA CLINICAAJUSTADO22072026_20260722151143.pdf) respondió 404 el 10/11/2026; la memoria justificativa sí responde. El plazo de comentarios cerró el 08/08/2026. Pregunta abierta para jurídica: si ya se expidió."
+    },
+    {
+      "id": "rips-campos-documento-tecnico",
+      "norma": "Resolución 948 de 2026, Documentos Técnicos 1 y 2",
+      "articulo": "anexos técnicos (se actualizan sin cambiar la resolución)",
+      "regla_verificable": "Todo cambio en la HC, el agendamiento o la facturación que altere un campo del RIPS (CUPS, CIE-10, finalidad, causa externa, programa o ruta) se cruza contra la versión vigente del Documento Técnico 1. Lo que se reporta en el RIPS sale de la atención realmente prestada, no de un evento de la interfaz.",
+      "disparador": "El requerimiento hace que una acción de pantalla (diligenciar un formulario, una escala, un campo) genere, cambie o dispare un registro o un código del RIPS.",
+      "alternativa_estandar": "El RIPS se deriva de la atención y del programa o ruta activos, con la regla en un solo lugar; la acción de la interfaz solo registra el dato clínico.",
+      "aplica_a": [
+        "rips",
+        "hc",
+        "tamizaje",
+        "agendamiento",
+        "facturacion"
+      ],
+      "estado": "vigente",
+      "verificado_el": "2026-11-10",
+      "verificacion": "url",
+      "url": "https://www.minsalud.gov.co/sites/rid/Lists/BibliotecaDigital/RIDE/DE/OT/anexo-tecnico2-resolucion-948-de-2026.pdf",
+      "urls_relacionadas": [
+        "https://www.minsalud.gov.co/sites/rid/Lists/BibliotecaDigital/RIDE/DE/DIJ/resolucion-0948-de-2026.pdf"
+      ],
+      "nota": "La versión vigente de los Documentos Técnicos cambia sin cambiar la resolución: confirmarla antes de citar un campo concreto (pregunta abierta para jurídica)."
+    },
+    {
+      "id": "rips-2275-derogada",
+      "norma": "Resolución 2275 de 2023 y sus modificaciones (558 de 2024 y 1884 de 2024)",
+      "articulo": "todo el acto",
+      "regla_verificable": "Derogadas por la Resolución 948 de 2026 (14/05/2026). No se citan como vigentes.",
+      "disparador": "El requerimiento, la historia o la especificación citan la 2275, la 558 o la 1884 como norma que obliga.",
+      "alternativa_estandar": "Citar la 948 de 2026 y la versión vigente de sus Documentos Técnicos.",
+      "aplica_a": [
+        "rips",
+        "facturacion"
+      ],
+      "estado": "derogada",
+      "verificado_el": "2026-11-10",
+      "verificacion": "url",
+      "url": "https://normograma.supersalud.gov.co/compilacion/docs/resolucion_minsaludps_2275_2023.htm",
+      "urls_relacionadas": [
+        "https://normograma.supersalud.gov.co/compilacion/docs/resolucion_minsaludps_0558_2024.htm",
+        "https://normograma.supersalud.gov.co/compilacion/docs/resolucion_minsaludps_1884_2024.htm",
+        "https://www.minsalud.gov.co/sites/rid/Lists/BibliotecaDigital/RIDE/DE/DIJ/resolucion-0948-de-2026.pdf"
+      ],
+      "nota": "El normograma de la Supersalud (actualizado al 28/08/2025) aún no muestra la derogatoria; la fuente de la derogatoria es la propia 948."
+    },
+    {
+      "id": "datos-minimo-en-logs-y-pruebas",
+      "norma": "Ley 1581 de 2012 (principios de seguridad y circulación restringida)",
+      "articulo": "art. 4",
+      "regla_verificable": "Nada de datos de pacientes en logs, mensajes de error, capturas o evidencias de prueba; en reportes y exportaciones, solo el mínimo dato necesario.",
+      "disparador": "El requerimiento registra datos clínicos o de identificación en logs, o pide evidencias de prueba con datos reales.",
+      "alternativa_estandar": "Datos sintéticos o enmascarados en pruebas; identificadores técnicos en logs.",
+      "aplica_a": [
+        "datos_personales",
+        "auditoria",
+        "pruebas"
+      ],
+      "estado": "vigente",
+      "verificado_el": "2026-11-10",
+      "verificacion": "url",
+      "url": "https://www.funcionpublica.gov.co/eva/gestornormativo/norma.php?i=49981"
+    }
+  ]
+}

@@ -1,6 +1,6 @@
 ---
 name: planear-sprint
-description: Planea un sprint o un requerimiento de punta a punta para un líder técnico — revisa con agentes el código actual de los repos que toca (ramas y remotos verificados), entiende las historias de usuario, la especificación, los mockups, las transcripciones y los correos del tema, separa lo que ya existe de lo nuevo y de lo que el cliente no ha definido, estima con la matriz de tiempos del equipo (devs que usan IA de copiloto, por nivel y familiaridad), pasa un revisor adversarial y entrega un cronograma interactivo para aceptar y exportar a Jira, con el expediente del requerimiento y el borrador del correo de escalada. Úsala cuando el usuario diga "planeemos el sprint de X", "haz el planning de", "estima estas historias", "arma las subtareas de", "cuánto se demora este requerimiento", "calibra la matriz de tiempos" o pase una épica o historia para planear. No es para el estado diario del equipo (status-celula) ni para registrar horas (timesheet). NUNCA escribe en Jira por su cuenta.
+description: Planea un sprint o un requerimiento de punta a punta para un líder técnico — revisa con agentes el código actual de los repos que toca, entiende las historias de usuario, la especificación, los mockups, las transcripciones y los correos del tema, separa lo que ya existe de lo nuevo y de lo que el cliente no ha definido, estima con la matriz de tiempos del equipo (devs que usan IA de copiloto, por nivel y familiaridad), pasa un revisor adversarial y entrega un cronograma interactivo para aceptar y exportar a Jira, con el expediente del requerimiento y el borrador del correo de escalada. Úsala cuando el usuario diga "planeemos el sprint de X", "haz el planning de", "estima estas historias", "arma las subtareas de", "cuánto se demora este requerimiento", "aceptemos este requerimiento", "¿esto choca con la norma?", "calibra la matriz de tiempos" o pase una épica o historia para planear. No es para el estado diario del equipo (status-celula) ni para registrar horas (timesheet). NUNCA escribe en Jira por su cuenta.
 ---
 
 # planear-sprint — de las historias al cronograma estimado
@@ -35,6 +35,13 @@ ejemplos, referencias) están en `${CLAUDE_SKILL_DIR}`. Los scripts del plugin s
   el plan «quepa»: el desborde se muestra como atraso, con las horas que no caben.
 - **Sin secretos**: nada de tokens, PAT ni cadenas de conexión en el plan, el expediente o el chat. Si un
   repo pide credenciales, el usuario las configura en su git.
+- **El refutador corre antes de exportar** y sus recortes bajan al plan. En un caso real se exportaron
+  27 subtareas y después apareció que una disparaba facturación desde la interfaz, otras usaban cortes
+  clínicos sin fuente y una escala estaba fuera del alcance: nadie lo había clasificado antes.
+- **Lo claro avanza, lo dudoso espera** (DoR por niveles, no compuerta): una pregunta abierta bloquea solo
+  los criterios que nombra, nunca el requerimiento entero.
+- **Un expediente por requerimiento** en `<stateDir>/requerimientos/<slug>/expediente.json` (esquema v2).
+  Es la fuente única: la página del cronograma y la lista de trabajo del líder cargan copias de él.
 
 ## Fase 0 · Insumos (preguntar solo lo que falte)
 
@@ -88,11 +95,20 @@ cliente/rama` · `nuevo` · `solo parametrización/BD` · `contradice o no está
 
 ## Fase 1-bis · Expediente del requerimiento (el analista)
 
-Con lo leído arma `expediente.json` (forma y reglas en `references/expediente.md`): `resumen`,
-`historias`, `decisiones`, `pendientes`, `riesgos`, `hallazgos_codigo`, `cronograma`, `fuentes` e
-`historial`. **Cada afirmación lleva su fuente.** Lo que el cliente ya respondió va como decisión y su
-pendiente se marca resuelto con la resolución. No se incrusta en el HTML: se carga en la base de la
-página publicada (Fase 4), donde quedan el chat del analista y el botón «Actualizar requerimiento».
+Con lo leído arma el expediente v2 en `<stateDir>/requerimientos/<slug>/expediente.json` (forma y reglas
+en `references/expediente.md`). **Cada afirmación lleva su fuente.** Lo que el cliente ya respondió va
+como decisión y su pendiente se marca resuelto con la resolución. Además de lo de siempre (resumen,
+historias, decisiones, pendientes, riesgos, hallazgos, fuentes, historial), en esta fase llenas:
+
+- **Historias con criterios `CA-n`**, cada uno con su `como_verificar` (test, consulta o captura). Es la
+  única especificación: la usan la subtarea, la revisión del PR y la matriz de pruebas.
+- **Pendientes con `bloquea`** (los CA que frenan) y un dueño corto (`a_quien`), no un párrafo.
+- **Ficha de impacto (paso 1):** `cabecera` (para qué, quién lo pide, motivo, expectativas, si lo pide
+  gerencia, fecha comprometida) e `impacto` (ejes del módulo tocado, peso en la operación y, si un eje vale
+  4 o más, 3-5 modos de falla). Cómo llenarla: `references/especificacion.md` §1.
+
+No se incrusta en el HTML: se carga en la base de la página publicada (Fase 4), donde quedan el chat del
+analista y el botón «Actualizar requerimiento».
 
 ## Fase 2 · Descomponer y estimar
 
@@ -123,32 +139,53 @@ página publicada (Fase 4), donde quedan el chat del analista y el botón «Actu
 - **Responsable por subtarea:** por defecto el dueño del cronograma; la de otra persona (soporte, por
   ejemplo) no suma a su carga y al exportar sale asignada a ella (accountId de `equipo` o buscado en Jira
   por nombre; nunca se adivina).
-- **Ninguna subtarea va a Jira solo con su título**, pero es una subtarea, no una historia: corta
-  (~150 palabras), puntual y técnica, para que el dev sepa exactamente qué tocar sin volver a preguntar.
-  Borrador en `desc` con: **Objetivo** (una línea) · **Qué hacer** (2 a 6 pasos) · **Dónde** (repo,
-  archivo:línea, tabla, SP, endpoint) · **Criterios técnicos** (1 a 3, verificables en el PR) · **Depende
-  de** (solo si hay orden). El contexto de negocio vive en la historia padre. Una subtarea aceptada con
-  horas **no lleva «Por confirmar»**: lo que falte definir es otra subtarea, en pendiente de definición.
-  Nada inventado. Al exportar, la página la vuelve a interpretar con el analista y el líder la revisa.
+- **Definición técnica (paso 2):** 2-3 **escenarios de calidad** `QA-n` con medida numérica, escogidos
+  por los ejes altos de la ficha de impacto, y un **ADR** por cada decisión estructural (algo síncrono en
+  una ruta crítica, una tabla nueva, una integración, un cambio de contrato). Sin medida no se puede
+  revisar en el PR. Formato y ejemplos: `references/especificacion.md` §2.
+- **Cada subtarea es una instrucción exacta** que el dev (o su asistente) ejecuta sin volver a preguntar:
+  contexto · qué hacer · dónde · **qué NO tocar** · criterios `CA-n` con cómo verificarlos · entregables
+  (tests, docs, script de BD con publicación y rollback si toca BD) · corte · «si dudas, pregunta». Va en
+  `desc` (o en campos sueltos que el generador compone). Plantilla: `references/especificacion.md` §3.
+  Una subtarea aceptada con horas **no lleva «Por confirmar»**: lo que falte definir es otra subtarea, en
+  pendiente de definición. Nada inventado. Al exportar, la página la vuelve a interpretar con el analista.
+- **Cortes de seguimiento:** propón fechas en las que el líder revisa evidencia (rama empujada, PR parcial
+  con tests verdes) contra CA concretos, al menos uno por historia con lógica y nunca solo al final.
+  Van a `cortes[]` del expediente (`references/especificacion.md` §4).
 
 Si existe `planeacion.investigacion`, es la base documental de estas reglas: cítala cuando el líder
 pregunte por qué.
 
-## Fase 3 · Revisor adversarial
+## Fase 3 · Revisores adversariales y chequeo del paso 0
 
-Lanza el agente **`revisor-estimacion`** de este plugin (puede aparecer como
-`personal-os:revisor-estimacion`) con: la ruta de la matriz usada, la tabla de piezas clasificadas, las
-subtareas (tipo, cantidad, horas, estado, observación), las rutas de los repos con su ref y los criterios
-de aceptación. Busca sobreestimación frente a la matriz, piezas que ya existen o están en otro cliente,
-duplicados entre historias, subtareas que no responden a ningún criterio de aceptación y, al revés, lo
-legado o riesgoso que quedó corto. Aplica sus hallazgos o déjalos anotados con el porqué.
+Lanza **en un solo mensaje** los dos agentes de este plugin (pueden aparecer con el prefijo
+`personal-os:`):
+
+1. **`revisor-estimacion`** con: la ruta de la matriz usada, la tabla de piezas clasificadas, las subtareas
+   (tipo, cantidad, horas, estado, observación), las rutas de los repos con su ref y los criterios de
+   aceptación. Busca sobreestimación, piezas que ya existen, duplicados, subtareas sin criterio detrás y lo
+   legado que quedó corto. Aplica sus hallazgos o déjalos anotados con el porqué.
+2. **`refutador-requerimiento`** con: la ruta del expediente, las subtareas, la tabla de normas
+   (`<stateDir>/criticidad/normas.json`; si no existe, la de ejemplo del plugin y avisa que no está
+   verificada) y el mapa de criticidad si existe. Devuelve, por punto, interés del usuario, qué se acepta,
+   qué se refuta y con qué regla, la alternativa y su costo.
+
+Con lo que devuelvan (`references/paso0.md`):
+- Guarda la refutación en `refutacion[]` del expediente, con estado `propuesta`: el líder la acepta o la
+  descarta, el refutador no decide.
+- **Baja los recortes al plan**: lo refutado pasa a `espera` con la alternativa en la observación, lo que
+  el refutador propone agregar entra como `propuesta` nueva, y lo que pide descartar se marca en la
+  observación para que el líder lo descarte en la página (no se borra en silencio).
+- Calcula el **chequeo del paso 0** (`aceptado`, `parcial` o `por_entender`) con la DoR por niveles y
+  escríbelo en `chequeos.p0`. Con `por_entender` no se publica para exportar: se publica para decidir.
 
 ## Fase 4 · Entregables
 
 1. **`plan.json` y el cronograma interactivo** en `planeacion.carpeta_trabajo` (por defecto
    `<stateDir>/estimaciones/<slug>/`). Formato en el docstring de `generar_cronograma.py` y en
    `plan-ejemplo.json`; de dónde sale cada campo, en `references/configuracion.md` §5. Incluye `epica`,
-   `correos_busqueda`, `capacidad`, `personas`, `cuentas` y `expediente`. Las fases, tal cual del cliente.
+   `correos_busqueda`, `capacidad`, `personas`, `cuentas` y `expediente` (ruta al expediente v2 de
+   `<stateDir>/requerimientos/<slug>/`). Las fases, tal cual del cliente.
 
    ```
    python "${CLAUDE_SKILL_DIR}/generar_cronograma.py" plan.json cronograma.html [--perfil <perfil>] [--marca <marca>]
@@ -156,9 +193,12 @@ legado o riesgoso que quedó corto. Aplica sus hallazgos o déjalos anotados con
 
    Publicar (capacidades, sin herramienta `Artifact`, cargar el expediente con `ArtifactData`, registrar
    en el tablero central y la nota de alcance): `references/cronograma.md`.
-2. **Resumen en el chat:** horas propuestas frente a la capacidad del sprint, fin de desarrollo según el
-   plan frente al cronograma, pendientes por definir con sus horas, bloqueos de terceros (desde cuándo y
-   de quién) y los tipos «sin matriz».
+   El generador avisa si el expediente v2 no tiene el chequeo del paso 0 o la refutación: **no exportes
+   sin ellos**.
+2. **Resumen en el chat:** chequeo del paso 0 y qué porción entra, refutaciones con su alternativa (cada
+   una en una línea), horas propuestas frente a la capacidad del sprint, fin de desarrollo según el plan
+   frente al cronograma, cortes propuestos, pendientes por definir con sus horas, bloqueos de terceros
+   (desde cuándo y de quién) y los tipos «sin matriz».
 3. **Borrador del correo de escalada** de lo pendiente: conteos, nombres clave y preguntas numeradas,
    para responder **en el hilo donde vive el tema**. Cada código interno va con su nombre en lenguaje
    normal. Si existe `rutas.perfil_voz` (o una skill de redacción del usuario), redáctalo con esa voz.
@@ -183,6 +223,9 @@ de los mineros, página del catálogo y Monte Carlo: `references/calibracion.md`
 - Editar directamente datos que el almacén de la página entrega congelados: se clonan antes de editar.
 - Exportar subtareas con una descripción fija de una línea: el dev no sabía qué hacer sin volver a preguntar.
 - Correr las fases para que el plan «quepa»: el desborde se muestra como atraso, no se esconde.
+- Exportar antes de clasificar lo que chocaba con la norma o el producto: una subtarea hacía que llenar un
+  formulario disparara facturación, y se descubrió con las subtareas ya en Jira.
+- Aplicar una aceptación parcial del cliente en el correo pero no en el plan ya exportado.
 
 ## Cuándo NO usarla
 
@@ -195,10 +238,13 @@ de los mineros, página del catálogo y Monte Carlo: `references/calibracion.md`
 | Archivo | Cuándo |
 |---|---|
 | `references/configuracion.md` | Fase 0 y al armar el plan: claves de `fuentes.yaml`, orden de la matriz, perfil de organización y marca |
-| `references/expediente.md` | Fase 1-bis y al actualizar el requerimiento |
+| `references/expediente.md` | Fase 1-bis y al actualizar el requerimiento: esquema v2, ubicación, compatibilidad con v1 |
+| `references/especificacion.md` | Fases 1-bis y 2: ficha de impacto, escenarios de calidad y ADR, subtarea-instrucción, cortes |
+| `references/paso0.md` | Fase 3: encargo al refutador, cómo bajar sus recortes, DoR por niveles y chequeo del paso 0 |
 | `references/cronograma.md` | Fase 4: generar, publicar, cómo se comporta la página, exportar y registrar |
 | `references/calibracion.md` | Fase 0 si hay propuesta pendiente, y Fase 5 |
 | `generar_cronograma.py` | Se **ejecuta**: valida el plan y el expediente, aplica perfil y marca, genera el HTML |
 | `cronograma-plantilla.html`, `analista-bloque.html` | Los usa el generador; no se leen |
 | `matriz-tiempos-ejemplo.yaml` | Matriz por defecto si el usuario no tiene la suya |
 | `plan-ejemplo.json` | Ejemplo ficticio del plan |
+| `expediente-ejemplo.json` | Ejemplo ficticio del expediente v2 (lo valida el generador) |
