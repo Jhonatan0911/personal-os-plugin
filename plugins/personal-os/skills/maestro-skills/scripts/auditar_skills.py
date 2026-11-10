@@ -47,7 +47,8 @@ PATRONES_PERSONALES = [
     (re.compile(r"[A-Za-z]:\\Users\\[^\\\s]+", re.I), "ruta absoluta de un usuario de Windows"),
     (re.compile(r"/(?:home|Users)/[a-z0-9_.-]+/", re.I), "ruta absoluta de un usuario"),
     (re.compile(r"\b[\w.+-]+@[\w-]+\.[\w.]+\b"), "correo electrónico"),
-    (re.compile(r"\b\d{8,10}\b"), "número largo (¿cédula, teléfono o id?)"),
+    # Número suelto de 8-10 dígitos; no cuenta si va pegado a un nombre de archivo, ruta, id o fecha.
+    (re.compile(r"(?<![\w./\\:#-])\d{8,10}(?![\w./\\:-])"), "número largo (¿cédula, teléfono o id?)"),
     (re.compile(r"OneDrive\s-\s", re.I), "carpeta de OneDrive de una organización"),
 ]
 # Marcadores con que se escriben los ejemplos genéricos: <usuario>, fulano, ejemplo, ${VAR}.
