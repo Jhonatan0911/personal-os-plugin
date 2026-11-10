@@ -28,6 +28,23 @@ Si falta `azure_devops.organizacion`, pregúntala en el modal y ofrece guardarla
 `python -I "${CLAUDE_SKILL_DIR}/scripts/<script>.py"`; en adelante se nombran sin la ruta. Carpeta de trabajo:
 la que imprime `azdo_pr.py` (por defecto `<temp>/revisar-pr/pr-<id>`), aquí `<T>`.
 
+## Según el nivel del caso
+
+Si `fuentes.yaml` trae `flujo.niveles_activos: true`, la revisión se ajusta al nivel (A/B/C) del caso; contrato
+en `planear-sprint/references/niveles.md` (si la skill está instalada). Tras el paso 2 corre
+`nivel.py --config <fuentes.yaml> [--expediente <ruta>]`: nivel del expediente o `nivel_por_defecto`, y la
+variante de `p4`. La capa 0 la resuelve igual y `guardar_revision.py` registra nivel y variante.
+
+| Variante p4 | Qué corre |
+|---|---|
+| `completo` (o sin `flujo`) | Todo el procedimiento, idéntico a hoy |
+| `ia_y_humana` | Pasos 1-4 y 6-7. En el 5 solo `revision_ia.py unir` y `verificar_hallazgos.py` (ancla determinista, sin tokens); **sin refutador**. La IA no devuelve el PR sola: lo que señala queda en «revisa esto» para tu revisión humana |
+| `regla_minima` | Pasos 1-3 y 6 (`guardar_revision.py` sin `--revision`); los CA los revisa el líder |
+| sin `p4` (sale con código 3) | El paso no aplica: dilo y no revises. Si el líder insiste, pregunta la variante y pásala con `--variante` a `capa0.py` |
+
+En las variantes reducidas la **regla mínima** (`revision_pr.regla_minima`: rama con clave de Jira, scripts de
+BD con rollback) sube a «alta»: es lo único que separa el PR de producción.
+
 ## Procedimiento
 
 1. **Leer el PR.** `azdo_pr.py <objetivo> --config <fuentes.yaml>`. Con una clave de Jira busca en
@@ -84,5 +101,5 @@ la que imprime `azdo_pr.py` (por defecto `<temp>/revisar-pr/pr-<id>`), aquí `<T
 |---|---|
 | `references/capa1-y-segunda-pasada.md` | Pasos 4-5: encargo de los revisores, refutador, arquitectura por tipo de repo |
 | `references/azure-devops.md` | Si falla la lectura, para buscar PR por clave o si el líder pide publicar |
-| `config-ejemplo.yaml` | Para crear o completar la sección `revision_pr` |
+| `config-ejemplo.yaml` | Para crear o completar la sección `revision_pr` (incluye `regla_minima`) |
 | `scripts/*.py` | Se ejecutan, no se leen (`comun.py` y `diffutil.py` son módulos que usan los demás). Pruebas: `python -I -m unittest discover -s "${CLAUDE_SKILL_DIR}/scripts/pruebas"` |

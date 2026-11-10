@@ -314,6 +314,12 @@ const PERS = D.personas || [];
 const nombre = (s) => (PERS.find((p) => p.slug === s) || {}).nombre || s || 'sin responsable';
 const colorF = (k) => (D.frentes || []).find((f) => f.clave === k)?.color || '#5E6B7D';
 const FACTOR = D.capacidad_factor != null ? D.capacidad_factor : 0.8;
+// Capacidad real: una persona prestada no tiene jornada en su rango de préstamo (equipo[].prestado).
+const fichaDe = (s) => PERS.find((p) => p.slug === s) || null;
+const prestadaEn = (s, f) => { const x = (fichaDe(s) || {}).prestado; return !!(x && x.desde && f >= x.desde && (!x.hasta || f <= x.hasta)); };
+const jornadaP = (s, f) => (prestadaEn(s, f) ? 0 : jornadaDe(f));
+const rotuloPrestamo = (p) => (p.prestado ? `prestada a ${p.prestado.a} desde ${fdm(p.prestado.desde)}${p.prestado.hasta ? ' hasta ' + fdm(p.prestado.hasta) : ''}`
+  : p.prestamo ? 'prestado: ' + p.prestamo : '');
 const esTraza = (i) => !!i.cerrada || i.tipo === 'implementacion' || i.tipo === 'redefinido';
 let ANCHO = ls.get('zoom', 40), huecos = false, soloVencidas = false, ocultarHechas = false, mostrarTrans = true;
 const items = (D.items || []).map((x) => Object.assign({}, x, { fijo: x.fijo || esTraza(x),
@@ -342,7 +348,7 @@ function rango(i) {
 }
 
 // ── Veredicto: la fecha manda, no el reloj ──────────────────────────────────────
-function capacidadHasta(fin) { let h = 0; for (let d = D.corte; d <= fin; d = addD(d, 1)) h += jornadaDe(d); return h * FACTOR; }
+function capacidadHasta(fin, slug) { let h = 0; for (let d = D.corte; d <= fin; d = addD(d, 1)) h += slug ? jornadaP(slug, d) : jornadaDe(d); return h * FACTOR; }
 function veredicto(i) {
   const est = +i.horas || 0, tra = +i.trabajado || 0, restan = Math.max(0, est - tra);
   const fin = i.vence || i.fin, d_ = fin ? dif(D.corte, fin) : 0;
@@ -366,8 +372,9 @@ function veredicto(i) {
   }
   if (d_ < 0) return { n: 'ex', t: `Vencida hace ${-d_} día(s)`, d: est ? `Quedaban ${h(restan)} sin hacer. Mueve la fecha con razón escrita o ciérrala.` : 'Sin estimación: ni siquiera se sabe cuánto falta.' };
   if (!est) return { n: 'na', t: d_ === 0 ? 'Vence hoy, sin estimación' : `Vence en ${d_} días, sin estimación`, d: 'Sin horas estimadas no se puede saber si alcanza. Eso es lo primero que hay que resolver.' };
-  const cap = capacidadHasta(fin);
-  if (restan > cap) return { n: 'ex', t: 'No alcanza', d: `Faltan ${h(restan)} y hasta el ${fdm(fin)} solo hay ${h(cap)} de trabajo efectivo (${Math.round(FACTOR * 100)} % de la jornada). Otra fecha, otra persona o repartirla.` };
+  const cap = capacidadHasta(fin, i.persona);
+  const pres = prestadaEn(i.persona, D.corte) || prestadaEn(i.persona, fin) ? ` ${nombre(i.persona)} está ${rotuloPrestamo(fichaDe(i.persona))}: esos días no cuentan.` : '';
+  if (restan > cap) return { n: 'ex', t: 'No alcanza', d: `Faltan ${h(restan)} y hasta el ${fdm(fin)} solo hay ${h(cap)} de trabajo efectivo (${Math.round(FACTOR * 100)} % de la jornada).${pres} Otra fecha, otra persona o repartirla.` };
   if (restan > cap * 0.85) return { n: 'al', t: 'Al filo', d: `Faltan ${h(restan)} y quedan ${h(cap)} efectivas: ocupa casi todo el margen.` };
   return { n: 'ok', t: d_ === 0 ? 'Vence hoy y alcanza' : 'Va en tiempo', d: `Faltan ${h(restan)} y hay ${h(cap)} de trabajo efectivo hasta el ${fdm(fin)}.` };
 }
@@ -398,10 +405,11 @@ function cargaDiaria(lista) {
   return m;
 }
 const claseCarga = (h, jor, sin) => (h === 0 ? 'nada' : h / jor > 1.05 ? 'sobre' : h / jor >= 0.85 ? 'lleno' : 'libre');
-function tiraCarga(m, top) {
+function tiraCarga(m, top, slug) {
   return DIAS.map((d, k) => {
     if (!d.hab || (HOY >= 0 && k < HOY)) return '';
-    const jor = jornadaDe(d.f), c = m.get(k) || { h: 0, it: [], sin: 0 }, falta = jor - c.h;
+    const jor = slug ? jornadaP(slug, d.f) : jornadaDe(d.f), c = m.get(k) || { h: 0, it: [], sin: 0 }, falta = jor - c.h;
+    if (!jor && !c.h && !c.sin) return `<div class="cargad nada" style="left:${k * ANCHO + 2}px;width:${ANCHO - 5}px;top:${top}px" title="${esc(`${DNOM[d.dow]} ${fdm(d.f)}: ${rotuloPrestamo(fichaDe(slug))}, sin capacidad aquí.`)}">—</div>`;
     const tip = `${DNOM[d.dow]} ${fdm(d.f)}: ${fh(c.h)} h asignadas de ${fh(jor)} h de jornada. ` +
       (falta > 0.05 ? `Le caben ${fh(falta)} h más.` : falta < -0.05 ? `Se pasa ${fh(-falta)} h.` : 'Día completo.') +
       (c.it.length ? ' — ' + c.it.map(([id, h, mk, s]) => `${id}: ${s ? 'sin estimar' : fh(h) + ' h'}${mk ? ' (' + mk + ')' : ''}`).join(' · ') : ' — Nada asignado.') +
@@ -485,12 +493,12 @@ function pintar() {
     const altoB = pleg ? 32 : Math.max(52, baseT + nT * 13 + 6);
     const cm = cargaDiaria(items.filter((i) => i.persona === p.slug));
     const cHoy = HOY >= 0 && DIAS[HOY].hab ? (cm.get(HOY) || { h: 0, sin: 0 }) : null;
-    const jHoy = HOY >= 0 ? jornadaDe(DIAS[HOY].f) : 0;
+    const jHoy = HOY >= 0 ? jornadaP(p.slug, DIAS[HOY].f) : 0;
     const hoyTxt = cHoy ? ` · <b class="hoy-${{ libre: 'l', lleno: 'o', sobre: 's' }[claseCarga(cHoy.h, jHoy, cHoy.sin)] || 'l'}">hoy ${fh(cHoy.h)}/${fh(jHoy)} h${cHoy.sin ? '+' : ''}</b>` : '';
     return `<div class="grow" data-p="${esc(p.slug)}"><div class="who"><button class="pleg" data-p="${esc(p.slug)}" title="${pleg ? 'Desplegar' : 'Minimizar'}">${pleg ? '▸' : '▾'}</button>` +
-      `<span class="dot" style="background:${esc(p.color)}"></span>${esc(p.nombre)}${p.lider ? ' <span class="rol">(líder)</span>' : ''}${p.prestamo ? ` <span class="rol">(prestado: ${esc(p.prestamo)})</span>` : ''}` +
+      `<span class="dot" style="background:${esc(p.color)}"></span>${esc(p.nombre)}${p.lider ? ' <span class="rol">(líder)</span>' : ''}${rotuloPrestamo(p) ? ` <span class="rol">(${esc(rotuloPrestamo(p))})</span>` : ''}${p.produce_pr === false ? ' <span class="rol">(no produce PR)</span>' : ''}` +
       `<span class="carga" title="pendientes con fecha · horas estimadas · terminadas en la ventana · horas asignadas hoy / jornada">${vivos.length} · ${fh(horas)} h${nTraza ? ' · ✓' + nTraza : ''}${hoyTxt}</span></div>` +
-      `<div class="lane" data-p="${esc(p.slug)}" style="height:${altoB + 24}px;width:${DIAS.length * ANCHO}px">${celdas}${barras}${pleg ? '' : tiraCarga(cm, altoB + 2)}</div></div>`;
+      `<div class="lane" data-p="${esc(p.slug)}" style="height:${altoB + 24}px;width:${DIAS.length * ANCHO}px">${celdas}${barras}${pleg ? '' : tiraCarga(cm, altoB + 2, p.slug)}</div></div>`;
   }).join('');
   $('gantt').innerHTML = cab + filas;
   pintarLeyenda();
@@ -686,7 +694,15 @@ function resumen() {
     `${plan.length} pendientes con fecha · ${items.filter((i) => i.cerrada).length} terminadas · ${items.filter((i) => i.tipo === 'implementacion').length} listas para implementar<br>` +
     `Trabajo efectivo supuesto: <b>${Math.round(FACTOR * 100)} %</b> de la jornada` +
     (D.sla_revision != null ? ` · acuerdo de revisión ${D.sla_revision} d háb. · de publicación ${D.sla_implementacion != null ? D.sla_implementacion : 5} d háb.` : '') +
-    (FEST.size ? ` · ${FEST.size} festivos configurados` : ' · <span class="reg">sin festivos configurados</span>');
+    (FEST.size ? ` · ${FEST.size} festivos configurados` : ' · <span class="reg">sin festivos configurados</span>') +
+    capacidadTxt();
+}
+function capacidadTxt() {
+  const ce = D.capacidad_equipo;
+  if (!ce || (!ce.sin_pr.length && !ce.prestadas.length)) return '';
+  return `<br>Producen PR al corte: <b>${ce.producen_pr} de ${ce.total}</b>` +
+    ce.prestadas.map((x) => ` · ${esc(x.nombre)} ${x.ya ? '' : '<span class="reg">(desde el ' + fdm(x.desde) + ')</span> '}prestada a ${esc(x.a)} desde ${fdm(x.desde)}${x.hasta ? ' hasta ' + fdm(x.hasta) : ''} (no cuenta en la capacidad)`).join('') +
+    (ce.sin_pr.length ? ` · no producen PR: ${esc(ce.sin_pr.join(', '))}` : '');
 }
 function pintarCobertura() {
   const a = (D.cobertura && D.cobertura.avisos) || [];

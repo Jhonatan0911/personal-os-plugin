@@ -9,10 +9,31 @@ marcado; sin el bloque `status_celula:` valen los valores por defecto del motor.
 |---|---|---|
 | `owner`, `jira.mi_account_id` | Quién es el líder (carril primero) | Se pregunta (obligatorio) |
 | `equipo[]` (`nombre`, `rol`, `account_id`, `correo`, `prestamo`) | Carriles y remitentes de timesheet | Se pregunta (obligatorio) |
+| `equipo[].produce_pr`, `equipo[].prestado` | Capacidad real (abajo, §1-bis) | Todos producen PR y nadie está prestado |
 | `jira.cloud_id`, `jira.sitio`, `jira.proyectos[]` | Lectura de Jira y tablas de Status Jira | Se pregunta (obligatorio); `cloud_id` sale de `getAccessibleAtlassianResources` |
 | `jira.campo_inicio` | Campo de fecha de inicio de la instancia | Sin fecha de inicio: la barra empieza en el vencimiento |
 | `jira.estados_que_parecen_cerrados` | `estados.no_cierre` | `Redefinido`, `Won't Do`, `Duplicado` |
 | `config.json` → `festivos`, `timesheet.jornada`, `timesheet.formatoClave`, `timesheet.metaCoberturaIssue` | Días hábiles, jornada, clave válida de issue y meta del % con issue | Sin festivos (se avisa), 8 h L-V, `PROY-123`, 90 % |
+
+### 1-bis. Capacidad real: `produce_pr` y `prestado`
+
+```yaml
+equipo:
+  - nombre: "<Persona>"
+    produce_pr: true          # false: QA, analista… no cuenta en «producen PR»
+    prestado: { a: "<otra célula>", desde: "AAAA-MM-DD", hasta: null }   # hasta null = sin fecha de regreso
+```
+
+La skill los copia tal cual a `personas[]` del JSON de datos. Con ellos el tablero:
+
+- rotula el carril «prestada a `<a>` desde `<fecha>`» (y «no produce PR» si aplica). El campo viejo
+  `prestamo` (texto) se sigue mostrando si no hay `prestado`;
+- le pone **jornada 0** a la persona en los días del préstamo: no cuenta en la capacidad del veredicto
+  ni en la tira de carga, y lo que tenga con fecha en ese rango sale en la cobertura para reasignarlo;
+- dice en la cabecera cuántas personas **producen PR al corte** (ni prestadas ni con `produce_pr: false`)
+  y quién está prestado o lo estará.
+
+Un `prestado` sin `desde` válido se ignora con aviso: la persona cuenta con capacidad completa.
 
 ## 2. Bloque `status_celula:` de `fuentes.yaml`
 

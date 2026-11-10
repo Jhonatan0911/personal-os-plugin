@@ -142,5 +142,92 @@ class Certificar(unittest.TestCase):
         self.assertFalse(exp["retro"]["enviada"])
 
 
+FLUJO = {"flujo": {"niveles_activos": True, "nivel_por_defecto": "C", "niveles": {
+    "A": {"pasos": {"p0": "corto", "p5": "evidencia"}},
+    "B": {"pasos": {"p0": "corto", "p1": "corto", "p4": "ia_y_humana", "p5": "evidencia", "p6": "corto"}},
+    "C": {"pasos": {"p0": "completo", "p4": "completo", "p5": "matriz"}},
+    "X": {"pasos": {"p0": "corto"}}}}}
+
+
+class CertificarPorNivel(unittest.TestCase):
+    def setUp(self):
+        self.tmp = Path(tempfile.mkdtemp())
+        self.cfg = self.tmp / "fuentes.json"
+        base.escribir_json(self.cfg, FLUJO)
+        self.exp = self.tmp / "expediente.json"
+
+    def tearDown(self):
+        shutil.rmtree(self.tmp, ignore_errors=True)
+
+    def expediente(self, nivel=None, evidencia="Plantilla de mensajería aprobada en el ambiente de pruebas"):
+        exp = base.leer_json(AQUI / "expediente_ejemplo.json")
+        if nivel:
+            exp["nivel"] = nivel
+        if evidencia:
+            exp["ficha_corta"] = {"que": "Cargar la plantilla", "para_cuando": "2026-11-20", "quien_pidio": "Cliente",
+                                  "evidencia_cierre": evidencia, "fuente": "F1"}
+        base.escribir_json(self.exp, exp)
+
+    def ids_generados(self, *extra, config=True):
+        salida = self.tmp / "m.csv"
+        correr("matriz.py", "--expediente", self.exp, "--salida", salida, *(["--config", self.cfg] if config else []), *extra)
+        return [f["id"] for f in matriz.leer(salida)[0]]
+
+    def test_resolver_nivel(self):
+        self.assertEqual(base.resolver_nivel({}, {"nivel": "A"})["variante"], "matriz")  # sin flujo: lo de hoy
+        self.assertEqual(base.resolver_nivel(FLUJO, {"nivel": "A"})["variante"], "evidencia")
+        self.assertEqual(base.resolver_nivel(FLUJO, {"nivel": "B"})["variante"], "evidencia")
+        self.assertEqual(base.resolver_nivel(FLUJO, {"nivel": "C"})["variante"], "matriz")
+        self.assertEqual(base.resolver_nivel(FLUJO, {})["nivel"], "C")
+        self.assertFalse(base.resolver_nivel(FLUJO, {"nivel": "X"})["aplica"])
+
+    def test_sin_flujo_y_nivel_c_matriz_completa(self):
+        self.expediente("A")
+        self.assertEqual(self.ids_generados(config=False), ["CA-1", "CA-2", "QA-1", "MF-1"])
+        self.expediente("C")
+        self.assertEqual(self.ids_generados(), ["CA-1", "CA-2", "QA-1", "MF-1"])
+
+    def test_nivel_a_una_fila_y_su_evidencia(self):
+        self.expediente("A")
+        self.assertEqual(self.ids_generados(), ["EV-1"])
+        m = self.tmp / "llena.csv"
+        escribir_csv(m, [{"ID": "EV-1", "Qué se verifica": "Plantilla aprobada", "Resultado obtenido": "Aprobada",
+                          "Estado": "OK"}])
+        ev = self.tmp / "evidencias" / "EV-1"
+        ev.mkdir(parents=True)
+        (ev / "aprobacion.txt").write_text("Plantilla aprobada con PAC-0001", encoding="utf-8")
+        out = correr("verificar_matriz.py", "--expediente", self.exp, "--matriz", m, "--config", self.cfg, "--escribir",
+                     "--salida", self.tmp / "v.json", "--fecha", "2026-11-12")
+        self.assertIn("nivel A, evidencia", out)
+        v = base.leer_json(self.tmp / "v.json")
+        self.assertEqual((v["veredicto"], v["esperadas"], v["variante_p5"]), ("certificada", 1, "evidencia"))
+        exp = base.leer_json(self.exp)
+        self.assertEqual([f["ca"] for f in exp["matriz_pruebas"]], ["EV-1"])
+        self.assertEqual(exp["chequeos"]["p5"]["variante"], "evidencia")
+        # La misma evidencia con un dato real: se rechaza igual que la matriz completa.
+        (ev / "aprobacion.txt").write_text("Enviada al celular " + "300" + "1234567", encoding="utf-8")
+        correr("verificar_matriz.py", "--expediente", self.exp, "--matriz", m, "--config", self.cfg,
+               "--salida", self.tmp / "v.json")
+        self.assertEqual(base.leer_json(self.tmp / "v.json")["veredicto"], "rechazada")
+
+    def test_nivel_b_sin_evidencia_de_cierre_la_pide(self):
+        self.expediente("B", evidencia=None)
+        r = subprocess.run([sys.executable, "-I", str(SCRIPTS / "matriz.py"), "--expediente", str(self.exp),
+                            "--salida", str(self.tmp / "m.csv"), "--config", str(self.cfg)],
+                           capture_output=True, text=True, encoding="utf-8")
+        self.assertEqual(r.returncode, 2)
+        self.assertIn("--evidencia-cierre", r.stdout)
+        self.assertEqual(self.ids_generados("--evidencia-cierre", "Registro corregido y verificado"), ["EV-1"])
+
+    def test_paso_que_no_aplica(self):
+        self.expediente("X")
+        r = subprocess.run([sys.executable, "-I", str(SCRIPTS / "matriz.py"), "--expediente", str(self.exp),
+                            "--salida", str(self.tmp / "m.csv"), "--config", str(self.cfg)],
+                           capture_output=True, text=True, encoding="utf-8")
+        self.assertEqual(r.returncode, 3)
+        self.assertFalse((self.tmp / "m.csv").exists())
+        self.assertEqual(self.ids_generados("--variante", "matriz"), ["CA-1", "CA-2", "QA-1", "MF-1"])  # el líder insiste
+
+
 if __name__ == "__main__":
     unittest.main()

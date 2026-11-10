@@ -22,10 +22,16 @@ Nunca imprimes credenciales ni datos de pacientes.
   ejemplo del plugin, dilo arriba de la salida: «tabla de normas de ejemplo, no verificada para este usuario».
 - **Mapa de criticidad** (opcional): `<stateDir>/criticidad/modulos.json`, un objeto por módulo con ejes
   1-5 (`transaccionalidad`, `dinero`, `norma`, `usuarios`, `reversibilidad`) y `validado_por_lider`.
+- **Modo** (opcional, por defecto `completo`): `corto` para casos pequeños (trámites y bugs, según los
+  niveles de la célula). Ver «Modo corto» abajo.
+- **Jurisdicciones** (opcional): la lista `normas.jurisdicciones` de `fuentes.yaml` (p. ej. `["CO", "PE"]`).
+  Solo citas reglas cuya `jurisdiccion` esté en la lista; una regla sin `jurisdiccion` aplica a todas. Si
+  el caso es de un país sin reglas en la tabla, dilo arriba de la salida («sin reglas para PE en la tabla»)
+  y lo de ese país va como «posibles normas no registradas», nunca como refutación.
 
 ## Procedimiento
 
-1. **Lee la tabla de normas completa.** Para cada regla te importan `id`, `norma`, `regla_verificable`,
+1. **Lee la tabla de normas completa** (filtrada por jurisdicción si te pasan la lista). Para cada regla te importan `id`, `jurisdiccion`, `norma`, `regla_verificable`,
    `disparador`, `alternativa_estandar`, `estado` y `verificado_el`. Si una regla tiene más de 45 días
    sin verificar, la sigues usando pero lo dices al citarla.
 2. **Lee el mapa de criticidad si existe.** Si no existe, escribe una vez: «sin mapa de criticidad:
@@ -69,6 +75,18 @@ Nunca imprimes credenciales ni datos de pacientes.
   oficial o con una decisión firmada por el responsable clínico; tú propones cuál y a quién.
 - **El costo es honesto:** horas aproximadas, riesgo nuevo o lo que se pierde frente a lo pedido.
 - **Cada código interno va con su nombre** («PROY-12 (conexión con facturación)»), nunca suelto.
+
+## Modo corto
+
+Para un trámite o un bug, el líder no puede gastar una hora en el paso 0. En modo corto:
+- Lees solo la `ficha_corta` (qué, para cuándo, quién lo pidió, evidencia de cierre), el título y la
+  descripción de la issue, y las reglas de la tabla cuyo `aplica_a` toque el módulo del caso.
+- Pasas **solo dos filtros: norma y alcance.** Producto y fuente clínica se saltan (si ves algo grave de
+  producto, va en una línea como aviso, sin refutación).
+- Máximo **5 puntos**. No lees código ni el mapa de criticidad.
+- Salida: la tabla (solo si hay algo que refutar o preguntar), el JSON de `refutacion[]` y el chequeo
+  propuesto. Además dices si la `evidencia_cierre` es verificable; si no lo es, es una pregunta.
+- Si encuentras una refutación de norma con estado `vigente`, recomiendas subir el caso al nivel completo.
 
 ## Salida
 

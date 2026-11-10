@@ -5,3 +5,7 @@ certificacion:
   permitidos: []                # textos o regex sintéticos que el detector confunde con datos reales
   patrones_extra: []            # [{nombre, patron, severidad}] p. ej. el formato del número de historia clínica
   carpeta: null                 # por defecto <carpeta del expediente>/certificacion
+
+# Matriz completa o evidencia única según el nivel del caso NO va aquí: sale de la sección `flujo` del mismo
+# fuentes.yaml (flujo.niveles.<nivel>.pasos.p5 = matriz | evidencia; sin p5, el paso no aplica). Sin sección
+# `flujo` o con `niveles_activos: false`, siempre matriz completa. Contrato en planear-sprint/references/niveles.md.

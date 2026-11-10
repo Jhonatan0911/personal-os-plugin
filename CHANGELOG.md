@@ -1,5 +1,30 @@
 # Changelog
 
+## 3.1.0
+
+Cada célula adapta el flujo del líder sin copiar el de otra: niveles de caso, normas por país y
+capacidad real, todo por configuración. Sin la sección `flujo`, nada cambia.
+
+### Nuevo
+- **worklist-lider**: la cabina del líder como skill genérica (lista + expediente + chat), con filtro
+  por nivel y detalle corto para los casos pequeños. Paleta neutra; marca y conectores por configuración.
+- **Niveles de caso** (`flujo` en `fuentes.yaml`, contrato en `planear-sprint/references/niveles.md`):
+  qué pasos recorre cada nivel y en qué versión (`corto`, `completo`, `ia_y_humana`, `evidencia`…).
+- **Expediente**: `nivel`, `ficha_corta`, `compromisos[]` con historial de fechas y cortes con
+  `responsable`, `tipo` (incluye `acta`) y `fuente`.
+
+### Cambiado
+- **refutador-requerimiento**: modo corto (norma y alcance, máx. 5 puntos) y filtro por
+  `normas.jurisdicciones`; las reglas de la tabla llevan `jurisdiccion`.
+- **planear-sprint**: paso 0 clasifica el nivel y resuelve los casos cortos con la ficha corta; el
+  cronograma muestra cuántas personas producen PR y avisa de subtareas en días de préstamo.
+- **revisar-pr**: capas según el nivel; en `ia_y_humana` no hay segunda pasada y la regla mínima (rama
+  con clave, BD con rollback) devuelve el PR.
+- **certificar-funcional**: con `evidencia`, una sola fila con la evidencia de cierre.
+- **Vigía** (`alcances-scan.js`): persigue también los cortes pendientes y los compromisos vigentes de
+  los expedientes, con la cadena de fechas movidas y sin duplicar lo que ya trae una nota de alcance.
+- **status-celula**: `produce_pr` y `prestado` en el carril y en la capacidad.
+
 ## 3.0.0
 
 Salto mayor: el plugin pasa a cubrir el flujo completo del líder técnico por requerimiento, de entender

@@ -30,10 +30,11 @@ def estado(t):
     return ESTADOS.get(norm(t), "desconocido")
 
 
-def cargar_config(ruta=None, seccion="certificacion"):
-    cfg = copy.deepcopy(DEFECTO)
+def leer_config(ruta):
+    """El archivo de configuración completo (.yaml/.yml/.json) como dict. Sin ruta, {}."""
     if not ruta:
-        return cfg
+        return {}
+    ruta = str(ruta)
     with open(ruta, encoding="utf-8") as f:
         texto = f.read()
     if ruta.lower().endswith((".yaml", ".yml")):
@@ -41,9 +42,15 @@ def cargar_config(ruta=None, seccion="certificacion"):
             import yaml
         except ImportError:
             sys.exit("La configuración es YAML y falta PyYAML (pip install pyyaml), o pásala como JSON.")
-        datos = yaml.safe_load(texto) or {}
-    else:
-        datos = json.loads(texto)
+        return yaml.safe_load(texto) or {}
+    return json.loads(texto)
+
+
+def cargar_config(ruta=None, seccion="certificacion"):
+    cfg = copy.deepcopy(DEFECTO)
+    if not ruta:
+        return cfg
+    datos = leer_config(ruta)
     sec = datos.get(seccion)
     if sec is None and any(k in datos for k in DEFECTO):
         sec = datos
@@ -51,6 +58,45 @@ def cargar_config(ruta=None, seccion="certificacion"):
         if v is not None:
             cfg[k] = v if k != "seudonimos" else DEFECTO["seudonimos"] + list(v)
     return cfg
+
+
+# ─── Nivel del caso (contrato: planear-sprint/references/niveles.md) ───────────────────────────────
+# Duplicada a propósito en revisar-pr/scripts/comun.py: las skills se instalan sueltas.
+VARIANTES_P5 = ("matriz", "evidencia")
+
+
+def resolver_nivel(config, exp=None, paso="p5", variante=None, validas=VARIANTES_P5, por_defecto="matriz"):
+    """Qué versión del paso corre este caso según `flujo` de fuentes.yaml y el `nivel` del expediente.
+
+    `config` es la ruta de fuentes.yaml/.json o el dict ya leído. Sin sección `flujo` o con `niveles_activos`
+    falso devuelve la variante de siempre (`por_defecto`). `variante` la fuerza (el líder insiste).
+    Devuelve {niveles_activos, nivel, origen, paso, variante, aplica, forzado, aviso}.
+    """
+    datos = leer_config(config) if isinstance(config, (str, os.PathLike)) else (config or {})
+    flujo = datos.get("flujo") or {}
+    r = {"niveles_activos": bool(flujo.get("niveles_activos")), "nivel": None, "origen": "sin_flujo", "paso": paso,
+         "variante": por_defecto, "aplica": True, "forzado": False, "aviso": None}
+    if r["niveles_activos"]:
+        propio = (exp or {}).get("nivel")
+        r["origen"] = "expediente" if propio else "nivel_por_defecto"
+        r["nivel"] = nivel = str(propio or flujo.get("nivel_por_defecto") or "C").upper()
+        conf = (flujo.get("niveles") or {}).get(nivel)
+        if conf is None:
+            r["aviso"] = f"El nivel «{nivel}» no está en flujo.niveles: se usa la variante «{por_defecto}»."
+        else:
+            v = (conf.get("pasos") or {}).get(paso)
+            if v is None:
+                r.update(variante=None, aplica=False, aviso=f"El paso {paso} no aplica al nivel {nivel}.")
+            elif v not in validas:
+                r["aviso"] = f"Variante «{v}» de {paso} no reconocida en el nivel {nivel}: se usa «{por_defecto}»."
+            else:
+                r["variante"] = v
+    if variante:
+        if variante not in validas:
+            sys.exit(f"Variante «{variante}» no válida para {paso} (válidas: {', '.join(validas)}).")
+        r["forzado"] = variante != r["variante"]
+        r.update(variante=variante, aplica=True)
+    return r
 
 
 def leer_json(ruta):

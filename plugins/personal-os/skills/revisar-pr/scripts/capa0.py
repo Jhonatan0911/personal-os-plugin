@@ -361,6 +361,29 @@ def config_agente(archivos, patrones, H):
     return tocados
 
 
+def regla_minima(H, ent, cfg, variante):
+    """La regla mínima (rama con clave de Jira, scripts de BD con rollback) se evalúa siempre; en las variantes
+    reducidas (ia_y_humana, regla_minima) es lo único que separa el PR de producción, así que sus fallas suben a «alta»."""
+    activas = cfg.get("regla_minima") or {}
+    reglas = {h["regla"] for h in H}
+    hay_bd = "script_bd" in ent["presentes"] or any(r.replace(" ", "").startswith("script_bd") for r in ent["requeridos"])
+    estado = {
+        "rama_con_clave": "falla" if "rama_sin_clave" in reglas else "cumple",
+        "bd_con_rollback": ("falla" if "script_bd_sin_rollback" in reglas or "rollback" in ent["faltantes"]
+                            else "cumple" if hay_bd else "no_aplica"),
+    }
+    reducida = variante in ("ia_y_humana", "regla_minima")
+    disparan = {"rama_con_clave": ("rama_sin_clave",), "bd_con_rollback": ("script_bd_sin_rollback",)}
+    for nombre, regs in disparan.items():
+        if not (reducida and activas.get(nombre)):
+            continue
+        for h in H:
+            if h["regla"] in regs and h["severidad"] != "alta":
+                h["severidad"] = "alta"
+                h["mensaje"] += " (regla mínima del nivel: bloquea)"
+    return {k: v for k, v in estado.items() if activas.get(k)}
+
+
 def agrupar(H):
     """Un hallazgo por regla y archivo, con sus líneas: 40 avisos iguales esconden el que importa."""
     out, idx = [], {}
@@ -460,6 +483,7 @@ def main():
     ap.add_argument("--verificar-registro", action="store_true")
     ap.add_argument("--salida")
     ap.add_argument("--diff-ia")
+    ap.add_argument("--variante", help="fuerza la variante de p4 (el líder insiste): completo|ia_y_humana|regla_minima")
     a = ap.parse_args()
     cfg = comun.cargar_config(a.config)
     texto = Path(a.diff).read_text(encoding="utf-8", errors="replace")
@@ -467,6 +491,7 @@ def main():
     pr = comun.leer_json(a.pr) if a.pr else {}
     exp = comun.leer_json(a.expediente) if a.expediente else None
     jira = comun.leer_json(a.jira) if a.jira else None
+    nivel = comun.resolver_nivel(a.config or {}, exp, variante=a.variante)
     H, tachar = [], {}
 
     clave = chequear_rama(pr, cfg, H) if pr else None
@@ -485,6 +510,7 @@ def main():
     chequear_any(archivos, repo["frontend"] == "nuevo", H)
     agente = config_agente(archivos, cfg["no_tocar_de_la_rama"], H)
     tam = tamano(archivos, cfg["tamano_max_lineas"], H)
+    minima = regla_minima(H, ent, cfg, nivel["variante"])
     H = agrupar(H)
     sen = senales(archivos)
     excluidos = [x["ruta"] for x in archivos if comun.coincide(x["ruta"], cfg["excluir_de_ia"])]
@@ -497,12 +523,16 @@ def main():
         "entregables": ent, "tamano": tam, "config_de_agente_tocada": agente, "excluidos_de_ia": excluidos,
         "criterios": criterios, "subtareas": subtareas,
         "criterios_fuente": "expediente" if criterios else None,
+        "nivel": nivel, "regla_minima": minima,
     }
     if a.salida:
         comun.escribir_json(a.salida, resultado)
     if a.diff_ia:
         Path(a.diff_ia).write_text(diff_para_ia(texto, cfg["excluir_de_ia"], tachar), encoding="utf-8")
     print(f"Capa 0 · clave {clave or '—'} · {tam['archivos']} archivos · {tam['lineas_logica']} líneas de lógica")
+    if nivel["niveles_activos"] or nivel["forzado"]:
+        print(f"Nivel {nivel['nivel'] or '—'} ({nivel['origen']}) · p4: {nivel['variante'] or 'no aplica'}"
+              + (" (forzada por el líder)" if nivel["forzado"] else "") + (f" · {nivel['aviso']}" if nivel["aviso"] else ""))
     print(f"Hallazgos: {cuenta['alta']} alta · {cuenta['media']} media · {cuenta['baja']} baja · {len(sen)} señales para la IA")
     for h in H:
         if h["severidad"] in ("alta", "media"):

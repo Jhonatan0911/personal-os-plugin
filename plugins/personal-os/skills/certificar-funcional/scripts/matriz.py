@@ -8,6 +8,12 @@ Filas esperadas (una por cada una):
   MF-n   cada modo de falla de `impacto.modos_falla[]` con `a_regresion: true` (n = su posición en la lista)
 Con --plantilla (una matriz existente del equipo, p. ej. la de regresión) copia el libro y llena su hoja de
 matriz por nombre de columna; sin plantilla arma un libro propio. Sin openpyxl, usa .csv o .md.
+
+Según el nivel del caso (`flujo` de --config y `nivel` del expediente; contrato en planear-sprint/references/niveles.md):
+  p5 = matriz (o sin flujo)  lo de arriba
+  p5 = evidencia             UNA fila, EV-1: la evidencia de cierre de `ficha_corta.evidencia_cierre`
+                             (o --evidencia-cierre "<texto>"); si falta, sale con 2 para que la skill la pida
+  p5 ausente                 el paso no aplica a ese nivel: sale con 3 (--variante lo fuerza si el líder insiste)
 """
 import argparse, csv, re, shutil, sys
 from pathlib import Path
@@ -52,6 +58,23 @@ def filas_esperadas(exp):
                       "_prioridad": "Crítica" if sev >= 5 else "Alta" if sev == 4 else "Media" if sev == 3 else "Baja",
                       "_tipo": "Regresión"})
     return filas
+
+
+def evidencia_cierre(exp, extra=None):
+    return (extra or ((exp or {}).get("ficha_corta") or {}).get("evidencia_cierre") or "").strip()
+
+
+def filas_evidencia(exp, texto):
+    """Niveles cortos (p5 = evidencia): una sola fila con la evidencia que cierra el caso."""
+    clave = ", ".join(exp.get("jira") or []) or (exp.get("historias") or [{}])[0].get("clave", "")
+    return [{"ID": "EV-1", "Origen": "Evidencia de cierre", "Historia": clave,
+             "Qué se verifica": texto or "(evidencia de cierre sin declarar)",
+             "Cómo verificar": "Adjuntar la evidencia en evidencias/EV-1/ con datos sintéticos",
+             "_prioridad": "Alta", "_tipo": "Funcional"}]
+
+
+def filas_segun(exp, variante="matriz", evidencia=None):
+    return filas_evidencia(exp, evidencia_cierre(exp, evidencia)) if variante == "evidencia" else filas_esperadas(exp)
 
 
 def _xlsx():
@@ -207,10 +230,22 @@ def main():
     ap.add_argument("--salida", required=True)
     ap.add_argument("--plantilla")
     ap.add_argument("--config")
+    ap.add_argument("--variante", help="fuerza la variante de p5 (matriz|evidencia) si el líder insiste")
+    ap.add_argument("--evidencia-cierre", help="la evidencia que cierra el caso, si la ficha corta no la trae")
     a = ap.parse_args()
     cfg = base.cargar_config(a.config)
     exp = base.leer_json(a.expediente)
-    filas = filas_esperadas(exp)
+    nivel = base.resolver_nivel(a.config or {}, exp, variante=a.variante)
+    if nivel["aviso"]:
+        print(nivel["aviso"])
+    if not nivel["aplica"]:
+        print("La revisión funcional no aplica a este nivel: no se genera matriz (con --variante se fuerza).")
+        sys.exit(3)
+    if nivel["variante"] == "evidencia" and not evidencia_cierre(exp, a.evidencia_cierre):
+        print(f"Nivel {nivel['nivel'] or '—'}: falta la evidencia de cierre (ficha_corta.evidencia_cierre). "
+              "Pídela al líder y pásala con --evidencia-cierre \"<texto>\".")
+        sys.exit(2)
+    filas = filas_segun(exp, nivel["variante"], a.evidencia_cierre)
     if not filas:
         sys.exit("El expediente no trae criterios, escenarios de calidad ni modos de falla a regresión: no hay qué certificar.")
     titulo = f"Certificación funcional · {exp.get('titulo') or exp.get('requerimiento') or exp.get('id', '')}"
@@ -229,6 +264,9 @@ def main():
     else:
         escribir_texto(filas, a.salida)
         print(f"Matriz: {a.salida}")
+    if nivel["variante"] == "evidencia":
+        print(f"Nivel {nivel['nivel'] or '—'} · 1 fila (EV-1): evidencia de cierre — {filas[0]['Qué se verifica']}")
+        return
     cuenta = {p: sum(1 for f in filas if f["ID"].split("/")[-1].startswith(p)) for p in ("CA", "QA", "MF")}
     print(f"{len(filas)} filas: {cuenta['CA']} criterios · {cuenta['QA']} de calidad · {cuenta['MF']} modos de falla a regresión")
 

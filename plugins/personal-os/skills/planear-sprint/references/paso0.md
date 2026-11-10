@@ -2,6 +2,24 @@
 
 Léelo en la Fase 3, cuando vuelvan el revisor de estimación y el refutador.
 
+## 0. Nivel del caso (solo con `flujo.niveles_activos: true`)
+
+Antes de todo, clasifica el caso con los niveles de `fuentes.yaml` → `flujo.niveles` (contrato en
+`niveles.md`) y escríbelo en `nivel`. Propón el nivel con una línea de por qué; el líder lo confirma o lo
+cambia (si `flujo.clasifica` es `analista`, el analista lo propone y el líder igual puede cambiarlo).
+
+- **Nivel con `p0: corto`:** no armas expediente completo ni plan de sprint. Llenas `ficha_corta` (qué,
+  para cuándo, quién lo pidió, evidencia de cierre, cada una con su fuente). Si
+  `flujo.paso0.quien_llena` es `analista`, deja la ficha como borrador para el analista que trae el caso
+  (sugiere quién según `flujo.paso0.analistas`). Corre el refutador **solo si el nivel está en
+  `flujo.refutador.corto_en`**, con `modo: corto`. El chequeo `p0` sale igual que abajo (§4), y los pasos
+  que el nivel no recorre quedan `no_aplica`. Termina aquí: no hay cronograma.
+- **Nivel completo:** sigue desde §1. Corre el refutador si el nivel está en `flujo.refutador.completo_en`.
+- Si `flujo.entrada_solo_por_paso0` es `true` y el pedido llegó directo a un desarrollador (por correo o
+  chat), dilo en el resumen: el caso entra desde aquí y el desarrollador no arranca hasta el chequeo `p0`.
+
+Sin sección `flujo`, o con `niveles_activos: false`: no clasifiques, todo caso va por §1 en adelante.
+
 ## 1. Encargo al refutador
 
 Al agente `refutador-requerimiento` le pasas rutas, no copias:
@@ -10,6 +28,7 @@ Al agente `refutador-requerimiento` le pasas rutas, no copias:
 - la tabla de normas: `<stateDir>/criticidad/normas.json`. Si no existe, la de ejemplo del plugin
   (`plantillas/estado/criticidad/normas-ejemplo.json`) y le dices que **no está verificada**;
 - el mapa de criticidad `<stateDir>/criticidad/modulos.json`, si existe;
+- `normas.jurisdicciones` de `fuentes.yaml`, si existe (el refutador solo cita reglas de esos países);
 - las rutas de los repos con su ref, si quieres que mire el código.
 
 La tabla de normas la mantiene el usuario: cada regla con su URL oficial, su estado (`vigente`,

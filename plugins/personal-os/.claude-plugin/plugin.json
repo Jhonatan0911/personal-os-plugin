@@ -1,7 +1,7 @@
 {
   "name": "personal-os",
   "displayName": "Personal OS — Chief of Staff",
-  "version": "3.0.0",
+  "version": "3.1.0",
   "description": "Sistema operativo ejecutivo para Claude Code: vigía de compromisos punto por punto, hitos con fecha en cada prompt, búsqueda en todas las fuentes antes de afirmar una ausencia, estado en notas-objeto, bitácora con líneas de timesheet colgadas de Jira, consola neuronal, handoff multi-frente, módulo de personas, planeación de sprint con revisor adversarial y status de la célula. Sobre Jira, Outlook y Teams; toda escritura externa se confirma antes.",
   "author": {
     "name": "Jhonatan Piña"

@@ -140,9 +140,17 @@ timesheet, la planeación de sprint y los recordatorios de Windows.
 
 Skills que se activan por lo que pides: `brief-diario`, `planear-sprint` («planeemos el sprint de…»),
 `checkpoint` / `retomar` («guarda el avance», «en qué quedamos»), `personas`, `status-celula`,
-`timesheet`, `consola-neuronal`, `tablero-diario`, `cerrar-tarea`, `reconciliar`.
+`timesheet`, `consola-neuronal`, `tablero-diario`, `cerrar-tarea`, `reconciliar`, y las del flujo del
+líder: `mapa-criticidad`, `revisar-pr`, `certificar-funcional`, `worklist-lider` («la cabina del líder»)
+y `maestro-skills`.
 Agentes: `brief-jira`, `brief-outlook`, `brief-teams` (solo lectura), `redactor-correos` (redacta,
-nunca envía) y `revisor-estimacion` (revisor adversarial de los planes de sprint).
+nunca envía), `revisor-estimacion` (revisor adversarial de los planes de sprint) y
+`refutador-requerimiento` (paso 0, con modo corto y normas por país).
+
+**Cada célula adapta el flujo sin copiar el de otra:** la sección `flujo` de `fuentes.yaml` define niveles
+de caso (p. ej. trámite, bug, requerimiento) y qué pasos recorre cada uno; `normas.jurisdicciones` elige los
+países cuyas reglas cita el refutador; `equipo[].produce_pr` y `prestado` ajustan la capacidad real.
+Contrato: `skills/planear-sprint/references/niveles.md`.
 
 ---
 

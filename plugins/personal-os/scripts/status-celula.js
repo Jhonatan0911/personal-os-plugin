@@ -27,7 +27,11 @@
  *                "pausa": [...], "desarrollo": [...] },  // nombres de estado de TU Jira; «Nombre*» = prefijo
  *       revision: cola del líder · certificacion: entregado a QA/PO (cuenta como «entregada hoy» en la carga,
  *       no es cola del líder) · implementacion: cola de publicación · no_cierre: Jira lo cuenta Done y no lo es
- *   "personas": [{ "slug", "nombre", "jira" (displayName exacto), "lider": true?, "rol"?, "prestamo"?, "color"? }],
+ *   "personas": [{ "slug", "nombre", "jira" (displayName exacto), "lider": true?, "rol"?, "prestamo"?, "color"?,
+ *                  "produce_pr"?: true, "prestado"?: { "a", "desde", "hasta"? } }],
+ *       produce_pr false: no cuenta en «producen PR» (QA, analista). prestado: sin capacidad del «desde» al «hasta»
+ *       (hasta null = sin fecha de regreso); su carril se rotula «prestada a <a> desde <fecha>». Vienen de
+ *       equipo[] de fuentes.yaml. «prestamo» (texto) es el formato anterior y se sigue mostrando.
  *   "frentes":  [{ "clave", "nombre", "color"?, "titular"?, "backup"? }],
  *   "acuerdo_frentes": [{ "nombre", "cliente"?, "titular" (slug), "backup" (slug), "titular_txt"?, "backup_txt"? }]?,
  *       // titular y backup del acuerdo de equipo cuando no coinciden 1 a 1 con los frentes del cronograma
@@ -151,6 +155,18 @@ function construir(datos) {
     color: p.color || PALETA[i % PALETA.length],
   }));
   personas.sort((a, b) => (b.lider ? 1 : 0) - (a.lider ? 1 : 0));
+  // Capacidad real: quién no produce PR y quién está prestado (y desde cuándo).
+  for (const p of personas) {
+    p.produce_pr = p.produce_pr !== false;
+    const pr = p.prestado;
+    if (pr && typeof pr === 'object' && valida(pr.desde) && (pr.hasta == null || pr.hasta === '' || valida(pr.hasta))) {
+      p.prestado = { a: String(pr.a || 'otra célula'), desde: pr.desde, hasta: valida(pr.hasta) ? pr.hasta : null };
+    } else {
+      if (pr) avisos.push(`«${p.nombre}»: «prestado» necesita { a, desde: AAAA-MM-DD, hasta? }; se ignoró y cuenta con capacidad completa.`);
+      delete p.prestado;
+    }
+  }
+  const prestadaEn = (p, dia) => !!p.prestado && dia >= p.prestado.desde && (!p.prestado.hasta || dia <= p.prestado.hasta);
   const lider = personas.find((p) => p.lider) || null;
   const slugs = new Set(personas.map((p) => p.slug));
   if (!lider) avisos.push('Nadie está marcado como líder: las colas de revisión e implementación no tienen carril donde pintarse.');
@@ -259,6 +275,23 @@ function construir(datos) {
       }
     }
   }
+  // Trabajo con fecha en el carril de alguien prestado: no tiene capacidad para hacerlo.
+  for (const p of personas.filter((x) => x.prestado)) {
+    const choca = items.filter((i) => i.persona === p.slug && !i.cerrada && !i.pausada && i.tipo !== 'grupo'
+      && ['issue', 'reunion'].includes(i.tipo) && (i.vencida ? prestadaEn(p, corte) : (i.vence || i.fin) >= p.prestado.desde
+      && (!p.prestado.hasta || i.ini <= p.prestado.hasta)));
+    if (choca.length) avisos.push(`${choca.length} item(s) de «${p.nombre}» caen mientras está prestada a ${p.prestado.a} ` +
+      `(desde ${p.prestado.desde}${p.prestado.hasta ? ' hasta ' + p.prestado.hasta : ''}): ` +
+      choca.slice(0, 6).map((i) => i.id).join(', ') + (choca.length > 6 ? '…' : '') + '. No tiene capacidad: reasígnalos o muévelos.');
+  }
+  const capacidadEquipo = {
+    total: personas.length,
+    producen_pr: personas.filter((p) => p.produce_pr && !prestadaEn(p, corte)).length,
+    sin_pr: personas.filter((p) => !p.produce_pr).map((p) => p.nombre),
+    prestadas: personas.filter((p) => p.prestado && (prestadaEn(p, corte) || p.prestado.desde > corte))
+      .map((p) => ({ nombre: p.nombre, a: p.prestado.a, desde: p.prestado.desde, hasta: p.prestado.hasta, ya: prestadaEn(p, corte) })),
+  };
+
   if (items.some((i) => i.en_revision) && colas.some((c) => c.sin_entrada)) {
     avisos.push('Sin historial de cambios, la entrada a una cola se toma de la fecha de inicio o de la última actualización: la espera es aproximada.');
   }
@@ -267,6 +300,7 @@ function construir(datos) {
     corte, desde, hasta, personas, items, sin_programar: sinProgramar,
     festivos: [...ctx.fest].sort(), jornada: ctx.jornada,
     capacidad_factor: datos.capacidad_factor ?? 0.8,
+    capacidad_equipo: capacidadEquipo,
     cobertura: { avisos },
     colas_resumen: colas.map((c) => ({
       cola: c.cola, de: c.de, n: c.grupo.length, horas: c.horas, sin_est: c.sin_est,
@@ -440,7 +474,10 @@ function cargaTexto(d, n) {
   const filas = ['persona'.padEnd(22) + dias.map((s) => `${DN[dUTC(s).getUTCDay()]} ${s.slice(8)}/${s.slice(5, 7)}`.padEnd(17)).join('')];
   for (const p of d.personas) {
     filas.push(String(p.nombre).replace(/\s*\(.*$/, '').slice(0, 21).padEnd(22) + dias.map((s) => {
-      const h = carga.get(p.slug + '|' + s) || 0, j = d.jornada[dUTC(s).getUTCDay()];
+      const h = carga.get(p.slug + '|' + s) || 0;
+      const prest = p.prestado && s >= p.prestado.desde && (!p.prestado.hasta || s <= p.prestado.hasta);
+      const j = prest ? 0 : d.jornada[dUTC(s).getUTCDay()];
+      if (prest && !h) return 'prestada'.padEnd(17);
       const marca = h > j * 1.05 ? 'se pasa' : h >= j * 0.85 ? 'lleno' : 'cabe';
       return `${f1(h)}/${f1(j)} ${marca}${sin.get(p.slug + '|' + s) ? '+' : ''}`.padEnd(17);
     }).join(''));
@@ -482,6 +519,12 @@ function main() {
   console.log('Tablero: ' + salida);
   console.log(`  ${d.personas.length} carriles · ${pend.length} pendientes con fecha · ${pend.filter((i) => i.vencida).length} vencidas · ` +
               `${d.sin_programar.length} sin programar · ${d.colas_resumen.length} colas del líder`);
+  const ce = d.capacidad_equipo;
+  if (ce && (ce.sin_pr.length || ce.prestadas.length)) {
+    console.log(`  Capacidad: ${ce.producen_pr} de ${ce.total} producen PR al corte` +
+      ce.prestadas.map((x) => ` · ${x.nombre} prestada a ${x.a} desde ${x.desde}${x.ya ? '' : ' (próximamente)'}`).join('') +
+      (ce.sin_pr.length ? ` · no producen PR: ${ce.sin_pr.join(', ')}` : ''));
+  }
   if (d.cobertura.avisos.length) {
     console.log('  COBERTURA — lo que se pierde o no cuadra:');
     d.cobertura.avisos.forEach((a) => console.log('   · ' + a));

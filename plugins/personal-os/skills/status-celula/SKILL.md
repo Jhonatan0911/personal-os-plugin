@@ -44,7 +44,7 @@ búscala donde Claude Code instaló `personal-os` y dila antes de usarla. Para v
 
 | Dato | Dónde |
 |---|---|
-| Equipo (carriles) | `<stateDir>/config/fuentes.yaml` → `equipo[]` (`nombre`, `rol`, `account_id`, `correo`, `prestamo`) + fichas de `<stateDir>/personas/` con `estado: activo`. Los prestados entran igual, con su préstamo |
+| Equipo (carriles) | `<stateDir>/config/fuentes.yaml` → `equipo[]` (`nombre`, `rol`, `account_id`, `correo`, `prestamo`, `produce_pr`, `prestado`) + fichas de `<stateDir>/personas/` con `estado: activo`. Los prestados entran igual: su carril dice «prestada a … desde …» y no cuentan en la capacidad de ese rango (`references/configuracion.md` §1-bis) |
 | El líder | `owner` + `jira.mi_account_id`. Tiene carril propio y va **primero** |
 | Proyectos y sitio de Jira | `jira.proyectos[]`, `jira.cloud_id`, `jira.sitio`. Se pasan al conector; nunca se adivinan |
 | Estados que parecen cerrados | `jira.estados_que_parecen_cerrados` (`Redefinido` y compañía: no son cierres) |
@@ -194,7 +194,7 @@ Cada item lleva `horas` (estimado de Jira) y `trabajado` (lo registrado); la bar
 | Veredicto | Cuándo |
 |---|---|
 | 🔴 Vencida hace N días | `fin` < hoy. Mover la fecha con razón escrita o cerrarla |
-| 🔴 No alcanza | restante > capacidad efectiva hasta `fin`. Otra fecha, otra persona o repartirla |
+| 🔴 No alcanza | restante > capacidad efectiva hasta `fin` (sin los días en que la persona está prestada). Otra fecha, otra persona o repartirla |
 | 🟠 Al filo | restante > 85 % de la capacidad |
 | ⚪ Sin estimación | no hay `horas`: es lo primero que hay que resolver |
 | 🟢 Va en tiempo / Cerrada | el resto |

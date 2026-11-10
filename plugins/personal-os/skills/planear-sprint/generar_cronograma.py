@@ -43,6 +43,10 @@ plan.json (campos):
   "personas": ["Ana", "Luis"],                            # opcional: responsables posibles por subtarea
   "cuentas": {"Luis": "<accountId>"},                     # opcional: accountId conocidos
   "capacidad": [7.5, 7],                                  # h de desarrollo lunes-jueves y viernes (matriz)
+  "equipo": [                                             # opcional: ← equipo[] de fuentes.yaml (capacidad real)
+    {"nombre": "Luis", "produce_pr": true,                #   produce_pr false: no suma capacidad de desarrollo
+     "prestado": {"a": "<otra célula>", "desde": "2026-03-09", "hasta": null}}   # sin capacidad en ese rango
+  ],
   "epica": "PROY-140",                                    # para que el analista busque hijas nuevas
   "correos_busqueda": ["Reportes Cliente A"],             # términos para buscar correos del tema
   "expediente": "expediente.json",                        # opcional: semilla del expediente (relativa al plan);
@@ -63,6 +67,11 @@ Subtarea-instrucción (opcional, en vez de «desc»): si el ítem trae «context
 «desc», el generador compone «desc» con la plantilla de references/especificacion.md §3. Los CA citados por
 id se buscan en las historias del expediente v2.
 
+Equipo (opcional): sin «equipo» todo funciona como antes. Con él, la capacidad de cada persona es 0 si
+«produce_pr» es false o en los días en que está «prestado» (hasta null = sin fecha de regreso); la página
+muestra cuántas personas producen PR entre «inicio» y «fin_desarrollo» y avisa si una subtarea cae en días
+en que su responsable está prestado. El generador hace la misma cuenta y la imprime.
+
 Expediente: v1 (sin «esquema») o v2 («esquema»: 2, references/expediente.md). En v2 se avisa si falta el
 chequeo del paso 0 o la refutación: sin ellos no se exporta.
 """
@@ -72,6 +81,7 @@ import json
 import os
 import re
 import sys
+from datetime import date, timedelta
 
 AQUI = os.path.dirname(os.path.abspath(__file__))
 SECCIONES_EXPEDIENTE = ("resumen", "historias", "decisiones", "pendientes", "riesgos", "hallazgos_codigo",
@@ -84,6 +94,7 @@ NOMBRE_ENTREGABLE = {"tests": "tests unitarios de cada CA", "docs": "documentaci
                      "script_bd+rollback": "script de BD de publicación y de rollback, idempotentes"}
 MIME_LOGO = {".png": "image/png", ".svg": "image/svg+xml", ".jpg": "image/jpeg", ".jpeg": "image/jpeg",
              ".webp": "image/webp"}
+FECHA = re.compile(r"^\d{4}-\d{2}-\d{2}$")
 VAR_CSS = re.compile(r"^--[a-z][a-z0-9-]*$")
 VALOR_CSS = re.compile(r"^[^;{}<>\\]{1,80}$")
 
@@ -230,6 +241,91 @@ def cargar_expediente(ref, base, avisos):
     return ruta, exp
 
 
+def mismo_nombre(a, b):
+    """«Ana» y «Ana Pérez» son la misma persona (igual que en la página)."""
+    a, b = str(a or "").strip(), str(b or "").strip()
+    return bool(a and b) and (a == b or a.startswith(b + " ") or b.startswith(a + " "))
+
+
+def cargar_equipo(crudo, avisos):
+    """Normaliza «equipo»: [{nombre, produce_pr (bool, por defecto true), prestado {a, desde, hasta} | None}]."""
+    if not crudo:
+        return []
+    if not isinstance(crudo, list):
+        falla("«equipo» debe ser una lista de personas ({\"nombre\", \"produce_pr\", \"prestado\"})")
+    out = []
+    for p in crudo:
+        if not isinstance(p, dict) or not str(p.get("nombre") or "").strip():
+            avisos.append("equipo: una persona sin «nombre» se ignoró")
+            continue
+        x = {"nombre": str(p["nombre"]).strip(), "produce_pr": p.get("produce_pr", True) is not False}
+        pr = p.get("prestado")
+        if isinstance(pr, dict) and pr.get("desde"):
+            desde, hasta = str(pr.get("desde")), (str(pr["hasta"]) if pr.get("hasta") else None)
+            if not FECHA.match(desde) or (hasta and not FECHA.match(hasta)):
+                avisos.append(f"equipo: «prestado» de {x['nombre']} con fechas inválidas (AAAA-MM-DD); se ignoró")
+            else:
+                x["prestado"] = {"a": str(pr.get("a") or "otra célula"), "desde": desde, "hasta": hasta}
+        elif pr:
+            avisos.append(f"equipo: «prestado» de {x['nombre']} necesita al menos «desde»; se ignoró")
+        out.append(x)
+    return out
+
+
+def prestado_en(persona, dia):
+    pr = persona.get("prestado")
+    return bool(pr) and dia >= pr["desde"] and (not pr["hasta"] or dia <= pr["hasta"])
+
+
+def dias_habiles(ini, fin, festivos):
+    d, e, out = date.fromisoformat(ini), date.fromisoformat(fin), []
+    while d <= e:
+        if d.weekday() < 5 and d.isoformat() not in festivos:
+            out.append(d.isoformat())
+        d += timedelta(days=1)
+    return out
+
+
+def capacidad_real(equipo, plan, festivos, asignado, avisos):
+    """Cuántas personas producen PR en el rango de desarrollo y qué subtareas caen en días de préstamo."""
+    try:
+        dias = dias_habiles(plan["inicio"], plan["fin_desarrollo"], set(festivos))
+    except ValueError:
+        return ""
+    if not dias:
+        return ""
+    producen, notas = 0, []
+    for p in equipo:
+        if not p["produce_pr"]:
+            notas.append(f"{p['nombre']} no produce PR")
+            continue
+        fuera = [d for d in dias if prestado_en(p, d)]
+        if len(fuera) == len(dias):
+            notas.append(f"{p['nombre']} prestada a {p['prestado']['a']} todo el rango")
+            continue
+        producen += 1
+        if fuera:
+            notas.append(f"{p['nombre']} prestada a {p['prestado']['a']} desde {p['prestado']['desde']}"
+                         f" ({len(fuera)} de {len(dias)} días)")
+    dueno = next((p for p in equipo if mismo_nombre(p["nombre"], asignado)), None)
+    if dueno and not dueno["produce_pr"]:
+        avisos.append(f"{asignado} (dueño del cronograma) no produce PR: su capacidad de desarrollo es 0")
+    if dueno and dueno.get("prestado"):
+        for h in plan["historias"]:
+            for it in h.get("items", []):
+                if it.get("estado", "propuesta") == "espera" or not it.get("ini"):
+                    continue
+                malos = [d for d in dias_habiles(it["ini"], it.get("fin") or it["ini"], set(festivos))
+                         if prestado_en(dueno, d)]
+                if malos:
+                    avisos.append(f"{h['key']} «{it['titulo']}» cae el {malos[0]} y {asignado} está prestada"
+                                  f" a {dueno['prestado']['a']} desde {dueno['prestado']['desde']}")
+    if producen == 0:
+        avisos.append("nadie del equipo produce PR en el rango de desarrollo: no comprometas fecha")
+    return (f"equipo: {producen} de {len(equipo)} producen PR del {dias[0]} al {dias[-1]}"
+            + (" · " + " · ".join(notas) if notas else ""))
+
+
 def criterios_del_expediente(exp):
     out = {}
     for h in exp.get("historias") or []:
@@ -305,6 +401,7 @@ def main(argv):
                      else (None, {}))
     cas = criterios_del_expediente(exp)
     compuestas = 0
+    equipo = cargar_equipo(plan.get("equipo"), avisos)
 
     hus = []
     for h in plan["historias"]:
@@ -353,6 +450,8 @@ def main(argv):
         "capacidad": [float(cap[0]), float(cap[1])],
         "historias": hus,
     }
+    if equipo:   # sin «equipo», el CFG queda idéntico al de siempre
+        cfg["equipo"] = equipo
     meta = {"titulo": plan["titulo"], "keys": [h["key"] for h in plan["historias"] if not h.get("ficticia")],
             "epica": plan.get("epica"), "correos": plan.get("correos_busqueda") or [plan["titulo"]],
             "cloud_id": cfg["jira"]["cloud_id"], "servidor_jira": cfg["jira"]["servidor_mcp"],
@@ -394,9 +493,11 @@ def main(argv):
     if not cfg["jira"]["sitio"]:
         avisos.append("sin jira.sitio: no habrá enlaces «Abrir en Jira»")
     p0 = ((exp.get("chequeos") or {}).get("p0") or {}).get("estado") if exp else None
+    linea_equipo = capacidad_real(equipo, plan, festivos, asignado["nombre"], avisos) if equipo else ""
     print(f"ok {out} · {len(hus)} historias · propuesto {tot:g} h · pendiente de definición {pen:g} h"
           + (f" · marca «{alt}»" if marca or logo else " · marca neutra")
           + (f" · {compuestas} subtareas compuestas como instrucción" if compuestas else "")
+          + (f"\n{linea_equipo}" if linea_equipo else "")
           + (f"\npaso 0: {p0} · refutaciones: {len(exp.get('refutacion') or [])} · cortes: {len(exp.get('cortes') or [])}"
              if p0 else "")
           + (f"\nexpediente: {exp_ruta} → tras publicar, cárgalo con ArtifactData set en expediente/actual"

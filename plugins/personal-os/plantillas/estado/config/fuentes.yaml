@@ -43,12 +43,15 @@ equipo:                                  # tu célula; el detalle por persona vi
     capacidad_horas_dia: 8
     nivel: "semi"                        # junior | semi | senior
     familiaridad: { "<frente>": "alta" } # alta | media | nula, por frente
+    produce_pr: true                     # opcional; false = no suma capacidad de desarrollo
+    # prestado: { a: "<otra célula>", desde: "AAAA-MM-DD", hasta: null }   # sin capacidad en ese rango
   - nombre: "<Persona 2>"
     rol: "QA"
     account_id: "<accountId>"
     capacidad_horas_dia: 8
     nivel: "senior"
     familiaridad: {}
+    produce_pr: false
 
 tareas_externas: []                     # p. ej. un seguimiento en Excel compartido:
 # - nombre: "Seguimiento del cliente"
@@ -114,3 +117,28 @@ planeacion:
   # minero_dir: "<carpeta con tus encargos o scripts del minero>"
   # catalogo_matriz_url: "<url de la página de la matriz>"
   # investigacion: "<documento con la base de las reglas de estimación>"
+
+# Flujo del líder por niveles de caso (opcional; contrato en skills/planear-sprint/references/niveles.md).
+# Sin esta sección, o con niveles_activos: false, todo caso recorre el flujo completo (pasos 0 a 6).
+flujo:
+  niveles_activos: false
+  nivel_por_defecto: "C"
+  niveles:
+    A: { nombre: "Trámite o configuración", minutos_lider: "10-15", pasos: { p0: corto, p5: evidencia } }
+    B: { nombre: "Bug o incidente", minutos_lider: "30-60", pasos: { p0: corto, p1: corto, p4: ia_y_humana, p5: evidencia, p6: corto } }
+    C: { nombre: "Requerimiento o proyecto", minutos_lider: "120-180 al inicio + cortes",
+         pasos: { p0: completo, p1: completo, p2: completo, p3: completo, p4: completo, p5: matriz, p6: completo } }
+  clasifica: "lider"                    # lider | analista
+  paso0: { quien_llena: "lider", analistas: [] }   # analistas: [{ nombre: "<corto>", clientes: ["Cliente A"] }]
+  refutador: { completo_en: ["C"], corto_en: [] }
+  entrada_solo_por_paso0: false         # true: un pedido que llega al desarrollador por correo vuelve al paso 0
+  cierre_jira: null                     # estado al que pasa el caso al cerrar el paso 6
+
+normas:
+  jurisdicciones: ["CO"]                # el refutador solo cita reglas de estas jurisdicciones (CO, PE, …)
+
+# worklist:                             # opcional; Worklist del líder (skills/worklist-lider/references/configuracion.md)
+#   url: "<url del artifact publicado>"
+#   marca: "marca/marca-worklist.json"  # relativa a esta carpeta; sin ella, página neutra
+#   conector_jira: "Atlassian Rovo"     # nombre visible del conector en claude.ai
+#   conector_correo: "Microsoft 365"

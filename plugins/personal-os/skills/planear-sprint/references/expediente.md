@@ -37,7 +37,13 @@ Léelo en la Fase 1-bis (armar el expediente) y cuando el líder pida actualizar
                  "criterios": [{"id": "CA-1", "texto": "", "como_verificar": ""}]}],
   "subtareas": [{"clave": null, "titulo": "", "historia": "PROY-142", "contexto": "", "que_hacer": "", "donde": "",
                  "no_tocar": "", "criterios": ["CA-1"], "entregables": ["tests", "docs", "script_bd+rollback"], "horas": 0}],
-  "cortes": [{"fecha": "", "que_se_revisa": "", "criterios": ["CA-1"], "estado": "pendiente|ok|desviado", "nota": ""}],
+  "nivel": "A|B|C (opcional; ver niveles.md)",
+  "ficha_corta": {"que": "", "para_cuando": "", "quien_pidio": "", "evidencia_cierre": "", "fuente": "F1"},
+  "compromisos": [{"id": "K1", "fecha": "", "que": "", "a_quien": "", "fuente": "F2",
+                   "estado": "vigente|cumplida|incumplida|reemplazada", "reemplaza": null, "nota": ""}],
+  "cortes": [{"fecha": "", "que_se_revisa": "", "criterios": ["CA-1"], "responsable": "",
+              "tipo": "desarrollo|revision_lider|tercero|validacion|acta", "fuente": null,
+              "estado": "pendiente|ok|desviado", "nota": ""}],
   "pendientes": [{"id": "P1", "texto": "", "a_quien": "", "desde": "", "bloquea": ["CA-2"],
                   "estado": "abierto|resuelto", "resolucion": "", "fuente": "F2"}],
   "decisiones": [{"id": "D1", "texto": "", "quien": "", "fecha": "", "fuente": "F3"}],
@@ -51,6 +57,10 @@ Léelo en la Fase 1-bis (armar el expediente) y cuando el líder pida actualizar
 }
 ```
 
+- `nivel`, `ficha_corta`, `compromisos` y los campos `responsable`/`tipo`/`fuente` de `cortes` son
+  opcionales (contrato en `niveles.md`). **Toda fecha prometida al cliente va en `compromisos[]`**: si se
+  mueve, se agrega una nueva con `reemplaza` y la vieja queda `reemplazada` o `incumplida`, nunca se
+  sobreescribe. El vigía persigue los `cortes` pendientes y los `compromisos` vigentes.
 - `revisiones_pr`, `matriz_pruebas`, `documentacion` y `retro` los llenan los pasos 4 a 6 (otras
   skills); esta skill los crea vacíos.
 - **Compatibilidad con v1:** un expediente sin `esquema` es v1 (`requerimiento`, `historias[].key`). La

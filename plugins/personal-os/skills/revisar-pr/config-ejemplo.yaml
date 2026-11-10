@@ -25,3 +25,11 @@ revision_pr:
     guia_backend: null                   # ruta al documento de arquitectura backend
     guia_frontend: null
   carpeta_trabajo: null                  # por defecto <temp>/revisar-pr/pr-<id>
+  regla_minima:                          # lo que bloquea aunque el nivel del caso no corra la revisión completa
+    rama_con_clave: true                 # rama sin clave de Jira → «alta» en las variantes ia_y_humana y regla_minima
+    bd_con_rollback: true                # scripts de BD sin su rollback → «alta» en esas variantes
+
+# La versión de la revisión según el nivel del caso NO va aquí: sale de la sección `flujo` del mismo
+# fuentes.yaml (flujo.niveles.<nivel>.pasos.p4 = completo | ia_y_humana | regla_minima; sin p4, el paso no
+# aplica). Sin sección `flujo` o con `niveles_activos: false`, toda revisión es completa. Contrato en
+# planear-sprint/references/niveles.md.

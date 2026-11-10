@@ -9,7 +9,7 @@ from pathlib import Path
 AQUI = Path(__file__).parent
 SCRIPTS = AQUI.parent
 sys.path.insert(0, str(SCRIPTS))
-import capa0, comun, diffutil  # noqa: E402
+import capa0, comun, diffutil, guardar_revision  # noqa: E402
 
 # Los datos «de paciente» del ejemplo se arman aquí para que ningún archivo de la skill traiga números de persona.
 DOC, CEL = "12345" + "67890", "300" + "1234567"
@@ -196,6 +196,131 @@ class SegundaPasadaYVeredicto(unittest.TestCase):
         salida = correr("guardar_revision.py", "--capa0", self.tmp / "c.json", "--revision", self.tmp / "rev.json",
                         "--informe", self.tmp / "i.md")
         self.assertIn("Listo para aprobar", salida)
+
+
+FLUJO = {"flujo": {"niveles_activos": True, "nivel_por_defecto": "C", "niveles": {
+    "A": {"pasos": {"p0": "corto", "p5": "evidencia"}},
+    "B": {"pasos": {"p0": "corto", "p1": "corto", "p4": "ia_y_humana", "p5": "evidencia", "p6": "corto"}},
+    "C": {"pasos": {"p0": "completo", "p4": "completo", "p5": "matriz"}},
+    "R": {"pasos": {"p4": "regla_minima"}}}}}
+
+# PR de un bug: rama sin clave de Jira y un script de BD sin su rollback.
+DIFF_BUG = ("diff --git a/db/arreglo.sql b/db/arreglo.sql\nnew file mode 100644\n--- /dev/null\n+++ b/db/arreglo.sql\n"
+            "@@ -0,0 +1,1 @@\n+UPDATE Tabla SET Campo = 1 WHERE Id = 2;\n"
+            "diff --git a/src/Util.cs b/src/Util.cs\n--- a/src/Util.cs\n+++ b/src/Util.cs\n@@ -1,2 +1,3 @@\n"
+            " public static class Util {\n+    public static int Doble(int x) => x * 2;\n }\n")
+
+
+class NivelDelCaso(unittest.TestCase):
+    def test_resolver_nivel(self):
+        r = comun.resolver_nivel({}, {"nivel": "A"})
+        self.assertEqual((r["niveles_activos"], r["variante"], r["aplica"]), (False, "completo", True))  # sin flujo: lo de hoy
+        apagado = {"flujo": {**FLUJO["flujo"], "niveles_activos": False}}
+        self.assertEqual(comun.resolver_nivel(apagado, {"nivel": "B"})["variante"], "completo")
+        a = comun.resolver_nivel(FLUJO, {"nivel": "A"})
+        self.assertEqual((a["nivel"], a["variante"], a["aplica"]), ("A", None, False))
+        b = comun.resolver_nivel(FLUJO, {"nivel": "b"})
+        self.assertEqual((b["nivel"], b["variante"], b["origen"]), ("B", "ia_y_humana", "expediente"))
+        c = comun.resolver_nivel(FLUJO, {})
+        self.assertEqual((c["nivel"], c["variante"], c["origen"]), ("C", "completo", "nivel_por_defecto"))
+        self.assertEqual(comun.resolver_nivel(FLUJO, None)["variante"], "completo")  # sin expediente: nivel por defecto
+        f = comun.resolver_nivel(FLUJO, {"nivel": "A"}, variante="regla_minima")
+        self.assertEqual((f["variante"], f["aplica"], f["forzado"]), ("regla_minima", True, True))
+
+    def test_nivel_cli_avisa_si_no_aplica(self):
+        tmp = Path(tempfile.mkdtemp())
+        try:
+            comun.escribir_json(tmp / "fuentes.json", FLUJO)
+            comun.escribir_json(tmp / "exp.json", {"nivel": "A"})
+            r = subprocess.run([sys.executable, "-I", str(SCRIPTS / "nivel.py"), "--config", str(tmp / "fuentes.json"),
+                                "--expediente", str(tmp / "exp.json")], capture_output=True, text=True, encoding="utf-8")
+            self.assertEqual(r.returncode, 3)
+            self.assertFalse(json.loads(r.stdout)["aplica"])
+        finally:
+            shutil.rmtree(tmp, ignore_errors=True)
+
+
+class RevisionPorNivel(unittest.TestCase):
+    def setUp(self):
+        self.tmp = Path(tempfile.mkdtemp())
+        (self.tmp / "d.diff").write_text(DIFF_BUG, encoding="utf-8")
+        comun.escribir_json(self.tmp / "pr.json", {"id": 9, "rama": "bugfix/arreglo-rapido", "destino": "develop",
+                                                   "titulo": "Arreglo", "descripcion": "Probé el arreglo en local."})
+        comun.escribir_json(self.tmp / "fuentes.json", FLUJO)
+
+    def tearDown(self):
+        shutil.rmtree(self.tmp, ignore_errors=True)
+
+    def capa0(self, nivel=None, flujo=True):
+        exp = self.tmp / "exp.json"
+        comun.escribir_json(exp, {"id": "bug-demo", "jira": ["PROY-142"], "chequeos": {"p4": {}},
+                                  **({"nivel": nivel} if nivel else {})})
+        args = ["--diff", self.tmp / "d.diff", "--pr", self.tmp / "pr.json", "--expediente", exp,
+                "--salida", self.tmp / "c.json"] + (["--config", self.tmp / "fuentes.json"] if flujo else [])
+        correr("capa0.py", *args)
+        return comun.leer_json(self.tmp / "c.json"), exp
+
+    def severidades(self, c0):
+        return {h["regla"]: h["severidad"] for h in c0["hallazgos"]}
+
+    def test_sin_flujo_regla_minima_no_bloquea(self):
+        c0, _ = self.capa0(flujo=False)
+        self.assertEqual(c0["nivel"]["variante"], "completo")
+        sev = self.severidades(c0)
+        self.assertEqual((sev["rama_sin_clave"], sev["script_bd_sin_rollback"]), ("media", "media"))
+        self.assertEqual(c0["regla_minima"], {"rama_con_clave": "falla", "bd_con_rollback": "falla"})
+
+    def test_nivel_c_es_la_revision_de_hoy(self):
+        c0, exp = self.capa0("C")
+        self.assertEqual((c0["nivel"]["nivel"], c0["nivel"]["variante"]), ("C", "completo"))
+        self.assertEqual(self.severidades(c0)["rama_sin_clave"], "media")
+        comun.escribir_json(self.tmp / "rev.json", {"veredicto_por_ca": {}, "hallazgos": [{"id": "IA-1", "titulo": "x"}]})
+        r = subprocess.run([sys.executable, "-I", str(SCRIPTS / "guardar_revision.py"), "--capa0", str(self.tmp / "c.json"),
+                            "--revision", str(self.tmp / "rev.json"), "--informe", str(self.tmp / "i.md")],
+                           capture_output=True, text=True, encoding="utf-8")
+        self.assertNotEqual(r.returncode, 0)  # en C la segunda pasada sigue siendo obligatoria
+
+    def test_nivel_b_ia_y_humana_sin_segunda_pasada(self):
+        c0, exp = self.capa0("B")
+        self.assertEqual(c0["nivel"]["variante"], "ia_y_humana")
+        sev = self.severidades(c0)
+        self.assertEqual((sev["rama_sin_clave"], sev["script_bd_sin_rollback"]), ("alta", "alta"))  # regla mínima bloquea
+        comun.escribir_json(self.tmp / "rev.json", {
+            "veredicto_por_ca": {"CA-1": {"estado": "no", "evidencia": "src/Util.cs:2"}},
+            "hallazgos": [{"id": "IA-1", "titulo": "Desborde con enteros grandes", "severidad": "alta",
+                           "archivo": "src/Util.cs", "linea": 2, "explicacion": "x * 2 desborda."}]})
+        salida = correr("guardar_revision.py", "--capa0", self.tmp / "c.json", "--revision", self.tmp / "rev.json",
+                        "--informe", self.tmp / "i.md", "--expediente", exp, "--fecha", "2026-11-11")
+        self.assertIn("nivel B, revisión ia_y_humana", salida)
+        e = comun.leer_json(exp)["revisiones_pr"][-1]
+        self.assertEqual((e["nivel"], e["variante_p4"], e["veredicto"]), ("B", "ia_y_humana", "devolver"))  # por la regla mínima
+        self.assertEqual([h["verificacion"] for h in e["hallazgos"] if h.get("capa") != 0], ["sin_segunda_pasada"])
+        self.assertIn("sin segunda pasada", (self.tmp / "i.md").read_text(encoding="utf-8"))
+        # Sin la regla mínima rota, lo que dice la IA sin verificar pide revisión humana, no devuelve el PR.
+        c0["hallazgos"] = [h for h in c0["hallazgos"] if h["severidad"] != "alta"]
+        ver, razones = guardar_revision.veredicto(c0, comun.leer_json(self.tmp / "rev.json"))
+        self.assertEqual(ver, "revisa_esto")
+        self.assertTrue(any("sin segunda pasada" in r for r in razones))
+
+    def test_regla_minima_solo_capa0(self):
+        c0, exp = self.capa0("R")
+        self.assertEqual(c0["nivel"]["variante"], "regla_minima")
+        salida = correr("guardar_revision.py", "--capa0", self.tmp / "c.json", "--informe", self.tmp / "i.md",
+                        "--expediente", exp, "--fecha", "2026-11-11")
+        self.assertIn("Devolver", salida)
+        e = comun.leer_json(exp)["revisiones_pr"][-1]
+        self.assertEqual((e["nivel"], e["variante_p4"], e["veredicto_por_ca"]), ("R", "regla_minima", {}))
+        self.assertIn("los revisa el líder", (self.tmp / "i.md").read_text(encoding="utf-8"))
+        limpio = {**c0, "hallazgos": []}
+        self.assertEqual(guardar_revision.veredicto(limpio, {})[0], "listo_para_aprobar")
+
+    def test_nivel_a_no_aplica_y_el_lider_puede_forzar(self):
+        c0, _ = self.capa0("A")
+        self.assertFalse(c0["nivel"]["aplica"])
+        correr("capa0.py", "--diff", self.tmp / "d.diff", "--pr", self.tmp / "pr.json", "--expediente", self.tmp / "exp.json",
+               "--config", self.tmp / "fuentes.json", "--variante", "completo", "--salida", self.tmp / "c.json")
+        n = comun.leer_json(self.tmp / "c.json")["nivel"]
+        self.assertEqual((n["variante"], n["aplica"], n["forzado"]), ("completo", True, True))
 
 
 if __name__ == "__main__":

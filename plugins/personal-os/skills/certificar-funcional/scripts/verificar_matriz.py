@@ -16,6 +16,9 @@ Evidencia de una fila: lo que diga su columna Evidencia (rutas separadas por ; ,
 .xlsx se escanean; imágenes, PDF y video se listan en `revisar_a_ojo` para que alguien los mire.
 --dato-real lo pasa la skill cuando, al mirar una imagen, encuentra un dato real. --escribir llena `matriz_pruebas`
 y el chequeo p5 del expediente (con copia .antes-certificar).
+Según el nivel del caso (`flujo` de --config y `nivel` del expediente): con p5 = evidencia se espera UNA fila, EV-1,
+la evidencia de cierre (`ficha_corta.evidencia_cierre` o --evidencia-cierre); se verifica que exista y que no traiga
+datos reales con el mismo detector. Si el paso no aplica al nivel sale con 3 (--variante lo fuerza).
 """
 import argparse, datetime, re, shutil, sys
 from pathlib import Path
@@ -73,11 +76,17 @@ def main():
     ap.add_argument("--dato-real", action="append", default=[])
     ap.add_argument("--escribir", action="store_true")
     ap.add_argument("--fecha", default=datetime.date.today().isoformat())
+    ap.add_argument("--variante", help="fuerza la variante de p5 (matriz|evidencia) si el líder insiste")
+    ap.add_argument("--evidencia-cierre", help="la evidencia que cierra el caso, si la ficha corta no la trae")
     a = ap.parse_args()
     cfg = base.cargar_config(a.config)
     det = base.Detector(cfg)
     exp = base.leer_json(a.expediente)
-    esperadas = {f["ID"]: f for f in matriz.filas_esperadas(exp)}
+    nivel = base.resolver_nivel(a.config or {}, exp, variante=a.variante)
+    if not nivel["aplica"]:
+        print(f"{nivel['aviso']} No hay revisión funcional que verificar (con --variante se fuerza).")
+        sys.exit(3)
+    esperadas = {f["ID"]: f for f in matriz.filas_segun(exp, nivel["variante"], a.evidencia_cierre)}
     filas, hoja = matriz.leer(a.matriz)
     carpeta = a.evidencias or str(Path(a.matriz).parent / "evidencias")
 
@@ -89,6 +98,8 @@ def main():
     datos, problemas, a_ojo, resultado = [], [], [], []
     for d in a.dato_real:
         datos.append({"tipo": "visto_en_evidencia", "severidad": "alta", "donde": d, "valor": "(revisión visual)"})
+    if nivel["variante"] == "evidencia" and not matriz.evidencia_cierre(exp, a.evidencia_cierre):
+        problemas.append("EV-1: el expediente no dice cuál es la evidencia de cierre (ficha_corta.evidencia_cierre)")
 
     for i, esperada in esperadas.items():
         f = por_id.get(i)
@@ -156,6 +167,7 @@ def main():
         veredicto = "certificada"
 
     salida = {"fecha": a.fecha, "matriz": str(a.matriz), "hoja": hoja, "veredicto": veredicto,
+              "nivel": nivel["nivel"], "variante_p5": nivel["variante"], "variante_forzada": nivel["forzado"],
               "esperadas": len(esperadas), "en_matriz": len(por_id), "faltan": faltan, "sobran": sobran,
               "fallas": fallas, "problemas": problemas, "datos_personales": datos, "revisar_a_ojo": a_ojo,
               "imagenes_revisadas": a.imagenes_revisadas, "filas": resultado}
@@ -165,13 +177,17 @@ def main():
         shutil.copy2(a.expediente, a.expediente + ".antes-certificar")
         exp["matriz_pruebas"] = [{k: r[k] for k in ("ca", "caso", "pasos", "esperado", "resultado", "evidencia", "estado")}
                                  | {"origen": r["origen"]} for r in resultado]
-        exp.setdefault("historial", []).append({"fecha": a.fecha, "resumen": f"Certificación funcional: {veredicto}"})
+        etiqueta = (f" (nivel {nivel['nivel']}, {nivel['variante']})" if nivel["nivel"] else
+                    f" ({nivel['variante']})" if nivel["variante"] != "matriz" else "")
+        exp.setdefault("historial", []).append({"fecha": a.fecha, "resumen": f"Certificación funcional{etiqueta}: {veredicto}"})
         if isinstance(exp.get("chequeos"), dict):
             exp["chequeos"]["p5"] = {"estado": {"certificada": "aceptado", "certificada_con_observaciones": "parcial"}.get(veredicto, "pendiente"),
-                                     "fecha": a.fecha, "nota": f"Matriz {Path(a.matriz).name}: {veredicto}"}
+                                     "fecha": a.fecha, "nota": f"Matriz {Path(a.matriz).name}{etiqueta}: {veredicto}",
+                                     "variante": nivel["variante"]}
         base.escribir_json(a.expediente, exp)
 
-    print(f"Veredicto funcional: {veredicto} · {len(esperadas)} filas esperadas · {len(por_id)} en la matriz")
+    print(f"Veredicto funcional: {veredicto} · {len(esperadas)} filas esperadas · {len(por_id)} en la matriz"
+          + (f" · nivel {nivel['nivel']}, {nivel['variante']}" if nivel["nivel"] else ""))
     if datos:
         print(f"  DATOS DE PERSONAS ({len(datos)}): se devuelve la matriz completa. Primeros:")
         for d in datos[:8]:

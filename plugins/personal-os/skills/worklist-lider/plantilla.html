@@ -1,0 +1,705 @@
+<title>Worklist del líder</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<style>
+/* Layout: cabina 20/80 — lista lateral con buscador y filtros, detalle del expediente por secciones en el orden del flujo (0-6), chat del analista al final. En móvil la lista es un cajón. Paleta neutra; la marca opcional la sobreescribe (build.py). */
+:root{
+  --marca:#1F2937; --profundo:#1F2937; --accion:#2F5BB7; --medio:#3B6FC7;
+  --tinta:#1F2328; --gris:#59606B; --suave:#8B929C; --linea:#E3E6EA; --fondo:#F4F5F7; --papel:#FFFFFF;
+  --sel:#EAF0FA; --critico:#A8322D; --critico-bg:#F8E9E8; --alto:#9A5B00; --alto-bg:#FBF1E1; --ok:#2A6349; --ok-bg:#E6F1EB;
+  --banda-tx:#D1D5DB; --sombra:15,18,24;
+  --f-ui:"Segoe UI",system-ui,-apple-system,"Helvetica Neue",Arial,sans-serif;
+  --f-mono:Consolas,"Cascadia Mono","SFMono-Regular",Menlo,monospace;
+  --banda-h:52px;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --marca:#111827; --profundo:#D6DBE3; --accion:#86A8EC; --medio:#93B4EE; --tinta:#E7E9ED; --gris:#A7AEBA; --suave:#7F8794; --linea:#2C323C;
+  --fondo:#161A21; --papel:#0F1216; --sel:#1E2A40; --critico:#EE8A82; --critico-bg:#3A1C1E; --alto:#E8AE55; --alto-bg:#3A2A12;
+  --ok:#76CBA0; --ok-bg:#132E23; --sombra:0,0,0; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --marca:#111827; --profundo:#D6DBE3; --accion:#86A8EC; --medio:#93B4EE; --tinta:#E7E9ED; --gris:#A7AEBA; --suave:#7F8794; --linea:#2C323C;
+  --fondo:#161A21; --papel:#0F1216; --sel:#1E2A40; --critico:#EE8A82; --critico-bg:#3A1C1E; --alto:#E8AE55; --alto-bg:#3A2A12;
+  --ok:#76CBA0; --ok-bg:#132E23; --sombra:0,0,0; color-scheme:dark}
+/*__MARCA_CSS__*/
+*,*::before,*::after{box-sizing:border-box}
+html,body{height:100%}
+body{background:var(--papel);color:var(--tinta);font:14px/1.45 var(--f-ui);overflow:hidden}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--marca)}
+button,input,select,textarea{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:2px solid var(--accion);outline-offset:2px}
+a{color:var(--medio)}
+.mono{font-family:var(--f-mono);font-size:12.5px}
+.tab-nums{font-variant-numeric:tabular-nums}
+
+/* Banda de marca */
+.banda{height:var(--banda-h);background:var(--marca);color:#fff;display:flex;align-items:center;gap:14px;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.banda img{height:22px;width:auto}
+.banda h1{font-size:16px;font-weight:600;margin:0;letter-spacing:.01em;white-space:nowrap}
+.banda .sep{width:1px;height:22px;background:rgba(255,255,255,.25)}
+.banda .cuenta{color:var(--banda-tx);font-size:12.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+.banda .esp{flex:1}
+.banda .btn-lista{display:none;border:1px solid rgba(255,255,255,.35);background:transparent;color:#fff;border-radius:6px;padding:5px 10px;font-size:13px}
+
+.app{display:grid;grid-template-columns:minmax(260px,20%) minmax(0,1fr);height:calc(100% - var(--banda-h))}
+
+/* Barra lateral */
+.lat{border-right:1px solid var(--linea);background:var(--fondo);display:flex;flex-direction:column;min-height:0}
+.lat .filtros{padding:12px 12px 10px;display:flex;flex-direction:column;gap:8px;border-bottom:1px solid var(--linea)}
+.lat input[type=search]{width:100%;border:1px solid var(--linea);background:var(--papel);border-radius:6px;padding:7px 10px}
+.fgrid{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.fgrid select{width:100%;min-width:0;border:1px solid var(--linea);background:var(--papel);border-radius:6px;padding:5px 6px;font-size:12.5px}
+.chk{display:flex;align-items:center;gap:6px;font-size:12.5px;color:var(--gris)}
+.lat .meta{font-size:11.5px;color:var(--gris);display:flex;justify-content:space-between;gap:6px}
+.lat .meta button{border:0;background:none;color:var(--medio);padding:0;font-size:11.5px}
+.lista{list-style:none;margin:0;padding:6px;overflow:auto;flex:1;min-height:0;display:flex;flex-direction:column;gap:2px}
+.it{display:block;width:100%;text-align:left;border:1px solid transparent;background:transparent;border-radius:7px;padding:8px 10px}
+.it:hover{background:var(--papel);border-color:var(--linea)}
+.it[aria-current="true"]{background:var(--sel);border-color:var(--accion)}
+.it b{display:block;font-size:13.5px;font-weight:600;color:var(--tinta);line-height:1.3}
+.it .l2{display:flex;flex-wrap:wrap;gap:4px 6px;margin-top:5px;align-items:center}
+.vacio-lista{padding:16px;color:var(--gris);font-size:13px}
+
+/* Píldoras de estado */
+.pill{display:inline-flex;align-items:center;gap:4px;border-radius:99px;padding:1px 8px;font-size:11.5px;font-weight:600;white-space:nowrap;border:1px solid var(--linea);color:var(--gris);background:var(--papel)}
+.pill.req{color:var(--profundo)} .pill.bug{color:var(--critico);border-color:var(--critico)}
+.pill.c-crit{background:var(--critico-bg);color:var(--critico);border-color:transparent}
+.pill.c-alto{background:var(--alto-bg);color:var(--alto);border-color:transparent}
+.pill.c-ok{background:var(--ok-bg);color:var(--ok);border-color:transparent}
+.pill.c-sin{border-style:dashed}
+.pill.dudas{background:var(--alto-bg);color:var(--alto);border-color:transparent}
+
+/* Detalle */
+.det{overflow:auto;min-height:0;scroll-behavior:smooth}
+@media (prefers-reduced-motion:reduce){.det{scroll-behavior:auto}}
+.det-in{max-width:1180px;padding-block:0 64px;padding-left:max(20px,env(safe-area-inset-left,0px));padding-right:max(20px,env(safe-area-inset-right,0px))}
+.nav-sec{position:sticky;top:0;z-index:5;background:var(--papel);border-bottom:1px solid var(--linea);display:flex;gap:2px;overflow-x:auto;margin:0 -4px;padding:6px 4px}
+.nav-sec button{border:0;background:none;padding:6px 10px;border-radius:6px;font-size:12.5px;color:var(--gris);white-space:nowrap}
+.nav-sec button:hover{background:var(--fondo);color:var(--tinta)}
+section.sec{padding-top:22px;scroll-margin-top:48px}
+section.sec>h2{font-size:12px;letter-spacing:.07em;text-transform:uppercase;color:var(--gris);margin:0 0 10px;display:flex;justify-content:space-between;gap:8px;align-items:baseline;border-bottom:1px solid var(--linea);padding-bottom:6px}
+section.sec>h2 small{text-transform:none;letter-spacing:0;font-weight:400}
+h3{font-size:14px;margin:16px 0 8px;color:var(--profundo)}
+.cab-titulo{display:flex;flex-wrap:wrap;align-items:center;gap:8px 12px;margin-top:18px}
+.cab-titulo h2{font-size:24px;line-height:1.2;margin:0;color:var(--profundo);text-wrap:balance}
+.claves{display:flex;flex-wrap:wrap;gap:4px 8px;margin-top:6px}
+.claves a{font-family:var(--f-mono);font-size:12px;text-decoration:none;border-bottom:1px dotted var(--medio)}
+.desc{margin:10px 0 0;max-width:80ch;color:var(--tinta)}
+.kv{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,140px),1fr));gap:10px 18px;margin:14px 0 0}
+.kv>div{min-width:0}
+.kv dt{font-size:11.5px;color:var(--gris);text-transform:uppercase;letter-spacing:.05em}
+.kv dd{margin:2px 0 0;overflow-wrap:anywhere}
+.kv select,.kv input{border:1px solid var(--linea);background:var(--papel);border-radius:5px;padding:3px 6px;max-width:100%}
+.falta{color:var(--suave);font-style:italic}
+.completa{display:flex;align-items:center;gap:10px;margin-top:14px;font-size:12.5px;color:var(--gris)}
+.barra{flex:0 0 140px;height:6px;border-radius:99px;background:var(--linea);overflow:hidden}
+.barra i{display:block;height:100%;background:var(--accion)}
+details.pc{font-size:12.5px;color:var(--gris)} details.pc summary{cursor:pointer;color:var(--medio)}
+details.pc ul{margin:6px 0 0;padding-left:18px;columns:2 220px}
+
+/* Barra de pasos 0-6 */
+.pasos{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:4px;margin-top:18px;counter-reset:p}
+.paso{border:1px solid var(--linea);border-top:4px solid var(--linea);background:var(--papel);border-radius:6px;padding:7px 8px;text-align:left;min-width:0;display:flex;flex-direction:column;gap:3px}
+.paso .n{font-size:11px;color:var(--gris);font-variant-numeric:tabular-nums}
+.paso .t{font-size:12.5px;font-weight:600;line-height:1.25;color:var(--tinta)}
+.paso .e{font-size:11.5px;color:var(--gris)}
+.paso.e-ok{border-top-color:var(--ok)} .paso.e-alto{border-top-color:var(--alto)} .paso.e-crit{border-top-color:var(--critico)}
+.paso.actual{outline:2px solid var(--accion);outline-offset:-1px;background:var(--sel)}
+.paso[aria-expanded="true"]{box-shadow:0 0 0 2px var(--medio) inset}
+.editor{margin-top:8px;border:1px solid var(--linea);border-left:3px solid var(--accion);border-radius:6px;padding:12px;background:var(--fondo);display:grid;gap:8px}
+.editor .fila{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.res{display:flex;gap:4px;min-width:200px}.res input{flex:1;min-width:0;border:1px solid var(--linea);border-radius:5px;padding:2px 6px;background:var(--papel);font-size:12.5px}
+.editor textarea,.nota textarea{width:100%;min-height:60px;border:1px solid var(--linea);border-radius:6px;padding:6px 8px;background:var(--papel);resize:vertical}
+.editor select{border:1px solid var(--linea);border-radius:5px;padding:4px 6px;background:var(--papel)}
+.btn{border:1px solid var(--linea);background:var(--papel);border-radius:6px;padding:5px 12px;font-size:13px}
+.btn:hover{border-color:var(--accion)}
+.btn.pri{background:var(--accion);border-color:var(--accion);color:#fff}
+:root[data-theme="dark"] .btn.pri{color:#0B1226}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .btn.pri{color:#0B1226}}
+.btn.sm{padding:2px 8px;font-size:12px}
+.btn[disabled]{opacity:.5;cursor:not-allowed}
+.ro{font-size:12px;color:var(--gris)}
+
+/* Tablas */
+.tw{overflow-x:auto;border:1px solid var(--linea);border-radius:6px}
+table{border-collapse:collapse;width:100%;font-size:13px}
+th{background:var(--profundo);color:var(--papel);text-align:left;font-weight:600;padding:7px 9px;font-size:12px;white-space:nowrap}
+td{padding:7px 9px;border-top:1px solid var(--linea);vertical-align:top}
+tbody tr:nth-child(even) td{background:var(--fondo)}
+td.mono{white-space:nowrap}
+td.num{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+tr.resuelta td{color:var(--gris)} tr.resuelta td.tx{text-decoration:line-through}
+.src{font-family:var(--f-mono);font-size:11.5px;color:var(--medio)}
+.who{color:var(--gris);font-size:12px}
+
+/* Ejes de criticidad */
+.ejes{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,170px),1fr));gap:10px}
+.eje{border:1px solid var(--linea);border-radius:6px;padding:10px}
+.eje .nom{font-size:12px;color:var(--gris)}
+.eje .val{font-size:22px;font-weight:600;font-variant-numeric:tabular-nums;color:var(--profundo)}
+.eje .val.sin{font-size:13px;font-weight:400;color:var(--suave);font-style:italic;padding:6px 0}
+.dots{display:flex;gap:3px;margin-top:4px}.dots i{width:16px;height:5px;border-radius:2px;background:var(--linea)}
+.dots i.on{background:var(--accion)} .dots.hi i.on{background:var(--critico)}
+
+.lista-sec{margin:0;padding-left:18px;display:flex;flex-direction:column;gap:6px;max-width:100ch}
+.callout{border-left:3px solid var(--medio);background:var(--fondo);padding:8px 12px;border-radius:0 6px 6px 0;font-size:13px;max-width:100ch}
+.callout.aviso{border-left-color:var(--alto)}
+.vacio{color:var(--suave);font-style:italic;font-size:13px;margin:4px 0}
+details.blk{border:1px solid var(--linea);border-radius:6px;padding:0 12px;margin-top:8px}
+details.blk>summary{cursor:pointer;padding:9px 0;font-weight:600;color:var(--profundo);font-size:13.5px}
+details.blk[open]>summary{border-bottom:1px solid var(--linea);margin-bottom:8px}
+details.blk>*:last-child{margin-bottom:10px}
+.st-desc{white-space:pre-wrap;font-size:12.5px;color:var(--tinta);margin:6px 0 0;max-width:110ch}
+.chips{display:flex;flex-wrap:wrap;gap:4px}
+.ca{font-family:var(--f-mono);font-size:11.5px;border:1px solid var(--linea);border-radius:4px;padding:0 5px}
+.ca.cumple{background:var(--ok-bg);color:var(--ok);border-color:transparent}
+.ca.parcial{background:var(--alto-bg);color:var(--alto);border-color:transparent}
+.ca.no{background:var(--critico-bg);color:var(--critico);border-color:transparent}
+.doc-g{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,240px),1fr));gap:10px}
+.doc{border:1px solid var(--linea);border-radius:6px;padding:10px}
+.doc b{display:block;font-size:12px;color:var(--gris);text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px}
+
+/* Chat del analista */
+.chat{border:1px solid var(--linea);border-radius:8px;display:flex;flex-direction:column;height:min(560px,70vh);overflow:hidden}
+.chat header{background:var(--profundo);color:var(--papel);padding:8px 12px;font-size:13px;display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap}
+.msgs{flex:1;overflow:auto;display:flex;flex-direction:column;gap:8px;padding:12px;min-height:0;background:var(--fondo)}
+.msg{border-radius:8px;padding:8px 11px;font-size:13.5px;white-space:pre-wrap;overflow-wrap:anywhere;max-width:92%}
+.msg.u{align-self:flex-end;background:var(--accion);color:#fff}
+:root[data-theme="dark"] .msg.u{color:#0B1226}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .msg.u{color:#0B1226}}
+.msg.a{align-self:flex-start;background:var(--papel);border:1px solid var(--linea)}
+.msg.err{background:var(--critico-bg);color:var(--critico);border-color:transparent}
+.sugs{display:flex;flex-wrap:wrap;gap:5px;padding:8px 12px 0}
+.sug{font-size:12px;border:1px solid var(--linea);background:var(--papel);border-radius:99px;padding:2px 10px}
+.ask{display:flex;gap:6px;padding:10px 12px;align-items:flex-end}
+.ask textarea{flex:1;min-height:42px;max-height:140px;border:1px solid var(--linea);border-radius:6px;padding:6px 8px;background:var(--papel);resize:vertical}
+
+.estado-carga{padding:40px 0;max-width:62ch}
+.estado-carga h2{font-size:20px;color:var(--profundo);margin:0 0 8px}
+.toast{position:fixed;right:calc(16px + env(safe-area-inset-right,0px));bottom:calc(16px + env(safe-area-inset-bottom,0px));background:var(--profundo);color:var(--papel);padding:8px 14px;border-radius:6px;font-size:13px;z-index:60;box-shadow:0 6px 18px rgba(var(--sombra),.3)}
+.velo{display:none}
+
+/* Cola de revisión del líder */
+.cola-btn{display:flex;flex-direction:column;gap:3px;width:100%;text-align:left;border:1px solid var(--accion);background:var(--papel);border-radius:8px;padding:9px 12px;color:var(--tinta)}
+.cola-btn b{font-size:13.5px;color:var(--profundo)}
+.cola-btn span{font-size:12px;color:var(--gris)}
+.cola-btn[aria-current="true"]{background:var(--sel)}
+.pill.cola{background:var(--sel);color:var(--accion);border-color:transparent}
+.cola-res{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,150px),1fr));gap:10px;margin-top:14px}
+.cola-res>div{border:1px solid var(--linea);border-radius:6px;padding:10px 12px;min-width:0}
+.cola-res b{display:block;font-size:22px;font-variant-numeric:tabular-nums;color:var(--profundo)}
+.cola-res span{font-size:12px;color:var(--gris)}
+.cmd{display:flex;gap:8px;align-items:flex-start;margin-top:8px}
+.cmd code{flex:1;min-width:0;display:block;font-family:var(--f-mono);font-size:12.5px;background:var(--fondo);border:1px solid var(--linea);border-radius:6px;padding:8px 10px;white-space:pre-wrap;overflow-wrap:anywhere;user-select:all}
+.grp-meta{display:flex;flex-wrap:wrap;gap:4px 8px;align-items:center;font-weight:400}
+.hijos{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.est-j{white-space:nowrap}
+.est-j.rev{color:var(--accion);font-weight:600}
+.est-j.ok{color:var(--ok)}
+
+/* Niveles de caso */
+.pill.niv{background:var(--fondo);color:var(--profundo);border-color:var(--linea)}
+.paso.na{background:var(--fondo);border-style:dashed;border-top-style:solid;opacity:.7;cursor:default}
+.paso.na .t{color:var(--gris);font-weight:400}
+.paso .v{font-size:11px;color:var(--suave)}
+.ficha{border:1px solid var(--linea);border-left:3px solid var(--accion);border-radius:6px;padding:12px 14px;margin-top:14px;max-width:100ch}
+.ficha .kv{margin-top:0}
+.nivel-sel{display:flex;flex-wrap:wrap;gap:6px;align-items:center;font-size:12.5px;color:var(--gris);margin-top:8px}
+.nivel-sel select{border:1px solid var(--linea);background:var(--papel);border-radius:5px;padding:3px 6px}
+
+@media (max-width:900px){
+  .app{grid-template-columns:minmax(0,1fr)}
+  .banda .btn-lista{display:inline-flex;align-items:center;min-height:44px;padding:0 14px}
+  .banda h1{font-size:15px;overflow:hidden;text-overflow:ellipsis;min-width:0}
+  .banda .sep{display:none}
+  .it,.cola-btn{min-height:44px}
+  .nav-sec button,.btn,.lat .meta button{min-height:44px;padding-inline:12px}
+  .btn.sm{min-height:40px}
+  .sug{min-height:44px;padding-inline:14px}
+  .lat input[type=search],.fgrid select,.kv select,.kv input,.editor select,.nivel-sel select{min-height:44px}
+  .chk{min-height:44px}
+  .chk input{width:20px;height:20px}
+  .paso{min-height:64px}
+  details>summary{min-height:44px;padding-block:11px}
+  .toast{left:calc(16px + env(safe-area-inset-left,0px))}
+  .banda .cuenta{display:none}
+  .lat{position:fixed;z-index:40;top:calc(var(--banda-h) + env(safe-area-inset-top,0px));bottom:0;left:0;width:min(340px,88vw);transform:translateX(-102%);transition:transform .2s ease;box-shadow:0 10px 30px rgba(var(--sombra),.35);padding-left:env(safe-area-inset-left,0px)}
+  .lat.abierta{transform:none}
+  .velo.on{display:block;position:fixed;inset:0;z-index:35;background:rgba(var(--sombra),.35)}
+  .pasos{grid-template-columns:repeat(4,minmax(0,1fr))}
+  .det-in{padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+}
+@media (max-width:480px){.pasos{grid-template-columns:repeat(2,minmax(0,1fr))}.cab-titulo h2{font-size:20px}}
+@media (prefers-reduced-motion:reduce){.lat{transition:none}}
+</style>
+
+<header class="banda">
+  __LOGO_HTML__
+  <h1>Worklist del líder</h1>
+  <span class="cuenta tab-nums" id="cuenta">Conectando con la base…</span>
+  <span class="esp"></span>
+  <button class="btn-lista" id="btnLista" type="button" aria-controls="lat" aria-expanded="false">Lista</button>
+</header>
+<div class="app">
+  <aside class="lat" id="lat" aria-label="Requerimientos y bugs">
+    <div class="filtros">
+      <button type="button" class="cola-btn" id="btnCola" aria-current="false"><b>Cola de revisión del líder</b><span id="colaRes">Cargando…</span></button>
+      <input type="search" id="fq" placeholder="Buscar por texto, clave o módulo…" aria-label="Buscar">
+      <div class="fgrid">
+        <select id="fmod" aria-label="Módulo"><option value="">Todo módulo</option></select>
+        <select id="ftipo" aria-label="Tipo"><option value="">Requerimiento y bug</option><option value="requerimiento">Requerimiento</option><option value="bug">Bug</option></select>
+        <select id="fpaso" aria-label="Paso actual"><option value="">Todo paso</option><option value="sin">Sin paso</option><option>0</option><option>1</option><option>2</option><option>3</option><option>4</option><option>5</option><option>6</option></select>
+        <select id="fcrit" aria-label="Criticidad"><option value="">Toda criticidad</option><option value="alta">Alta (4-5)</option><option value="media">Media (3)</option><option value="baja">Baja (1-2)</option><option value="sin">Sin evaluar</option></select>
+        <select id="fnivel" aria-label="Nivel del caso" hidden><option value="">Todo nivel</option></select>
+      </div>
+      <label class="chk"><input type="checkbox" id="fdudas"> Solo con dudas abiertas</label>
+      <div class="meta"><span id="fcuenta" class="tab-nums"></span><button type="button" id="flimpiar">Quitar filtros</button></div>
+    </div>
+    <ul class="lista" id="lista"><li class="vacio-lista">Cargando la lista…</li></ul>
+  </aside>
+  <div class="velo" id="velo"></div>
+  <main class="det" id="det">
+    <div class="det-in" id="detIn">
+      <div class="estado-carga"><h2>Abriendo la worklist</h2><p>La lista de requerimientos y bugs aparece a la izquierda en cuanto responde la base. Elige uno para ver su expediente: cabecera, impacto, dudas, definición técnica, cronograma, documentación, calidad, historias y el chat del analista.</p></div>
+    </div>
+  </main>
+</div>
+<div class="toast" id="toast" hidden role="status" aria-live="polite"></div>
+
+<script>
+(function(){
+"use strict";
+const CFG=__CONFIG__;
+const JIRA_SRVS=(CFG.jira&&CFG.jira.servidores)||[], CLOUD=(CFG.jira&&CFG.jira.cloud_id)||"", JIRA_WEB=(CFG.jira&&CFG.jira.web)||"", M365_SRV=CFG.correo||"";
+const REVISION=CFG.revision||["Listo para revisión","En revisión*"];
+const FLUJO=CFG.flujo||{activos:false,defecto:"",niveles:{}};
+const COMPLETO={p0:"completo",p1:"completo",p2:"completo",p3:"completo",p4:"completo",p5:"matriz",p6:"completo"};
+const PASOS=[
+  {n:0,t:"Entender y aceptar",c:"Aceptado / aceptado parcial / por entender"},
+  {n:1,t:"Impacto",c:"Ficha de impacto completa"},
+  {n:2,t:"Definición técnica",c:"Escenarios de calidad con número + ADR"},
+  {n:3,t:"Subtareas y cronograma",c:"Plan aprobado y cortes agendados"},
+  {n:4,t:"Revisión técnica del PR",c:"Veredicto por CA + entregables completos"},
+  {n:5,t:"Revisión funcional",c:"Matriz de pruebas aprobada"},
+  {n:6,t:"Retro y cierre",c:"Retro enviada y lección guardada"}];
+/* Chequeo de cada paso según su variante (contrato: planear-sprint/references/niveles.md). */
+const VARIANTE={
+  p0:{completo:"Expediente aceptado / aceptado parcial / por entender",corto:"Ficha corta con dueño, fecha y evidencia de cierre"},
+  p1:{completo:"Ficha de impacto completa con modos de falla",corto:"Módulo ubicado en el mapa de criticidad"},
+  p2:{completo:"Escenarios de calidad con número + ADR"},
+  p3:{completo:"Subtareas-instrucción con CA-n, cronograma y cortes"},
+  p4:{completo:"Capa máquina + capa IA + segunda pasada + humana",ia_y_humana:"Capa máquina mínima + IA + revisión humana",regla_minima:"Solo capa máquina"},
+  p5:{matriz:"Matriz de pruebas aprobada",evidencia:"Una evidencia concreta que cierra el caso"},
+  p6:{completo:"Retro al desarrollador, lección y horas reales",corto:"Cierre en Jira y horas reales"}};
+const NOM_VAR={completo:"completo",corto:"corto",matriz:"matriz",evidencia:"evidencia",ia_y_humana:"IA + humana",regla_minima:"regla mínima"};
+const EST_P0={pendiente:"Pendiente",por_entender:"Por entender",parcial:"Aceptado parcial",aceptado:"Aceptado"};
+const EST_PN={pendiente:"Pendiente",en_curso:"En curso",hecho:"Hecho",no_aplica:"No aplica"};
+const EJES=[["transaccionalidad","Transaccionalidad"],["dinero","Dinero"],["norma","Norma"],["usuarios","Usuarios"],["reversibilidad","Reversibilidad"]];
+const SECS=[["s-cab","Cabecera"],["s-imp","Impacto"],["s-s0","Sprint 0 · dudas"],["s-tec","Definición técnica"],["s-cro","Cronograma"],["s-doc","Documentación"],["s-cal","Calidad"],["s-his","Historias"],["s-chat","Analista"]];
+const SECS_CORTA=[["s-cab","Ficha corta"],["s-seg","Compromisos y cortes"],["s-chat","Analista"]];
+const $=id=>document.getElementById(id);
+const esc=s=>String(s==null?"":s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const COLA="cola";
+const S={cola:null,db:null,user:null,sample:null,mcp:null,owner:false,req:{},reqOk:false,marcas:{},crit:{},sel:null,exp:null,expSlug:null,unsubExp:null,editPaso:null,chats:{},ctl:null,verCompleto:{}};
+
+/* ---------- utilidades ---------- */
+function fecha(d){if(!d)return"";const m=String(d).match(/^(\d{4})-(\d{2})-(\d{2})/);return m?`${m[3]}/${m[2]}/${m[1]}`:String(d);}
+function dias(d){const m=String(d||"").match(/^(\d{4})-(\d{2})-(\d{2})/);if(!m)return null;const t=new Date(+m[1],+m[2]-1,+m[3]);return Math.floor((Date.now()-t.getTime())/864e5);}
+function horas(n){return n==null||n===""?"":String(Math.round(Number(n)*100)/100).replace(".",",");}
+function falta(t){return `<span class="falta">${esc(t||"Por completar")}</span>`;}
+function jiraLinks(keys){return (keys||[]).map(k=>JIRA_WEB&&/^[A-Z][A-Z0-9]*-\d+$/.test(k)?`<a href="${JIRA_WEB}${esc(k)}" target="_blank" rel="noopener">${esc(k)}</a>`:`<span class="mono">${esc(k)}</span>`).join("");}
+function toast(t){const e=$("toast");e.textContent=t;e.hidden=false;clearTimeout(toast._t);toast._t=setTimeout(()=>e.hidden=true,2600);}
+function clone(o){return JSON.parse(JSON.stringify(o||{}));}
+function critClase(v){return v==null?"c-sin":v>=4?"c-crit":v===3?"c-alto":"c-ok";}
+function critTxt(v){return v==null?"Sin evaluar":v>=4?`Crítico ${v}/5`:v===3?`Medio 3/5`:`Bajo ${v}/5`;}
+function estClase(i,e){if(!e||e==="pendiente"||e==="no_aplica")return"";if(e==="aceptado"||e==="hecho")return"e-ok";if(e==="parcial"||e==="en_curso")return"e-alto";if(e==="por_entender")return"e-crit";return"";}
+function estTxt(i,e){return (i===0?EST_P0:EST_PN)[e||"pendiente"]||e;}
+
+/* ---------- mezcla expediente + marcas del líder ---------- */
+function marca(slug){return S.marcas[slug]||{};}
+function pasoDe(slug,base){const m=marca(slug);return m.paso_actual!==undefined?m.paso_actual:base;}
+function chequeo(slug,E,i){const b=(E&&E.chequeos&&E.chequeos["p"+i])||{};const m=(marca(slug).chequeos||{})["p"+i]||{};return Object.assign({},b,m);}
+function pendEstado(slug,p){const m=(marca(slug).pendientes||{})[p.id];return m?Object.assign({},p,m):p;}
+function cabecera(slug,E){return Object.assign({},(E&&E.cabecera)||{},marca(slug).cabecera||{});}
+function dudasAbiertas(slug,r){const mp=marca(slug).pendientes||{};return (r.pendientes_abiertos_ids||[]).filter(id=>!mp[id]||mp[id].estado!=="resuelto").length+Object.keys(mp).filter(id=>mp[id].estado==="abierto"&&!(r.pendientes_abiertos_ids||[]).includes(id)).length;}
+/* Nivel del caso: la marca del líder manda sobre el expediente; sin niveles activos, todo es flujo completo. */
+function nivelDe(slug,base){if(!FLUJO.activos)return null;const m=marca(slug).nivel;const n=m||base||FLUJO.defecto;return FLUJO.niveles[n]?n:FLUJO.defecto;}
+function pasosNivel(n){return n&&FLUJO.niveles[n]?FLUJO.niveles[n].pasos||{}:COMPLETO;}
+function esCorto(n){return pasosNivel(n).p0==="corto";}
+function nomNivel(n){const x=FLUJO.niveles[n];return x?`${n} · ${x.nombre}`:String(n||"");}
+function chequeoTxt(i,variante){const v=VARIANTE["p"+i]||{};return v[variante]||PASOS[i].c;}
+function completitudDe(slug,V){const n=nivelDe(slug,V.nivel),cn=V.completitud_niveles||{};
+  if(n&&cn[n])return Object.assign({nivel:n},cn[n]);return V.completitud||{};}
+function esRevision(e){const s=String(e||"").trim().toLowerCase();return REVISION.some(p=>{p=String(p).trim().toLowerCase();return p.endsWith("*")?s.startsWith(p.slice(0,-1)):s===p;});}
+function vista(slug,E){
+  const V=clone(E);V.paso_actual=pasoDe(slug,E.paso_actual);V.cabecera=cabecera(slug,E);
+  V.nivel=nivelDe(slug,E.nivel);const ps=pasosNivel(V.nivel);
+  V.chequeos={};for(let i=0;i<7;i++){const c=chequeo(slug,E,i),mc=(marca(slug).chequeos||{})["p"+i];
+    /* Un «no_aplica» que puso cargar.py por el nivel vuelve a pendiente si el líder sube el nivel en la página. */
+    V.chequeos["p"+i]=ps["p"+i]?(!mc&&c.por_nivel&&c.estado==="no_aplica"?Object.assign({},c,{estado:"pendiente"}):c):Object.assign({},c,{estado:"no_aplica",por_nivel:true});}
+  V.pendientes=(E.pendientes||[]).map(p=>pendEstado(slug,p));V.nota_lider=marca(slug).nota||"";return V;}
+
+/* ---------- escritura de marcas (una a la vez por documento) ---------- */
+let cola=Promise.resolve();
+function guardarMarca(slug,cambio){
+  if(!S.db||!S.owner){toast("Solo el dueño de la página puede guardar cambios.");return;}
+  cola=cola.then(async()=>{const M=clone(S.marcas[slug]);cambio(M);M.actualizado=new Date().toISOString();S.marcas[slug]=M;pintarTodo();
+    try{await S.db.collection("marcas").doc(slug).set(M);toast("Guardado");}
+    catch(e){toast(e&&e.code==="quota_exceeded"?"La base está llena: no se guardó.":"No se pudo guardar ("+(e&&e.code||"error")+"). Intenta de nuevo.");}});}
+
+/* ---------- barra lateral ---------- */
+const F={q:"",mod:"",tipo:"",paso:"",crit:"",nivel:"",dudas:false};
+try{const g=JSON.parse(localStorage.getItem("wl-filtros")||"null");if(g)Object.assign(F,g);}catch(e){}
+if(!FLUJO.activos||(F.nivel&&!FLUJO.niveles[F.nivel]))F.nivel="";
+if(FLUJO.activos){const fn=$("fnivel");fn.hidden=false;fn.innerHTML='<option value="">Todo nivel</option>'+Object.keys(FLUJO.niveles).map(n=>`<option value="${esc(n)}">${esc(nomNivel(n))}</option>`).join("");}
+function guardarFiltros(){try{localStorage.setItem("wl-filtros",JSON.stringify(F));}catch(e){}}
+function syncFiltros(){$("fq").value=F.q;$("fmod").value=F.mod;$("ftipo").value=F.tipo;$("fpaso").value=F.paso;$("fcrit").value=F.crit;$("fnivel").value=F.nivel;$("fdudas").checked=F.dudas;}
+function pasa(slug,r){
+  const p=pasoDe(slug,r.paso_actual);
+  if(F.nivel&&nivelDe(slug,r.nivel)!==F.nivel)return false;
+  if(F.tipo&&r.tipo!==F.tipo)return false;
+  if(F.mod&&!(r.modulos||[]).includes(F.mod))return false;
+  if(F.paso==="sin"&&p!=null)return false;
+  if(F.paso!==""&&F.paso!=="sin"&&String(p)!==F.paso)return false;
+  const c=critDe(r);
+  if(F.crit==="alta"&&!(c>=4))return false; if(F.crit==="media"&&c!==3)return false;
+  if(F.crit==="baja"&&!(c!=null&&c<=2))return false; if(F.crit==="sin"&&c!=null)return false;
+  if(F.dudas&&!dudasAbiertas(slug,r))return false;
+  if(F.q){const q=F.q.toLowerCase();const h=[r.titulo,r.descripcion_corta,r.cliente,(r.modulos||[]).join(" "),(r.jira||[]).join(" "),(r.responsables||[]).join(" "),slug].join(" ").toLowerCase();
+    if(!q.split(/\s+/).every(w=>h.includes(w)))return false;}
+  return true;}
+function critDe(r){if(r.criticidad_max!=null)return r.criticidad_max;let m=null;for(const mod of r.modulos||[]){const c=S.crit[mod];if(c&&c.ejes){for(const v of Object.values(c.ejes))if(typeof v==="number")m=Math.max(m||0,v);}}return m;}
+function orden(a,b){const ra=S.req[a],rb=S.req[b];
+  const ca=critDe(ra)||0,cb=critDe(rb)||0;if(cb!==ca)return cb-ca;
+  const da=dudasAbiertas(a,ra),dd=dudasAbiertas(b,rb);if(dd!==da)return dd-da;
+  return (ra.titulo||"").localeCompare(rb.titulo||"","es");}
+function pintarLista(){
+  const slugs=Object.keys(S.req).sort(orden);const vis=slugs.filter(s=>pasa(s,S.req[s]));
+  const mods=[...new Set(slugs.flatMap(s=>S.req[s].modulos||[]))].sort();
+  const fm=$("fmod"),cur=F.mod;fm.innerHTML='<option value="">Todo módulo</option>'+mods.map(m=>`<option value="${esc(m)}">${esc(m)}</option>`).join("");fm.value=cur;
+  const tot=slugs.length,dud=slugs.filter(s=>dudasAbiertas(s,S.req[s])).length,bugs=slugs.filter(s=>S.req[s].tipo==="bug").length;
+  const porNivel=FLUJO.activos?" · "+Object.keys(FLUJO.niveles).map(n=>`${slugs.filter(s=>nivelDe(s,S.req[s].nivel)===n).length} ${n}`).join(" / "):"";
+  $("cuenta").textContent=tot?`${tot} en curso · ${tot-bugs} requerimientos · ${bugs} bugs · ${dud} con dudas abiertas${porNivel}`:"Sin requerimientos cargados";
+  $("fcuenta").textContent=`${vis.length} de ${tot}`;
+  if(!tot){$("lista").innerHTML=`<li class="vacio-lista">${S.reqOk?"La base todavía no tiene requerimientos. Se cargan desde la copia local con <span class=\"mono\">cargar.py</span> (skill worklist-lider).":"Cargando la lista…"}</li>`;return;}
+  if(!vis.length){$("lista").innerHTML='<li class="vacio-lista">Nada coincide con los filtros.</li>';return;}
+  $("lista").innerHTML=vis.map(s=>{const r=S.req[s],p=pasoDe(s,r.paso_actual),c=critDe(r),d=dudasAbiertas(s,r);
+    const ch=p!=null?estTxt(p,chequeo(s,null,p).estado||r.chequeo_paso):"";const cr=r.cola_revision||{},cp=r.compromiso;const nv=nivelDe(s,r.nivel);
+    return `<li><button class="it" type="button" data-s="${esc(s)}" aria-current="${s===S.sel}"><b>${esc(r.titulo)}</b>
+      <span class="l2">${nv?`<span class="pill niv" title="${esc(nomNivel(nv))}">Nivel ${esc(nv)}</span>`:""}<span class="pill ${r.tipo==="bug"?"bug":"req"}">${(r.hijos||[]).length?"Paraguas":r.tipo==="bug"?"Bug":"Requerimiento"}</span>
+      <span class="pill">${p==null?"Sin paso":"Paso "+p+(ch?" · "+esc(ch):"")}</span>
+      <span class="pill ${critClase(c)}">${esc(critTxt(c))}</span>${d?`<span class="pill dudas">${d} duda${d>1?"s":""}</span>`:""}
+      ${cr.tareas?`<span class="pill cola">${cr.tareas} por revisar</span>`:""}${cp&&cp.fecha?`<span class="pill">Compromiso ${fecha(cp.fecha)}</span>`:""}</span></button></li>`;}).join("");
+  pintarColaBtn();}
+function pintarColaBtn(){const c=S.cola,b=$("btnCola");b.setAttribute("aria-current",S.sel===COLA);
+  $("colaRes").textContent=c?`${c.tareas} tareas · ${horas(c.horas)} h en ${(c.grupos||[]).length} grupos · Jira al ${fecha(c.fecha)}`:"Sin cola cargada (sync-jira.py)";}
+$("btnCola").onclick=()=>{seleccionar(COLA);cajon(false);};
+$("lista").addEventListener("click",e=>{const b=e.target.closest(".it");if(b){seleccionar(b.dataset.s);cajon(false);}});
+[["fq","q","input"],["fmod","mod","change"],["ftipo","tipo","change"],["fpaso","paso","change"],["fcrit","crit","change"],["fnivel","nivel","change"]].forEach(([id,k,ev])=>$(id).addEventListener(ev,e=>{F[k]=e.target.value;guardarFiltros();pintarLista();}));
+$("fdudas").addEventListener("change",e=>{F.dudas=e.target.checked;guardarFiltros();pintarLista();});
+$("flimpiar").onclick=()=>{Object.assign(F,{q:"",mod:"",tipo:"",paso:"",crit:"",nivel:"",dudas:false});syncFiltros();guardarFiltros();pintarLista();};
+function cajon(o){$("lat").classList.toggle("abierta",o);$("velo").classList.toggle("on",o);$("btnLista").setAttribute("aria-expanded",o);}
+$("btnLista").onclick=()=>cajon(!$("lat").classList.contains("abierta"));$("velo").onclick=()=>cajon(false);
+document.addEventListener("keydown",e=>{if(e.key==="Escape")cajon(false);});
+syncFiltros();
+
+/* ---------- selección ---------- */
+function seleccionar(slug){
+  if(slug===COLA){if(S.unsubExp){S.unsubExp();S.unsubExp=null;}S.sel=COLA;S.exp=null;S.expSlug=null;if(location.hash!=="#"+COLA)history.replaceState(null,"","#"+COLA);pintarLista();pintarCola();$("det").scrollTop=0;return;}
+  if(!slug||!S.req[slug])return;
+  if(S.sel!==slug){S.sel=slug;S.editPaso=null;if(location.hash!=="#"+slug)history.replaceState(null,"","#"+slug);}
+  pintarLista();
+  if(S.expSlug===slug)return;
+  if(S.unsubExp)S.unsubExp();S.exp=null;S.expSlug=slug;pintarDetalle();
+  const t=setTimeout(()=>{if(S.expSlug===slug&&!S.exp){$("detIn").innerHTML=cargando(slug,"La base no responde todavía. Si sigue así, revisa tu conexión; el expediente aparece solo cuando llegue.");}},10000);
+  S.unsubExp=S.db.collection("expediente").doc(slug).onSnapshot(sn=>{clearTimeout(t);if(S.expSlug!==slug)return;S.exp=sn.exists?sn.data():{};pintarDetalle();},
+    er=>{clearTimeout(t);$("detIn").innerHTML=cargando(slug,"No se pudo leer el expediente ("+esc(er&&er.code)+").");});
+  $("det").scrollTop=0;}
+window.addEventListener("hashchange",()=>{const s=decodeURIComponent(location.hash.slice(1));if(s&&s!==S.sel)seleccionar(s);});
+function cargando(slug,txt){const r=S.req[slug]||{};return `<div class="estado-carga"><h2>${esc(r.titulo||slug)}</h2><p>${txt||"Cargando el expediente…"}</p></div>`;}
+function pintarTodo(){pintarLista();if(S.sel===COLA)pintarCola();else if(S.exp)pintarDetalle(true);}
+
+/* ---------- cola de revisión del líder ---------- */
+function cmdGrupo(g){const ks=g.items.map(x=>x.clave);const exp=g.slug?` Revísalas contra los CA del expediente requerimientos/${g.slug}/expediente.json de la carpeta de estado${g.nivel?` (nivel ${g.nivel})`:""} y guarda cada resultado en su revisiones_pr.`:" No tienen expediente: revisa contra los criterios de la issue y dime qué expediente les falta.";
+  return `/revisar-pr Revisa la cola de «${g.titulo}»: ${ks.join(", ")}. Busca el PR de cada issue en Azure DevOps por la clave en la rama.${exp} Empieza por la de mayor riesgo, agrupa las que comparten PR y no publiques nada.`;}
+function pintarCola(){const c=S.cola;
+  if(!c){$("detIn").innerHTML='<div class="estado-carga"><h2>Cola de revisión del líder</h2><p>La cola todavía no está en la base. Se arma con <span class="mono">sync-jira.py</span> y se sube con <span class="mono">cargar.py</span> (skill worklist-lider).</p></div>';return;}
+  const gs=c.grupos||[],conExp=gs.filter(g=>g.slug),sinExp=gs.filter(g=>!g.slug);
+  const viejo=gs.map(g=>g.desde).filter(Boolean).sort()[0];
+  const fila=x=>{const d=dias(x.actualizado);return `<tr><td>${jiraLinks([x.clave])}</td><td>${esc(x.titulo)}${x.padre?`<div class="who">${esc(x.padre)} · ${esc(x.padre_titulo||"")}</div>`:""}</td><td>${esc(x.tipo)}</td><td>${esc(x.responsable)||falta("Sin responsable")}</td><td class="num">${x.estimacion_h==null?falta("—"):horas(x.estimacion_h)}</td><td class="num">${x.actualizado?fecha(x.actualizado)+(d!=null?`<div class="who">hace ${d} d</div>`:""):"—"}</td></tr>`;};
+  const grupo=(g,i)=>{const cmd=cmdGrupo(g);return `<details class="blk"${i<2?" open":""}><summary><span class="grp-meta">${esc(g.titulo)} <span class="pill ${critClase(g.criticidad)}">${esc(critTxt(g.criticidad))}</span> <span class="pill cola">${g.tareas} · ${horas(g.horas)} h</span>${g.desde?`<span class="who">desde ${fecha(g.desde)}</span>`:""}</span></summary>
+    ${g.slug?`<p style="margin:0"><button class="btn sm" type="button" data-s="${esc(g.slug)}">Abrir el expediente</button></p>`:""}
+    <div class="cmd"><code id="cmd-${i}">${esc(cmd)}</code><button class="btn sm" type="button" data-acc="copiar" data-id="cmd-${i}">Copiar</button></div>
+    <div class="tw" style="margin-top:10px"><table><thead><tr><th>Clave</th><th>Tarea</th><th>Tipo</th><th>Responsable</th><th>Horas</th><th>En revisión desde</th></tr></thead><tbody>${g.items.map(fila).join("")}</tbody></table></div></details>`;};
+  $("detIn").innerHTML=`<section class="sec" style="padding-top:4px"><div class="cab-titulo"><h2>Cola de revisión del líder</h2></div>
+    <p class="desc">Todo lo de la célula que está en revisión en Jira (${esc((c.estados_revision||REVISION).join(", "))}), agrupado por requerimiento y ordenado por criticidad. Cada grupo trae el pedido exacto para la skill revisar-pr: cópialo y pégalo en Claude Code.</p>
+    <div class="cola-res"><div><b>${c.tareas}</b><span>tareas por revisar</span></div><div><b>${horas(c.horas)} h</b><span>de desarrollo estimado</span></div><div><b>${conExp.length}</b><span>requerimientos con expediente</span></div><div><b>${sinExp.length}</b><span>grupos sin expediente</span></div><div><b>${viejo?fecha(viejo):"—"}</b><span>la más antigua</span></div></div>
+    <p class="ro" style="margin-top:8px">Jira al ${fecha(c.fecha)} (solo lectura). Se refresca con <span class="mono">sync-jira.py</span> y <span class="mono">cargar.py</span>.</p></section>
+   <section class="sec"><h2>Con expediente <small>${conExp.length} grupos</small></h2>${conExp.map(grupo).join("")||'<p class="vacio">Nada en revisión.</p>'}</section>
+   <section class="sec"><h2>Sin expediente <small>${sinExp.length} grupos · se revisan sin CA del flujo</small></h2>${sinExp.map((g,i)=>grupo(g,i+conExp.length+2)).join("")||'<p class="vacio">Nada.</p>'}</section>`;}
+
+/* ---------- detalle ---------- */
+function pintarDetalle(conservar){
+  const slug=S.sel;if(!slug){return;}
+  if(!S.exp){$("detIn").innerHTML=cargando(slug);return;}
+  if(!Object.keys(S.exp).length){$("detIn").innerHTML=cargando(slug,"Este ítem está en la lista pero su expediente no se ha cargado en la base.");return;}
+  const borradores={};if(conservar)$("detIn").querySelectorAll("textarea[id],input[type=text][id]").forEach(t=>{if(t.value)borradores[t.id]=t.value;});
+  const foco=document.activeElement&&document.activeElement.id;
+  const V=vista(slug,S.exp);
+  if(S.editPaso!=null&&V.chequeos["p"+S.editPaso].por_nivel)S.editPaso=null;
+  const corto=esCorto(V.nivel)&&!S.verCompleto[slug];
+  const nav=arr=>`<nav class="nav-sec" aria-label="Secciones">${arr.map(([id,t])=>`<button type="button" data-go="${id}">${t}</button>`).join("")}</nav>`;
+  $("detIn").innerHTML=corto?`${nav(SECS_CORTA)}${secCorta(slug,V)}${secSeg(V)}${secChat(slug,V)}`
+   :`${nav(SECS)}${secCab(slug,V)}${secImp(V)}${secS0(slug,V)}${secTec(V)}${secCro(V)}${secDoc(V)}${secCal(V)}${secHis(V)}${secChat(slug,V)}`;
+  pintarMsgs(slug);for(const [id,v] of Object.entries(borradores)){const t=$(id);if(t&&t.value!==v)t.value=v;}
+  if(foco&&$(foco))$(foco).focus();}
+$("detIn").addEventListener("click",e=>{
+  const go=e.target.closest("[data-go]");if(go){const t=$(go.dataset.go);if(t)t.scrollIntoView({block:"start"});return;}
+  const so=e.target.closest("button[data-s]");if(so){seleccionar(so.dataset.s);return;}
+  const cp=e.target.closest('[data-acc="copiar"]');if(cp){const el=$(cp.dataset.id);const txt=el?el.textContent:"";
+    const sel=()=>{const r=document.createRange();r.selectNodeContents(el);const s=getSelection();s.removeAllRanges();s.addRange(r);toast("Texto seleccionado: cópialo con el menú del sistema.");};
+    try{navigator.clipboard.writeText(txt).then(()=>toast("Copiado. Pégalo en Claude Code."),sel);}catch(er){sel();}return;}
+  const ps=e.target.closest("button.paso");if(ps){const i=+ps.dataset.i;S.editPaso=S.editPaso===i?null:i;pintarDetalle(true);return;}
+  const a=e.target.closest("[data-acc]");if(!a)return;const slug=S.sel,acc=a.dataset.acc;
+  if(acc==="ver-completo"){S.verCompleto[slug]=!S.verCompleto[slug];pintarDetalle(true);$("det").scrollTop=0;return;}
+  if(acc==="guardar-paso"){const i=+a.dataset.i;const est=$("edEst").value,nota=$("edNota").value.trim();
+    guardarMarca(slug,M=>{M.chequeos=M.chequeos||{};M.chequeos["p"+i]={estado:est,nota,fecha:new Date().toISOString().slice(0,10)};});S.editPaso=null;}
+  if(acc==="paso-actual"){const i=+a.dataset.i;guardarMarca(slug,M=>{M.paso_actual=i;});}
+  if(acc==="cerrar-ed"){S.editPaso=null;pintarDetalle(true);}
+  if(acc==="pend"){const id=a.dataset.id,nuevo=a.dataset.v;const res=nuevo==="resuelto"?(($("res-"+id)||{}).value||"").trim():"";
+    guardarMarca(slug,M=>{M.pendientes=M.pendientes||{};M.pendientes[id]={estado:nuevo,resolucion:res,fecha:new Date().toISOString().slice(0,10)};});}
+  if(acc==="nota"){const v=$("notaLider").value;guardarMarca(slug,M=>{M.nota=v;});}
+  if(acc==="sug"){$("chQ").value=a.textContent;preguntar();}
+  if(acc==="enviar")preguntar();
+  if(acc==="detener"&&S.ctl)S.ctl.abort();
+});
+$("detIn").addEventListener("change",e=>{const t=e.target;
+  if(t.dataset.nivel!==undefined){const v=t.value;guardarMarca(S.sel,M=>{if(v)M.nivel=v;else delete M.nivel;});return;}
+  if(!t.dataset.cab)return;const k=t.dataset.cab;let v=t.value;
+  if(k==="pedido_por_gerencia")v=v===""?null:v==="si";if(k==="prioridad_wsjf")v=v===""?null:Number(v);
+  guardarMarca(S.sel,M=>{M.cabecera=M.cabecera||{};M.cabecera[k]=v;});});
+$("detIn").addEventListener("keydown",e=>{if(e.target.id==="chQ"&&e.key==="Enter"&&!e.shiftKey){e.preventDefault();preguntar();}});
+
+function sel(k,val,opts){const dis=S.owner?"":" disabled";return `<select data-cab="${k}" aria-label="${k}"${dis}>${opts.map(([v,t])=>`<option value="${v}"${String(val==null?"":val)===v?" selected":""}>${t}</option>`).join("")}</select>`;}
+/* Barra de pasos 0-6: los que no aplican al nivel se ven «No aplica» y no se editan ni cuentan. */
+function barraPasos(V){const pa=V.paso_actual,ps=pasosNivel(V.nivel);
+  return `<div class="pasos" role="group" aria-label="Pasos del flujo, del 0 al 6">${PASOS.map(p=>{const ch=V.chequeos["p"+p.n],va=ps["p"+p.n];
+    if(!va)return `<div class="paso na" title="Este paso no aplica al nivel ${esc(V.nivel||"")}"><span class="n">Paso ${p.n}</span><span class="t">${p.t}</span><span class="e">No aplica</span></div>`;
+    const varTx=FLUJO.activos&&va!=="completo"?`<span class="v">${esc(NOM_VAR[va]||va)}</span>`:"";
+    return `<button type="button" class="paso ${estClase(p.n,ch.estado)} ${pa===p.n?"actual":""}" data-i="${p.n}" aria-expanded="${S.editPaso===p.n}" title="${esc(chequeoTxt(p.n,va))}"><span class="n">Paso ${p.n}${pa===p.n?" · actual":""}</span><span class="t">${p.t}</span>${varTx}<span class="e">${esc(estTxt(p.n,ch.estado))}${ch.fecha?" · "+fecha(ch.fecha):""}</span></button>`;}).join("")}</div>`;}
+function editorPaso(V){if(S.editPaso==null)return "";const i=S.editPaso,p=PASOS[i],ch=V.chequeos["p"+i],ops=i===0?EST_P0:EST_PN,pa=V.paso_actual,va=pasosNivel(V.nivel)["p"+i];
+  return `<div class="editor" role="group" aria-label="Chequeo del paso ${i}"><div><b>Paso ${i} · ${p.t}${FLUJO.activos&&va?" ("+esc(NOM_VAR[va]||va)+")":""}.</b> Chequeo: ${esc(chequeoTxt(i,va))}.</div>
+      ${S.owner?`<div class="fila"><label for="edEst">Estado</label><select id="edEst">${Object.entries(ops).map(([v,t])=>`<option value="${v}"${(ch.estado||"pendiente")===v?" selected":""}>${t}</option>`).join("")}</select></div>
+      <textarea id="edNota" aria-label="Nota del chequeo" placeholder="Qué se revisó, qué falta o por qué">${esc(ch.nota||"")}</textarea>
+      <div class="fila"><button class="btn pri" type="button" data-acc="guardar-paso" data-i="${i}">Guardar chequeo</button>${pa!==i?`<button class="btn" type="button" data-acc="paso-actual" data-i="${i}">Fijar como paso actual</button>`:""}<button class="btn" type="button" data-acc="cerrar-ed">Cerrar</button></div>`
+      :`<p class="ro">${esc(ch.nota||"Sin nota.")}</p><p class="ro">Solo el dueño de la página edita los chequeos.</p>`}</div>`;}
+function selNivel(slug,V){if(!FLUJO.activos)return "";const ns=Object.keys(FLUJO.niveles),n=V.nivel,ps=pasosNivel(n),m=marca(slug).nivel;
+  const resumen=Object.keys(ps).sort().map(k=>`${k} ${NOM_VAR[ps[k]]||ps[k]}`).join(" · ");const x=FLUJO.niveles[n]||{};
+  const ctl=S.owner?`<select data-nivel aria-label="Nivel del caso">${ns.map(k=>`<option value="${esc(k)}"${k===n?" selected":""}>${esc(nomNivel(k))}</option>`).join("")}</select>`:`<b>${esc(nomNivel(n))}</b>`;
+  return `<div class="nivel-sel"><span>Nivel del caso:</span>${ctl}<span class="who">${x.minutos_lider?esc(x.minutos_lider)+" min del líder · ":""}${esc(resumen)}</span>${m&&m!==S.exp.nivel?`<span class="pill dudas">cambiado en la página: pásalo al expediente local</span>`:""}</div>`;}
+function barraCompletitud(slug,V){const comp=completitudDe(slug,V),pc=comp.por_completar||[];
+  return `<div class="completa"><span class="barra" aria-hidden="true"><i style="width:${comp.porcentaje||0}%"></i></span><span class="tab-nums">Expediente ${comp.porcentaje||0} % completo${comp.nivel?" para el nivel "+esc(comp.nivel):""}</span></div>
+   ${pc.length?`<details class="pc"><summary>Qué falta (${pc.length})</summary><ul>${pc.map(x=>`<li>${esc(x)}</li>`).join("")}</ul></details>`:""}`;}
+function notaLider(V){return `<h3>Notas del líder</h3><div class="nota">${S.owner?`<textarea id="notaLider" aria-label="Notas del líder" placeholder="Lo que quieres recordar de este caso">${esc(V.nota_lider)}</textarea><div style="margin-top:6px"><button class="btn" type="button" data-acc="nota">Guardar nota</button></div>`:`<p>${V.nota_lider?esc(V.nota_lider):falta("Sin notas")}</p>`}</div>`;}
+
+/* Detalle corto: niveles cuyo paso 0 es «corto» (trámites, bugs). */
+function secCorta(slug,V){const fc=V.ficha_corta||{},c=V.cabecera||{};const kv=(t,v)=>`<div><dt>${t}</dt><dd>${v}</dd></div>`;const tx=(v,f)=>v?esc(v):falta(f);
+  const pc=fc.para_cuando,d=pc?dias(pc):null;
+  return `<section class="sec" id="s-cab" style="padding-top:4px">
+   <div class="cab-titulo"><h2>${esc(V.titulo)}</h2>${V.nivel?`<span class="pill niv">Nivel ${esc(V.nivel)}</span>`:""}<span class="pill ${V.tipo==="bug"?"bug":"req"}">${V.tipo==="bug"?"Bug":"Requerimiento"}</span></div>
+   <div class="claves">${jiraLinks(V.jira)}</div>
+   ${selNivel(slug,V)}
+   <div class="ficha"><dl class="kv">
+    ${kv("Qué se pide",tx(fc.que))}
+    ${kv("Para cuándo",pc?esc(/^\d{4}-\d{2}-\d{2}$/.test(pc)?fecha(pc):pc)+(d!=null?`<div class="who">${d>0?"vencido hace "+d+" d":d===0?"hoy":"en "+(-d)+" d"}</div>`:""):falta("Sin fecha"))}
+    ${kv("Quién lo pidió",tx(fc.quien_pidio||c.solicitante))}
+    ${kv("Evidencia de cierre",tx(fc.evidencia_cierre,"Sin evidencia definida"))}
+    ${kv("Responsables",(c.responsables||[]).length?esc(c.responsables.join(", ")):falta("Sin dueño"))}
+    ${c.cliente?kv("Cliente",esc(c.cliente)):""}
+   </dl>${fc.fuente?`<p class="ro" style="margin:8px 0 0">Fuente <span class="src">${esc(fc.fuente)}</span></p>`:""}</div>
+   ${barraPasos(V)}${editorPaso(V)}
+   ${barraCompletitud(slug,V)}
+   ${notaLider(V)}
+   <p style="margin-top:12px"><button class="btn sm" type="button" data-acc="ver-completo">Ver el expediente completo</button></p>
+  </section>`;}
+function tablaCortes(co){const est={ok:"c-ok",desviado:"c-crit",pendiente:"",reemplazado:"c-sin"};const TIPO={desarrollo:"Desarrollo",revision_lider:"Revisión del líder",tercero:"Tercero",validacion:"Validación",acta:"Acta"};
+  return `<div class="tw"><table><thead><tr><th>Fecha</th><th>Qué se revisa</th><th>Tipo</th><th>Responsable</th><th>CA</th><th>Estado</th><th>Nota</th></tr></thead><tbody>${co.slice().sort((a,b)=>String(a.fecha||"9").localeCompare(String(b.fecha||"9"))).map(c=>{const d=dias(c.fecha);
+    return `<tr><td class="num">${c.fecha?fecha(c.fecha):falta("Sin fecha")}${c.estado==="pendiente"&&d!=null?`<div class="who">${d>0?"vencido hace "+d+" d":d===0?"hoy":"en "+(-d)+" d"}</div>`:""}</td><td>${esc(c.que_se_revisa)}${c.fuente?` <span class="src">[${esc(c.fuente)}]</span>`:""}</td><td>${c.tipo?esc(TIPO[c.tipo]||c.tipo):falta("—")}</td><td>${c.responsable?esc(c.responsable):falta("Sin responsable")}</td><td>${(c.criterios||[]).map(x=>`<span class="ca">${esc(x)}</span>`).join(" ")}</td><td><span class="pill ${est[c.estado]||""}">${esc(c.estado)}</span></td><td>${esc(c.nota)}</td></tr>`;}).join("")}</tbody></table></div>`;}
+function secSeg(V){const co=V.cortes||[];
+  return `<section class="sec" id="s-seg"><h2>Compromisos y cortes <small>${(V.compromisos||[]).length} compromisos · ${co.length} cortes</small></h2>
+   ${secComp(V)}
+   <h3>Cortes de seguimiento</h3>${co.length?tablaCortes(co):'<p class="vacio">Sin cortes agendados.</p>'}
+   ${secHijos(V)}</section>`;}
+
+function secCab(slug,V){const c=V.cabecera;
+  const ger=c.pedido_por_gerencia===true?"si":c.pedido_por_gerencia===false?"no":"";
+  const kv=(t,v)=>`<div><dt>${t}</dt><dd>${v}</dd></div>`;const tx=v=>v?esc(v):falta();
+  const pasos=barraPasos(V),ed=editorPaso(V);
+  return `<section class="sec" id="s-cab" style="padding-top:4px">
+   <div class="cab-titulo"><h2>${esc(V.titulo)}</h2>${V.nivel?`<span class="pill niv">Nivel ${esc(V.nivel)}</span>`:""}<span class="pill ${V.tipo==="bug"?"bug":"req"}">${V.tipo==="bug"?"Bug":"Requerimiento"}</span></div>
+   <div class="claves">${jiraLinks(V.jira)}</div>
+   ${selNivel(slug,V)}
+   ${c.descripcion_corta?`<p class="desc">${esc(c.descripcion_corta)}</p>`:""}
+   <dl class="kv">
+    ${kv("Importancia",S.owner?sel("importancia",c.importancia,[["","—"],["alta","Alta"],["media","Media"],["baja","Baja"]]):tx(c.importancia))}
+    ${kv("Cliente",tx(c.cliente))}${kv("Quién lo pidió",tx(c.solicitante))}
+    ${kv("Por qué lo pidió",tx(c.motivo))}${kv("Para qué sirve",tx(c.para_que))}
+    ${kv("Expectativas",S.owner?sel("expectativas",c.expectativas,[["","—"],["alta","Altas"],["media","Medias"],["baja","Bajas"]]):tx(c.expectativas))}
+    ${kv("¿Lo pidió gerencia?",S.owner?sel("pedido_por_gerencia",ger,[["","Sin saber"],["si","Sí"],["no","No"]]):(ger?ger==="si"?"Sí":"No":falta()))}
+    ${kv("Prioridad (WSJF)",S.owner?`<input type="number" step="0.1" min="0" data-cab="prioridad_wsjf" aria-label="Prioridad WSJF" value="${c.prioridad_wsjf==null?"":esc(c.prioridad_wsjf)}" style="width:90px">`:(c.prioridad_wsjf==null?falta():esc(c.prioridad_wsjf)))}
+    ${kv("Fecha de compromiso",c.fecha_compromiso?fecha(c.fecha_compromiso):falta("Sin fecha"))}
+    ${kv("Responsables",(c.responsables||[]).length?esc(c.responsables.join(", ")):falta())}
+   </dl>
+   ${secComp(V)}${secHijos(V)}
+   ${pasos}${ed}
+   ${V.paso_nota?`<p class="ro" style="margin-top:6px">${esc(V.paso_nota)}</p>`:""}
+   ${barraCompletitud(slug,V)}
+   ${notaLider(V)}
+   ${enlaces(V)}
+   ${esCorto(V.nivel)?`<p style="margin-top:12px"><button class="btn sm" type="button" data-acc="ver-completo">Volver al detalle corto</button></p>`:""}
+  </section>`;}
+const EST_CP={vigente:["Vigente","c-alto"],cumplida:["Cumplida","c-ok"],incumplida:["Incumplida","c-crit"],reemplazada:["Reemplazada","c-sin"]};
+function secComp(V){const cs=(V.compromisos||[]).slice().sort((a,b)=>(a.estado==="vigente"?-1:b.estado==="vigente"?1:0)||String(b.fecha).localeCompare(String(a.fecha)));
+  if(!cs.length)return `<h3>Compromisos con el cliente</h3><p class="vacio">Sin compromisos registrados. Si se le prometió una fecha a alguien, va aquí con su fuente.</p>`;
+  return `<h3>Compromisos con el cliente <small class="who">(${cs.length}, el vigente primero)</small></h3><div class="tw"><table><thead><tr><th>Fecha</th><th>Qué</th><th>A quién</th><th>Estado</th><th>Fuente</th></tr></thead><tbody>${cs.map(c=>{const e=EST_CP[c.estado]||[c.estado,""];const d=dias(c.fecha);
+    return `<tr><td class="num">${fecha(c.fecha)}${c.estado==="vigente"&&d!=null?`<div class="who">${d>0?"vencido hace "+d+" d":d===0?"hoy":"en "+(-d)+" d"}</div>`:""}</td><td>${esc(c.que)}${c.nota?`<div class="who">${esc(c.nota)}</div>`:""}</td><td>${esc(c.a_quien)}</td><td><span class="pill ${e[1]}">${esc(e[0])}</span>${c.reemplaza?`<div class="who">reemplaza ${esc(c.reemplaza)}</div>`:""}</td><td class="src">${esc(c.fuente)}</td></tr>`;}).join("")}</tbody></table></div>`;}
+function secHijos(V){const h=V.hijos||[],sin=V.sin_expediente||[],js=V.jira_sync,cr=V.cola_revision||{};let o="";
+  if(h.length)o+=`<h3>Frentes de este paraguas</h3><div class="hijos">${h.map(s=>{const r=S.req[s]||{},c=r.cola_revision||{};return `<button class="btn" type="button" data-s="${esc(s)}">${esc(r.titulo||s)}${c.tareas?` · ${c.tareas} por revisar`:""}</button>`;}).join("")}</div>`;
+  if(sin.length){const porEst={};sin.forEach(x=>{porEst[x.estado]=(porEst[x.estado]||0)+1;});
+    o+=`<details class="blk"><summary>Sin expediente ni plan: ${sin.length} historias (${Object.entries(porEst).map(([e,n])=>n+" "+esc(e)).join(", ")})</summary><div class="tw"><table><thead><tr><th>Clave</th><th>Historia</th><th>Estado</th><th>Responsable</th></tr></thead><tbody>${sin.map(x=>`<tr><td>${jiraLinks([x.clave])}</td><td>${esc(x.titulo)}</td><td>${esc(x.estado)}</td><td>${esc(x.responsable)||falta("Sin responsable")}</td></tr>`).join("")}</tbody></table></div></details>`;}
+  if(js)o+=`<p class="ro" style="margin-top:8px">Jira al ${fecha(js.fecha)}: ${js.encontradas} issues${cr.tareas?` · <b>${cr.tareas} en revisión (${horas(cr.horas)} h)</b> <button class="btn sm" type="button" data-s="${COLA}">Ver la cola</button>`:""}${(js.faltantes||[]).length?` · no llegaron de Jira: ${esc(js.faltantes.join(", "))}`:""}</p>`;
+  return o;}
+function enlaces(V){const e=V.enlaces||{},m=V.migrado_de||{};const a=[];
+  if(e.cronograma)a.push(`Cronograma: <a href="${esc(e.cronograma)}" target="_blank" rel="noopener">abrir</a>`);
+  if(e.alcance)a.push(`Nota de alcance: <span class="mono">${esc(e.alcance)}</span>`);
+  if(m.origen)a.push(`Migrado el ${fecha(m.fecha)} desde ${esc(m.origen==="vivo"?"la base del cronograma":m.origen)}${m.version_expediente?" (expediente v"+esc(m.version_expediente)+")":""}`);
+  return a.length?`<p class="ro" style="margin-top:12px">${a.join(" · ")}</p>`:"";}
+function secImp(V){const im=V.impacto||{},cm=im.criticidad_modulo||{};
+  const ejes=EJES.map(([k,t])=>{const v=cm[k];return `<div class="eje"><div class="nom">${t}</div>${v==null?'<div class="val sin">Sin evaluar</div>':`<div class="val">${v}<small style="font-size:12px;color:var(--gris)">/5</small></div><div class="dots ${v>=4?"hi":""}">${[1,2,3,4,5].map(n=>`<i class="${n<=v?"on":""}"></i>`).join("")}</div>`}</div>`;}).join("");
+  const mods=(V.modulos||[]).map(m=>S.crit[m]?`${esc(m)} (mapa de criticidad${S.crit[m].validado_por_lider?"":", por validar"})`:esc(m)).join(", ");
+  const mf=im.modos_falla||[];
+  return `<section class="sec" id="s-imp"><h2>Impacto <small>Paso 1 · ficha de impacto</small></h2>
+   <p class="ro" style="margin:0 0 8px">Módulos: ${mods||falta()}</p><div class="ejes">${ejes}</div>
+   <h3>Peso en la operación</h3>${im.peso_operacion?`<p class="desc">${esc(im.peso_operacion)}</p>`:'<p class="vacio">Por completar con la skill mapa-criticidad.</p>'}
+   <h3>Modos de falla</h3>${mf.length?`<div class="tw"><table><thead><tr><th>Modo</th><th>Efecto</th><th>Severidad</th><th>A regresión</th></tr></thead><tbody>${mf.map(m=>`<tr><td>${esc(m.modo)}</td><td>${esc(m.efecto)}</td><td class="num">${esc(m.severidad)}</td><td>${m.a_regresion?"Sí":"No"}</td></tr>`).join("")}</tbody></table></div>`:'<p class="vacio">Sin modos de falla registrados.</p>'}
+   <h3>Riesgos <small class="who">(${(V.riesgos||[]).length})</small></h3>${(V.riesgos||[]).length?`<ul class="lista-sec">${V.riesgos.map(r=>`<li>${r.id?`<span class="src">${esc(r.id)}</span> `:""}${esc(r.texto)}${r.fuente?` <span class="src">[${esc(r.fuente)}]</span>`:""}</li>`).join("")}</ul>`:'<p class="vacio">Sin riesgos registrados.</p>'}
+  </section>`;}
+function secS0(slug,V){const ps=V.pendientes||[],ab=ps.filter(p=>p.estado!=="resuelto"),rs=ps.filter(p=>p.estado==="resuelto");
+  const fila=p=>{const d=dias(p.desde);const idS=esc(p.id);return `<tr class="${p.estado==="resuelto"?"resuelta":""}"><td class="mono">${idS}</td><td class="tx">${esc(p.texto)}${p.fuente?` <span class="src">[${esc(p.fuente)}]</span>`:""}${p.resolucion?`<div class="who">→ ${esc(p.resolucion)}</div>`:""}</td>
+    <td>${p.a_quien?esc(p.a_quien):falta("Sin dueño")}</td><td class="num">${p.desde?fecha(p.desde)+(d!=null&&p.estado!=="resuelto"?`<div class="who">hace ${d} d</div>`:""):falta("—")}</td>
+    <td>${(p.bloquea||[]).length?`<span class="chips">${p.bloquea.map(c=>`<span class="ca">${esc(c)}</span>`).join("")}</span>`:falta("Sin clasificar")}</td>
+    <td>${S.owner?(p.estado==="resuelto"?`<button class="btn sm" type="button" data-acc="pend" data-id="${idS}" data-v="abierto">Reabrir</button>`:`<div class="res"><input type="text" id="res-${idS}" aria-label="Resolución de ${idS}" placeholder="Resolución (opcional)"><button class="btn sm" type="button" data-acc="pend" data-id="${idS}" data-v="resuelto">Resolver</button></div>`):esc(p.estado)}</td></tr>`;};
+  const tabla=arr=>`<div class="tw"><table><thead><tr><th>Id</th><th>Duda</th><th>Dueño</th><th>Desde</th><th>Bloquea</th><th>Estado</th></tr></thead><tbody>${arr.map(fila).join("")}</tbody></table></div>`;
+  const rf=V.refutacion||[];const dec=V.decisiones||[];
+  return `<section class="sec" id="s-s0"><h2>Sprint 0 · dudas abiertas <small>Paso 0 · ${ab.length} abiertas de ${ps.length}</small></h2>
+   ${ab.length?tabla(ab):'<p class="vacio">No hay dudas abiertas registradas.</p>'}
+   ${rs.length?`<details class="blk"><summary>Resueltas (${rs.length})</summary>${tabla(rs)}</details>`:""}
+   <h3>Refutaciones</h3>${rf.length?`<div class="tw"><table><thead><tr><th>Punto</th><th>Interés del usuario</th><th>Se acepta</th><th>Se refuta (regla)</th><th>Alternativa · costo</th><th>Estado</th></tr></thead><tbody>${rf.map(r=>`<tr><td>${esc(r.punto)}</td><td>${esc(r.interes_usuario)}</td><td>${esc(r.acepta)}</td><td>${esc(r.refuta)}${r.regla?`<div class="who">${esc(r.regla)}${r.fuente?` [${esc(r.fuente)}]`:""}</div>`:""}</td><td>${esc(r.alternativa)}${r.costo?`<div class="who">${esc(r.costo)}</div>`:""}</td><td>${esc(r.estado)}</td></tr>`).join("")}</tbody></table></div>`:'<p class="vacio">El refutador todavía no corrió sobre este requerimiento.</p>'}
+   ${dec.length?`<details class="blk"><summary>Decisiones del cliente (${dec.length})</summary><ul class="lista-sec">${dec.map(d=>`<li>${d.id?`<span class="src">${esc(d.id)}</span> `:""}${esc(d.texto)} <span class="who">${esc(d.quien||"")} ${fecha(d.fecha)}</span>${d.reemplazada_por?`<div class="who">Reemplazada por: ${esc(d.reemplazada_por)}</div>`:""}${d.fuente?` <span class="src">[${esc(d.fuente)}]</span>`:""}</li>`).join("")}</ul></details>`:""}
+   ${(V.decisiones_lider||[]).length?`<details class="blk"><summary>Decisiones del líder en el cronograma (${V.decisiones_lider.length})</summary><ul class="lista-sec">${V.decisiones_lider.slice().reverse().map(d=>`<li>${esc(d.texto)} <span class="who">${fecha(d.fecha)}</span></li>`).join("")}</ul></details>`:""}
+  </section>`;}
+function secTec(V){const q=V.calidad||[],adr=V.adr||[],pr=V.proyectos||[],h=V.hallazgos_codigo||[];
+  return `<section class="sec" id="s-tec"><h2>Definición técnica <small>Paso 2</small></h2>
+   <h3>Escenarios de calidad</h3>${q.length?`<div class="tw"><table><thead><tr><th>Id</th><th>Atributo</th><th>Escenario</th><th>Medida</th><th>Cómo verificar</th></tr></thead><tbody>${q.map(x=>`<tr><td class="mono">${esc(x.id)}</td><td>${esc(x.atributo)}</td><td>${esc(x.escenario)}</td><td>${esc(x.medida)}</td><td>${esc(x.como_verificar)}</td></tr>`).join("")}</tbody></table></div>`:'<p class="vacio">Sin escenarios de calidad con número.</p>'}
+   <h3>Decisiones de arquitectura (ADR)</h3>${adr.length?`<ul class="lista-sec">${adr.map(a=>`<li><span class="src">${esc(a.id)}</span> <b>${esc(a.decision)}</b><div class="who">${esc(a.contexto)}</div><div class="who">Consecuencias: ${esc(a.consecuencias)}</div></li>`).join("")}</ul>`:'<p class="vacio">Sin ADR.</p>'}
+   <h3>Proyectos y ramas</h3>${pr.length?`<div class="tw"><table><thead><tr><th>Repositorio</th><th>Remoto</th><th>Rama</th><th>Fuente</th></tr></thead><tbody>${pr.map(p=>`<tr><td class="mono">${esc(p.repo)}</td><td>${esc(p.remoto)}</td><td class="mono">${esc(p.rama)}</td><td class="src">${esc(p.fuente||"")}</td></tr>`).join("")}</tbody></table></div>`:'<p class="vacio">Sin proyectos ni ramas verificados.</p>'}
+   ${h.length?`<details class="blk"><summary>Hallazgos del código (${h.length})</summary><ul class="lista-sec">${h.map(x=>`<li>${x.id?`<span class="src">${esc(x.id)}</span> `:""}${esc(x.texto)}${x.fuente?` <span class="src">[${esc(x.fuente)}]</span>`:""}</li>`).join("")}</ul></details>`:""}
+  </section>`;}
+function secCro(V){const st=V.subtareas||[],co=V.cortes||[],hi=V.hitos_alcance||[];const tot=st.reduce((s,x)=>s+(Number(x.horas)||0),0);const al=V.alcance;
+  const est={ok:"c-ok",desviado:"c-crit",pendiente:"",reemplazado:"c-sin"};
+  return `<section class="sec" id="s-cro"><h2>Cronograma <small>Paso 3 · ${st.length} subtareas · ${horas(tot)} h</small></h2>
+   ${V.cronograma_texto?`<div class="callout">${esc(V.cronograma_texto)}</div>`:""}
+   <h3>Subtareas</h3>${st.length?`<div class="tw"><table><thead><tr><th>Clave</th><th>Jira</th><th>Subtarea</th><th>Historia</th><th>Responsable</th><th>Horas</th><th>Fechas</th><th>CA</th></tr></thead><tbody>${st.map(s=>`<tr><td>${s.clave?jiraLinks([s.clave]):falta("Sin clave")}</td><td>${estJira(V,s.clave)}</td><td>${esc(s.titulo)}${(s.contexto||s.que_hacer||s.donde)?`<details><summary class="who" style="cursor:pointer">Instrucción</summary><div class="st-desc">${s.contexto?"Objetivo: "+esc(s.contexto)+"\n\n":""}${s.que_hacer?"Qué hacer:\n"+esc(s.que_hacer)+"\n\n":""}${s.donde?"Dónde: "+esc(s.donde)+"\n\n":""}${s.criterios_tecnicos?"Criterios técnicos:\n"+esc(s.criterios_tecnicos):""}</div></details>`:""}</td><td class="mono">${esc(s.historia)}</td><td>${esc(s.responsable||"")}</td><td class="num">${horas(s.horas)}</td><td class="num">${s.ini?fecha(s.ini)+(s.fin&&s.fin!==s.ini?" → "+fecha(s.fin):""):""}</td><td>${(s.criterios||[]).length?`<span class="chips">${s.criterios.map(c=>`<span class="ca">${esc(c)}</span>`).join("")}</span>`:falta("—")}</td></tr>`).join("")}</tbody></table></div>`:'<p class="vacio">Sin subtareas cargadas.</p>'}
+   ${issuesJira(V)}
+   <h3>Cortes de seguimiento</h3>${co.length?tablaCortes(co):'<p class="vacio">Sin cortes agendados.</p>'}
+   ${hi.length?`<h3>Hitos de la nota de alcance${al&&al.id?" "+esc(al.id):""} <small class="who">estado según la nota, verificada el ${fecha(al&&al.verificado_el)}</small></h3><div class="tw"><table><thead><tr><th>Fecha</th><th>Hito</th><th>Estado</th></tr></thead><tbody>${hi.map(h=>`<tr><td class="num">${h.fecha?fecha(h.fecha):"Sin fecha"}</td><td>${esc(h.texto)}</td><td><span class="pill ${est[h.estado]||""}">${esc(h.estado)}</span><div class="who">${esc(h.estado_fuente)}</div></td></tr>`).join("")}</tbody></table></div>`:""}
+  </section>`;}
+function estJira(V,k){const j=(V.jira_estado||{})[k];if(!j)return falta("—");const rev=esRevision(j.estado),ok=j.categoria==="done";
+  return `<span class="est-j ${rev?"rev":ok?"ok":""}">${esc(j.estado)}</span>`;}
+function issuesJira(V){const js=V.jira_estado||{},ks=Object.keys(js);if(!ks.length)return "";
+  const porEst={};ks.forEach(k=>{const e=js[k].estado||"—";(porEst[e]=porEst[e]||[]).push(k);});
+  const orden=Object.keys(porEst).sort((a,b)=>(esRevision(b)-esRevision(a))||porEst[b].length-porEst[a].length);
+  return `<details class="blk"><summary>Issues en Jira (${ks.length}): ${orden.map(e=>`${porEst[e].length} ${esc(e)}`).join(" · ")}</summary><div class="tw"><table><thead><tr><th>Clave</th><th>Issue</th><th>Estado</th><th>Responsable</th><th>Horas</th><th>Vence</th></tr></thead><tbody>${orden.flatMap(e=>porEst[e]).map(k=>{const j=js[k];return `<tr><td>${jiraLinks([k])}</td><td>${esc(j.titulo)}<div class="who">${esc(j.tipo)}${j.padre?" · "+esc(j.padre):""}</div></td><td>${estJira(V,k)}</td><td>${esc(j.responsable)||falta("Sin responsable")}</td><td class="num">${j.estimacion_h==null?"":horas(j.estimacion_h)}</td><td class="num">${j.vence?fecha(j.vence):""}</td></tr>`;}).join("")}</tbody></table></div></details>`;}
+function secDoc(V){const d=V.documentacion||{};const it=[["bd","Base de datos"],["tecnica","Técnica"],["funcional","Funcional"],["manual_usuario","Manual de usuario y guía"]];
+  return `<section class="sec" id="s-doc"><h2>Documentación</h2><div class="doc-g">${it.map(([k,t])=>`<div class="doc"><b>${t}</b>${d[k]?(/^https?:/.test(d[k])?`<a href="${esc(d[k])}" target="_blank" rel="noopener">${esc(d[k])}</a>`:esc(d[k])):falta()}</div>`).join("")}</div></section>`;}
+function secCal(V){const rv=V.revisiones_pr||[],mt=V.matriz_pruebas||[];const est={ok:"c-ok",falla:"c-crit",pendiente:""};
+  return `<section class="sec" id="s-cal"><h2>Calidad <small>Pasos 4 y 5</small></h2>
+   <h3>Revisiones de PR</h3>${rv.length?rv.map(r=>`<details class="blk"><summary>${esc(r.pr)} · ${fecha(r.fecha)}</summary><div class="chips">${Object.entries(r.veredicto_por_ca||{}).map(([ca,v])=>`<span class="ca ${esc(v)}">${esc(ca)}: ${esc(v)}</span>`).join("")}</div>${(r.hallazgos||[]).length?`<ul class="lista-sec" style="margin-top:8px">${r.hallazgos.map(h=>`<li>${esc(typeof h==="string"?h:(h.texto||JSON.stringify(h)))}</li>`).join("")}</ul>`:""}${(r.entregables_faltantes||[]).length?`<p class="callout aviso">Faltan: ${esc(r.entregables_faltantes.join(", "))}</p>`:""}</details>`).join(""):'<p class="vacio">Sin revisiones de PR registradas (las escribe la skill revisar-pr).</p>'}
+   <h3>Matriz de pruebas</h3>${mt.length?`<div class="tw"><table><thead><tr><th>CA</th><th>Caso</th><th>Pasos</th><th>Esperado</th><th>Resultado</th><th>Estado</th></tr></thead><tbody>${mt.map(m=>`<tr><td class="mono">${esc(m.ca)}</td><td>${esc(m.caso)}</td><td>${esc(m.pasos)}</td><td>${esc(m.esperado)}</td><td>${esc(m.resultado)}${m.evidencia?`<div class="src">${esc(m.evidencia)}</div>`:""}</td><td><span class="pill ${est[m.estado]||""}">${esc(m.estado)}</span></td></tr>`).join("")}</tbody></table></div>`:'<p class="vacio">Sin matriz de pruebas (la genera la skill certificar-funcional).</p>'}
+  </section>`;}
+function secHis(V){const hs=V.historias||[];
+  return `<section class="sec" id="s-his"><h2>Historias y casos de uso <small>${hs.length}</small></h2>
+   ${hs.length?hs.map(h=>`<details class="blk"${hs.length<=3?" open":""}><summary>${h.clave?`<span class="src">${esc(h.clave)}</span> `:""}${esc(h.titulo)} <span class="who">· ${(h.criterios||[]).length} CA</span></summary><p class="desc" style="margin:0 0 8px">${esc(h.resumen)}</p>${(h.criterios||[]).length?`<ul class="lista-sec">${h.criterios.map(c=>`<li><span class="ca">${esc(c.id)}</span> ${esc(c.texto)}${c.como_verificar?`<div class="who">Cómo verificar: ${esc(c.como_verificar)}</div>`:""}</li>`).join("")}</ul>`:'<p class="vacio">Sin criterios CA-n todavía.</p>'}</details>`).join(""):'<p class="vacio">Sin historias registradas.</p>'}
+  </section>`;}
+
+/* ---------- chat del analista ---------- */
+const SUGS=["¿Qué está pendiente y de quién?","¿Qué bloquea avanzar al siguiente paso?","¿Cuál es el mayor riesgo para la fecha?","¿En qué estado están las issues en Jira?"];
+function secChat(slug,V){const ok=!!S.sample;
+  return `<section class="sec" id="s-chat"><h2>Chat del analista <small>${herramientas().length?"lee el expediente y, en solo lectura, "+fuentesChat():"lee el expediente"}</small></h2>
+   <div class="chat"><header><b>Analista de «${esc(V.titulo)}»</b><span>${ok?"Cita la fuente de cada dato":"No disponible en esta vista"}</span></header>
+    <div class="msgs" id="chMsgs" aria-live="polite"></div>
+    <div class="sugs">${SUGS.map(s=>`<button class="sug" type="button" data-acc="sug"${ok?"":" disabled"}>${esc(s)}</button>`).join("")}</div>
+    <div class="ask"><textarea id="chQ" aria-label="Pregunta al analista" placeholder="${ok?"Ej.: ¿qué decidió el cliente sobre el alcance del reporte?":"El chat necesita abrir la página en claude.ai con permiso para usar Claude"}"${ok?"":" disabled"}></textarea>
+     <div style="display:flex;flex-direction:column;gap:4px"><button class="btn pri" type="button" id="chSend" data-acc="enviar"${ok?"":" disabled"}>Enviar</button><button class="btn sm" type="button" id="chStop" data-acc="detener" hidden>Detener</button></div></div>
+   </div></section>`;}
+function hilo(slug){return S.chats[slug]||(S.chats[slug]={turns:[],msgs:[{c:"a",t:"Pregúntame sobre este caso. Respondo con lo que está en el expediente y cito la fuente; si algo no está, lo digo."+(herramientas().length?" También consulto "+fuentesChat()+" en solo lectura cuando hace falta.":"")}]});}
+function pintarMsgs(slug){const box=$("chMsgs");if(!box)return;box.innerHTML="";for(const m of hilo(slug).msgs){const d=document.createElement("div");d.className="msg "+m.c;d.textContent=m.t;box.append(d);}box.scrollTop=box.scrollHeight;
+  if(S.ctl&&S.ctl.slug===slug){$("chStop").hidden=false;$("chSend").disabled=true;}}
+function compactIssues(p){const n=(p&&p.issues&&p.issues.nodes)||(p&&p.issues)||[];return (Array.isArray(n)?n:[]).slice(0,30).map(i=>{const f=i.fields||{};const cs=(f.comment&&f.comment.comments)||[];
+  return {key:i.key,titulo:f.summary,estado:f.status&&f.status.name,responsable:f.assignee&&f.assignee.displayName,actualizado:f.updated,
+   comentarios:cs.slice(-4).map(c=>({autor:c.author&&c.author.displayName,fecha:c.created,texto:String(c.body||"").slice(0,900)}))};});}
+function bloques(r){const c=(r&&r.content)||[];const t=c.filter(b=>b&&b.type==="text").map(b=>{try{const o=JSON.parse(b.text);delete o.webLink;delete o.id;delete o.internetMessageId;return JSON.stringify(o);}catch(e){return b.text;}});return t.length?t.join("\n"):JSON.stringify(r&&r.payload);}
+const T_JIRA={name:"consultar_jira",description:"Busca issues en Jira (solo lectura) con una JQL. Devuelve clave, título, estado, responsable, fecha de actualización y, si conComentarios es true, los 4 últimos comentarios.",
+  inputSchema:{type:"object",properties:{jql:{type:"string"},conComentarios:{type:"boolean"}},required:["jql"]},
+  execute:async(i,c)=>{const fields=["summary","status","assignee","updated"];if(i.conComentarios)fields.push("comment");
+    let ult=null;for(const srv of JIRA_SRVS){try{const r=await S.mcp.callTool(srv,"searchJiraIssuesUsingJql",{cloudId:CLOUD,jql:String(i.jql),fields,maxResults:30,responseContentFormat:"markdown"},{signal:c&&c.signal});return compactIssues(r.payload);}
+      catch(e){ult=e;if(e&&(e.code==="cancelled"||e.code==="rate_limited"))throw e;}}throw ult||new Error("Jira no disponible");}};
+const T_CORREOS={name:"buscar_correos",description:"Busca correos (solo lectura) por texto y fecha mínima ISO. Devuelve asunto, remitente, fecha, vista previa y la uri para leerlo.",
+  inputSchema:{type:"object",properties:{texto:{type:"string"},desde:{type:"string"}},required:["texto"]},
+  execute:async(i,c)=>{const inp={query:String(i.texto),limit:15};if(i.desde)inp.afterDateTime=String(i.desde);const r=await S.mcp.callTool(M365_SRV,"outlook_email_search",inp,{signal:c&&c.signal});return bloques(r).slice(0,7000);}};
+const T_LEER={name:"leer_correo",description:"Lee un correo por su uri (mail:///messages/...). Devuelve el contenido recortado a 5000 caracteres.",
+  inputSchema:{type:"object",properties:{uri:{type:"string"}},required:["uri"]},
+  execute:async(i,c)=>{const r=await S.mcp.callTool(M365_SRV,"read_resource",{uri:String(i.uri)},{signal:c&&c.signal});return bloques(r).slice(0,5000);}};
+function herramientas(){const t=[];if(!S.mcp)return t;if(CLOUD&&JIRA_SRVS.length)t.push(T_JIRA);if(M365_SRV)t.push(T_CORREOS,T_LEER);return t;}
+function fuentesChat(){const j=CLOUD&&JIRA_SRVS.length,c=!!M365_SRV;return j&&c?"Jira y el correo":j?"Jira":c?"el correo":"";}
+function reglas(V){const nv=V.nivel&&FLUJO.niveles[V.nivel];return `Eres el analista del ${V.tipo==="bug"?"bug":"requerimiento"} "${V.titulo}". Respondes al líder técnico${CFG.lider?", "+CFG.lider+",":""} en español, breve y directo.
+${nv?`Es un caso de nivel ${V.nivel} (${nv.nombre}): solo aplican los pasos ${Object.keys(nv.pasos||{}).sort().join(", ")}; los demás son «no aplica» y no se reportan como pendientes. ${(nv.pasos||{}).p0==="corto"?"Su paso 0 es la ficha corta (ficha_corta: qué, para cuándo, quién lo pidió y evidencia de cierre).":""}\n`:""}Reglas: responde SOLO con lo que está en el EXPEDIENTE o con lo que consultes con las herramientas de solo lectura${fuentesChat()?" ("+fuentesChat()+")":""}. Cita la fuente de cada afirmación entre corchetes (id de fuente, clave de Jira o correo con asunto y fecha). Si algo no está, di "No está en el expediente" y sugiere a quién preguntarlo. No inventes fechas, horas ni decisiones. Nombra cada issue con su clave y de qué trata; nunca un código suelto. No escribes en ningún sistema.
+El expediente sigue el flujo del líder: pasos 0 (entender y aceptar) a 6 (retro). "chequeos" es el estado de cada paso, "pendientes" las dudas (las abiertas bloquean lo que dice "bloquea"), "hitos_alcance" los hitos de la nota de alcance, "nota_lider" las notas del líder. El estado de Jira es la evidencia; el comentario de un desarrollador no cierra nada.
+Claves de Jira del requerimiento: ${(V.jira||[]).join(", ")||"ninguna"}.
+EXPEDIENTE (JSON):
+${JSON.stringify(V).slice(0,150000)}`;}
+function msgErr(c){return ({not_granted:"No autorizaste a esta página a usar Claude. Puedes habilitarlo en los permisos de la página.",rate_limited:"Demasiadas consultas seguidas. Intenta en un momento.",cancelled:"Detenido.",prompt_too_large:"El expediente es muy grande para una pregunta.",session_expired:"Tu sesión venció: vuelve a iniciar sesión.",tools_unavailable:"Esta vista no puede consultar Jira ni el correo; pregunta sobre el expediente.",server_ambiguous:"Hay dos conectores de Jira con el mismo nombre en claude.ai; renombra o quita uno para que el analista consulte Jira."})[c]||"No pude responder ("+c+"). Intenta de nuevo.";}
+async function preguntar(){
+  const slug=S.sel,q=($("chQ").value||"").trim();if(!q||S.ctl||!S.sample||!S.exp)return;
+  const H=hilo(slug);$("chQ").value="";H.msgs.push({c:"u",t:q});H.turns.push({role:"user",content:q});if(H.turns.length>12)H.turns=H.turns.slice(-12);
+  const out={c:"a",t:"Pensando…"};H.msgs.push(out);pintarMsgs(slug);
+  const ctl=new AbortController();ctl.slug=slug;S.ctl=ctl;$("chStop").hidden=false;$("chSend").disabled=true;
+  const V=vista(slug,S.exp);
+  try{const opts={signal:ctl.signal,cache:false,onText:({text})=>{out.t=text;if(S.sel===slug){const b=$("chMsgs");if(b&&b.lastChild){b.lastChild.textContent=text;b.scrollTop=b.scrollHeight;}}}};
+    const tl=herramientas();if(tl.length)opts.tools=tl;
+    const {text}=await S.sample([{role:"user",content:reglas(V)},{role:"assistant",content:"Entendido."},...H.turns],opts);
+    out.t=text;H.turns.push({role:"assistant",content:text});}
+  catch(e){out.c="a err";out.t=(e&&e.text)||msgErr(e&&e.code);H.turns.pop();}
+  finally{S.ctl=null;if(S.sel===slug)pintarMsgs(slug);const st=$("chStop"),sd=$("chSend");if(st)st.hidden=true;if(sd)sd.disabled=false;}}
+
+/* ---------- arranque ---------- */
+(async()=>{
+  const C=window.claude;
+  if(!C||!C.use){$("cuenta").textContent="Abre la página en claude.ai";$("lista").innerHTML='<li class="vacio-lista">La lista vive en la base de la página: ábrela en claude.ai con tu sesión.</li>';return;}
+  const usar=n=>C.use(n).catch(()=>null);
+  const [db,user,sample,mcp]=await Promise.all([usar("db"),usar("user"),usar("sample"),usar("mcp")]);
+  S.db=db;S.user=user;S.sample=sample;S.mcp=mcp;
+  try{S.owner=!!(user&&await user.isOwner());}catch(e){S.owner=false;}
+  if(!db){$("cuenta").textContent="Sin acceso a la base";$("lista").innerHTML='<li class="vacio-lista">Inicia sesión en claude.ai para ver la lista. Solo el dueño la lee.</li>';return;}
+  const t=setTimeout(()=>{if(!S.reqOk){$("cuenta").textContent="La base no responde todavía…";}},10000);
+  db.collection("req").onSnapshot(sn=>{clearTimeout(t);S.reqOk=!sn.metadata.fromCache||S.reqOk;S.req={};sn.docs.forEach(d=>{if(d.exists)S.req[d.id]=d.data();});
+    pintarLista();const h=decodeURIComponent(location.hash.slice(1));
+    if(!S.sel&&h===COLA){seleccionar(COLA);return;}
+    if(!S.sel){const ini=S.req[h]?h:Object.keys(S.req).sort(orden)[0];if(ini)seleccionar(ini);else if(S.reqOk)$("detIn").innerHTML='<div class="estado-carga"><h2>La worklist está vacía</h2><p>Carga los expedientes de <span class="mono">requerimientos/</span> (carpeta de estado) con <span class="mono">cargar.py</span> de la skill worklist-lider y el lote de ArtifactData. Aquí aparecerán con su cabecera, sus pasos y su chat.</p></div>';}},
+    er=>{clearTimeout(t);$("cuenta").textContent="No se pudo leer la base ("+(er&&er.code)+")";});
+  db.collection("marcas").onSnapshot(sn=>{const m={};sn.docs.forEach(d=>{if(d.exists)m[d.id]=d.data();});S.marcas=m;pintarLista();if(S.exp)pintarDetalle(true);},()=>{});
+  db.collection("cola").doc("actual").onSnapshot(sn=>{S.cola=sn.exists?sn.data():null;pintarColaBtn();if(S.sel===COLA)pintarCola();},()=>{$("colaRes").textContent="No se pudo leer la cola";});
+  db.collection("criticidad").onSnapshot(sn=>{const m={};sn.docs.forEach(d=>{if(d.exists)m[d.id]=d.data();});S.crit=m;pintarLista();},()=>{});
+})();
+})();
+</script>

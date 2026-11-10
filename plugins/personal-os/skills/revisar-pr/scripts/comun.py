@@ -30,6 +30,9 @@ DEFECTO = {
                          "repos_nuevos": [], "repos_legados": []},
     "feeds_internos_prefijos": [],
     "carpeta_trabajo": None,
+    # Lo que todo PR cumple aunque su nivel no corra la revisión completa (variantes ia_y_humana y regla_minima):
+    # si falla, la capa 0 lo sube a «alta» y el PR se devuelve.
+    "regla_minima": {"rama_con_clave": True, "bd_con_rollback": True},
 }
 
 
@@ -43,10 +46,11 @@ def _mezclar(base, extra):
     return out
 
 
-def cargar_config(ruta=None, seccion="revision_pr"):
-    """Lee la sección `seccion` de un .yaml/.yml/.json. Sin ruta, devuelve los valores por defecto."""
+def leer_config(ruta):
+    """El archivo de configuración completo (.yaml/.yml/.json) como dict. Sin ruta, {}."""
     if not ruta:
-        return copy.deepcopy(DEFECTO)
+        return {}
+    ruta = str(ruta)
     with open(ruta, encoding="utf-8") as f:
         texto = f.read()
     if ruta.lower().endswith((".yaml", ".yml")):
@@ -54,9 +58,15 @@ def cargar_config(ruta=None, seccion="revision_pr"):
             import yaml
         except ImportError:
             sys.exit("La configuración es YAML y falta PyYAML (pip install pyyaml), o pasa la sección como JSON.")
-        datos = yaml.safe_load(texto) or {}
-    else:
-        datos = json.loads(texto)
+        return yaml.safe_load(texto) or {}
+    return json.loads(texto)
+
+
+def cargar_config(ruta=None, seccion="revision_pr"):
+    """Lee la sección `seccion` de un .yaml/.yml/.json. Sin ruta, devuelve los valores por defecto."""
+    if not ruta:
+        return copy.deepcopy(DEFECTO)
+    datos = leer_config(ruta)
     sec = datos.get(seccion)
     if sec is None and any(k in datos for k in DEFECTO):  # un JSON que ya es la sección
         sec = datos
@@ -64,6 +74,45 @@ def cargar_config(ruta=None, seccion="revision_pr"):
     for k in ("excluir_de_ia", "no_tocar_de_la_rama"):  # estas listas se suman: el usuario no puede quitar las de fábrica
         cfg[k] = DEFECTO[k] + [p for p in cfg[k] if p not in DEFECTO[k]]
     return cfg
+
+
+# ─── Nivel del caso (contrato: planear-sprint/references/niveles.md) ───────────────────────────────
+# Duplicada a propósito en certificar-funcional/scripts/base.py: las skills se instalan sueltas.
+VARIANTES_P4 = ("completo", "ia_y_humana", "regla_minima")
+
+
+def resolver_nivel(config, exp=None, paso="p4", variante=None, validas=VARIANTES_P4, por_defecto="completo"):
+    """Qué versión del paso corre este caso según `flujo` de fuentes.yaml y el `nivel` del expediente.
+
+    `config` es la ruta de fuentes.yaml/.json o el dict ya leído. Sin sección `flujo` o con `niveles_activos`
+    falso devuelve la variante de siempre (`por_defecto`). `variante` la fuerza (el líder insiste).
+    Devuelve {niveles_activos, nivel, origen, paso, variante, aplica, forzado, aviso}.
+    """
+    datos = leer_config(config) if isinstance(config, (str, os.PathLike)) else (config or {})
+    flujo = datos.get("flujo") or {}
+    r = {"niveles_activos": bool(flujo.get("niveles_activos")), "nivel": None, "origen": "sin_flujo", "paso": paso,
+         "variante": por_defecto, "aplica": True, "forzado": False, "aviso": None}
+    if r["niveles_activos"]:
+        propio = (exp or {}).get("nivel")
+        r["origen"] = "expediente" if propio else "nivel_por_defecto"
+        r["nivel"] = nivel = str(propio or flujo.get("nivel_por_defecto") or "C").upper()
+        conf = (flujo.get("niveles") or {}).get(nivel)
+        if conf is None:
+            r["aviso"] = f"El nivel «{nivel}» no está en flujo.niveles: se usa la variante «{por_defecto}»."
+        else:
+            v = (conf.get("pasos") or {}).get(paso)
+            if v is None:
+                r.update(variante=None, aplica=False, aviso=f"El paso {paso} no aplica al nivel {nivel}.")
+            elif v not in validas:
+                r["aviso"] = f"Variante «{v}» de {paso} no reconocida en el nivel {nivel}: se usa «{por_defecto}»."
+            else:
+                r["variante"] = v
+    if variante:
+        if variante not in validas:
+            sys.exit(f"Variante «{variante}» no válida para {paso} (válidas: {', '.join(validas)}).")
+        r["forzado"] = variante != r["variante"]
+        r.update(variante=variante, aplica=True)
+    return r
 
 
 def coincide(ruta, patrones):

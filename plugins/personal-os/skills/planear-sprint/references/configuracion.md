@@ -24,6 +24,9 @@ de organización o de marca.
 | `planeacion.minero_dir` | Carpeta con los encargos/scripts propios del minero, si el usuario los tiene | Se usan los encargos de `calibracion.md` |
 | `planeacion.catalogo_matriz_url` | Página publicada de la matriz donde el líder decide tipo por tipo | Propuesta en el chat |
 | `planeacion.investigacion` | Documento propio con la base de las reglas de estimación | Las reglas de la skill |
+| `equipo[].produce_pr`, `equipo[].prestado` | Capacidad real: quién no produce PR y quién está prestado a otra célula en un rango | Todos producen PR y nadie está prestado |
+| `flujo` | Niveles de caso de la célula (qué pasos recorre cada uno y en qué versión), quién clasifica y quién llena el paso 0, cuándo corre el refutador (`niveles.md`) | Todo caso recorre el flujo completo |
+| `normas.jurisdicciones` | Países cuyas reglas cita el refutador (`CO`, `PE`…) | Todas las reglas de la tabla |
 
 ## 2. Qué matriz se usa (en este orden)
 
@@ -84,6 +87,7 @@ La plantilla es neutra. Una marca sobrescribe variables CSS y pone un logo en la
 ## 5. Del config al `plan.json`
 
 `jira` ← `fuentes.yaml → jira` · `correo.servidor_mcp` ← `"Microsoft 365"` solo si `m365.outlook` ·
-`capacidad` ← `capacidad_diaria` · `personas` y `cuentas` ← `equipo` · `lider` ← `owner.nombre` ·
+`capacidad` ← `capacidad_diaria` · `personas` y `cuentas` ← `equipo` · `equipo` (con `produce_pr` y
+`prestado`) ← `equipo` tal cual · `lider` ← `owner.nombre` ·
 `expediente` ← ruta de `expediente.json` · `epica` y `correos_busqueda` ← Fase 0. Formato completo en el
 docstring de `generar_cronograma.py` y en `plan-ejemplo.json`.

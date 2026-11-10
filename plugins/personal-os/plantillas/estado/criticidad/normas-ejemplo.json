@@ -11,6 +11,7 @@
   "como_se_verifico": "verificacion = 'texto' (se leyó el texto oficial el 10/11/2026), 'url' (la URL oficial respondió el 10/11/2026 y el contenido viene de la investigación del mismo día) o 'parcial' (ver nota).",
   "plantilla_regla": {
     "id": "slug-corto",
+    "jurisdiccion": "CO|PE|…",
     "norma": "",
     "articulo": "",
     "regla_verificable": "",
@@ -26,6 +27,7 @@
   "reglas": [
     {
       "id": "hc-sin-enmiendas",
+      "jurisdiccion": "CO",
       "norma": "Resolución 1995 de 1999 (manejo de la historia clínica)",
       "articulo": "art. 5 (generalidades) y art. 18 (medios técnicos)",
       "regla_verificable": "Un registro clínico guardado no se edita ni se borra en el lugar. Cada anotación lleva fecha, hora, nombre completo y firma del autor. Los programas que manejan la HC deben impedir modificaciones una vez se registran y guardan los datos (art. 18).",
@@ -44,6 +46,7 @@
     },
     {
       "id": "hc-proyecto-unificacion-2026",
+      "jurisdiccion": "CO",
       "norma": "Proyecto de resolución de historia clínica (memoria justificativa del 22/07/2026)",
       "articulo": "todo el proyecto",
       "regla_verificable": "Unificaría la 1995 de 1999 y la 839 de 2017 en una sola norma de HC física y electrónica, interoperable y con el RDA, y daría 18 meses a los prestadores sin sistema electrónico. No se confirmó que esté expedido.",
@@ -61,6 +64,7 @@
     },
     {
       "id": "rips-campos-documento-tecnico",
+      "jurisdiccion": "CO",
       "norma": "Resolución 948 de 2026, Documentos Técnicos 1 y 2",
       "articulo": "anexos técnicos (se actualizan sin cambiar la resolución)",
       "regla_verificable": "Todo cambio en la HC, el agendamiento o la facturación que altere un campo del RIPS (CUPS, CIE-10, finalidad, causa externa, programa o ruta) se cruza contra la versión vigente del Documento Técnico 1. Lo que se reporta en el RIPS sale de la atención realmente prestada, no de un evento de la interfaz.",
@@ -84,6 +88,7 @@
     },
     {
       "id": "rips-2275-derogada",
+      "jurisdiccion": "CO",
       "norma": "Resolución 2275 de 2023 y sus modificaciones (558 de 2024 y 1884 de 2024)",
       "articulo": "todo el acto",
       "regla_verificable": "Derogadas por la Resolución 948 de 2026 (14/05/2026). No se citan como vigentes.",
@@ -106,6 +111,7 @@
     },
     {
       "id": "datos-minimo-en-logs-y-pruebas",
+      "jurisdiccion": "CO",
       "norma": "Ley 1581 de 2012 (principios de seguridad y circulación restringida)",
       "articulo": "art. 4",
       "regla_verificable": "Nada de datos de pacientes en logs, mensajes de error, capturas o evidencias de prueba; en reportes y exportaciones, solo el mínimo dato necesario.",
@@ -121,5 +127,9 @@
       "verificacion": "url",
       "url": "https://www.funcionpublica.gov.co/eva/gestornormativo/norma.php?i=49981"
     }
-  ]
+  ],
+  "jurisdicciones": {
+    "CO": "Colombia"
+  },
+  "_jurisdiccion": "Cada regla dice a qué jurisdicción pertenece. El refutador solo cita las de normas.jurisdicciones en fuentes.yaml; una regla sin jurisdiccion aplica a todas. Para otro país, agrega sus reglas con su código (PE, MX…) y su URL oficial verificada: esta tabla de ejemplo solo trae Colombia."
 }

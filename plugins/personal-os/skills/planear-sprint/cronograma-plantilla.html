@@ -214,21 +214,40 @@ function huVino(k){const x=huHoras(k);return x.w>0&&x.w>=x.a+x.p;}
 const MAIN=CFG.asignado.nombre, GENTE=CFG.personas||[], CUENTAS=Object.assign({},CFG.cuentas||{},DUENO_CTA?{[MAIN]:DUENO_CTA}:{});
 const esMain=n=>n===MAIN||String(n).startsWith(MAIN+" ")||MAIN.startsWith(String(n)+" ");
 const respOf=it=>(it.resp&&it.resp.nombre&&!esMain(it.resp.nombre))?it.resp:null;
+// ---- Capacidad real (CFG.equipo, de fuentes.yaml): quien no produce PR o está prestado no tiene capacidad ese día. Sin equipo, igual que siempre ----
+const EQUIPO=CFG.equipo||[];
+const mismo=(a,b)=>{a=String(a||"");b=String(b||"");return !!a&&!!b&&(a===b||a.startsWith(b+" ")||b.startsWith(a+" "));};
+const fichaDe=n=>EQUIPO.find(p=>mismo(p.nombre,n))||null;
+const prestadoEn=(n,d)=>{const p=fichaDe(n),x=p&&p.prestado;return !!(x&&x.desde&&d>=x.desde&&(!x.hasta||d<=x.hasta));};
+const sinPR=n=>{const p=fichaDe(n);return !!(p&&p.produce_pr===false);};
+function jorDe(n,d){return sinPR(n)||prestadoEn(n,d)?0:jor(d);}
+function equipoKpi(){
+  if(!EQUIPO.length)return "";
+  const dias=DAYS.filter(d=>d<=FIN_DEV&&jor(d)>0);const notas=[];let n=0;
+  EQUIPO.forEach(p=>{if(p.produce_pr===false){notas.push(p.nombre+" no produce PR");return;}
+    const fuera=dias.filter(d=>prestadoEn(p.nombre,d)).length;
+    if(dias.length&&fuera===dias.length){notas.push(`${p.nombre}: prestada a ${p.prestado.a} desde ${fmt(p.prestado.desde)}`);return;}
+    n++;if(fuera)notas.push(`${p.nombre}: prestada a ${p.prestado.a} desde ${fmt(p.prestado.desde)} (${fuera} de ${dias.length} días)`);});
+  const malas=[];KEYS.forEach(k=>ST[k].items.forEach(it=>{if(!vivo(it)||!it.ini)return;const q=respOf(it)?respOf(it).nombre:MAIN;
+    const d=DAYS.find(x=>x>=it.ini&&x<=(it.fin||it.ini)&&prestadoEn(q,x));if(d)malas.push(`${k} · ${it.titulo.slice(0,50)} · ${q} prestada el ${fmt(d)}`);}));
+  return `<span class="${n?"":"c"}" title="${esc(notas.join("\n")||"Todos producen PR y nadie está prestado")}">Producen PR (${fmt(dias[0]||DAYS[0])} al ${fmt(FIN_DEV)}): <b>${n} de ${EQUIPO.length}</b>${notas.length?" · "+esc(notas.join(" · ")):""}</span>`
+    +(malas.length?`<span class="c" title="${esc(malas.join("\n"))}">Subtareas con su responsable prestado en esa fecha: <b>${malas.length}</b> · ${esc(malas[0])}${malas.length>1?" …":""}</span>`:"");
+}
 const enCarga=it=>(it.estado==="aceptada"||it.jira)&&it.ini&&!respOf(it);
 // Reparto real por día: cada subtarea toma la capacidad que queda desde su inicio y lo que no cabe pasa al día siguiente (no se duplica)
 function reparto(){
-  const cap=DAYS.map(d=>jor(d)), por={}, sobra={};
+  const cap=DAYS.map(d=>jorDe(MAIN,d)), por={}, sobra={};
   const orden=[];KEYS.forEach((k,ki)=>ST[k].items.forEach((it,ii)=>{if(enCarga(it))orden.push({k,it,ki,ii});}));
   orden.sort((a,b)=>(a.it.ini<b.it.ini?-1:a.it.ini>b.it.ini?1:a.ki-b.ki||a.ii-b.ii));
   orden.forEach(({it})=>{let r=Number(it.horas)||0;const m={};for(let i=Math.max(0,di(it.ini));i<DAYS.length&&r>1e-9;i++){const t=Math.min(r,cap[i]);if(t>0){cap[i]-=t;m[i]=t;r-=t;}}
     por[it.id]=m;if(r>1e-9)sobra[it.id]=r;});
-  const load=DAYS.map((d,i)=>jor(d)-cap[i]);return{por,sobra,load};}
+  const load=DAYS.map((d,i)=>jorDe(MAIN,d)-cap[i]);return{por,sobra,load};}
 // Programar en secuencia desde una fecha: en el orden de las historias y de sus subtareas, llenando la capacidad diaria y arrastrando lo que no cabe
 function programar(desde){
   const tocadas=new Set(), cal={};
   const quien=it=>respOf(it)?respOf(it).nombre:MAIN;
   KEYS.forEach(k=>ST[k].items.forEach(it=>{if(it.estado!=="aceptada"||it.jira)return;
-    const p=quien(it);if(!cal[p])cal[p]={cap:DAYS.map(d=>jor(d)),i:Math.max(0,di(desde))};const c=cal[p];
+    const p=quien(it);if(!cal[p])cal[p]={cap:DAYS.map(d=>jorDe(p,d)),i:Math.max(0,di(desde))};const c=cal[p];
     let r=Number(it.horas)||0,ini=null,fin=null;
     while(c.i<DAYS.length&&c.cap[c.i]<=1e-9)c.i++;
     let i=c.i;while(r>1e-9&&i<DAYS.length){const t=Math.min(r,c.cap[i]);if(t>0){if(ini===null)ini=i;fin=i;c.cap[i]-=t;r-=t;}if(c.cap[i]<=1e-9)i++;}
@@ -250,10 +269,10 @@ document.addEventListener("click",ev=>{const b=ev.target.closest&&ev.target.clos
   anotar([{texto:`Reprogramó el sprint en secuencia desde el ${fmt(desde)} (${t.size} historias movidas), a ${h(CAP_LJ)} h por día y ${h(CAP_V)} el viernes`,fuente:"cronograma"}],[],`Reprogramado desde ${desde}`);});
 function renderKpis(){
   let a=0,p=0,w=0,fin="";KEYS.forEach(k=>{const x=huHoras(k);a+=x.a;p+=x.p;w+=x.w;ST[k].items.forEach(it=>{if(vivo(it)&&it.fin&&it.fin>fin)fin=it.fin;});});
-  let cap=0;DAYS.forEach(d=>{if(d<=FIN_DEV)cap+=jor(d);});
+  let cap=0;DAYS.forEach(d=>{if(d<=FIN_DEV)cap+=jorDe(MAIN,d);});
   const pend=countOps();
   $("kpis").innerHTML=`<span>Aceptadas: <b>${h(a)} h</b></span><span>Propuestas sin aceptar: <b>${h(p)} h</b></span><span class="v">Pendiente de definición: <b>${h(w)} h</b> <button class="btn sm" id="bPend">Ver pendientes por definir</button></span>
-  <span>Capacidad de desarrollo (${fmt(DAYS[0])} al ${fmt(FIN_DEV)}): <b>${h(cap)} h</b></span><span class="${fin>FIN_DEV?"c":""}">Fin de desarrollo según el plan: <b>${fmt(fin)}</b> (cronograma ${fmt(FIN_DEV)})</span><span>Cambios por exportar: <b>${pend}</b></span>
+  <span>Capacidad de desarrollo (${fmt(DAYS[0])} al ${fmt(FIN_DEV)}): <b>${h(cap)} h</b></span><span class="${fin>FIN_DEV?"c":""}">Fin de desarrollo según el plan: <b>${fmt(fin)}</b> (cronograma ${fmt(FIN_DEV)})</span><span>Cambios por exportar: <b>${pend}</b></span>${equipoKpi()}
   ${canWrite?`<span><label>Programar desde <input type="date" id="pDesde" value="${($("pDesde")&&$("pDesde").value)||sigHabil()}"></label> <button class="btn sm" id="bProg" title="Reparte las subtareas aceptadas en el orden de las historias, llenando ${h(CAP_LJ)} h por día (viernes ${h(CAP_V)}) y pasando al día siguiente lo que no cabe">Programar en secuencia</button></span>`:""}`;
 }
 function renderGrid(){
@@ -290,7 +309,7 @@ function renderGrid(){
     if(x.w){html+=`<div class="bar vino" style="top:${6+its.length*26}px;height:22px;left:2px;width:${Math.min(DAYS.length,6)*cw-4}px">Pendiente de definición · ${h(x.w)} h</div>`;}
     html+=`</div>`;
   });
-  html+=`<div class="ll">Carga de ${esc(MAIN)} (h/día)</div><div class="load">`+DAYS.map((d,i)=>{const j=jor(d),v=load[i];if(!j)return`<div class="lc none">fest.</div>`;const c=v===0?"none":(v>j*1.05?"over":(v>=j*.85?"full":"lo"));const det=[];KEYS.forEach(k=>ST[k].items.forEach(it=>{const m=R.por[it.id];if(m&&m[i])det.push(k+" "+h(m[i])+" h · "+it.titulo.slice(0,50));}));return`<div class="lc ${c}" title="${esc(fmt(d)+": "+h(v)+" de "+h(j)+" h"+(det.length?"\n"+det.join("\n"):""))}">${v?h(v):"·"}</div>`;}).join("")+`</div>`;
+  html+=`<div class="ll">Carga de ${esc(MAIN)} (h/día)</div><div class="load">`+DAYS.map((d,i)=>{const j=jorDe(MAIN,d),v=load[i];if(!j)return`<div class="lc none">${jor(d)?(prestadoEn(MAIN,d)?"prest.":"sin PR"):"fest."}</div>`;const c=v===0?"none":(v>j*1.05?"over":(v>=j*.85?"full":"lo"));const det=[];KEYS.forEach(k=>ST[k].items.forEach(it=>{const m=R.por[it.id];if(m&&m[i])det.push(k+" "+h(m[i])+" h · "+it.titulo.slice(0,50));}));return`<div class="lc ${c}" title="${esc(fmt(d)+": "+h(v)+" de "+h(j)+" h"+(det.length?"\n"+det.join("\n"):""))}">${v?h(v):"·"}</div>`;}).join("")+`</div>`;
   const sobra=Object.values(R.sobra).reduce((s,x)=>s+x,0); if(sobra>1e-9)html+=`<div class="ll" style="grid-column:1 / -1;color:var(--crit)">No caben ${h(sobra)} h de ${esc(MAIN)} antes del ${fmt(DAYS[DAYS.length-1])}: desbordan el sprint.</div>`;
   g.innerHTML=html;
 }

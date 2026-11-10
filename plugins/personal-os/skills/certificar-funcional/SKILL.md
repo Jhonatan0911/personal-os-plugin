@@ -30,6 +30,19 @@ para los v1) por slug o por clave de Jira en `jira`, `historias` o `subtareas`, 
 `certificacion.carpeta` o `<carpeta del expediente>/certificacion/`. Scripts:
 `python -I "${CLAUDE_SKILL_DIR}/scripts/<script>.py"`.
 
+## Según el nivel del caso
+
+Si `fuentes.yaml` trae `flujo.niveles_activos: true`, la certificación se ajusta al nivel (A/B/C) del caso;
+contrato en `planear-sprint/references/niveles.md` (si la skill está instalada). Antes de generar corre
+`nivel.py --config <fuentes.yaml> --expediente <exp>`: nivel del expediente o `nivel_por_defecto`, variante de `p5`.
+`matriz.py` y `verificar_matriz.py` la resuelven igual con `--config` y registran nivel y variante.
+
+| Variante p5 | Qué se hace |
+|---|---|
+| `matriz` (o sin `flujo`) | Las secciones 1 y 2 tal cual |
+| `evidencia` | Matriz de **una fila** (`EV-1`) con `ficha_corta.evidencia_cierre`. Si falta (`matriz.py` sale con 2), pídela en el modal y pásala con `--evidencia-cierre "<texto>"` (también a `verificar_matriz.py`). Se verifica solo que esa evidencia exista y no traiga datos reales: mismas reglas de arriba, capturas a ojo incluidas |
+| sin `p5` (sale con 3) | El paso no aplica al nivel: dilo y no generes matriz. Si el líder insiste, pregunta la variante y pásala con `--variante` |
+
 ## 1. Generar la matriz
 
 1. Lee el expediente. Si no tiene `historias[].criterios` con `como_verificar`, dilo: sin especificación no hay

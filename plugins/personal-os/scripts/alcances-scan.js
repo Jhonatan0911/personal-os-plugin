@@ -29,6 +29,9 @@
  *  4. Rastrea la bitácora reciente buscando compromisos NO DECLARADOS: si alguien habló de un
  *     alcance, una entrega o unas horas comprometidas y no existe una nota de alcance que lo
  *     cubra, eso es un punto ciego y se reporta.
+ *  5. Lee `estado/requerimientos/<slug>/expediente.json` y persigue sus `cortes[]` pendientes y sus
+ *     `compromisos[]` vigentes que vencen hoy, mañana o ya vencieron (sin duplicar un hito que una
+ *     nota de alcance ya trae con la misma fecha y la misma clave de Jira).
  *
  * Salida: un bloque de texto para inyectar en contexto (exit 0, para que el hook SessionStart lo
  * inyecte). Con --exit-code, sale con 2 si hay CRÍTICOS (útil en CI o en un script propio).
@@ -358,12 +361,8 @@ function analizar(base, hoy) {
       const [f, que, est] = String(h).split('|').map((s) => (s || '').trim());
       if (!/^\d{4}-\d{2}-\d{2}$/.test(f || '')) continue;
       if (/^(hecho|cumplido|cancelado)/i.test(est || '')) continue;
-      const dh = diasHabiles(hoy, f);
-      if (dh === null || dh > 1) continue;
-      // La etiqueta usa días calendario: un hito en sábado o festivo da 0 días hábiles, pero no es "hoy".
-      const dc = diasEntre(hoy, f);
-      const cuando = dc < 0 ? `VENCIDO hace ${Math.max(1, Math.abs(dh))} día(s) hábil(es)`
-        : dc === 0 ? 'HOY' : dc === 1 ? 'MAÑANA' : `ANTES DEL PRÓXIMO DÍA HÁBIL (${f})`;
+      const cuando = cuandoVence(hoy, f);
+      if (!cuando) continue;
       const hit = { id, cliente, nombre, fecha: f, que: que || '(sin descripción)', cuando };
       HITOS.push(hit);
       hallazgos.push({ sev: 'CRITICO', alcance: etiqueta,
@@ -413,7 +412,160 @@ function analizar(base, hoy) {
   //     (en nivel `fácil` este rastreo se apaga: es el chequeo más caro de atender)
   const sospechas = EXIGENCIA.detectar_sin_declarar ? rastrearBitacora(base, hoy, alcances) : [];
 
-  return { hallazgos, vencidos, sospechas, hitos: HITOS, totalAlcances: alcances.length, activos: activos.length };
+  // (8) fechas de los expedientes de requerimiento: cortes y compromisos con el cliente
+  let expedientes = { leidos: 0, conFechas: 0 };
+  try { expedientes = vigilarExpedientes(base, hoy, legibles, hallazgos); }
+  catch (e) {
+    hallazgos.push({ sev: 'ALERTA', alcance: '⚠ requerimientos/',
+      titulo: 'El vigía no pudo recorrer los expedientes', detalle: String(e && e.message || e).slice(0, 160),
+      accion: 'Revisar la carpeta `requerimientos/`: mientras tanto sus cortes y compromisos NO se vigilan.' });
+  }
+
+  return { hallazgos, vencidos, sospechas, hitos: HITOS, totalAlcances: alcances.length, activos: activos.length,
+           expedientes };
+}
+
+/**
+ * ¿Cuándo vence una fecha, en el lenguaje del vigía? null si queda más allá del próximo día hábil.
+ * La etiqueta usa días calendario: una fecha en sábado o festivo da 0 días hábiles, pero no es "hoy".
+ */
+function cuandoVence(hoy, f) {
+  const dh = diasHabiles(hoy, f);
+  if (dh === null || dh > 1) return null;
+  const dc = diasEntre(hoy, f);
+  return dc < 0 ? `VENCIDO hace ${Math.max(1, Math.abs(dh))} día(s) hábil(es)`
+    : dc === 0 ? 'HOY' : dc === 1 ? 'MAÑANA' : `ANTES DEL PRÓXIMO DÍA HÁBIL (${f})`;
+}
+
+/**
+ * Expedientes de requerimiento (`requerimientos/<slug>/expediente.json`, contrato en la skill
+ * planear-sprint). Persigue dos listas con fecha:
+ *   · `cortes[]` en estado `pendiente` (las revisiones intermedias; `tipo: acta` es una promesa
+ *     tomada de un acta con el cliente). Un corte sin `responsable` es riesgo desde el día uno.
+ *   · `compromisos[]` en estado `vigente`: fechas prometidas al cliente. Las `reemplazada` no
+ *     alertan, pero la vigente dice cuántas veces se movió la fecha (la cadena de `reemplaza`).
+ * Un expediente v1/v2 sin esos campos no emite nada; uno ilegible se avisa en una línea y no tumba
+ * al resto. Si una nota de alcance ya trae el mismo hito (misma fecha y una clave de Jira del
+ * expediente en su texto), no se repite: lo vigila la nota.
+ */
+function vigilarExpedientes(base, hoy, notas, hallazgos) {
+  const dir = path.join(base, 'requerimientos');
+  let slugs = [];
+  try { slugs = fs.readdirSync(dir, { withFileTypes: true }).filter((d) => d.isDirectory()).map((d) => d.name); }
+  catch (e) { return { leidos: 0, conFechas: 0 }; }
+
+  // Hitos ya declarados en las notas de alcance, para no duplicar.
+  const hitosNotas = [];
+  for (const a of notas) {
+    for (const h of (Array.isArray(a.fm.hitos) ? a.fm.hitos : [])) {
+      const f = String(h).split('|')[0].trim();
+      if (/^\d{4}-\d{2}-\d{2}$/.test(f)) hitosNotas.push({ fecha: f, texto: String(h).toUpperCase() });
+    }
+  }
+  const yaEnNota = (fecha, claves) => claves.length > 0 && hitosNotas.some((h) => h.fecha === fecha
+    && claves.some((k) => new RegExp(`(^|[^A-Z0-9-])${k.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}(?![0-9])`).test(h.texto)));
+
+  const esFecha = (f) => /^\d{4}-\d{2}-\d{2}$/.test(String(f || ''));
+  const lista = (v) => (Array.isArray(v) ? v.filter((x) => x && typeof x === 'object') : []);
+  let leidos = 0;
+  let conFechas = 0;
+
+  for (const slug of slugs.sort()) {
+    if (slug.startsWith('_')) continue;   // plantillas o ejemplos, como en las notas
+    const ruta = path.join(dir, slug, 'expediente.json');
+    if (!fs.existsSync(ruta)) continue;
+    let exp;
+    try {
+      let t = fs.readFileSync(ruta, 'utf8');
+      if (t.charCodeAt(0) === 0xFEFF) t = t.slice(1);
+      exp = JSON.parse(t);
+      if (!exp || typeof exp !== 'object' || Array.isArray(exp)) throw new Error('no es un objeto JSON');
+    } catch (e) {
+      const aviso = { id: slug, cliente: '', nombre: slug, fecha: '', que: 'expediente.json ILEGIBLE: sus fechas no se vigilan',
+                      cuando: 'AVISO', origen: 'expediente' };
+      HITOS.push(aviso);
+      hallazgos.push({ sev: 'ALERTA', alcance: `⚠ requerimientos/${slug}`,
+        titulo: 'Expediente ILEGIBLE para el vigía (JSON roto)',
+        detalle: String(e && e.message || e).split('\n')[0].slice(0, 160),
+        accion: 'Arreglar el JSON. Mientras esté así, sus cortes y compromisos NO se vigilan.' });
+      continue;
+    }
+    leidos++;
+
+    const cortes = lista(exp.cortes);
+    const compromisos = lista(exp.compromisos);
+    if (!cortes.length && !compromisos.length) continue;
+    conFechas++;
+
+    const id = txt(exp.id) || slug;
+    const titulo = txt(exp.titulo) || txt(exp.requerimiento) || id;
+    const cab = obj(exp.cabecera) || {};
+    const cliente = txt(cab.cliente);
+    const etiqueta = `${id} · ${cliente || 'SIN CLIENTE'} · ${titulo}`;
+    const claves = new Set((Array.isArray(exp.jira) ? exp.jira : [exp.jira]).map(txt).filter(Boolean));
+    for (const h of lista(exp.historias)) { const k = txt(h.clave) || txt(h.key); if (k) claves.add(k); }
+    const clavesArr = [...claves].map((k) => k.toUpperCase());
+
+    // Cortes pendientes (sin estado = pendiente: el lado seguro del error).
+    for (const c of cortes) {
+      const est = (txt(c.estado) || 'pendiente').toLowerCase();
+      if (est !== 'pendiente') continue;
+      const f = txt(c.fecha);
+      if (!esFecha(f)) continue;
+      const cuando = cuandoVence(hoy, f);
+      if (!cuando || yaEnNota(f, clavesArr)) continue;
+      const tipo = txt(c.tipo).toLowerCase();
+      const resp = txt(c.responsable);
+      const que = txt(c.que_se_revisa) || '(sin descripción)';
+      const acta = tipo === 'acta';
+      const vencido = cuando.startsWith('VENCIDO');
+      // Promesa de un acta o corte sin dueño: CRÍTICO siempre. Corte interno: CRÍTICO solo vencido.
+      const sev = acta || !resp || vencido ? 'CRITICO' : 'ALERTA';
+      const extra = [acta ? 'acta con el cliente' : (tipo || 'corte'), resp || 'SIN RESPONSABLE'].join(' · ');
+      HITOS.push({ id, cliente, nombre: titulo, fecha: f, que, cuando, origen: 'corte', extra });
+      hallazgos.push({ sev, alcance: etiqueta,
+        titulo: `${acta ? 'COMPROMISO DE ACTA' : 'CORTE'} ${cuando}: ${que}`,
+        detalle: `Fecha del corte: ${f} · tipo: ${tipo || 'sin tipo'} · responsable: ${resp || 'SIN RESPONSABLE'}` +
+                 (Array.isArray(c.criterios) && c.criterios.length ? ` · criterios: ${c.criterios.join(', ')}` : '') + '.',
+        accion: !resp
+          ? 'Ponerle responsable hoy: un corte sin dueño ya está incumplido, solo que todavía no se nota.'
+          : vencido ? 'Hacer la revisión hoy y marcar el corte `ok` o `desviado` en el expediente, con nota.'
+            : 'Agendarlo con el responsable y marcarlo `ok` o `desviado` en el expediente al terminar.' });
+    }
+
+    // Compromisos vigentes con el cliente.
+    const porId = new Map(compromisos.filter((k) => txt(k.id)).map((k) => [txt(k.id), k]));
+    for (const k of compromisos) {
+      const est = (txt(k.estado) || 'vigente').toLowerCase();
+      if (est !== 'vigente') continue;
+      const f = txt(k.fecha);
+      if (!esFecha(f)) continue;
+      const cuando = cuandoVence(hoy, f);
+      if (!cuando || yaEnNota(f, clavesArr)) continue;
+      // Cadena de reemplazos: cuántas veces se movió la fecha antes de esta.
+      const previas = [];
+      const vistos = new Set([txt(k.id)]);
+      let ant = txt(k.reemplaza);
+      while (ant && !vistos.has(ant) && porId.has(ant)) {
+        vistos.add(ant);
+        previas.unshift(txt(porId.get(ant).fecha) || '¿?');
+        ant = txt(porId.get(ant).reemplaza);
+      }
+      const movida = previas.length
+        ? ` · la fecha se movió ${previas.length} ${previas.length === 1 ? 'vez' : 'veces'} (${previas.join(' → ')} → ${f})` : '';
+      const que = txt(k.que) || '(sin descripción)';
+      const aQuien = txt(k.a_quien);
+      const extra = `compromiso con el cliente${aQuien ? ` · a ${aQuien}` : ''}${previas.length ? ` · movida ${previas.length}×` : ''}`;
+      HITOS.push({ id, cliente, nombre: titulo, fecha: f, que, cuando, origen: 'compromiso_expediente', extra });
+      hallazgos.push({ sev: 'CRITICO', alcance: etiqueta,
+        titulo: `FECHA PROMETIDA AL CLIENTE ${cuando}: ${que}`,
+        detalle: `Fecha comprometida: ${f}${aQuien ? ` · a ${aQuien}` : ''}${movida}.`,
+        accion: cuando.startsWith('VENCIDO')
+          ? 'Marcarla `cumplida` con evidencia, o `incumplida` y registrar la nueva fecha como compromiso que la `reemplaza`, avisando al cliente HOY.'
+          : 'Va en «Mi recomendación para hoy» por encima de lo interno. Si no se cumple, avisar al cliente ANTES de la fecha.' });
+    }
+  }
+  return { leidos, conFechas };
 }
 
 /**
@@ -494,7 +646,7 @@ function render(r, hoy, base) {
   const oks = r.hallazgos.filter((h) => h.sev === 'OK');
   const L = [];
 
-  if (!r.totalAlcances && !r.vencidos.length && !r.sospechas.length) {
+  if (!r.totalAlcances && !r.vencidos.length && !r.sospechas.length && !r.hallazgos.length) {
     return { texto: '', criticos: 0 };
   }
 
@@ -503,7 +655,9 @@ function render(r, hoy, base) {
   L.push(`Alcances vigilados: **${r.activos} activos** de ${r.totalAlcances}. ` +
          `Críticos: **${criticos.length}** · Alertas: ${alertas.length}. ` +
          `Exigencia: **${EXIGENCIA.etiqueta}**` +
-         (EXIGENCIA.aviso ? ` ⚠️ (${EXIGENCIA.aviso}; se usa el nivel por defecto)` : '') + '.');
+         (EXIGENCIA.aviso ? ` ⚠️ (${EXIGENCIA.aviso}; se usa el nivel por defecto)` : '') + '.' +
+         (r.expedientes && r.expedientes.conFechas
+           ? ` Expedientes con cortes o compromisos: ${r.expedientes.conFechas} de ${r.expedientes.leidos}.` : ''));
   L.push('');
 
   if (criticos.length) {
@@ -569,7 +723,10 @@ try {
   if (FLAG_HITOS) {
     if (r.hitos.length) {
       const L = ['⏰ HITOS CON FECHA (vigía, cada prompt): lo de hoy va en «Mi recomendación para hoy» por encima de lo interno, salvo que ya esté hecho con evidencia.'];
-      for (const h of r.hitos) L.push(`- ${h.cuando} · ${h.id} · ${h.que}${h.compromiso ? ' (compromiso)' : ''}`);
+      for (const h of r.hitos) {
+        const extra = h.compromiso ? ' (compromiso)' : h.extra ? ` (${h.extra})` : '';
+        L.push(`- ${h.cuando} · ${h.id} · ${h.que}${extra}`);
+      }
       process.stdout.write(L.join('\n') + '\n');
     }
     process.exit(0);   // en UserPromptSubmit un código 2 BLOQUEA el prompt: nunca

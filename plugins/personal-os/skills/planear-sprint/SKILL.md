@@ -54,7 +54,11 @@ ejemplos, referencias) están en `${CLAUDE_SKILL_DIR}`. Los scripts del plugin s
 3. **Propuesta de calibración pendiente:** si `<mineria_dir>/propuesta-matriz.md` es más nueva que la
    matriz, muéstrale al líder en 3-5 líneas qué tipos propone ajustar o crear y pregunta si los aplica
    antes de estimar (`references/calibracion.md`). Sin su OK la matriz no cambia.
-4. **Nivel y familiaridad por persona** son ejes distintos: un júnior que conoce todo el negocio puede
+4. **Nivel del caso:** si `flujo.niveles_activos` es `true`, clasifica primero el caso (trámite, bug,
+   requerimiento…) con `references/paso0.md` §0. Un nivel con `p0: corto` se resuelve con la ficha corta
+   y termina ahí, sin Fases 1-5. Sin sección `flujo`, todo caso sigue el flujo completo
+   (`references/niveles.md`).
+5. **Nivel y familiaridad por persona** son ejes distintos: un júnior que conoce todo el negocio puede
    rendir más que un sénior nuevo. Salen de `equipo` o de `personas` de la matriz. Si falta alguno para
    la persona y el frente, pregúntalo y, con su OK, guárdalo con fuente y fecha. Nunca deducirlo.
 
@@ -167,7 +171,8 @@ Lanza **en un solo mensaje** los dos agentes de este plugin (pueden aparecer con
    legado que quedó corto. Aplica sus hallazgos o déjalos anotados con el porqué.
 2. **`refutador-requerimiento`** con: la ruta del expediente, las subtareas, la tabla de normas
    (`<stateDir>/criticidad/normas.json`; si no existe, la de ejemplo del plugin y avisa que no está
-   verificada) y el mapa de criticidad si existe. Devuelve, por punto, interés del usuario, qué se acepta,
+   verificada), el mapa de criticidad si existe y `normas.jurisdicciones` si está configurado (con niveles
+   activos, solo si el nivel está en `flujo.refutador.completo_en`). Devuelve, por punto, interés del usuario, qué se acepta,
    qué se refuta y con qué regla, la alternativa y su costo.
 
 Con lo que devuelvan (`references/paso0.md`):
@@ -184,7 +189,8 @@ Con lo que devuelvan (`references/paso0.md`):
 1. **`plan.json` y el cronograma interactivo** en `planeacion.carpeta_trabajo` (por defecto
    `<stateDir>/estimaciones/<slug>/`). Formato en el docstring de `generar_cronograma.py` y en
    `plan-ejemplo.json`; de dónde sale cada campo, en `references/configuracion.md` §5. Incluye `epica`,
-   `correos_busqueda`, `capacidad`, `personas`, `cuentas` y `expediente` (ruta al expediente v2 de
+   `correos_busqueda`, `capacidad`, `personas`, `cuentas`, `equipo` (con `produce_pr` y `prestado`
+   de `fuentes.yaml`: capacidad real) y `expediente` (ruta al expediente v2 de
    `<stateDir>/requerimientos/<slug>/`). Las fases, tal cual del cliente.
 
    ```
@@ -240,7 +246,8 @@ de los mineros, página del catálogo y Monte Carlo: `references/calibracion.md`
 | `references/configuracion.md` | Fase 0 y al armar el plan: claves de `fuentes.yaml`, orden de la matriz, perfil de organización y marca |
 | `references/expediente.md` | Fase 1-bis y al actualizar el requerimiento: esquema v2, ubicación, compatibilidad con v1 |
 | `references/especificacion.md` | Fases 1-bis y 2: ficha de impacto, escenarios de calidad y ADR, subtarea-instrucción, cortes |
-| `references/paso0.md` | Fase 3: encargo al refutador, cómo bajar sus recortes, DoR por niveles y chequeo del paso 0 |
+| `references/paso0.md` | Fase 0 (nivel del caso) y Fase 3: encargo al refutador, cómo bajar sus recortes, DoR por niveles y chequeo del paso 0 |
+| `references/niveles.md` | Contrato de los niveles de caso (A/B/C u otros) que comparten todas las piezas del flujo |
 | `references/cronograma.md` | Fase 4: generar, publicar, cómo se comporta la página, exportar y registrar |
 | `references/calibracion.md` | Fase 0 si hay propuesta pendiente, y Fase 5 |
 | `generar_cronograma.py` | Se **ejecuta**: valida el plan y el expediente, aplica perfil y marca, genera el HTML |
