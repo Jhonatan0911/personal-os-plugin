@@ -62,10 +62,21 @@ tareas_externas: []                     # p. ej. un seguimiento en Excel compart
 #   capacidad_factor: 0.8                # la capacidad no es la jornada completa
 #   sla_revision: 2                      # días hábiles para revisar
 #   sla_implementacion: 5                # días hábiles para publicar
-#   limite_wip: null
-#   estados: { revision: "En revisión", implementacion: "Listo para implementación", pausa: "Pausado", desarrollo: "En curso" }
-#   reparto: { titulares: 2, backups: 2 }
-#   campo_inicio: null
+#   limite_wip: null                     # máximo «en desarrollo» por persona
+#   proyectos_propios: ["PROY"]          # lo de otro proyecto sale como transversal
+#   estados:                             # listas con los nombres de TU Jira; «Nombre*» = prefijo
+#     revision: ["Listo para revisión", "En revisión*"]
+#     certificacion: ["Certificación*"]
+#     implementacion: ["Listo para implementación"]
+#     pausa: ["Pausado"]
+#     desarrollo: ["En curso"]
+#   reparto: { titular: 2, backup: 2 }
+#   acuerdo_frentes_fuente: "<ruta al acuerdo de equipo>"
+#   externos: [{ jira: "<displayName>", nombre: "<corto>", lider: "otro líder" }]
+#   mesa: { nombre: "mesa de líderes", con: "<quien la coordina>" }
+#   mesa_excluir: [{ tema: "<qué>", por_que: "<razón>", donde_queda: "<dónde>" }]
+#   tablero_compartido: { url: "<url del Artifact>", nombre: "<nombre>", personas_extra: [], excluir: [] }
+#   (detalle: skills/status-celula/references/configuracion.md del plugin)
 
 # seguimiento_equipo:                   # opcional; lo usa el brief para "hace cuánto no hay seguimiento"
 #   senales: ["comentario tuyo en una issue de la persona", "última reunión común", "trabajo conjunto en la bitácora"]

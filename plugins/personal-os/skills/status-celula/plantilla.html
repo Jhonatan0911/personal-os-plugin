@@ -169,6 +169,16 @@ dl.kv{display:grid;grid-template-columns:130px 1fr;gap:4px 10px;margin:0;font-si
 dl.kv dt{color:var(--soft)}
 .form-row{display:flex;flex-direction:column;gap:4px;margin-bottom:10px}
 .form-row select,.form-row input{padding:6px 8px;border:1px solid var(--line);border-radius:6px;background:var(--panel2)}
+.form-row textarea{padding:6px 8px;border:1px solid var(--line);border-radius:6px;background:var(--panel2);min-height:64px;font:inherit;color:inherit}
+.pc{color:var(--soft);font-size:11px;font-weight:400}
+.ajeno{display:inline-block;font-size:10.5px;padding:0 6px;border-radius:9px;background:var(--warn-bg);color:var(--warn);margin-left:6px}
+.com{border-left:3px solid var(--line);padding:4px 8px;margin-bottom:8px;font-size:12.5px}
+.com .quien{font-weight:600}.com .cuando{color:var(--soft);font-size:11px;margin-left:6px}
+.com .txt{white-space:pre-wrap;margin-top:2px}
+.hist{font-size:12px;max-height:180px;overflow:auto}.hist div{padding:2px 0;border-bottom:1px dashed var(--line)}
+h4.sub{margin:12px 0 6px;font-size:13px;color:var(--soft)}
+.prop{display:flex;gap:8px;align-items:flex-end;flex-wrap:wrap}.prop .form-row{flex:1;min-width:200px;margin:0}
+tr.k{cursor:pointer} tr.k:hover td{background:var(--hoy)}
 footer{color:var(--soft);font-size:11.5px;margin-top:16px}
 [hidden]{display:none!important}
 </style>
@@ -216,7 +226,7 @@ footer{color:var(--soft);font-size:11.5px;margin-top:16px}
           <div class="chips" id="pendientes"></div>
         </div>
         <div class="panel">
-          <h3>Cambios propuestos <span><button class="btn" id="copiar">Copiar para Jira</button> <button class="btn" id="vaciar" title="Vaciar la lista">×</button></span></h3>
+          <h3>Cambios propuestos <span class="pill" id="nCambios">0</span> <span><button class="btn" id="copiar">Copiar para Jira</button> <button class="btn" id="deshacer" title="Devuelve las barras a como vinieron de Jira y vacía la lista">Deshacer</button></span></h3>
           <div class="cambios" id="cambios"><div class="vacio">Arrastra una barra o una tarjeta: el cambio queda aquí. El tablero no escribe en Jira.</div></div>
         </div>
       </aside>
@@ -306,7 +316,8 @@ const colorF = (k) => (D.frentes || []).find((f) => f.clave === k)?.color || '#5
 const FACTOR = D.capacidad_factor != null ? D.capacidad_factor : 0.8;
 const esTraza = (i) => !!i.cerrada || i.tipo === 'implementacion' || i.tipo === 'redefinido';
 let ANCHO = ls.get('zoom', 40), huecos = false, soloVencidas = false, ocultarHechas = false, mostrarTrans = true;
-const items = (D.items || []).map((x) => Object.assign({}, x, { fijo: x.fijo || esTraza(x), _o: { persona: x.persona, ini: x.ini, fin: x.fin } }));
+const items = (D.items || []).map((x) => Object.assign({}, x, { fijo: x.fijo || esTraza(x),
+  _o: { persona: x.persona, ini: x.ini, fin: x.fin, vence: x.vence, recortada: x.recortada, desde_real: x.desde_real, vencida: x.vencida } }));
 const pendientes = (D.sin_programar || []).map((x) => Object.assign({}, x));
 const cambios = [];
 
@@ -346,7 +357,9 @@ function veredicto(i) {
   if (i.tipo === 'redefinido') return { n: 'na', t: 'Redefinido', d: 'Jira lo cuenta como terminado y no lo está: no es un cierre. Se lista aparte.' };
   if (i.tipo === 'implementacion') return { n: 'al', t: 'Lista para implementación, sin publicar', d: 'El desarrollo terminó. Falta publicarla: está en la cola del líder.' };
   if (i.cerrada) return i.tarde ? { n: 'al', t: `Cerrada ${i.tarde} día(s) hábil(es) tarde`, d: `Se cerró el ${fdm(i.fin)}; vencía el ${fdm(i.vence)}.` } : { n: 'ok', t: 'Cerrada', d: `Se cerró el ${fdm(i.fin)}.` };
-  if (i.pausada) return { n: 'na', t: 'Pausada', d: 'No suma a la carga mientras siga pausada. Sigue en el tablero para que no se olvide.' };
+  // Pausar no borra la fecha: si ya venció sigue en rojo, porque alguien la está esperando.
+  if (i.pausada) return d_ < 0 ? { n: 'ex', t: `Pausada y vencida hace ${-d_} día(s)`, d: 'No suma a la carga, pero su fecha ya pasó: muévela con razón escrita o ciérrala.' }
+    : { n: 'na', t: 'Pausada', d: 'No suma a la carga mientras siga pausada. Sigue en el tablero para que no se olvide.' };
   if (i.tipo === 'compromiso') {
     if (d_ < 0) return { n: 'ex', t: `Compromiso vencido hace ${-d_} día(s)`, d: 'Ciérralo con evidencia o muévele la fecha con razón escrita.' };
     return { n: d_ <= 1 ? 'al' : 'ok', t: d_ === 0 ? 'Compromiso que vence hoy' : `Compromiso: vence en ${d_} días`, d: 'Compromiso con fecha del Personal OS. No tiene estimación en horas.' };
@@ -366,7 +379,7 @@ function cargaDiaria(lista) {
   const base = lista.filter((i) => !esTraza(i) && i.tipo !== 'grupo' && i.tipo !== 'compromiso' && !i.pausada);
   base.forEach((i) => {
     const est = +i.horas || 0;
-    if (i.en_revision) {   // entregada hoy: ocupa hoy la parte que le tocaba; desde mañana ya no cuenta
+    if (i.en_revision || i.en_certificacion) {   // entregada hoy: ocupa hoy la parte que le tocaba; desde mañana ya no cuenta
       if (HOY < 0 || !DIAS[HOY].hab || i.vencida) return;
       const [a, b] = rango(i); if (a > HOY || b < HOY) return;
       const n = Math.max(1, habilesIncl(DIAS[a].f, DIAS[b].f));
@@ -516,6 +529,7 @@ function pintarPendientes() {
 function registrar(txt) {
   cambios.push(txt);
   $('cambios').innerHTML = '<ol style="margin:0;padding-left:18px">' + cambios.map((c) => `<li>${esc(c)}</li>`).join('') + '</ol>';
+  $('nCambios').textContent = cambios.length;
 }
 $('copiar').onclick = () => {
   if (!cambios.length) return;
@@ -524,7 +538,19 @@ $('copiar').onclick = () => {
   if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(txt).catch(fallback); else fallback();
   $('copiar').textContent = 'Copiado ✓'; setTimeout(() => { $('copiar').textContent = 'Copiar para Jira'; }, 1500);
 };
-$('vaciar').onclick = () => { cambios.length = 0; $('cambios').innerHTML = '<div class="vacio">Sin cambios propuestos.</div>'; };
+/* Deshacer: las barras vuelven a como vinieron de Jira, lo programado vuelve a «Sin programar» y la lista
+   se vacía. Los frentes movidos también vuelven a su titular. Es la salida segura tras ensayar un plan. */
+$('deshacer').onclick = () => {
+  for (let k = items.length - 1; k >= 0; k--) {
+    const i = items[k];
+    if (i._o && i._o.persona === null && i._prog) { pendientes.push(i._prog); items.splice(k, 1); continue; }
+    if (i._o && i._o.persona) { i.persona = i._o.persona; i.ini = i._o.ini; i.fin = i._o.fin; i.vence = i._o.vence; i.recortada = i._o.recortada; i.desde_real = i._o.desde_real; i.vencida = i._o.vencida; }
+  }
+  (frentesAcuerdo() || []).forEach((f) => { if (f._o) { f.titular = f._o.titular; f.backup = f._o.backup; } });
+  cambios.length = 0; $('nCambios').textContent = '0';
+  $('cambios').innerHTML = '<div class="vacio">Sin cambios propuestos.</div>';
+  pintar(); pintarPendientes(); resumen(); pintarFrentes();
+};
 
 // ── Interacción: mover, alargar, reasignar ──────────────────────────────────────
 const byId = (id) => items.find((x) => x.id === id) || (() => { for (const p of PERS) { const g = visiblesDe(p.slug).find((x) => x.id === id); if (g) return g; } return null; })();
@@ -556,7 +582,7 @@ document.addEventListener('pointerup', (e) => {
     let fin = finPorHabiles(ini, n); if (fin > D.hasta) fin = antHabil(D.hasta);
     it.ini = ini; it.fin = fin;
     a.el.style.visibility = 'hidden';
-    const lane = document.elementFromPoint(e.clientX, e.clientY);
+    const lane = document.elementFromPoint ? document.elementFromPoint(e.clientX, e.clientY) : null;
     const l = lane && lane.closest ? lane.closest('.lane') : null;
     a.el.style.visibility = '';
     if (l && l.dataset.p && l.dataset.p !== it.persona) it.persona = l.dataset.p;
@@ -584,7 +610,7 @@ function programar(id, persona, dia) {
   const ini = sigHabil(dia < D.desde ? D.desde : dia);
   const n = Math.max(1, Math.ceil((+p.horas || JOR_MEDIA) / JOR_MEDIA));
   let fin = finPorHabiles(ini, n); if (fin > D.hasta) fin = antHabil(D.hasta);
-  items.push(Object.assign({}, p, { persona, ini, fin, vence: fin, vencida: fin < D.corte, _o: { persona: null } }));
+  items.push(Object.assign({}, p, { persona, ini, fin, vence: fin, vencida: fin < D.corte, _o: { persona: null }, _prog: p }));
   pendientes.splice(i, 1);
   registrar(`${p.id} (${p.titulo}): programar para ${nombre(persona)}, ${fdm(ini)} → ${fdm(fin)}`);
   pintar(); pintarPendientes(); resumen();
@@ -608,8 +634,10 @@ function abrirFicha(i) {
   const v = veredicto(i);
   const ver = `<div class="ver ${v.n}"><b>${esc(v.t)}</b><span>${esc(v.d)}</span></div>`;
   if (i.grupo) {
-    abrirDlg(i.titulo, ver + (i.nota ? `<p>${esc(i.nota)}</p>` : '') + `<div class="tabla-w"><table><tr><th>Issue</th><th>Desde / vence</th><th class="num">Horas</th></tr>` +
-      i.grupo.map((g) => `<tr><td>${g.url ? `<a href="${esc(g.url)}" target="_blank" rel="noopener">${esc(g.id)}</a>` : esc(g.id)} · ${esc(g.titulo)}</td><td>${fdm(g.desde)}</td><td class="num">${+g.horas ? fh(+g.horas) : '—'}</td></tr>`).join('') + `</table></div>`);
+    const esperaDe = (g) => { let n = 0; for (let d = g.desde; d < D.corte; d = addD(d, 1)) if (esHabil(addD(d, 1))) n++; return n; };
+    abrirDlg(i.titulo, ver + (i.nota ? `<p>${esc(i.nota)}</p>` : '') + `<div class="tabla-w"><table><tr><th>Issue</th><th>${i.cola ? 'En la cola desde' : 'Desde / vence'}</th>${i.cola ? '<th class="num">Espera</th>' : ''}<th class="num">Horas</th></tr>` +
+      i.grupo.map((g) => `<tr><td>${g.url ? `<a href="${esc(g.url)}" target="_blank" rel="noopener">${esc(g.id)}</a>` : esc(g.id)} · ${esc(g.titulo)}${g.sin_fecha ? ' <span class="pill">sin fecha</span>' : ''}</td><td>${fdm(g.desde)}</td>` +
+        `${i.cola ? `<td class="num ${esperaDe(g) > i.sla ? 'mal' : ''}">${esperaDe(g)} d háb.</td>` : ''}<td class="num">${+g.horas ? fh(+g.horas) : '<span class="reg">sin estimar</span>'}</td></tr>`).join('') + `</table></div>`);
     return;
   }
   const fr = ((D.frentes || []).find((f) => f.clave === i.frente) || {}).nombre || i.frente || '—';
@@ -652,7 +680,7 @@ function resumen() {
   const v = plan.map(veredicto);
   const k = (cls, n, t) => `<div class="kpi ${cls}"><b>${n}</b><span>${t}</span></div>`;
   $('kpis').innerHTML = k('crit', v.filter((x) => x.n === 'ex').length, 'en rojo') + k('warn', v.filter((x) => x.n === 'al').length, 'al filo') +
-    k('na', plan.filter((i) => !(+i.horas) && i.tipo !== 'compromiso' && !i.pausada).length, 'sin estimación') +
+    k('na', plan.filter((i) => !(+i.horas) && i.tipo !== 'compromiso').length, 'sin estimación') +
     k('crit', items.filter((i) => i.cola && i.vencida).length, 'colas fuera de acuerdo') + k('', pendientes.length, 'sin programar');
   $('meta').innerHTML = `Corte ${fdm(D.corte)}/${D.corte.slice(0, 4)} · ventana ${fdm(D.desde)} → ${fdm(D.hasta)} · ${PERS.length} carriles · ` +
     `${plan.length} pendientes con fecha · ${items.filter((i) => i.cerrada).length} terminadas · ${items.filter((i) => i.tipo === 'implementacion').length} listas para implementar<br>` +
@@ -691,7 +719,8 @@ function pintarMesa() {
   const fs_ = D.frentes_status || [];
   $('frentesRapidos').innerHTML = fs_.length ? `<h2 class="sec">Estado de los frentes <small class="meta">pasa el cursor para ver el detalle</small></h2><div class="fr-grid">` + fs_.map((f) => {
     const t = f.etiquetas || [], s = t.some((x) => x.tipo === 'c') ? 'r' : t.some((x) => x.tipo === 'a') ? 'a' : 'v';
-    return `<div class="fr" title="${esc(f.detalle || '')}"><span class="sem ${s}"></span><div><b>${esc(f.titulo)}</b><div>${pills(t)}</div></div></div>`;
+    const [nom, ...resto] = String(f.titulo || '').split(':');
+    return `<div class="fr" title="${esc(f.detalle || '')}"><span class="sem ${s}"></span><div><b>${esc(nom)}</b>${resto.length ? `<div class="meta">${esc(resto.join(':').trim())}</div>` : ''}<div>${pills(t)}</div></div></div>`;
   }).join('') + `</div>` : '';
 }
 
@@ -709,78 +738,150 @@ function pintarLider() {
   const nRev = colas('revision').reduce((a, c) => a + c.n, 0), nImp = colas('implementacion').reduce((a, c) => a + c.n, 0);
   $('nLider').textContent = nRev + nImp;
   const briefViejo = L.fecha_brief && L.fecha_brief !== D.corte;
-  $('liderCuerpo').innerHTML = (L.prioridad ? `<div class="p1"><b>Prioridad #1 vigente</b><p style="margin:4px 0">${esc(L.prioridad)}</p><small class="${briefViejo ? 'reg' : 'meta'}">${L.fecha_brief ? `Del brief del ${fdm(L.fecha_brief)}${briefViejo ? ': el brief de hoy no ha corrido' : ''}` : 'Sin fecha de brief'}</small></div>`
+  // La última verificación va debajo del título: es lo que dice si el compromiso se está persiguiendo.
+  const conUltima = (c) => `<b>${esc(c.id || '')}</b>${c.id ? ' · ' : ''}${esc(c.titulo)}${c.ultima ? `<div class="pc">${esc(c.ultima)}</div>` : ''}`;
+  const fechaC = (c) => { const f = c.fecha || c.desde; return `<span class="${f && f < D.corte ? 'mal' : ''}">${f ? fdm(f) : '<span class="reg">sin fecha</span>'}${c.dias > 0 ? ` · ${c.dias} d` : ''}</span>`; };
+  const P = L.propias;
+  const tProp = P ? `<div class="item"><div class="sub">${P.abiertas} abiertas · <span class="mal">${P.vencidas} vencidas</span> · ${P.sin_fecha} sin fecha · ${P.sin_est} sin estimación</div></div>` +
+    tablaSimple(P.lista, [['id', 'Issue', '', (i) => `${i.url ? `<a href="${esc(i.url)}" target="_blank" rel="noopener">${esc(i.id)}</a>` : esc(i.id)} · ${esc(i.titulo)}`], ['estado', 'Estado'],
+      ['fin', 'Fecha', '', (i) => `<span class="${i.fin && i.fin < D.corte ? 'mal' : ''}">${i.fin ? fdm(i.fin) : '<span class="reg">sin fecha</span>'}</span>`]]) : '';
+  const r3 = (L.riesgos || []).filter((r) => r.nivel >= 3).length;
+  $('liderCuerpo').innerHTML = (L.prioridad ? `<div class="p1"><b>Prioridad #1 vigente</b><p style="margin:4px 0">${esc(L.prioridad)}</p><small class="${briefViejo ? 'reg' : 'meta'}">${L.aviso_brief ? esc(L.aviso_brief) : L.fecha_brief ? `Del brief del ${fdm(L.fecha_brief)}${briefViejo ? ': el brief de hoy no ha corrido' : ''}` : 'Sin fecha de brief'}</small></div>`
       : `<div class="aviso">No hay prioridad #1 en los datos: el brief de hoy no ha corrido o no se leyó.</div>`) +
     `<div class="cards">` +
     tarjeta('Mi cola de revisión', 'crit', nRev, tablaSimple(colas('revision'), colCols)) +
     tarjeta('Cola de implementación', 'alto', nImp, tablaSimple(colas('implementacion'), colCols)) +
-    tarjeta('Mis compromisos abiertos', 'crit', (L.compromisos || []).length, tablaSimple(L.compromisos, [['id', 'Id'], ['titulo', 'Compromiso'], ['con', 'Con'], ['fecha', 'Fecha', '', (c) => `<span class="${c.fecha && c.fecha < D.corte ? 'mal' : ''}">${c.fecha ? fdm(c.fecha) : '<span class="reg">sin fecha</span>'}</span>`]])) +
-    tarjeta('Lo que espero de terceros', '', (L.terceros || []).length, tablaSimple(L.terceros, [['titulo', 'Qué'], ['de', 'De quién'], ['desde', 'Pedido el', '', (c) => fdm(c.desde)], ['dias', 'Días', 'num']])) +
-    tarjeta('Riesgos abiertos', 'crit', (L.riesgos || []).length, tablaSimple(L.riesgos, [['nivel', 'Nivel', 'num', (r) => `<span class="${r.nivel >= 3 ? 'mal' : r.nivel === 2 ? 'reg' : ''}">${esc(r.nivel)}</span>`], ['id', 'Id'], ['titulo', 'Riesgo']])) +
-    tarjeta('Alcances comprometidos', '', (L.alcances || []).length, tablaSimple(L.alcances, [['nombre', 'Alcance'], ['entrega', 'Entrega', '', (a) => fdm(a.entrega)], ['verificado_el', 'Cruzado', '', (a) => `<span class="${a.verificado_el && a.verificado_el < D.corte ? 'reg' : ''}">${fdm(a.verificado_el)}</span>`], ['resumen', 'Puntos']])) +
+    (P ? tarjeta('Mis issues en Jira', 'alto', P.abiertas, tProp) : '') +
+    tarjeta('Mis compromisos abiertos', 'crit', (L.compromisos || []).length, tablaSimple(L.compromisos, [['titulo', 'Compromiso', '', conUltima], ['con', 'Con'], ['fecha', 'Fecha', '', fechaC], ['verif', 'Verificado', '', (c) => fdm(c.verif)]])) +
+    tarjeta('Lo que espero de terceros', '', (L.terceros || []).length, tablaSimple(L.terceros, [['titulo', 'Qué', '', conUltima], ['de', 'De quién'], ['fecha', 'Fecha / pedido', '', fechaC], ['verif', 'Verificado', '', (c) => fdm(c.verif)]])) +
+    tarjeta(`Riesgos abiertos${r3 ? ` · ${r3} de nivel 3` : ''}`, 'crit', (L.riesgos || []).length, tablaSimple(L.riesgos, [['nivel', 'Nivel', 'num', (r) => `<span class="${r.nivel >= 3 ? 'mal' : r.nivel === 2 ? 'reg' : ''}">${esc(r.nivel)}</span>`], ['titulo', 'Riesgo', '', conUltima]])) +
+    tarjeta('Alcances comprometidos', '', (L.alcances || []).length, tablaSimple(L.alcances, [['nombre', 'Alcance', '', (a) => `${a.id ? `<b>${esc(a.id)}</b> · ` : ''}${esc(a.nombre)}`], ['entrega', 'Entrega', '', (a) => fdm(a.entrega)], ['verificado_el', 'Cruzado', '', (a) => `<span class="${a.verificado_el && a.verificado_el < D.corte ? 'reg' : ''}">${fdm(a.verificado_el)}</span>`], ['resumen', 'Puntos']])) +
     `</div>`;
 }
 
 // ── Status Jira: las nueve columnas, calculadas desde las issues crudas ───────────────
 const COLS9 = [['abiertas', 'Abiertas'], ['con_resp', 'Con resp.'], ['sin_resp', 'Sin resp.'], ['en_desarrollo', 'En desarrollo'], ['en_revision', 'En revisión'], ['sin_mov', 'Sin mov. 30 d'], ['vencidas', 'Vencidas'], ['sin_est', 'Sin estimación'], ['sin_fecha', 'Sin fecha']];
+const J_ = D.jira || null;
+/* Nombre corto de un displayName de Jira: el de la persona con carril, el de `externos` o el alias del JSON. */
+function alias(n) {
+  if (!n) return 'sin responsable';
+  const k = String(n).toLowerCase();
+  const p = PERS.find((x) => String(x.jira || '').toLowerCase() === k);
+  if (p) return p.nombre;
+  const x = ((J_ && J_.externos) || []).find((e) => String(e.jira || '').toLowerCase() === k);
+  if (x && x.nombre) return x.nombre;
+  return (J_ && J_.alias && J_.alias[n]) || n;
+}
+const enCelula = (n) => PERS.some((p) => p.jira && String(p.jira).toLowerCase() === String(n || '').toLowerCase());
+const esExterno = (n) => ((J_ && J_.externos) || []).some((e) => String(e.jira || '').toLowerCase() === String(n || '').toLowerCase());
 function pintarJira() {
   const J = D.jira;
   if (!J || !J.metricas) { $('jiraCuerpo').innerHTML = '<div class="aviso">No hay lectura de Jira en los datos de este corte.</div>'; return; }
   const M = J.metricas;
-  const celda = (f, c) => { const v = f[c] || 0, malo = ['sin_resp', 'sin_mov', 'vencidas', 'sin_est', 'sin_fecha'].includes(c) && v > 0; return `<td class="num ${malo ? 'reg' : ''}">${v}</td>`; };
-  const tabla = (filas, primera, attr) => `<div class="tabla-w"><table><tr><th>${primera}</th>${COLS9.map((c) => `<th class="num">${c[1]}</th>`).join('')}</tr>` +
-    filas.map((f) => `<tr class="${f.total ? 'total' : 'clic'}" ${f.total ? '' : attr(f)}><td>${f.total ? 'TOTAL' : esc(f.clave ? f.clave + (f.nombre ? ' · ' + f.nombre : '') : f.nombre)}${!f.total && M.excede_wip.includes(f.nombre) ? ` <span class="pill c">más de ${M.limite_wip} en desarrollo</span>` : ''}</td>${COLS9.map((c) => celda(f, c[0])).join('')}</tr>`).join('') + `</table></div>`;
-  $('jiraCuerpo').innerHTML =
-    `<p class="meta">Corte ${fdm(D.corte)} · «sin movimiento» = sin actualizar desde el ${fdm(M.corte_movimiento)}. Clic en una fila para ver sus issues, ordenadas por lo que arde.</p>` +
-    (M.proyectos.length ? `<h2 class="sec">Proyectos</h2>` + tabla(M.proyectos, 'Proyecto', (f) => `data-proy="${esc(f.clave)}"`) : '') +
-    `<h2 class="sec">Tu célula · todas sus issues abiertas, en el proyecto que sea</h2>` + tabla(M.celula, 'Persona', (f) => `data-pers="${esc(f.jira)}"`) +
-    (M.externos.length ? `<h2 class="sec">De fuera de la célula, dentro de tus proyectos <small class="meta">responden a otro líder</small></h2>` + tabla(M.externos, 'Persona', (f) => `data-pers="${esc(f.jira)}"`) : '') +
-    `<h2 class="sec">Sin responsable en tus proyectos</h2>` + tabla([Object.assign({ nombre: 'Bolsa sin responsable' }, M.huerfanas)], 'Bolsa', () => 'data-huerf="1"');
+  // Solo se pinta lo que se mira: un 0 en «sin responsable» es bueno; el % dice cuánto pesa.
+  const celda = (f, c) => {
+    const v = f[c] || 0, pc = f.abiertas ? Math.round(v / f.abiertas * 100) : 0;
+    const malo = (['sin_resp', 'sin_mov', 'sin_est', 'sin_fecha'].includes(c) && v > 0 && pc >= 25) || (c === 'vencidas' && v > 0) || (c === 'en_desarrollo' && M.limite_wip && v > M.limite_wip && !f.total);
+    const suf = ['sin_resp', 'sin_mov', 'sin_est', 'sin_fecha'].includes(c) && v > 0 && f.abiertas ? ` <span class="pc">${pc}%</span>` : '';
+    return `<td class="num ${malo ? 'reg' : ''}">${v}${suf}</td>`;
+  };
+  const tabla = (id, filas, primera, attr) => `<div class="tabla-w"><table id="${id}"><thead><tr><th>${primera}</th>${COLS9.map((c) => `<th class="num">${c[1]}</th>`).join('')}</tr></thead><tbody>` +
+    filas.map((f) => `<tr class="${f.total ? 'total' : 'clic'}" ${f.total ? '' : attr(f)}><td>${f.total ? 'TOTAL' : esc(f.clave ? f.clave + (f.nombre ? ' · ' + f.nombre : '') : f.nombre)}` +
+      `${f.externo ? '<span class="ajeno">no es de tu célula</span>' : ''}${!f.total && (M.excede_wip || []).includes(f.nombre) ? ` <span class="pill c">más de ${M.limite_wip} en desarrollo</span>` : ''}</td>${COLS9.map((c) => celda(f, c[0])).join('')}</tr>`).join('') + `</tbody></table></div>`;
+  const tot = M.proyectos.find((p) => p.total);
+  const avisos = [];
+  if (tot && tot.sin_resp) avisos.push(`<div class="aviso"><b>${tot.sin_resp} de ${tot.abiertas} issues abiertas de tus proyectos (${Math.round(tot.sin_resp / tot.abiertas * 100)} %) no tienen responsable.</b> Un conteo por responsable no las ve.</div>`);
+  if ((M.excede_wip || []).length) avisos.push(`<div class="aviso"><b>Más de ${M.limite_wip} «en desarrollo» a la vez:</b> ${M.excede_wip.map(esc).join(', ')}.</div>`);
+  if (M.sin_historial) avisos.push(`<div class="aviso"><b>Historial de cambios no incluido</b> en ${M.sin_historial} issues de la célula: Jira lo entrega issue por issue. La ficha enlaza a Jira, donde está completo.</div>`);
+  $('jiraCuerpo').innerHTML = avisos.join('') +
+    `<p class="meta">Corte ${fdm(D.corte)} · «sin movimiento» = sin actualizar desde el ${fdm(M.corte_movimiento)}. Clic en una fila para ver sus issues, ordenadas por lo que arde; clic en una issue para su ficha.</p>` +
+    (M.proyectos.length ? `<h2 class="sec">Proyectos</h2>` + tabla('tjProyectos', M.proyectos, 'Proyecto', (f) => `data-proy="${esc(f.clave)}"`) : '') +
+    `<h2 class="sec">Tu célula · todas sus issues abiertas, en el proyecto que sea</h2>` + tabla('tjCelula', M.celula, 'Persona', (f) => `data-pers="${esc(f.jira)}"`) +
+    (M.externos.length ? `<h2 class="sec">De fuera de la célula, dentro de tus proyectos <small class="meta">responden a otro líder</small></h2>` + tabla('tjExternos', M.externos, 'Persona', (f) => `data-pers="${esc(f.jira)}"`) : '') +
+    `<h2 class="sec">Sin responsable en tus proyectos</h2>` + tabla('tjHuerfanas', [Object.assign({ nombre: 'Bolsa sin responsable' }, M.huerfanas)], 'Bolsa', () => 'data-huerf="1"');
 }
+const estadoEn = (e, lista) => (lista || []).some((x) => { const a = String(x).toLowerCase(), v = String(e || '').toLowerCase(); return a.endsWith('*') ? v.startsWith(a.slice(0, -1).trim()) : a === v; });
 function issuesPorCalor(lista) {
   const E = D.estados || {};
-  const rev = (e) => (E.revision || []).some((x) => x.toLowerCase() === String(e || '').toLowerCase());
-  const des = (e) => (E.desarrollo || ['En Desarrollo', 'En curso', 'In Progress']).some((x) => x.toLowerCase() === String(e || '').toLowerCase());
-  const peso = (i) => (i.fin && i.fin < D.corte ? 0 : rev(i.estado) ? 1 : des(i.estado) ? 2 : 3);
+  const peso = (i) => (i.fin && i.fin < D.corte ? 0 : estadoEn(i.estado, E.revision || ['Listo para revisión', 'En revisión*']) ? 1 : estadoEn(i.estado, E.desarrollo || ['En Desarrollo', 'En curso', 'In Progress']) ? 2 : 3);
   return lista.slice().sort((a, b) => peso(a) - peso(b) || String(a.fin || '9').localeCompare(String(b.fin || '9')));
 }
-$('jiraCuerpo').addEventListener('click', (e) => {
-  const tr = e.target.closest('tr.clic'); if (!tr || !D.jira) return;
-  const abiertas = (D.jira.issues || []).filter((i) => i.categoria !== 'done');
+function abrirListaJira(tr) {
+  const abiertas = (D.jira.issues || []).filter((i) => i.categoria !== 'done' && !estadoEn(i.estado, (D.estados || {}).no_cierre));
   let sel, titulo;
   if (tr.dataset.proy) { sel = abiertas.filter((i) => i.proyecto === tr.dataset.proy); titulo = `Abiertas de ${tr.dataset.proy}`; }
-  else if (tr.dataset.pers) { sel = abiertas.filter((i) => String(i.persona || '').toLowerCase() === tr.dataset.pers.toLowerCase()); titulo = `Abiertas de ${tr.dataset.pers}`; }
+  else if (tr.dataset.pers) { sel = abiertas.filter((i) => String(i.persona || '').toLowerCase() === tr.dataset.pers.toLowerCase()); titulo = `Abiertas de ${alias(tr.dataset.pers)}${esExterno(tr.dataset.pers) ? ' (no es de tu célula)' : ''}`; }
   else { const cl = (D.jira.proyectos || []).map((p) => p.clave); sel = abiertas.filter((i) => !i.persona && cl.includes(i.proyecto)); titulo = 'Sin responsable'; }
   sel = issuesPorCalor(sel);
-  abrirDlg(`${titulo} · ${sel.length}`, sel.length ? `<div class="tabla-w"><table><tr><th>Issue</th><th>Estado</th><th>Vence</th><th class="num">Est.</th></tr>` + sel.map((i) =>
-    `<tr><td>${i.url ? `<a href="${esc(i.url)}" target="_blank" rel="noopener">${esc(i.clave)}</a>` : esc(i.clave)} · ${esc(i.titulo)}</td><td>${esc(i.estado)}</td><td class="${i.fin && i.fin < D.corte ? 'mal' : ''}">${i.fin ? fdm(i.fin) : '<span class="reg">sin fecha</span>'}</td><td class="num">${+i.estimado ? fh(+i.estimado) : '<span class="reg">—</span>'}</td></tr>`).join('') + `</table></div>`
+  abrirDlg(`${titulo} · ${sel.length}`, sel.length ? `<div class="tabla-w"><table id="listaTareas"><tr><th>Issue</th><th>Estado</th><th>Vence</th><th class="num">Est.</th></tr>` + sel.map((i) =>
+    `<tr class="k tarea" data-k="${esc(i.clave)}" title="Clic: la ficha"><td><b>${esc(i.clave)}</b> · ${esc(i.titulo)}${(i.comentarios || []).length ? ` <span class="pc">${i.comentarios.length} coment.</span>` : ''}` +
+    `${(i.actualizado || '9999') < (D.jira.metricas.corte_movimiento || '') ? ` <span class="pc">quieta desde ${fdm(i.actualizado)}</span>` : ''}</td><td>${esc(i.estado)}</td>` +
+    `<td class="${i.fin && i.fin < D.corte ? 'mal' : ''}">${i.fin ? fdm(i.fin) : '<span class="reg">sin fecha</span>'}</td><td class="num">${+i.estimado ? fh(+i.estimado) : '<span class="reg">—</span>'}</td></tr>`).join('') + `</table></div>`
     : '<div class="vacio">Nada.</div>');
-});
+}
+/* Ficha de una issue de Jira: el mismo veredicto del cronograma (la fecha manda), tiempo, comentarios e
+   historial, y dos propuestas que caen en «Cambios propuestos». El tablero NO escribe en Jira. */
+function abrirIssueJira(clave) {
+  const i = ((D.jira && D.jira.issues) || []).find((x) => x.clave === clave); if (!i) return;
+  const comoItem = { id: i.clave, titulo: i.titulo, horas: i.estimado, trabajado: i.trabajado, ini: i.inicio, fin: i.fin, vence: i.fin, estado: i.estado, vencida: !!i.fin && i.fin < D.corte };
+  const v = i.fin ? veredicto(comoItem) : { n: 'na', t: 'Sin fecha de vencimiento', d: 'No se puede saber si va a tiempo. Ponerle fecha es lo primero.' };
+  const ajeno = !i.persona ? '<span class="ajeno">sin responsable</span>' : enCelula(i.persona) ? '' : '<span class="ajeno">no es de tu célula</span>';
+  const url = i.url || (D.jira.sitio ? `https://${D.jira.sitio}/browse/${i.clave}` : '');
+  const estados = [...new Set((D.jira.issues || []).map((x) => x.estado).filter(Boolean))].sort();
+  const cs = i.comentarios || [], hs = i.historial || [];
+  abrirDlg(`${i.clave} · ${i.titulo}`,
+    `<div id="isV" class="ver ${v.n}"><b>${esc(v.t)}</b><span>${esc(v.d)}</span></div>` +
+    `<h4 class="sub">Seguimiento</h4><dl class="kv" id="isDatos">
+      <dt>Responsable</dt><dd>${esc(alias(i.persona))}${ajeno}</dd>
+      <dt>Proyecto</dt><dd>${esc(i.proyecto_nombre || i.proyecto || '—')}</dd>
+      ${i.tipo ? `<dt>Tipo</dt><dd>${esc(i.tipo)}</dd>` : ''}
+      <dt>Estado</dt><dd>${esc(i.estado || '—')}</dd>
+      <dt>Fecha de inicio</dt><dd>${i.inicio ? fdm(i.inicio) + '/' + i.inicio.slice(0, 4) : '—'}</dd>
+      <dt>Vencimiento</dt><dd>${i.fin ? fdm(i.fin) + '/' + i.fin.slice(0, 4) : '<span class="reg">sin fecha</span>'}</dd>
+      ${i.creado ? `<dt>Creada</dt><dd>${fdm(i.creado)}/${i.creado.slice(0, 4)}</dd>` : ''}
+      ${i.actualizado ? `<dt>Últ. actualización</dt><dd>${fdm(i.actualizado)}/${String(i.actualizado).slice(0, 4)}</dd>` : ''}
+      ${i.padre ? `<dt>Padre</dt><dd>${esc(i.padre)}</dd>` : ''}
+      ${url ? `<dt>Jira</dt><dd><a id="isUrl" href="${esc(url)}" target="_blank" rel="noopener">Abrir en Jira ↗</a></dd>` : ''}</dl>` +
+    `<h4 class="sub">Tiempo</h4><div id="isTiempo">${tiempoHTML(comoItem)}</div>` +
+    `<h4 class="sub">Comentarios ${cs.length ? '(' + cs.length + ')' : ''}</h4><div id="isCom">${cs.length ? cs.map((c) => `<div class="com"><span class="quien">${esc(c.autor)}</span><span class="cuando">${esc(c.fecha)}</span><div class="txt">${esc(c.texto)}</div></div>`).join('') : '<div class="vacio" style="padding:0">Sin comentarios en la lectura.</div>'}</div>` +
+    `<h4 class="sub">Historial</h4><div class="hist" id="isHist">${hs.length ? hs.slice(0, 40).map((h) => `<div><span class="pc">${esc(h.fecha)}</span> <b>${esc(h.campo)}</b>: ${esc(h.de || '—')} → ${esc(h.a || '—')} <span class="pc">· ${esc(h.autor)}</span></div>`).join('') : `<div class="vacio" style="padding:0">No incluido en esta lectura${url ? ': está completo en Jira' : ''}.</div>`}</div>` +
+    `<h4 class="sub">Proponer un cambio (queda en «Cambios propuestos»; no se escribe en Jira)</h4>
+      <div class="prop"><div class="form-row"><label for="isEstado">Cambiar estado a</label><select id="isEstado">${estados.map((e) => `<option ${e === i.estado ? 'selected' : ''}>${esc(e)}</option>`).join('')}</select></div><button class="btn" id="isAplicaEstado">Proponer</button></div>
+      <div class="prop" style="margin-top:8px"><div class="form-row"><label for="isComentario">Comentar</label><textarea id="isComentario" placeholder="Lo que hay que decirle al responsable o dejar escrito en la issue…"></textarea></div><button class="btn" id="isAplicaCom">Proponer</button></div>`);
+  const cerrar = () => { const d = $('dlg'); if (d.close) d.close(); else d.removeAttribute('open'); };
+  $('isAplicaEstado').onclick = () => { const nuevo = $('isEstado').value; if (nuevo && nuevo !== i.estado) { registrar(`${i.clave} (${i.titulo}): estado ${i.estado} → ${nuevo}`); cerrar(); } };
+  $('isAplicaCom').onclick = () => { const t = $('isComentario').value.trim(); if (t) { registrar(`${i.clave} (${i.titulo}): comentar «${t}»`); cerrar(); } };
+}
+$('jiraCuerpo').addEventListener('click', (e) => { const tr = e.target.closest('tr.clic'); if (tr && D.jira) abrirListaJira(tr); });
+$('dlgB').addEventListener('click', (e) => { const t = e.target.closest('tr.tarea[data-k]'); if (t && !e.target.closest('a')) abrirIssueJira(t.dataset.k); });
 
 // ── Frentes y backups (se mueven en la reunión de equipo, nunca como hecho consumado) ──
+const frentesAcuerdo = () => (D.acuerdo_frentes && D.acuerdo_frentes.length ? D.acuerdo_frentes : (D.frentes || []).filter((f) => f.titular !== undefined || f.backup !== undefined));
+frentesAcuerdo().forEach((f) => { f._o = { titular: f.titular, backup: f.backup }; });
 function pintarFrentes() {
-  const F = (D.frentes || []).filter((f) => f.titular !== undefined || f.backup !== undefined);
+  const F = frentesAcuerdo();
   if (!F.length) { $('frentesCuerpo').innerHTML = '<div class="aviso">No hay titulares ni backups de frentes en los datos.</div>'; return; }
   const gente = PERS.filter((p) => !p.lider);
-  const opts = (sel) => `<option value="">—</option>` + PERS.map((p) => `<option value="${esc(p.slug)}" ${p.slug === sel ? 'selected' : ''}>${esc(p.nombre)}</option>`).join('');
+  const opts = (sel, txt) => `<option value="">${esc(!sel && txt ? txt : '—')}</option>` + PERS.map((p) => `<option value="${esc(p.slug)}" ${p.slug === sel ? 'selected' : ''}>${esc(p.nombre)}</option>`).join('');
+  const conCliente = F.some((f) => f.cliente);
   const R = D.reparto;
   let balance = '';
   if (R) {
     const malos = gente.map((p) => ({ p, t: F.filter((f) => f.titular === p.slug).length, b: F.filter((f) => f.backup === p.slug).length }))
       .filter((x) => (R.titular != null && x.t !== R.titular) || (R.backup != null && x.b !== R.backup));
-    balance = malos.length ? `<div class="aviso"><b>Fuera del reparto acordado (${R.titular} titular / ${R.backup} backup)</b><ul>${malos.map((x) => `<li>${esc(x.p.nombre)}: ${x.t} titular · ${x.b} backup</li>`).join('')}</ul></div>`
-      : `<div class="aviso ok">Todos dentro del reparto acordado (${R.titular} titular / ${R.backup} backup). El líder queda fuera de la cuenta: es escalamiento.</div>`;
+    balance = `<div id="reparto">` + (malos.length ? `<div class="aviso desb"><b>Fuera del reparto acordado (${R.titular} titular / ${R.backup} backup)</b><ul>${malos.map((x) => `<li class="rp desb">${esc(x.p.nombre)}: ${x.t} titular · ${x.b} backup</li>`).join('')}</ul></div>`
+      : `<div class="aviso ok">Todos dentro del reparto acordado (${R.titular} titular / ${R.backup} backup). El líder queda fuera de la cuenta: es escalamiento.</div>`) + `</div>`;
   }
-  $('frentesCuerpo').innerHTML = balance + `<div class="tabla-w"><table><tr><th>Frente</th><th>Titular</th><th>Backup</th></tr>` +
-    F.map((f) => `<tr><td><span class="dot" style="display:inline-block;width:9px;height:9px;border-radius:50%;background:${esc(f.color)};margin-right:6px"></span>${esc(f.nombre)}</td>` +
-      `<td><select data-fr="${esc(f.clave)}" data-rol="titular">${opts(f.titular)}</select></td><td><select data-fr="${esc(f.clave)}" data-rol="backup">${opts(f.backup)}</select></td></tr>`).join('') +
-    `</table></div><p class="meta">Cambiar una titularidad la deja como propuesta para la reunión de equipo, con fecha y por escrito.</p>`;
+  $('frentesCuerpo').innerHTML = balance + `<div class="tabla-w"><table id="tfFrentes"><thead><tr><th>Frente</th>${conCliente ? '<th>Cliente</th>' : ''}<th>Titular</th><th>Backup</th></tr></thead><tbody>` +
+    F.map((f) => `<tr><td><span class="dot" style="display:inline-block;width:9px;height:9px;border-radius:50%;background:${esc(f.color)};margin-right:6px"></span>${esc(f.nombre)}</td>${conCliente ? `<td>${esc(f.cliente || '')}</td>` : ''}` +
+      `<td><select data-fr="${esc(f.clave)}" data-rol="titular">${opts(f.titular, f.titular_txt)}</select></td><td><select data-fr="${esc(f.clave)}" data-rol="backup">${opts(f.backup, f.backup_txt)}</select></td></tr>`).join('') +
+    `</tbody></table></div><p class="meta">Cambiar una titularidad la deja como propuesta para la reunión de equipo, con fecha y por escrito.</p>`;
 }
 $('frentesCuerpo').addEventListener('change', (e) => {
   const s = e.target.closest('select[data-fr]'); if (!s) return;
-  const f = (D.frentes || []).find((x) => x.clave === s.dataset.fr); if (!f) return;
+  const f = frentesAcuerdo().find((x) => x.clave === s.dataset.fr); if (!f) return;
   const antes = f[s.dataset.rol]; f[s.dataset.rol] = s.value || null;
-  registrar(`Frente ${f.nombre}: ${s.dataset.rol} ${nombre(antes) || '—'} → ${nombre(s.value) || '—'} (llevar a la reunión de equipo; no es un hecho consumado)`);
+  registrar(`Frente ${f.nombre}: ${s.dataset.rol} ${antes ? nombre(antes) : (f[s.dataset.rol + '_txt'] || '—')} → ${s.value ? nombre(s.value) : '—'} (llevar a la reunión de equipo; no es un hecho consumado)`);
   pintarFrentes();
 });
 
@@ -793,9 +894,9 @@ function pintarTs() {
   const clsP = (p) => (p == null ? '' : p < 50 ? 'mal' : p < meta ? 'reg' : 'bien');
   const NOM = { ok: 'envió', sin_correo: 'horas sin correo posterior', falta: 'no envió', festivo: 'festivo', pendiente: 'pendiente', no_leido: 'no se pudo leer' };
   $('tsCuerpo').innerHTML = `<p class="meta">Días: verde = envió · ámbar = hay horas pero ningún correo posterior · rojo = día hábil pasado sin horas · gris = festivo, hoy/futuro o archivo no leído. Dentro, el % de horas que cuelgan de una issue (meta ${meta} %). Clic en una persona: qué hizo cada día.</p>` +
-    `<div class="tabla-w"><table><tr><th>Persona</th>${T.dias.map((d) => `<th class="tsd">${DNOM[dowOf(d)]} ${fdm(d)}</th>`).join('')}${(T.personas[0].semanas || []).map((s, k) => `<th class="num">Sem. ${k + 1}</th>`).join('')}</tr>` +
+    `<div class="tabla-w"><table id="tsTabla"><tr><th>Persona</th>${T.dias.map((d) => `<th class="tsd">${DNOM[dowOf(d)]} ${fdm(d)}</th>`).join('')}${(T.personas[0].semanas || []).map((s, k) => `<th class="num">Sem. ${k + 1}</th>`).join('')}</tr>` +
     T.personas.map((p, n) => `<tr class="clic" data-ts="${n}"><td>${esc(p.nombre)}${p.sin_leer ? ` <span class="pill a">${p.sin_leer} sin leer</span>` : ''}</td>` +
-      p.dias.map((d) => `<td class="tsd ${d.estado}" title="${esc(NOM[d.estado] + (d.horas ? ` · ${fh(d.horas)} h, ${fh(d.horas_jira)} con issue` : ''))}">${d.horas ? Math.round(d.horas_jira / d.horas * 100) + '%' : ''}</td>`).join('') +
+      p.dias.map((d) => `<td class="tsd ${d.estado}" data-e="${d.estado}" title="${esc(NOM[d.estado] + (d.horas ? ` · ${fh(d.horas)} h, ${fh(d.horas_jira)} con issue` : ''))}">${d.horas ? Math.round(d.horas_jira / d.horas * 100) + '%' : ''}</td>`).join('') +
       p.semanas.map((s) => `<td class="num"><span class="${clsP(s.pct_jira)}">${s.dias_reportados}/${s.dias_exigibles} · ${s.pct_jira == null ? '—' : s.pct_jira + ' %'}</span></td>`).join('') + `</tr>`).join('') + `</table></div>`;
 }
 $('tsCuerpo').addEventListener('click', (e) => {
@@ -803,9 +904,12 @@ $('tsCuerpo').addEventListener('click', (e) => {
   const p = D.timesheets.metricas.personas[+tr.dataset.ts];
   const espera = (t) => /espera|sin asignaci|sin tarea/i.test(t || '');
   const dias = p.dias.filter((d) => d.horas).slice().reverse();
-  abrirDlg(`Qué hizo ${p.nombre}`, dias.length ? dias.map((d) => `<div class="card" style="margin-bottom:8px"><h2>${DNOM[dowOf(d.fecha)]} ${fdm(d.fecha)}<span class="n">${fh(d.horas)} h · ${Math.round(d.horas_jira / d.horas * 100)} % con issue</span></h2>` +
+  const sinIssue = p.dias.flatMap((d) => d.sin_jira.map((s) => Object.assign({ fecha: d.fecha }, s))).sort((a, b) => b.horas - a.horas);
+  const hSin = sinIssue.reduce((a, s) => a + s.horas, 0);
+  abrirDlg(`Qué hizo ${p.nombre}`, (sinIssue.length ? `<div class="aviso" id="tsSinJira"><b>${fh(hSin)} h sin issue en la ventana</b> (las más grandes primero)<ul>${sinIssue.slice(0, 8).map((s) => `<li>${fdm(s.fecha)} · ${esc(s.tarea || 'sin descripción')} · ${fh(s.horas)} h</li>`).join('')}</ul></div>` : '') +
+    (dias.length ? dias.map((d) => `<div class="card" style="margin-bottom:8px"><h2>${DNOM[dowOf(d.fecha)]} ${fdm(d.fecha)}<span class="n">${fh(d.horas)} h · ${Math.round(d.horas_jira / d.horas * 100)} % con issue</span></h2>` +
     d.actividades.map((a) => `<div class="item ${espera(a.tarea) ? 'mal' : ''}">${a.jira ? `<b>${esc(a.jira)}</b> · ` : '<span class="reg">sin issue</span> · '}${esc(a.tarea)} <span class="meta">${fh(a.horas)} h</span></div>`).join('') + `</div>`).join('')
-    : '<div class="vacio">Sin horas reportadas en la ventana.</div>');
+    : '<div class="vacio">Sin horas reportadas en la ventana.</div>'));
 });
 
 // ── Arranque ──────────────────────────────────────────────────────────────────────

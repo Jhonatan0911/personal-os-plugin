@@ -23,10 +23,14 @@
  *   "sla_revision": 2, "sla_implementacion": 5,   // días hábiles que puede esperar cada cola
  *   "limite_wip": null,               // máximo de issues «en desarrollo» por persona (null = no se mide)
  *   "proyectos_propios": ["PROY"],    // lo de otro proyecto es TRANSVERSAL (se muestra con su nombre)
- *   "estados": { "revision": [...], "implementacion": [...], "no_cierre": [...], "pausa": [...],
- *                "desarrollo": [...] },  // nombres de estado de TU Jira (hay valores por defecto)
- *   "personas": [{ "slug", "nombre", "jira" (displayName exacto), "lider": true?, "prestamo"?, "color"? }],
+ *   "estados": { "revision": [...], "certificacion": [...], "implementacion": [...], "no_cierre": [...],
+ *                "pausa": [...], "desarrollo": [...] },  // nombres de estado de TU Jira; «Nombre*» = prefijo
+ *       revision: cola del líder · certificacion: entregado a QA/PO (cuenta como «entregada hoy» en la carga,
+ *       no es cola del líder) · implementacion: cola de publicación · no_cierre: Jira lo cuenta Done y no lo es
+ *   "personas": [{ "slug", "nombre", "jira" (displayName exacto), "lider": true?, "rol"?, "prestamo"?, "color"? }],
  *   "frentes":  [{ "clave", "nombre", "color"?, "titular"?, "backup"? }],
+ *   "acuerdo_frentes": [{ "nombre", "cliente"?, "titular" (slug), "backup" (slug), "titular_txt"?, "backup_txt"? }]?,
+ *       // titular y backup del acuerdo de equipo cuando no coinciden 1 a 1 con los frentes del cronograma
  *   "reparto":  { "titular": 2, "backup": 2 }?,   // equilibrio que promete tu acuerdo de equipo
  *   "items": [{ "id", "titulo", "persona" (slug), "frente", "proyecto", "tipo"?,
  *               "inicio", "fin" (vencimiento), "cierre"? (fecha real de cierre), "horas" (estimado),
@@ -38,18 +42,25 @@
  *   "sin_programar": [{ "id", "titulo", "frente", "horas", "persona", "proyecto", "pausada"?, "etiqueta"? }],
  *   "bloqueos_cliente" | "bloqueos_equipo" | "recursos" | "requerimientos" | "frentes_status" | "resuelto":
  *       [{ "titulo", "detalle", "dias", "etiquetas": [{ "txt", "tipo": "c" | "a" | "" }] }],
- *   "lider": { "prioridad", "fecha_brief", "compromisos": [...], "terceros": [...], "riesgos": [...],
- *              "alcances": [...] },
- *   "jira": { "corte_movimiento"?, "proyectos": [{ "clave", "nombre" }], "externos"?: [{ "nombre", "jira" }],
- *             "issues": [{ "clave", "titulo", "proyecto", "persona" (displayName), "estado",
- *                          "categoria" ("new"|"indeterminate"|"done"), "fin", "estimado", "trabajado",
- *                          "actualizado", "url"? }] },
+ *   "lider": { "prioridad", "fecha_brief", "aviso_brief"?, "compromisos": [{ id, titulo, con, fecha, dias, verif, ultima }],
+ *              "terceros": [{ id, titulo, de, fecha|desde, dias, verif, ultima }], "riesgos": [{ id, titulo, nivel, ultima }],
+ *              "alcances": [{ id, nombre, entrega, verificado_el, resumen }],
+ *              "propias"?: { abiertas, vencidas, sin_fecha, sin_est, lista: [{ id, titulo, estado, fin, url }] } },
+ *   "jira": { "sitio"?, "corte_movimiento"?, "proyectos": [{ "clave", "nombre" }], "externos"?: [{ "nombre", "jira" }],
+ *             "alias"?: { displayName: nombre corto },
+ *             "issues": [{ "clave", "titulo", "proyecto", "proyecto_nombre"?, "tipo"?, "persona" (displayName), "estado",
+ *                          "categoria" ("new"|"indeterminate"|"done"), "inicio"?, "fin", "estimado", "trabajado",
+ *                          "creado"?, "actualizado", "padre"?, "url"?, "comentarios"?: [{ autor, fecha, texto }],
+ *                          "historial"?: [{ fecha, autor, campo, de, a }] }] },
+ *       // status-celula-jira.js arma este bloque desde los volcados del conector.
+ *   FORMATO ANTERIOR (motor en Python): se detecta y se convierte solo (lib/status-celula-legado.js).
  *   "timesheets": { "desde", "hasta", "personas": [{ "nombre", "envios": [...], "filas": [...] }] }
  * }
  */
 const fs = require('fs');
 const path = require('path');
 const C = require('./lib/comun.js');
+const Legado = require('./lib/status-celula-legado.js');
 
 const PLANTILLA = path.join(C.PLUGIN_ROOT, 'skills', 'status-celula', 'plantilla.html');
 const EJEMPLO = path.join(C.PLUGIN_ROOT, 'skills', 'status-celula', 'ejemplo.json');
@@ -57,8 +68,10 @@ const EJEMPLO = path.join(C.PLUGIN_ROOT, 'skills', 'status-celula', 'ejemplo.jso
 // Paleta categórica neutra (legible en claro y en oscuro con texto blanco). Sin identidad corporativa.
 const PALETA = ['#4F6D8F', '#5B8C6E', '#9A6F3E', '#7A5C99', '#3F8A8C', '#A45A6A', '#6B7A3A', '#5E6B7D'];
 
+// Un nombre que termina en «*» compara por prefijo («En revisión*» cubre «En revisión técnica»).
 const ESTADOS_DEF = {
-  revision: ['Listo para revisión', 'En revisión técnica', 'En revisión', 'Code review'],
+  revision: ['Listo para revisión', 'En revisión*', 'Code review'],
+  certificacion: ['Certificación*', 'En certificación'],   // entregado a QA/PO: no es cola del líder, pero fue trabajo del día
   implementacion: ['Listo para implementación', 'Listo para publicar'],
   no_cierre: ['Redefinido', "Won't Do", 'Duplicado'],
   pausa: ['Pausado', 'En pausa', 'Bloqueado'],
@@ -69,14 +82,15 @@ const DIAS_CFG = ['dom', 'lun', 'mar', 'mie', 'jue', 'vie', 'sab'];
 
 function uso(msg) {
   if (msg) console.error(msg);
-  console.error('Uso: node status-celula.js <datos.json> [--salida <archivo.html>] [--estado <carpeta>]\n' +
+  console.error('Uso: node status-celula.js <datos.json> [--salida <archivo.html>] [--estado <carpeta>] [--carga [N]]\n' +
+                '     node status-celula.js <datos.json> --convertir <salida.json>   (pasa un JSON del formato anterior al actual)\n' +
                 '     node status-celula.js --ejemplo [--salida <archivo.html>]');
   process.exit(1);
 }
 
 /** Primer argumento posicional (que no sea una bandera ni el valor de una). */
 function posicional() {
-  const conValor = new Set(['--salida', '--estado', '--hoy']);
+  const conValor = new Set(['--salida', '--estado', '--hoy', '--convertir', '--carga']);
   const a = process.argv.slice(2);
   for (let i = 0; i < a.length; i++) {
     if (conValor.has(a[i])) { i++; continue; }
@@ -116,7 +130,10 @@ function contexto(datos) {
 }
 
 const norm = (s) => C.sinTildes(s || '');
-const enLista = (estado, lista) => lista.some((x) => norm(x) === norm(estado));
+const enLista = (estado, lista) => (lista || []).some((x) => {
+  const a = norm(x), e = norm(estado);
+  return a.endsWith('*') ? e.startsWith(a.slice(0, -1).trim()) : a === e;
+});
 
 // ── Construcción ─────────────────────────────────────────────────────────────────────────────
 function construir(datos) {
@@ -139,6 +156,11 @@ function construir(datos) {
   if (!lider) avisos.push('Nadie está marcado como líder: las colas de revisión e implementación no tienen carril donde pintarse.');
 
   (datos.frentes || []).forEach((f, i) => { f.color = f.color || PALETA[i % PALETA.length]; });
+  // Titular y backup por frente: `acuerdo_frentes` o, si no viene, los frentes que traigan titular/backup.
+  (datos.acuerdo_frentes || []).forEach((f, i) => {
+    f.clave = f.clave || 'af-' + i;
+    f.color = f.color || ((datos.frentes || []).find((x) => x.clave === f.frente) || {}).color || PALETA[i % PALETA.length];
+  });
 
   // Items: se normalizan, se clasifican y se anclan a la ventana. Nada se descarta en silencio.
   const items = [];
@@ -150,16 +172,22 @@ function construir(datos) {
     if (enLista(x.estado, E.no_cierre)) { x.tipo = 'redefinido'; x.cerrada = false; }
     else if (enLista(x.estado, E.implementacion)) { x.tipo = 'implementacion'; x.cerrada = false; }
     if (enLista(x.estado, E.pausa)) x.pausada = true;
-    if (!x.cerrada && x.tipo !== 'implementacion' && x.tipo !== 'redefinido' && enLista(x.estado, E.revision)) x.en_revision = true;
+    if (!x.cerrada && x.tipo !== 'implementacion' && x.tipo !== 'redefinido') {
+      if (enLista(x.estado, E.revision)) x.en_revision = true;
+      else if (enLista(x.estado, E.certificacion)) x.en_certificacion = true;
+    }
 
     x.vence = valida(x.fin) ? x.fin : null;
+    // Lo listo para implementar no tiene fecha comprometida: se ancla a cuando llegó ahí (o a su
+    // última actualización). Mandarlo a «Sin programar» lo sacaría de la traza y de la cola.
+    if (x.tipo === 'implementacion' && !x.vence) x.vence = [x.entrada_cola, x.actualizado, x.cierre].find(valida) || null;
     if (x.cerrada || x.tipo === 'redefinido') {
-      const fin = valida(x.cierre) ? x.cierre : x.vence;
+      const fin = valida(x.cierre) ? x.cierre : x.vence || (valida(x.actualizado) ? x.actualizado : null);
       if (!fin) { x.sin_fecha_cierre = true; sinProgramar.push(Object.assign({ etiqueta: 'cerrada sin fecha' }, x)); continue; }
       x.ini = valida(x.inicio) && x.inicio <= fin ? x.inicio : fin;
       x.fin = fin;
-      if (x.cerrada && x.vence && fin > x.vence) x.tarde = ctx.habiles(x.vence, fin);
-      if (x.fin < desde) continue;   // la traza empieza en la ventana; lo anterior ya no es de este corte
+      if (x.tarde == null && x.cerrada && x.vence && fin > x.vence) x.tarde = ctx.habiles(x.vence, fin);
+      // Lo cerrado antes de la ventana que vino en los datos NO se descarta: entra anclado con «↤ fecha real».
     } else {
       if (!x.vence) { sinProgramar.push(Object.assign({ etiqueta: x.pausada ? 'pausada' : '' }, x)); continue; }
       x.fin = x.vence;
@@ -175,17 +203,22 @@ function construir(datos) {
 
   // Colas del líder: revisión e implementación de cada persona. Son trabajo del líder aunque la
   // issue sea del desarrollador. Se pintan en SU carril como marcas cortas que terminan hoy.
+  // Lo que no tiene fecha también cuenta: la cola es TODO lo de la persona en ese estado.
   const colas = [];
+  const enCola = (i, tipo) => (tipo === 'revision'
+    ? (i.en_revision || (!i.cerrada && enLista(i.estado, E.revision)))
+    : (i.tipo === 'implementacion' || enLista(i.estado, E.implementacion)));
   if (lider) {
     for (const tipo of ['revision', 'implementacion']) {
       for (const p of personas) {
-        const lista = items.filter((i) => i.persona === p.slug &&
-          (tipo === 'revision' ? i.en_revision : i.tipo === 'implementacion'));
+        // Lo que el propio líder entrega a revisión lo revisa otra persona: no es su cola.
+        if (tipo === 'revision' && p.lider) continue;
+        const lista = [...items, ...sinProgramar].filter((i) => i.persona === p.slug && i.tipo !== 'grupo' && enCola(i, tipo));
         if (!lista.length) continue;
         const sla = tipo === 'revision' ? (datos.sla_revision ?? 2) : (datos.sla_implementacion ?? 5);
         const grupo = lista.map((i) => ({
-          id: i.id, titulo: i.titulo, horas: +i.horas || 0, url: i.url || '',
-          desde: valida(i.entrada_cola) ? i.entrada_cola : (i.recortada || i.desde_real || i.ini),
+          id: i.id, titulo: i.titulo, horas: +i.horas || 0, url: i.url || '', sin_fecha: !i.ini,
+          desde: [i.entrada_cola, i.recortada, i.desde_real, i.ini, i.actualizado].find(valida) || corte,
         })).sort((a, b) => a.desde.localeCompare(b.desde));
         const espera = Math.max(0, ctx.habiles(grupo[0].desde, corte) || 0);
         const c = {
@@ -254,7 +287,7 @@ function fila(issues, corte, corteMov, E) {
     if (enLista(i.estado, E.desarrollo)) f.en_desarrollo++;
     if (enLista(i.estado, E.revision)) f.en_revision++;
     if ((i.actualizado || '9999').slice(0, 10) < corteMov) f.sin_mov++;
-    if (i.estimado == null || !(+i.estimado)) f.sin_est++;
+    if (i.estimado == null || i.estimado === '') f.sin_est++;   // 0 h es una estimación escrita en Jira, no su ausencia
     if (!i.fin) f.sin_fecha++; else if (i.fin < corte) f.vencidas++;
   }
   return f;
@@ -288,7 +321,11 @@ function metricasJira(j, corte, personas, E, limiteWip) {
     .sort((a, b) => b.abiertas - a.abiertas);
   const huerfanas = fila(abiertas.filter((i) => !i.persona && claves.includes(i.proyecto)), corte, corteMov, E);
   const excede = limiteWip ? celula.filter((f) => !f.total && f.en_desarrollo > limiteWip).map((f) => f.nombre) : [];
-  return { proyectos, celula, externos, huerfanas, limite_wip: limiteWip || null, excede_wip: excede, corte_movimiento: corteMov };
+  // El historial de cambios solo llega issue por issue: se dice cuántas de la célula no lo traen.
+  const conCampo = (j.issues || []).some((i) => 'historial' in i);
+  const sinHistorial = conCampo ? abiertas.filter((i) => nombresCelula.has(norm(i.persona)) && !(i.historial || []).length).length : null;
+  return { proyectos, celula, externos, huerfanas, limite_wip: limiteWip || null, excede_wip: excede, corte_movimiento: corteMov,
+           sin_historial: sinHistorial };
 }
 
 // ── Timesheets del equipo: semáforo por día y % de horas que cuelgan de una issue ──────────────
@@ -301,10 +338,11 @@ function metricasTimesheets(t, corte, ctx) {
   // Las semanas arrancan en lunes.
   let lunes = t.desde;
   while (dUTC(lunes).getUTCDay() !== 1) lunes = addD(lunes, -1);
+  const fest = new Set([...ctx.fest, ...(t.festivos || []).map(String)]);   // los del bloque también valen
   const dias = [];
   for (let d = lunes; d <= t.hasta; d = addD(d, 1)) {
     const w = dUTC(d).getUTCDay();
-    if (ctx.jornada[w] > 0) dias.push({ f: d, festivo: ctx.fest.has(d) });
+    if (ctx.jornada[w] > 0) dias.push({ f: d, festivo: fest.has(d) });
   }
   const personas = (t.personas || []).map((p) => {
     const envios = new Map((p.envios || []).map((e) => [e.id, e]));
@@ -373,12 +411,60 @@ function maquetar(d) {
     .replace(marca, () => marca.replace('__DATOS_JSON__', () => crudo));
 }
 
+// ── Carga de los próximos N días hábiles, en texto (la misma regla que la tira del cronograma) ─────
+function cargaTexto(d, n) {
+  const fest = new Set(d.festivos || []);
+  const habil = (s) => d.jornada[dUTC(s).getUTCDay()] > 0 && !fest.has(s);
+  const dias = [];
+  for (let s = d.corte; dias.length < n; s = addD(s, 1)) if (habil(s)) dias.push(s);
+  const habilesIncl = (a, b) => { let k = 0; for (let s = a; s <= b; s = addD(s, 1)) if (habil(s)) k++; return k; };
+  const traza = (i) => i.cerrada || ['implementacion', 'redefinido', 'grupo', 'compromiso'].includes(i.tipo) || i.pausada;
+  const carga = new Map(), sin = new Map();
+  const suma = (p, k, h, s) => { const key = p + '|' + k; if (s) sin.set(key, (sin.get(key) || 0) + 1); else carga.set(key, (carga.get(key) || 0) + h); };
+  for (const i of d.items) {
+    if (traza(i) || !i.persona) continue;
+    const est = +i.horas || 0;
+    if (i.en_revision || i.en_certificacion) {   // entregada hoy: la parte que le tocaba, solo hoy
+      if (!i.vencida && habil(d.corte) && i.ini <= d.corte && d.corte <= i.fin) suma(i.persona, d.corte, est / Math.max(1, habilesIncl(i.ini, i.fin)), !est);
+      continue;
+    }
+    let ks = [];
+    if (i.vencida) ks = [d.corte];
+    else for (let s = i.ini > d.corte ? i.ini : d.corte; s <= i.fin; s = addD(s, 1)) if (habil(s)) ks.push(s);
+    if (!ks.length) continue;
+    const resta = est ? Math.max(0, est - (+i.trabajado || 0)) : 0;
+    ks.forEach((k) => suma(i.persona, k, resta / ks.length, !est));
+  }
+  const f1 = (v) => (Math.round(v * 10) / 10).toString().replace('.', ',');
+  const DN = ['do', 'lu', 'ma', 'mi', 'ju', 'vi', 'sá'];
+  const filas = ['persona'.padEnd(22) + dias.map((s) => `${DN[dUTC(s).getUTCDay()]} ${s.slice(8)}/${s.slice(5, 7)}`.padEnd(17)).join('')];
+  for (const p of d.personas) {
+    filas.push(String(p.nombre).replace(/\s*\(.*$/, '').slice(0, 21).padEnd(22) + dias.map((s) => {
+      const h = carga.get(p.slug + '|' + s) || 0, j = d.jornada[dUTC(s).getUTCDay()];
+      const marca = h > j * 1.05 ? 'se pasa' : h >= j * 0.85 ? 'lleno' : 'cabe';
+      return `${f1(h)}/${f1(j)} ${marca}${sin.get(p.slug + '|' + s) ? '+' : ''}`.padEnd(17);
+    }).join(''));
+  }
+  return filas.join('\n') + '\n  (horas ASIGNADAS / jornada · «+» = hay trabajo sin estimar, la carga real es mayor)';
+}
+
 function main() {
   const ejemplo = process.argv.includes('--ejemplo');
   const entrada = ejemplo ? EJEMPLO : posicional();
   if (!entrada) uso();
-  const datos = C.leerJson(path.resolve(entrada), null);
+  let datos = C.leerJson(path.resolve(entrada), null);
   if (!datos) uso(`No pude leer el JSON: ${entrada}`);
+  if (Legado.esLegado(datos)) {
+    datos = Legado.convertir(datos);
+    console.log('Formato anterior detectado: convertido al actual.' + datos._convertido.notas.map((n) => '\n   · ' + n).join(''));
+  }
+  const conv = C.arg('--convertir', null);
+  if (conv) {
+    fs.mkdirSync(path.dirname(path.resolve(conv)), { recursive: true });
+    fs.writeFileSync(path.resolve(conv), JSON.stringify(datos, null, 1), 'utf8');
+    console.log('JSON convertido: ' + path.resolve(conv));
+    return;
+  }
   if (!Array.isArray(datos.personas) || !datos.personas.length) uso('El JSON no trae «personas»: el tablero no tiene carriles.');
 
   const d = construir(datos);
@@ -402,10 +488,14 @@ function main() {
   } else {
     console.log('  Cobertura: todo lo de las personas con carril está en el tablero.');
   }
+  if (process.argv.includes('--carga')) {
+    const n = Math.max(1, Math.min(20, +C.arg('--carga', '5') || 5));
+    console.log(`\nCarga de los próximos ${n} días hábiles (para ti, no para la mesa):\n` + cargaTexto(d, n));
+  }
 }
 
 if (require.main === module) {
   try { main(); } catch (e) { console.error('status-celula: ' + (e && e.message ? e.message : e)); process.exit(1); }
 }
 
-module.exports = { construir, metricasJira, metricasTimesheets };
+module.exports = { construir, metricasJira, metricasTimesheets, cargaTexto };

@@ -1,6 +1,6 @@
 ---
 name: status-celula
-description: Genera el tablero de estado de la célula con cronograma (Gantt) de ocupación — carriles por persona con el líder primero, colas de revisión e implementación, traza de lo terminado, carga diaria contra la jornada, veredicto por fecha, Status Jira, frentes y timesheets del equipo — cruzando el estado del Personal OS con Jira en solo lectura. Úsala cuando digan "/status-celula", "status de la célula", "tablero del equipo", "cronograma del equipo", "hasta cuándo está ocupado cada uno", "prepara la mesa de líderes" o pidan ver la ocupación del equipo. Sale como HTML local y privado; no escribe en Jira.
+description: Genera el tablero de estado de la célula con cronograma (Gantt) de ocupación — carriles por persona con el líder primero, colas de revisión e implementación, traza de lo terminado, carga diaria contra la jornada, veredicto por fecha, Status Jira, frentes y timesheets del equipo — cruzando el estado del Personal OS con Jira en solo lectura, y opcionalmente lo sube al tablero compartido del equipo. Úsala cuando digan "/status-celula", "status de la célula", "tablero del equipo", "cronograma del equipo", "hasta cuándo está ocupado cada uno", "quién tiene hueco esta semana", "prepara la mesa de líderes" o "actualiza el tablero compartido". No es el brief del día (eso es brief-diario), ni planear un sprint o estimar historias (planear-sprint), ni registrar tus propias horas (timesheet). Nunca escribe en Jira.
 ---
 
 # Skill — status-celula (tablero de estado de la célula)
@@ -11,48 +11,50 @@ líderes (o ante quien coordine varios equipos). Tiene dos caras:
 - **La mesa** — lo que necesita que alguien de fuera actúe. El filtro de la sección A es lo que más
   importa: se reporta lo que pide algo a otro líder o a la organización, no el detalle interno.
 - **El cronograma** — el corazón de la herramienta: hasta cuándo tiene ocupación cada persona, dónde hay
-  simultaneidad, qué está vencido y qué huecos quedan. Aquí **todo está a la vista** (sección C-1).
+  simultaneidad, qué está vencido y qué huecos quedan. Aquí **todo está a la vista** (C-1).
 
-**Salida:** `<stateDir>/status-celula-<fecha>.html`, un archivo local y **privado** (lleva datos de
-clientes y del equipo). **No se publica como Artifact** ni se sube a ningún servicio, salvo que el
-usuario lo pida expresamente para ese tablero.
+**Tres reglas que no se rompen:**
 
-**Motor:** `scripts/status-celula.js` (calcula y maqueta; no consulta nada) + `plantilla.html` y
-`ejemplo.json` de esta carpeta. Para ver cómo se ve sin datos reales:
+1. **Jira es solo lectura.** Ni el tablero ni la skill escriben en Jira: todo cambio (fecha, responsable,
+   estado, comentario, titularidad) cae en «Cambios propuestos» y se aplica aparte, uno por uno, con la
+   confirmación explícita del usuario. Un tablero que reasigna solo, reasigna mal.
+2. **Nada se inventa ni se filtra en silencio.** Lo que falte (estimación, issue, fecha, timesheet) se marca
+   como hallazgo; lo que no entre al tablero lo dice la cobertura del motor.
+3. **El tablero es privado.** `<stateDir>/status-celula-<fecha>.html` lleva datos de clientes y del equipo:
+   no se publica salvo que el usuario lo pida. El tablero compartido (sección H) es otra cosa y tiene sus
+   propias reglas de acceso.
 
-```bash
-node "<raíz del plugin>/scripts/status-celula.js" --ejemplo --salida "<stateDir>/status-celula-ejemplo.html"
-```
-
-`<raíz del plugin>` es la ruta que aparece en el contexto de la sesión en la línea **«Scripts del
-plugin:»** que inyecta el hook de arranque. Si no está, búscala donde Claude Code instaló el plugin
-`personal-os` y dila en voz alta antes de usarla.
+**Motor:** `status-celula.js` en `<raíz del plugin>/scripts/` (Node, calcula y maqueta; no consulta nada) con
+`plantilla.html` y `ejemplo.json` de esta carpeta. Comandos completos en `references/motor.md`.
+`<raíz del plugin>` es la ruta de la línea **«Scripts del plugin:»** del contexto de la sesión; si no está,
+búscala donde Claude Code instaló `personal-os` y dila antes de usarla. Para verlo sin datos reales:
+`node "<raíz del plugin>/scripts/status-celula.js" --ejemplo --salida "<stateDir>/status-celula-ejemplo.html"`.
 
 ---
 
-## 0 · DE DÓNDE SALE LA CONFIGURACIÓN (nada de la empresa vive en esta skill)
+## Cuándo no se usa
 
-| Dato | Dónde | Notas |
-|---|---|---|
-| Equipo (carriles) | `<stateDir>/config/fuentes.yaml` → `equipo[]` (`nombre`, `rol`, `account_id`, `capacidad_horas_dia`) + fichas de `estado/personas/` con `estado: activo` | Los prestados entran igual, con su `prestamo` |
-| El líder | `owner` + `jira.mi_account_id` de `fuentes.yaml` | Tiene carril propio y va **primero** |
-| Proyectos de Jira | `jira.proyectos[]` (`clave`, `cliente`) | Los «propios» del tablero. Lo demás es **transversal** |
-| Sitio de Jira | `jira.cloud_id`, `jira.sitio` | Se pasan al conector de Atlassian; nunca se adivinan |
-| Estados que parecen cerrados | `jira.estados_que_parecen_cerrados` | `Redefinido` y compañía: no son cierres |
-| Festivos y zona horaria | `~/.claude/personal-os/config.json` → `festivos`, `zonaHoraria` | El script los lee solo. Sin festivos configurados, el tablero lo avisa en la cabecera |
-| Jornada por día | `config.json` → `timesheet.jornada` (`lun`…`dom`) | Contra ella se mide la carga diaria |
+- **El brief del día** (prioridades, correos, riesgos del líder): rief-diario. Este tablero toma su #1, no lo reemplaza.
+- **Planear un sprint, estimar historias o armar subtareas**: planear-sprint. Aquí no se estima.
+- **Registrar las horas propias**: 	imesheet. Aquí solo se audita el timesheet del equipo.
 
-**Opcionales** (si el usuario los agrega a `fuentes.yaml` en un bloque `status_celula:`; si no, valen
-los valores por defecto del script): `capacidad_factor` (0,8), `sla_revision` (2 días hábiles),
-`sla_implementacion` (5), `limite_wip` (ninguno), `estados` (nombres de estado de SU Jira para
-revisión, implementación, pausa y desarrollo), `reparto` de frentes (p. ej. 2 titular / 2 backup) y
-`campo_inicio` (el campo personalizado de fecha de inicio de su instancia).
-El script no lee `fuentes.yaml`: la skill **copia estos valores al JSON** de datos (mismos nombres;
-`estados` lleva las listas `revision`, `implementacion`, `pausa`, `desarrollo` y `no_cierre`, esta última
-desde `jira.estados_que_parecen_cerrados`).
+---
 
-Si falta algo obligatorio (equipo, proyectos o `cloud_id`), **se pregunta** con el modal de preguntas
-antes de seguir. No se inventa.
+## 0 · CONFIGURACIÓN (nada de la empresa vive en esta skill)
+
+| Dato | Dónde |
+|---|---|
+| Equipo (carriles) | `<stateDir>/config/fuentes.yaml` → `equipo[]` (`nombre`, `rol`, `account_id`, `correo`, `prestamo`) + fichas de `<stateDir>/personas/` con `estado: activo`. Los prestados entran igual, con su préstamo |
+| El líder | `owner` + `jira.mi_account_id`. Tiene carril propio y va **primero** |
+| Proyectos y sitio de Jira | `jira.proyectos[]`, `jira.cloud_id`, `jira.sitio`. Se pasan al conector; nunca se adivinan |
+| Estados que parecen cerrados | `jira.estados_que_parecen_cerrados` (`Redefinido` y compañía: no son cierres) |
+| Festivos, zona y jornada | `~/.claude/personal-os/config.json` → `festivos`, `zonaHoraria`, `timesheet.jornada` (los lee el motor) |
+| Todo lo propio del tablero | Bloque opcional `status_celula:` de `fuentes.yaml` (`references/configuracion.md`) |
+
+Del bloque `status_celula:` la skill **copia al JSON de datos** `capacidad_factor` (0,8), `sla_revision` (2),
+`sla_implementacion` (5), `limite_wip`, `estados`, `reparto`, `proyectos_propios` y `campo_inicio`; el motor
+no lee `fuentes.yaml`. Si falta algo obligatorio (equipo, proyectos o `cloud_id`), **se pregunta** con el
+modal de preguntas y se guarda. No se inventa.
 
 ---
 
@@ -70,14 +72,17 @@ antes de seguir. No se inventa.
 **La prueba:** *¿esto necesita que otro líder o la organización haga algo?* Si no, se queda en la
 conversación interna. Ante la duda, no entra: un tablero contaminado con detalle técnico deja de servir.
 
-- **Antes de repetir un bloqueo de ayer, se verifica que siga.** Un bloqueo ya resuelto que vuelve a la
-  mesa le quita credibilidad a todo lo demás. Lo resuelto va a «Ya resuelto», para no volver a discutirlo.
-- **Un punto que no pide nada a la mesa no va en «Solicitudes de recurso»**, aunque sea buena noticia.
-  Va en el estado de los frentes.
+- **Lo que el usuario ya sacó de la mesa no vuelve**: `status_celula.mesa_excluir` lista cada tema con su
+  razón y dónde queda (p. ej. actas de gobierno del requerimiento que lleva la PMO, un riesgo aceptado, una
+  fuente que dejó de existir). Se respeta sin volver a preguntarlo.
+- **Antes de repetir un bloqueo de ayer, se verifica que siga.** Un bloqueo ya resuelto que vuelve a la mesa
+  le quita credibilidad a todo lo demás. Lo resuelto va a «Ya resuelto», para no volver a discutirlo.
+- **Un punto que no pide nada a la mesa no va en «Solicitudes de recurso»**, aunque sea buena noticia: va en
+  el estado de los frentes.
 - Lo que es conversación con una persona (su autocierre, el detalle de sus tareas) se le dice al usuario
   aparte, nunca en el tablero.
-- **Cada bloqueo lleva `dias`**: desde cuándo está pedido y a quién. Un bloqueo sin antigüedad no
-  presiona a nadie, y la antigüedad es justamente el argumento en una mesa de líderes.
+- **Cada bloqueo lleva `dias`**: desde cuándo está pedido y a quién. Un bloqueo sin antigüedad no presiona a
+  nadie, y la antigüedad es justamente el argumento en una mesa de líderes.
 
 ---
 
@@ -89,116 +94,102 @@ Todo se arma cruzando lo que el Personal OS ya sabe con Jira. **Nada se inventa;
 |---|---|
 | Carriles | El líder primero + `equipo[]` + fichas activas de `personas/` |
 | Items del cronograma | Jira (**solo lectura**): issues del equipo y del líder, abiertas o terminadas desde el día 1 del mes |
-| Colas del líder | Las calcula el script: lo que esté en estados de revisión o «listo para implementación» |
+| Colas del líder | Las calcula el motor: todo lo de cada persona en revisión o «listo para implementación», **con o sin fecha** |
 | Sin programar | Issues sin fecha de vencimiento + lo que las fichas marquen pendiente |
-| Pestaña Líder | `tablero.md` (la #1 y la fecha del brief), `compromisos/`, `riesgos/`, `alcances/` |
+| Pestaña Líder | `tablero.md` (la #1 y la fecha del brief), `compromisos/`, `riesgos/`, `alcances/` y las issues propias |
 | Bloqueos de cliente | `compromisos/` con `direccion: esperado_de_tercero` + bloqueos declarados en `alcances/` |
 | Bloqueos de equipo | `riesgos/` abiertos de nivel 2–3 que dependan de la organización |
 | Recursos | Riesgos de capacidad y compromisos de petición de recurso |
 | Requerimientos | Issues creadas en las últimas 24–48 h + lo declarado en la bitácora |
 | Estado de frentes | Fichas de personas + alcances con su `verificado_el` |
-| Status Jira | Todo lo abierto de `jira.proyectos`, **tenga o no responsable** |
-| Timesheets | Correo del equipo (opcional, sección G) |
+| Status Jira | Todo lo abierto de `jira.proyectos`, **tenga o no responsable**, con comentarios |
+| Frentes y backups | La tabla del acuerdo de equipo (`status_celula.acuerdo_frentes_fuente`), leída en vivo |
+| Timesheets | Correo del equipo (sección G) |
 
-### Lectura de Jira (conector de Atlassian, SOLO LECTURA)
+### Lectura de Jira (conector de Atlassian, SOLO LECTURA, `cloudId` = `jira.cloud_id`, paginado hasta el final)
 
-Con `cloudId` = `jira.cloud_id`. Tres lecturas, paginadas hasta el final:
+1. **El equipo y el líder:** `assignee in (<account_ids>) AND (statusCategory != Done OR statusCategoryChangedDate >= startOfMonth())`, con `comment`, `timespent` y el campo de inicio.
+2. **Las colas, sin límite de fecha:** `assignee in (<account_ids>) AND status in (<revisión e implementación>)`.
+3. **Status Jira:** `project in (<claves>) AND statusCategory != Done` (incluye las sin responsable).
 
-1. **El equipo y el líder:** `assignee in (<account_ids>) AND (statusCategory != Done OR statusCategoryChangedDate >= startOfMonth())`.
-2. **Las colas, sin límite de fecha:** `assignee in (<account_ids>) AND status in (<estados de revisión e implementación>)`.
-3. **Status Jira:** `project in (<claves de jira.proyectos>) AND statusCategory != Done` (incluye las sin responsable).
+Campos: `summary, status, assignee, duedate, timeoriginalestimate, timespent, updated, created, project,
+issuetype, parent, comment` y `campo_inicio`. Los volcados se guardan y se normalizan con
+`status-celula-jira.js` (segundos → horas, comentarios ADF → texto, ámbito célula / externo / sin responsable).
+El historial de cambios solo llega issue por issue (`expand=changelog`): pedirlo para todo satura el
+conector; se pide solo para lo que se vaya a discutir y la ficha enlaza a Jira.
 
-Campos: `summary, status, assignee, duedate, timeoriginalestimate, timespent, updated, project` y el
-campo de fecha de inicio de la instancia (`campo_inicio`). Los tiempos de Jira vienen en segundos: se
-pasan a horas.
-
-**El roster se cruza por `account_id`, no por nombre.** El `jira` de cada persona en el JSON es el
-**displayName exacto** que trajo la lectura para su `account_id`: si se escribe a mano y no coincide
-—una tilde basta—, esa persona desaparece de su propia célula sin avisar. El script lo audita.
+**El roster se cruza por `account_id`, no por nombre.** El `jira` de cada persona es el **displayName exacto**
+que trajo la lectura: si se escribe a mano y no coincide —una tilde basta—, esa persona desaparece de su
+propia célula sin avisar. El motor lo audita.
 
 ---
 
 ## C · CÓMO SE GENERA
 
-1. **Leer el estado** (personas, riesgos, compromisos, alcances, `tablero.md`).
-2. **Leer Jira en SOLO LECTURA** (sección B).
-3. **Aplicar el filtro de la sección A** a la mesa. Lo técnico se descarta aquí, no después. El
-   cronograma NO se filtra (C-1).
-4. **Timesheets del equipo**, si el usuario los usa (sección G).
-5. **Escribir el JSON** en `<stateDir>/_datos/status-celula/datos-<fecha>.json`. El formato completo
-   está en la cabecera de `scripts/status-celula.js`; `ejemplo.json` es un caso completo con datos ficticios.
-6. **Generar:**
-
-   ```bash
-   node "<raíz del plugin>/scripts/status-celula.js" "<stateDir>/_datos/status-celula/datos-<fecha>.json"
-   ```
-
-   Sale en `<stateDir>/status-celula-<fecha>.html`. El script imprime la **cobertura**: si dice que algo
-   se pierde, se corrige antes de entregar o se dice en la entrega.
-7. **Abrir el HTML** en el navegador del usuario (archivo local) y entregar (sección E).
+1. **Leer el estado** (personas, riesgos, compromisos, alcances, `tablero.md`) y el acuerdo de equipo.
+2. **Leer Jira en SOLO LECTURA** (sección B) y normalizar con `status-celula-jira.js`.
+3. **Aplicar el filtro de la sección A** a la mesa. Lo técnico se descarta aquí, no después. El cronograma
+   NO se filtra (C-1).
+4. **Timesheets del equipo** (sección G). Si el usuario los usa, un tablero sin esa pestaña no sale sin
+   decirlo en la entrega.
+5. **Escribir el JSON** en `status_celula.carpeta_datos` (por defecto `<stateDir>/_datos/status-celula/`)
+   como `datos-<fecha>.json`. Formato en la cabecera de `status-celula.js` (motor); `ejemplo.json` es un caso
+   completo ficticio. El formato del motor anterior se acepta tal cual (se convierte solo).
+6. **Generar, con la carga de la semana:**
+   `node "<raíz del plugin>/scripts/status-celula.js" "<datos.json>" --carga 5`
+   Sale en `<stateDir>/status-celula-<fecha>.html` (o `--salida`). El motor imprime la **cobertura**: si
+   dice que algo se pierde, se corrige antes de entregar o se dice en la entrega.
+7. **Probar** si se tocó la plantilla o el formato: `node "${CLAUDE_SKILL_DIR}/prueba.js" "<el HTML>"`
+   (necesita jsdom; ver `references/motor.md`). Sale con 0 o se dice qué falló.
+8. **Guardar la actividad del timesheet en las fichas**:
+   `node "<raíz del plugin>/scripts/status-celula-fichas.js" "<datos.json>"` (sin duplicar; pasa por el
+   guardarraíl de datos de personas).
+9. **Tablero compartido**, si está configurado (sección H).
+10. **Abrir el HTML** local y entregar (sección E).
 
 ### C-1 · Todo a la vista: nada se filtra en silencio
 
-Un tablero que deja fuera lo cerrado, lo pausado, lo viejo o al propio líder **miente por omisión**.
-Por eso:
+Un tablero que deja fuera lo cerrado, lo pausado, lo viejo o al propio líder **miente por omisión**:
 
 - **El líder tiene carril propio, el primero.** Lleva sus issues, sus compromisos con fecha y **dos colas
   por persona**, que son trabajo del líder aunque la issue sea de otro:
-  - **Revisar a X**: todo lo de X en estados de revisión. Se pinta como **marca corta que termina hoy**,
-    con «↤ desde dd/mm» de la entrega más vieja; al hacer clic sale la lista. Está atrasada si pasa de
-    `sla_revision` días hábiles.
-  - **Publicar a X**: todo lo de X «listo para implementación», **sin límite de fecha**. Atrasada si pasa
-    de `sla_implementacion`.
-  - Sin historial de cambios, la entrada a la cola es la última actualización de la issue. El tablero lo declara.
-- **Lo terminado se queda como traza**: todo lo cerrado desde el día 1 del mes, atenuado, en su fecha real
-  de cierre y marcado si cerró tarde. «Listo para implementación» y `Redefinido` se pintan aparte, **nunca
-  como cierre**. Las cifras de riesgo de la cabecera se cuentan solo sobre lo pendiente.
-- **Pausado entra**, gris y punteado. **Lo vencido antes de la ventana entra**, en una sola marca por
-  persona («N vencidas antes del dd/mm») con la lista al hacer clic. Lo sin fecha va a «Sin programar».
-- **Ninguna regla oculta issues de alguien con carril**: no hay filtros por persona en la lectura ni en el
-  armado. Y se audita: el script compara lo que vino de Jira con lo que quedó en el tablero y **avisa qué
-  se pierde** (issues abiertas de alguien con carril que no están, items de alguien sin carril, displayName
-  que no cuadra). El aviso sale en la terminal y arriba del tablero.
+  - **Revisar a X**: todo lo de X en revisión. **Marca corta que termina hoy**, con «↤ desde dd/mm» de la
+    entrega más vieja; al hacer clic, la lista con la espera de cada una. Atrasada si pasa de `sla_revision`
+    días hábiles. Lo que el líder mismo entrega a revisión no es su cola.
+  - **Publicar a X**: todo lo de X «listo para implementación», **sin límite de fecha**. Atrasada si pasa de
+    `sla_implementacion`. La certificación del PO/QA es de otra persona: no entra a la cola del líder.
+  - Sin historial de cambios, la entrada a la cola es la última actualización. El tablero lo declara.
+- **Lo terminado se queda como traza**, atenuado, en su fecha real de cierre y marcado si cerró tarde.
+  «Listo para implementación» y `Redefinido` se pintan aparte, **nunca como cierre**. Las cifras de riesgo de
+  la cabecera se cuentan solo sobre lo pendiente.
+- **Pausado entra**, gris y punteado; si ya venció, sigue contando en rojo. **Lo vencido antes de la ventana
+  entra** en una sola marca por persona («N vencidas antes del dd/mm»). Lo sin fecha va a «Sin programar».
+- **Ninguna regla oculta issues de alguien con carril**, y se audita: el motor compara lo que vino de Jira con
+  lo que quedó en el tablero y avisa qué se pierde (en la terminal y arriba del tablero).
 - **Si una afirmación del tablero contradice al brief del mismo día, gana la verificación más reciente** y
   se corrige el texto; no se deja convivir.
 
-### C-2 · Jira manda
+### C-2 · Jira manda, y regenerar es por delta
 
-**Cada actualización refresca de Jira el responsable, la estimación, las fechas y el estado** de cada
-item. Lo que se movió en el tablero es una **propuesta**, no un dato: si no se aplicó en Jira, en la
-siguiente generación vuelve a salir donde Jira diga. Nada del tablero anterior se arrastra por encima de
-la lectura nueva.
+Cada actualización refresca de Jira el responsable, la estimación, las fechas y el estado. Lo que se movió
+en el tablero es una **propuesta**: si no se aplicó en Jira, vuelve a salir donde Jira diga.
+**Para regenerar el mismo día no se vuelve a leer todo**: se pide solo `updated >= "<hora de la última
+lectura>"` y se pasa con `--delta`, en orden. Mezclar dos lecturas completas de horas distintas duplica
+issues (la misma sale abierta y cerrada a la vez).
 
-**Regenerar en el mismo día: por delta, nunca mezclando lecturas.** Para refrescar se pide solo
-`updated >= "<hora de la última lectura>"` y se aplica encima, en orden. Mezclar dos lecturas completas de
-horas distintas duplica issues (la misma sale abierta y cerrada a la vez).
+### C-3 · Días hábiles, reuniones y transversales
 
-### C-3 · Días hábiles y festivos
+- Todo se cuenta en **días hábiles**: la jornada de `config.json` menos los `festivos`. **Si no hay festivos
+  cargados, se le dice al usuario**: un festivo sin cargar es un día de capacidad que no existe.
+- **Una reunión en Jira se estima con su duración agendada** (`tipo: "reunion"`); lo que duró va al timesheet.
+- **Lo de otro proyecto (transversal)** se muestra con su nombre y etiqueta. «Mostrar transversales» las
+  resume por proyecto cuando estorban; nunca las oculta y la carga las cuenta igual.
 
-Todo se cuenta en **días hábiles**: la jornada de `config.json` (los días con 0 horas no se trabajan) menos
-los `festivos` configurados. El script los inyecta en el tablero: el fin de semana y el festivo se pintan
-como no hábiles, parten las barras y todo arrastre aterriza en día hábil. **Si el usuario no ha cargado los
-festivos de su país, se le dice**: un festivo sin cargar es un día de capacidad que no existe.
+### C-4 · El tiempo y el veredicto: la fecha manda, no el reloj
 
-### C-4 · Reuniones y transversales
-
-- **Una reunión en Jira se estima con su duración agendada.** Va con `tipo: "reunion"`, en su día, y suma a
-  la carga como cualquier trabajo. Lo que realmente duró va al timesheet, no a la estimación.
-- **Las issues de otro proyecto (transversales) se muestran con su nombre**, con una etiqueta del proyecto.
-  El interruptor «Mostrar transversales» las **resume** en una barra por proyecto cuando estorban; nunca las
-  oculta, y la carga diaria las cuenta igual.
-
-### C-5 · El tiempo: estimado contra trabajado, y la fecha manda
-
-Cada item lleva `horas` (estimado de Jira) y `trabajado` (lo registrado). La barra pinta el consumo; la
-ficha lo compara.
-
-- **Sin estimación no se calcula porcentaje.** Se muestra lo trabajado y se dice *«sin estimación: no se
-  puede evaluar si va bien»*. Un porcentaje sobre una base inventada miente.
-- **`trabajado: 0` significa «no ha registrado nada»**, distinto de no saberlo: si no se pudo traer, se omite.
-
-**El veredicto cruza horas restantes contra capacidad hasta la fecha** — el tiempo trabajado solo no dice
-si algo va bien:
+Cada item lleva `horas` (estimado de Jira) y `trabajado` (lo registrado); la barra pinta el consumo.
+**Sin estimación no se calcula porcentaje** (*«sin estimación: no se puede evaluar si va bien»*).
+`trabajado: 0` significa «no registró nada»; si no se pudo traer, se omite.
 
 | Veredicto | Cuándo |
 |---|---|
@@ -208,61 +199,51 @@ si algo va bien:
 | ⚪ Sin estimación | no hay `horas`: es lo primero que hay que resolver |
 | 🟢 Va en tiempo / Cerrada | el resto |
 
-**La capacidad no es la jornada completa:** se aplica `capacidad_factor` (0,8 por defecto) porque hay
-reuniones, revisiones, soporte e interrupciones. El factor se muestra en la cabecera para que el supuesto
-esté a la vista y se pueda discutir.
+**La capacidad no es la jornada completa:** `capacidad_factor` (0,8) porque hay reuniones, revisiones,
+soporte e interrupciones. Se muestra en la cabecera para que el supuesto se pueda discutir.
 
-### C-6 · La carga diaria: ¿le caben más cosas o menos?
+### C-5 · La carga diaria: ¿le caben más cosas o menos?
 
-Cada carril lleva, debajo de sus barras, una tira con las **horas ASIGNADAS** de cada día hábil desde hoy
-(no las libres; lo que le cabe sale al pasar el cursor), y la cabecera del carril dice `hoy X/Y h`.
+Debajo de cada carril, una tira con las **horas ASIGNADAS** de cada día hábil desde hoy (no las libres; lo que
+le cabe sale al pasar el cursor) y `hoy X/Y h` en la cabecera. `--carga N` la imprime en texto.
 
 | Regla | Por qué |
 |---|---|
-| Se mide contra la jornada completa del día, sin el factor | Es la jornada contra la que se asigna; el factor manda en el veredicto |
-| Cuenta solo trabajo ejecutable: fuera lo terminado, las colas, los compromisos y lo pausado | Lo cerrado ya no ocupa el día de nadie |
-| Lo que está en revisión con fecha de HOY cuenta hoy (la parte que le tocaba); desde mañana no | Fue el trabajo del día |
-| Lo que queda (estimado − trabajado) se reparte entre los días hábiles de hoy al vencimiento | Los días pasados ya se fueron |
+| Contra la jornada completa del día, sin el factor | Es la jornada contra la que se asigna |
+| Solo trabajo ejecutable: fuera lo terminado, las colas, los compromisos y lo pausado | Lo cerrado ya no ocupa a nadie |
+| En revisión o certificación con fecha de HOY cuenta hoy (la parte que le tocaba); desde mañana no | Fue el trabajo del día |
+| Lo que queda (estimado − trabajado) se reparte de hoy al vencimiento | Los días pasados ya se fueron |
 | Lo vencido y abierto se suma entero a HOY | Sigue pendiente y es lo que llena el día |
-| Un item sin estimación no suma horas, pero la celda lleva «+» | La carga real es mayor que la que se ve |
-| Colores: ámbar < 85 % (le caben más) · verde 85–105 % · rojo > 105 % · punteado = nada | Se lee sin hacer clic |
-| Se recalcula al arrastrar | Es la herramienta para decidir antes de proponer |
+| Sin estimación no suma, pero la celda lleva «+» | La carga real es mayor que la que se ve |
+| Ámbar < 85 % · verde 85–105 % · rojo > 105 % · punteado = nada; se recalcula al arrastrar | Se lee sin clic y sirve para decidir antes de proponer |
 
-### C-7 · Las horas no las pone Claude
+### C-6 · Las horas no las pone Claude, y el accountId tampoco se adivina
 
-Ni en el tablero ni en un borrador de issue: **la estimación la pone el usuario o la persona que hace el
-trabajo.** Donde falte, queda vacía y marcada. Si el usuario pide una cifra, va apretada (personas que
-trabajan con IA de copiloto) y la decide él.
+**La estimación la pone el usuario o quien hace el trabajo.** Donde falte, queda vacía y marcada. Si el
+usuario pide una cifra, va apretada (personas que trabajan con IA de copiloto) y la decide él. Cuando el
+tablero termina en escrituras aprobadas, el `accountId` **se saca del displayName exacto de una lectura
+reciente** (o de `equipo[].account_id`), nunca de memoria: uno equivocado deja la issue a nombre de otro.
 
-### C-8 · Reglas al armar el JSON
+### C-7 · Reglas al armar el JSON
 
-- Un item sin estimación va con `"horas": 0` y se dice en la `nota`. No se rellena.
-- Un item sin issue de Jira lleva `"estado": "Sin issue"` y su nota dice que hay que crearla: es el hallazgo.
-- La ventana arranca **el día 1 del mes** (para ver la traza) y llega a 8 semanas; lo anterior entra anclado.
+- Sin estimación: `"horas": 0` y se dice en la `nota`. Sin issue: `"estado": "Sin issue"`; es el hallazgo.
+- La ventana arranca **el día 1 del mes** y llega a 8 semanas; lo anterior entra anclado con su fecha real.
 - Si una sección de la mesa queda vacía, **se deja vacía**: el tablero escribe «Nada que reportar hoy».
 - Sin datos de salud, credenciales ni observaciones personales: una ausencia se escribe «ausente».
 
 ---
 
-## D · QUÉ HACE EL TABLERO (y qué NO hace)
+## D · QUÉ HACE EL TABLERO
 
-Se toca con el ratón (o el dedo):
-
-- **Arrastrar una barra** → mueve sus fechas conservando sus días hábiles. **Su borde derecho** → la alarga
-  o acorta. **A otro carril** → la reasigna.
-- **Desde «Sin programar»** (arrastrando o con clic) → le pone fecha y responsable.
-- **Resaltar huecos** → pinta los días hábiles vacíos de cada persona. Un día hábil vacío es una pregunta
-  —*¿qué va aquí?*—, no un descanso: el objetivo es planear el futuro del equipo, no mirar el presente.
-- **Solo vencidas**, **Ocultar terminadas**, **Mostrar transversales**, **Compacto / Normal / Amplio**, y
-  **▾ / ▸** para minimizar un carril (se recuerda en el navegador).
+- **Arrastrar una barra** → mueve sus fechas conservando sus días hábiles; **su borde derecho** → la alarga o
+  acorta; **a otro carril** → la reasigna. **Desde «Sin programar»** (arrastre o clic) → fecha y responsable.
+- **Resaltar huecos**: un día hábil vacío es una pregunta —*¿qué va aquí?*—, no un descanso. El objetivo es
+  planear el futuro del equipo, no mirar el presente.
+- **Solo vencidas**, **Ocultar terminadas**, **Mostrar transversales**, **Compacto / Normal / Amplio**, **▾/▸**
+  para minimizar un carril, tema claro/oscuro (se recuerdan en el navegador).
 - **Pestañas:** Cronograma · Mesa · Líder · Status Jira · Frentes · Timesheets.
-- Cada cambio se acumula en **«Cambios propuestos»**; **«Copiar para Jira»** los pasa al portapapeles.
-
-> ### El tablero NO escribe en Jira.
-> Nunca. Produce una lista de cambios que el usuario revisa y aplica, o que se aplican en sesión con su
-> confirmación explícita, uno por uno. **Antes de asignar**, el `accountId` se saca del displayName exacto
-> de una lectura reciente (o de `equipo[].account_id`), nunca de memoria: un accountId equivocado deja la
-> issue a nombre de otra persona.
+- **Cambios propuestos** acumula todo; **Copiar para Jira** los pasa al portapapeles; **Deshacer** devuelve el
+  tablero a como vino de Jira.
 
 ---
 
@@ -274,66 +255,57 @@ Al entregarlo, **tres frases, no un recorrido por el tablero**:
 2. **Lo que está en riesgo y por qué.**
 3. **Lo que ya está resuelto**, para que no se vuelva a discutir.
 
-Aparte, para el usuario y **no para la mesa**:
-
-- **La carga**: quién tiene hueco hoy y esta semana, y quién se pasa de su jornada.
-- **La cobertura**: lo que el script dijo que se pierde o no cuadra, si quedó algo.
-- **Timesheets** (si aplica): quién no envió, el % de horas con issue de cada uno y las horas «sin tarea».
-
-El cronograma es el respaldo cuando alguien pregunte *«¿y eso cuándo?»* o *«¿hasta cuándo está ocupado
-fulano?»*. No es el guion.
+Aparte, para el usuario y **no para la mesa**: la **carga** (quién tiene hueco hoy y esta semana y quién se
+pasa, de `--carga`), la **cobertura** (lo que el motor dijo que se pierde) y los **timesheets** (quién no
+envió, el % con issue de cada uno, qué hizo cada quien ayer en una línea y las horas «sin tarea»).
+El cronograma es el respaldo cuando alguien pregunte *«¿y eso cuándo?»*. No es el guion.
 
 ---
 
 ## F · STATUS JIRA Y FRENTES
 
-**Status Jira** mide con nueve columnas, **calculadas por el script desde las issues crudas** (así el
-tablero no puede contradecir a Jira): abiertas · con responsable · **sin responsable** · en desarrollo · en
-revisión · sin movimiento en 30 días · vencidas · sin estimación · sin fecha. Dos tablas:
+**Status Jira** mide con nueve columnas **calculadas por el motor desde las issues crudas** (el tablero no puede
+contradecir a Jira): abiertas · con responsable · **sin responsable** · en desarrollo · en revisión · sin
+movimiento en 30 días · vencidas · sin estimación · sin fecha. Tablas: **tus proyectos** (todo lo abierto,
+tenga o no responsable), **la célula** (todas las issues de cada persona, en el proyecto que sea), y —siempre
+separados y marcados— **los de fuera** que cargan tus proyectos y **la bolsa sin responsable**. Esa marca es
+la diferencia entre lo que el usuario dirige y lo que solo le preguntan. Clic en una fila → sus issues
+ordenadas por lo que arde; clic en una issue → su **ficha**: veredicto, inicio y vencimiento, tiempo,
+comentarios, historial y dos propuestas (estado, comentario) que van a «Cambios propuestos». Con `limite_wip`
+marca a quien lo supere.
 
-1. **Proyectos** (`jira.proyectos`), con todo lo abierto, tenga o no responsable.
-2. **La célula**: todas las issues abiertas de cada persona, **en el proyecto que sea** (la carga de alguien
-   no se parte por proyecto).
-
-Debajo, separados y marcados: los de fuera de la célula que cargan tus proyectos (responden a otro líder) y
-la bolsa sin responsable. Clic en una fila → sus issues ordenadas por lo que arde (vencidas, en revisión,
-en desarrollo, el resto). Si se configura `limite_wip`, marca a quien lo supere.
-
-**Frentes** muestra titular y backup de cada frente (si el equipo tiene ese acuerdo) y avisa si alguien se
-sale del `reparto` acordado; el líder queda fuera de la cuenta porque es escalamiento. Mover una
-titularidad sale como **propuesta para la reunión de equipo**, nunca como hecho consumado.
+**Frentes** muestra titular y backup (con cliente) y avisa si alguien se sale del `reparto`; el líder queda
+fuera de la cuenta porque es escalamiento. Mover una titularidad sale como **propuesta para la reunión de
+equipo**, con fecha y por escrito, nunca como hecho consumado.
 
 ---
 
-## G · TIMESHEETS DEL EQUIPO (opcional)
+## G · TIMESHEETS DEL EQUIPO
 
-Si el equipo envía su timesheet por correo, el tablero hace seguimiento a **que se envíe a diario, a qué %
-de sus horas cuelga de una issue y a qué hizo cada quien**. Lo que se mide es la hora trazable, no la escrita.
-
-1. **Buscar por remitente, nunca por asunto** (cada quien titula a su manera), en solo lectura, desde el
-   lunes de la semana anterior. El timesheet del líder no se audita aquí.
-2. **Abrir cada archivo** (adjunto o enlace). Si no se pudo leer, el envío va con `"leido": false` y el
-   tablero avisa que sus rojos pueden ser falsos: **nunca** se deja en rojo callando que no se leyó.
-3. **Pasar las filas tal como están**, sin corregirlas: `fecha`, `envio`, `categoria`, `jira` (vacío si no
-   hay clave válida: no se le inventa una), `tarea`, `horas`. Las fechas seriales de Excel se convierten.
-4. **No se deduplica a mano:** un día sale del envío más reciente que lo traiga (lo hace el script). Sumar
-   envíos acumulados duplica o triplica horas.
-
-Colores por día: verde = envió · ámbar = hay horas pero ningún correo posterior · rojo = día hábil pasado
-sin horas · gris = festivo, hoy o futuro, o archivo no leído. La meta del % con issue sale de
-`timesheet.metaCoberturaIssue` de `config.json`.
-
-**No se hace:** escribirle a nadie reclamando (el tablero lo muestra y el usuario decide), corregir horas,
-rellenar días ni poner observaciones personales. Las horas «en espera de asignación» o «sin tarea» son el
-hallazgo más importante: dicen que falta plan, no que alguien no trabajó.
+Si el equipo envía su timesheet por correo, el tablero sigue **que se envíe a diario, qué % de sus horas
+cuelga de una issue y qué hizo cada quien**. Se mide la hora trazable, no la escrita. Lo esencial (detalle en
+`references/timesheets.md`): se busca **por remitente, nunca por asunto**, en solo lectura; un archivo que no
+se pudo abrir va con `"leido": false` y **nunca** se deja en rojo callando que no se leyó; las filas pasan tal
+como están; **un día sale del envío más reciente que lo traiga** (lo hace el motor). No se le reclama a nadie,
+no se corrigen horas ni se rellenan días. Las horas «en espera» o «sin tarea» son el hallazgo más importante:
+dicen que falta plan, no que alguien no trabajó.
 
 ---
 
-## H · MANTENIMIENTO
+## H · TABLERO COMPARTIDO (opcional)
 
-- **Paleta neutra** con claro/oscuro; los frentes toman color de una paleta categórica si el JSON no trae
-  uno. Nada de identidad corporativa en la plantilla.
-- Si aparece un frente nuevo, **se agrega primero a los datos** (o a `fuentes.yaml`); el tablero no inventa frentes.
-- Si una persona no tiene carril, el script lo dice en la cobertura. Ese es el aviso de que falta en `equipo`.
-- Después de tocar `plantilla.html`: generar con `--ejemplo`, abrirlo y revisar que el cronograma, el
-  arrastre y las pestañas sigan funcionando.
+Si `status_celula.tablero_compartido.url` está configurado, ese Artifact es **la vista oficial para la mesa** y
+el HTML local queda de respaldo. Cada corrida le sube su foto con `status-celula-compartido.js` y **una sola**
+llamada `ArtifactData` `batch`: la foto de Jira solo si es más reciente que la que el tablero ya tiene, con
+`if_version` en cada documento y la pestaña del líder solo para el dueño. Procedimiento y reglas de acceso en
+`references/tablero-compartido.md`.
+
+---
+
+## I · MANTENIMIENTO
+
+- **Paleta neutra** con claro/oscuro; los frentes toman color de una paleta categórica si el JSON no trae uno.
+- Si aparece un frente nuevo, **se agrega primero a `personas/_dominios.md`** (o a los datos); el tablero no
+  inventa frentes. Si una persona no tiene carril, el motor lo dice en la cobertura.
+- Después de tocar `plantilla.html` o el motor: `--ejemplo` + `prueba.js` (y, con datos reales, la comparación
+  de `references/motor.md`).
