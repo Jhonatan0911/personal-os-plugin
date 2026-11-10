@@ -1,6 +1,6 @@
 ---
 name: retomar
-description: Reconstruye el contexto de cualquier proyecto al iniciar sesión leyendo el HANDOFF.md de la raíz (generado por el checkpoint), la memoria persistente si hay y git, y entrega un status con pendientes priorizados. En raíces multi-frente (donde existe handoff/_indice.json) primero muestra el índice de frentes y pregunta de qué se va a hablar; solo después lee el frente elegido. Úsalo cuando el usuario diga "retomemos", "retomar", "dame el status", "en qué quedamos" o al arrancar una sesión nueva en un proyecto.
+description: Reconstruye el contexto de cualquier proyecto al iniciar sesión leyendo el HANDOFF.md de la raíz (generado por el checkpoint), la memoria persistente si hay y git, y entrega un status con pendientes priorizados. En raíces multi-frente (donde existe handoff/_indice.json) primero muestra el índice de frentes y pregunta de qué se va a hablar; solo después lee el frente elegido. Úsalo cuando el usuario diga "retomemos", "retomar", "dame el status", "en qué quedamos" o al arrancar una sesión nueva en un proyecto. No es para el estado del equipo (eso es status-celula) ni para el brief del día.
 ---
 
 # Retomar — reconstruir contexto

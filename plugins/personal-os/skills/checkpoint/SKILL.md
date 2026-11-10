@@ -1,6 +1,6 @@
 ---
 name: checkpoint
-description: Cierra un tramo de trabajo en cualquier proyecto dejándolo retomable. En un proyecto normal genera o actualiza HANDOFF.md en la raíz; en una raíz multi-frente (donde existe handoff/_indice.json) clasifica la conversación en su frente, escribe solo handoff/<frente>.md y actualiza su fila del índice HANDOFF.md con candado, para que varias pestañas no se pisen. Guarda en memoria persistente si hay, verifica que compile y deja commit si es repo git. Úsalo cuando el usuario diga "checkpoint", "guarda el avance", "deja un punto de control" o vaya a cerrar la sesión con trabajo hecho.
+description: Cierra un tramo de trabajo en cualquier proyecto dejándolo retomable. En un proyecto normal genera o actualiza HANDOFF.md en la raíz; en una raíz multi-frente (donde existe handoff/_indice.json) clasifica la conversación en su frente, escribe solo handoff/<frente>.md y actualiza su fila del índice HANDOFF.md con candado, para que varias pestañas no se pisen. Guarda en memoria persistente si hay, verifica que compile y deja commit local si es repo git (el push se pregunta). Úsalo cuando el usuario diga "checkpoint", "guarda el avance", "deja un punto de control" o vaya a cerrar la sesión con trabajo hecho.
 ---
 
 # Checkpoint — cierre de tramo
@@ -100,11 +100,15 @@ Usa el chequeo más barato que dé señal real:
 - Angular: `npx ng build` · .NET: `dotnet build` · otro: el build o test que documente el repo.
 - No dejes commit con errores de compilación: arréglalos o repórtalos como pendiente explícito.
 
-## 6. Commit (+ push si hay remoto)
+## 6. Commit local (el push se pregunta)
 Solo si es repo git **y el usuario no ha pedido lo contrario**:
 - Sigue las convenciones del repo (mira `git log` para el estilo).
 - Cierra el mensaje con la línea de coautoría que exija tu entorno.
-- `git add -A`, commit y `git push` si hay remoto configurado. Reporta hash y resumen de una línea.
+- Agrega **por nombre** los archivos del tramo (no `git add -A`: arrastra secretos, binarios y trabajo
+  ajeno de otras pestañas). Si `git status` muestra archivos que no son del tramo, déjalos fuera y dilo.
+- Haz el commit local y reporta hash y resumen de una línea.
+- **El push es externo: pregúntalo** (en el modal de preguntas) salvo que el usuario ya lo haya pedido
+  en esta conversación. Nunca en la rama principal de un repo compartido sin su OK.
 - Si NO es repo git, dilo y sugiere `git init` (sin hacerlo por tu cuenta).
 
 ## 7. Reporte final
