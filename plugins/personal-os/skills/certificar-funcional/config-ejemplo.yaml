@@ -1,0 +1,7 @@
+# Sección `certificacion` para <stateDir>/config/fuentes.yaml (o un JSON con la misma forma). Todo es opcional.
+certificacion:
+  plantilla_matriz: null        # ruta a un .xlsx del equipo con una hoja de matriz (columnas ID … Estado) para reutilizar
+  seudonimos: []                # regex extra de seudónimos válidos; ya vienen PAC-0001 y similares
+  permitidos: []                # textos o regex sintéticos que el detector confunde con datos reales
+  patrones_extra: []            # [{nombre, patron, severidad}] p. ej. el formato del número de historia clínica
+  carpeta: null                 # por defecto <carpeta del expediente>/certificacion

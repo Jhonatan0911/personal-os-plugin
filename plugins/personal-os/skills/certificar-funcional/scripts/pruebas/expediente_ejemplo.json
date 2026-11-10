@@ -1,0 +1,25 @@
+{
+  "id": "reporte-demo", "tipo": "requerimiento", "titulo": "Exportar reporte", "jira": ["PROY-40"],
+  "paso_actual": 5,
+  "chequeos": {"p0": {"estado": "aceptado"}, "p1": {}, "p2": {}, "p3": {}, "p4": {}, "p5": {}, "p6": {}},
+  "impacto": {"modos_falla": [
+    {"modo": "El reporte muestra datos de otra sede", "efecto": "Fuga de datos", "severidad": 5, "a_regresion": true},
+    {"modo": "Tarda más de 10 s", "efecto": "Molestia", "severidad": 2, "a_regresion": false}
+  ]},
+  "calidad": [{"id": "QA-1", "atributo": "rendimiento", "escenario": "100 usuarios piden el reporte a la vez",
+               "medida": "p95 < 3 s", "como_verificar": "Prueba de carga en staging"}],
+  "historias": [{"clave": "PROY-40", "titulo": "Exportar reporte", "resumen": "",
+                 "criterios": [{"id": "CA-1", "texto": "Solo usuarios con permiso de reportes pueden obtenerlo",
+                                "como_verificar": "Llamar sin permiso y recibir 403"},
+                               {"id": "CA-2", "texto": "El reporte trae la fecha de corte", "como_verificar": "Ver la columna Fecha"}]}],
+  "subtareas": [{"clave": "PROY-42", "titulo": "Endpoint de reporte", "historia": "PROY-40", "criterios": ["CA-1"],
+                 "entregables": ["tests"], "horas": 6},
+                {"clave": "PROY-43", "titulo": "Pantalla de reporte", "historia": "PROY-40", "criterios": ["CA-2"],
+                 "entregables": ["tests"], "horas": 4}],
+  "revisiones_pr": [{"pr": "101", "fecha": "2026-11-11", "veredicto": "devolver", "veredicto_por_ca": {"CA-1": "no"},
+                     "hallazgos": [{"severidad": "alta", "titulo": "Endpoint anónimo"}]},
+                    {"pr": "101", "fecha": "2026-11-12", "veredicto": "listo_para_aprobar", "veredicto_por_ca": {"CA-1": "cumple"},
+                     "hallazgos": []}],
+  "matriz_pruebas": [], "historial": [], "pendientes": [],
+  "retro": {"horas_estimadas": 0, "horas_reales": 0, "retrabajo": "", "lecciones": []}
+}

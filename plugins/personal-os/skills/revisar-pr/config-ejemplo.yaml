@@ -1,0 +1,27 @@
+# Sección `revision_pr` para <stateDir>/config/fuentes.yaml (o un JSON con la misma forma).
+# Todo es opcional: lo que falte usa el valor por defecto de scripts/comun.py.
+revision_pr:
+  azure_devops:
+    organizacion: "<tu-organizacion>"          # https://dev.azure.com/<organizacion>
+    proyectos: ["<Proyecto A>", "<Proyecto B>"] # dónde buscar un PR por clave de Jira
+  rama:
+    patron: "^(feature|bugfix|hotfix)/(?P<clave>[A-Z][A-Z0-9]+-\\d+)\\+.+$"   # formato exacto de la política
+    patron_tolerante: "(?P<clave>[A-Z][A-Z0-9]+-\\d+)"                        # basta con que traiga la clave
+    destinos: {feature: [develop], bugfix: [develop], hotfix: [staging], develop: [qa], qa: [staging], staging: [main]}
+  jira:
+    estados_validos: ["<Listo para revisión>", "<En revisión técnica>"]  # en qué estados debe estar la issue
+  tamano_max_lineas: 400                 # líneas de lógica; más grande → partir o justificar
+  entregables_por_defecto: []            # si no hay expediente: p. ej. [tests]
+  feeds_internos_prefijos: []            # paquetes de un feed privado que no están en nuget/npm/PyPI
+  excluir_de_ia: []                      # globs extra que nunca llegan a la IA (se suman a los de comun.py)
+  patrones_extra:
+    secretos: []                         # [{nombre, patron, severidad}]
+    pacientes: []                        # p. ej. el formato del número de historia clínica de tu sistema
+  proyectos_nuevos:                      # cuándo aplica la guía de arquitectura de proyectos nuevos
+    dotnet_min: null                     # p. ej. 10 → net10.0 o más se revisa con la guía de backend
+    angular_min: null
+    repos_nuevos: []                     # lista explícita; si la hay, manda sobre la versión
+    repos_legados: []
+    guia_backend: null                   # ruta al documento de arquitectura backend
+    guia_frontend: null
+  carpeta_trabajo: null                  # por defecto <temp>/revisar-pr/pr-<id>

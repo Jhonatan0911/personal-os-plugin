@@ -1,0 +1,6 @@
+{
+  "id": 101, "repo": "reportes-api", "proyecto": "Demo", "url": "https://dev.azure.com/demo/Demo/_git/reportes-api/pullrequest/101",
+  "rama": "feature/PROY-42-exportar-reporte", "destino": "develop",
+  "titulo": "Exportar reporte", "descripcion": "Agrega la exportación del reporte.", "autor": "Dev Ejemplo",
+  "stack": {"dotnet": ["net6.0"], "angular": 16}
+}
