@@ -239,7 +239,7 @@ def main():
         sys.stdout.reconfigure(encoding="utf-8")
     except AttributeError:
         pass
-    personales = json.loads(Path(a.personal).read_text(encoding="utf-8")).get("terminos", []) if a.personal else []
+    personales = json.loads(Path(a.personal).read_text(encoding="utf-8-sig")).get("terminos", []) if a.personal else []
 
     res = [auditar(d, personales) for d in encontrar(a.rutas)]
 

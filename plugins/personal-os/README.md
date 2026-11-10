@@ -1,4 +1,4 @@
-# Personal OS — plugin (v2.0.0)
+# Personal OS — plugin (v3.0.0)
 
 Chief of Staff digital para Claude Code: protege tu ejecución (compromisos punto por punto, riesgos,
 prioridades, horas trazables) sobre Jira/Outlook/Teams. Documentación completa en el

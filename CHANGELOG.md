@@ -1,5 +1,31 @@
 # Changelog
 
+## 3.0.0
+
+Salto mayor: el plugin pasa a cubrir el flujo completo del líder técnico por requerimiento, de entender
+y aceptar hasta certificar, y la instalación local y el plugin quedan unidos en una sola fuente.
+
+### Nuevo
+- **maestro-skills**: crea, audita (con un auditor determinista y puntaje de 0 a 100), generaliza y
+  publica Agent Skills.
+- **mapa-criticidad**: calificación de cada módulo en cinco ejes (transaccionalidad, dinero, norma,
+  usuarios y reversibilidad) con evidencia citada y validación del líder.
+- **revisar-pr**: revisión de un PR de Azure DevOps contra los criterios de aceptación, en tres capas
+  (máquina, IA y segunda pasada que verifica cada hallazgo). Enmascara secretos y datos de personas y no
+  publica nada.
+- **certificar-funcional**: matriz de pruebas desde la especificación, verificación de evidencias,
+  veredicto funcional y retro en borrador.
+- Agente **refutador-requerimiento**: separa lo que se acepta de lo que va contra una norma, degrada el
+  producto o se sale del alcance, y da siempre una alternativa con su costo.
+
+### Cambiado
+- **planear-sprint**: paso 0 (entender y aceptar) con el refutador, ficha de impacto, escenarios de
+  calidad con medida, subtareas como instrucción con criterios CA-n y cortes de seguimiento.
+- **timesheet** une el genérico con el perfil de organización (plantilla corporativa, cortes de horas
+  extra).
+- **status-celula**, **brief-diario** (2.1.0), **tablero-diario** (pestaña ORDEN), **consola-neuronal**
+  (`--config-dir`) y los scripts de los hooks se unieron con las mejoras de la instalación local.
+- **checkpoint**: commit local agregando archivos por nombre (nunca `git add -A`) y push solo con OK.
 ## 2.0.0
 
 Salto mayor: de "brief + tablero" a un núcleo de control completo. Todo lo específico de una empresa

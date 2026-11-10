@@ -1,4 +1,4 @@
-# PERSONAL OS — Núcleo de comportamiento (v2.0.0)
+# PERSONAL OS — Núcleo de comportamiento (v3.0.0)
 
 > Comportamiento SIEMPRE activo del asistente ejecutivo. Lo carga el hook `SessionStart`
 > (`scripts/session-init.js`) cuando `~/.claude/personal-os/state.flag` = `active`. Si = `paused`,

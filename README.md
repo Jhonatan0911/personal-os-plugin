@@ -12,7 +12,7 @@ No es un chat: es una red de seguridad operativa que corre sola al abrir sesión
 > brief
 ```
 
-**Versión 2.0.0** · [Novedades](CHANGELOG.md)
+**Versión 3.0.0** · [Novedades](CHANGELOG.md)
 
 ---
 
