@@ -223,7 +223,10 @@ def encontrar(rutas):
             vistos.append(p)
         else:
             vistos += sorted(s.parent for s in p.rglob("SKILL.md") if "node_modules" not in s.parts)
-    return vistos
+    unicos = {}
+    for v in vistos:  # la misma carpeta pasada dos veces no es un duplicado
+        unicos.setdefault(str(v.resolve()).lower(), v)
+    return list(unicos.values())
 
 
 def main():
