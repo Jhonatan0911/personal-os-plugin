@@ -67,6 +67,25 @@ tareas_externas: []                     # p. ej. un seguimiento en Excel compart
 #   reparto: { titulares: 2, backups: 2 }
 #   campo_inicio: null
 
+# seguimiento_equipo:                   # opcional; lo usa el brief para "hace cuánto no hay seguimiento"
+#   senales: ["comentario tuyo en una issue de la persona", "última reunión común", "trabajo conjunto en la bitácora"]
+#   umbrales_dias: { amarillo: 2, rojo: 4 }
+
+# azure_devops:                         # opcional; cola de PR informativa al final del brief (por correo)
+#   prioridad: baja
+#   fuente: correo
+#   remitente: "azuredevops@microsoft.com"
+#   grupo_revisor: '[<organizacion>]\<Grupo-de-revisores>'
+#   asuntos:
+#     creado: "created a new pull request"
+#     asignado: "was added as a reviewer"
+#     completado: "completed the pull request"
+#     pat_vencido: "personal access token has expired"
+
+# rutas:                                # opcional; por defecto dentro de la carpeta de estado
+#   borradores: "<stateDir>/personal/borradores"   # textos redactados por el OS pendientes de enviar
+#   perfil_voz: "<stateDir>/personal/voz.md"       # perfil de voz que aprende de lo que envías
+
 planeacion:
   capacidad_diaria: { lunes_a_jueves: 8, viernes: 8 }
   matriz_tiempos:                        # referencias cortas; la forma completa (niveles, familiaridad,

@@ -1,9 +1,9 @@
 ---
 name: brief-diario
-description: Genera el brief operativo del día. Abre con el vigía de compromisos, cruza punto por punto los alcances con fecha contra Jira y escribe el resultado en su nota, verifica cada pendiente contra su fuente (Jira, Outlook, Teams y las tareas externas configuradas) y entrega riesgos, vencidos y la prioridad #1. Úsala cuando el usuario diga "brief", "arranquemos el día", "qué tengo hoy" o al iniciar una sesión sin brief del día.
+description: Genera el brief operativo del día del Personal OS cruzando el estado local con Jira, Outlook, Teams y las fuentes externas configuradas, con cada pendiente verificado contra su fuente. Úsala cuando el usuario diga "brief", "arranquemos el día", "qué tengo hoy", "qué hay pendiente hoy" o al iniciar una sesión sin brief del día. No es para el tablero del equipo en la mesa de líderes (eso es status-celula) ni para retomar un proyecto (retomar).
 ---
 
-# Skill: brief-diario (v2.0.0)
+# Skill: brief-diario (v2.1.0)
 
 Genera el resumen operativo del día. Se ejecuta cuando el usuario lo pide («brief», «arranquemos el día»)
 o al inicio de una sesión si no ha habido brief hoy.
@@ -17,10 +17,13 @@ o al inicio de una sesión si no ha habido brief hoy.
 **Dónde está cada cosa.** `<stateDir>` es la carpeta de estado de `~/.claude/personal-os/config.json`.
 El estado son **notas-objeto**: una nota por objeto con frontmatter YAML, en
 `<stateDir>/riesgos/*.md`, `compromisos/*.md`, `decisiones/*.md`, `alcances/*.md` (y `personas/*.md`,
-`proyectos/*.md`). Ya no hay un `riesgos.md` ni un `compromisos.md` únicos: si los encuentras de una
-versión vieja, son históricos. Las integraciones están en `<stateDir>/config/fuentes.yaml`.
+`proyectos/*.md`). Si encuentras un `riesgos.md` o `compromisos.md` únicos de una versión vieja, son
+históricos. Las integraciones están en `<stateDir>/config/fuentes.yaml`.
 Los scripts se citan como `node "<raíz del plugin>/scripts/<script>.js"`; la raíz del plugin aparece en el
 contexto de la sesión en la línea **«Scripts del plugin:»** que inyecta el hook de arranque.
+
+**Lo opcional se activa por configuración.** Cada bloque marcado *(si hay …)* corre solo cuando su clave
+existe en `fuentes.yaml` o su carpeta existe en el estado. Si no existe, se omite sin avisar.
 
 ## Pasos
 
@@ -29,17 +32,16 @@ El hook de arranque deja en el contexto un bloque **`⚠️ VIGÍA DE COMPROMISO
 `alcances-scan.js` leyendo `alcances/` y `compromisos/`). Si no está en el contexto, córrelo a mano:
 `node "<raíz del plugin>/scripts/alcances-scan.js"`.
 - **Sus CRÍTICOS se atienden o se declara por escrito por qué no**: no se sigue con el brief por encima
-  de ellos. Un CRÍTICO típico es «alcance que NO se ha cruzado hoy»: eso es exactamente lo que resuelve el
-  paso 3 de esta skill.
-- Si el script ofrece el modo `--hitos`, su salida (hitos con el cliente que vencen hoy, mañana o ya
-  vencieron) alimenta la tabla de «vence hoy» del paso 6.
+  de ellos. Un CRÍTICO típico es «alcance que NO se ha cruzado hoy»: eso es lo que resuelve el paso 3.
+- Corre también `node "<raíz del plugin>/scripts/alcances-scan.js" --hitos`: sus hitos con el cliente
+  (vencidos, de hoy y de mañana) alimentan la tabla de «vence hoy» del paso 6.
 
 ### 1. Lee el estado actual (hilo principal: es barato y es la fuente de verdad)
 - `<stateDir>/tablero.md`, las notas **abiertas** de `riesgos/` y `compromisos/`, las decisiones recientes
   de `decisiones/`, las notas **activas** de `alcances/` (estado distinto de `cumplido`/`cancelado`) y los
   `proyectos/*.md` activos.
 - `config/fuentes.yaml`: `jira.*` (incluidas `consultas_extra` y `estados_que_parecen_cerrados`), `equipo:`,
-  `roles:` y `tareas_externas:`.
+  `seguimiento_equipo:`, `roles:`, `tareas_externas:` y, si están, `azure_devops:` y `rutas.borradores`.
 - **Arma la lista explícita de PENDIENTES a verificar**: compromisos abiertos, correos que el estado da por
   responder, riesgos con acción del usuario e issues a su nombre. Esa lista se les pasa a los subagentes
   para que cada pendiente **se verifique contra su fuente**, no solo se busquen cosas nuevas.
@@ -47,13 +49,18 @@ El hook de arranque deja en el contexto un bloque **`⚠️ VIGÍA DE COMPROMISO
   URL, una ruta o un JQL) y extrae **la lista de puntos con su clave de Jira**. Los puntos **no se copian a
   la nota**: se leen de la fuente cada vez. Si la fuente no se puede leer, el alcance se reporta «sin
   vigilancia hoy», no se reconstruye de memoria ni buscando en Jira por título.
+- *(si hay borradores)* Lee `rutas.borradores` (por defecto `<stateDir>/personal/borradores/`) y arma la
+  lista de los que tienen `estado: pendiente` (asunto + destinatarios). Son textos que el OS redactó y que
+  el usuario tenía que enviar: van a `brief-outlook` para cotejarlos contra Enviados (paso 4-bis).
 
 ### 2. Fan-out a fuentes (SOLO LECTURA): lanza los subagentes EN PARALELO
 Un solo mensaje con las llamadas a la herramienta Agent, **cada una con su `subagent_type` propio**:
-`brief-jira`, `brief-outlook` y `brief-teams` (los trae el plugin; si tu entorno los lista con el prefijo
-del plugin, p. ej. `personal-os:brief-jira`, usa ese nombre). Si hay `tareas_externas`, añade un cuarto
-subagente `general-purpose` para ellas. Lanza solo los de las fuentes que el usuario tiene conectadas
-(`m365.*` y `jira` en `fuentes.yaml`).
+`brief-jira`, `brief-outlook`, `brief-teams` y, si hay `tareas_externas`, `brief-pits` (si tu entorno los
+lista con el prefijo del plugin, p. ej. `personal-os:brief-jira`, usa ese nombre; si `brief-pits` no
+existe, usa `general-purpose` con las instrucciones de abajo). Lanza solo los de las fuentes conectadas
+(`m365.*` y `jira` en `fuentes.yaml`). Cada agente con nombre trae escritas las lecciones de su fuente
+(el JQL que miente, mirar Enviados y no la bandeja, que en Teams «sin hallazgos» no es «silencio probado»,
+que una hoja compartida puede estar sin guardar).
 
 A cada uno pásale: (a) su instrucción **y la lista de pendientes que le tocan**, (b) la ruta de
 `fuentes.yaml`, (c) la orden de **devolver únicamente un digest compacto**, (d) que es solo lectura y
@@ -61,20 +68,35 @@ A cada uno pásale: (a) su instrucción **y la lista de pendientes que le tocan*
 haga falta: mejor un seguimiento correcto que uno rápido.
 
 - **`brief-jira`**: los **puntos de cada alcance activo con su clave** (paso 1), los pendientes ligados a
-  Jira, las `consultas_extra` (aprobador, sin fecha, próximos a vencer) y, si hay `equipo:`, el barrido del
-  equipo a cargo. Devuelve el cruce de alcances con sus contadores, el inventario, la verificación de cada
-  pendiente (estado + último comentario como evidencia) y la lista por rol.
-- **`brief-outlook`**: los pendientes de correo (se verifican contra **Enviados** y el hilo completo, no
-  contra la bandeja), los entrantes nuevos que exigen acción y la agenda de hoy y mañana.
-- **`brief-teams`**: menciones y mensajes directos que siguen esperando al usuario, verificando antes si ya
-  respondió. «Sin hallazgos» no es «silencio probado».
-- **Tareas externas** (solo si `tareas_externas` no está vacío): lee cada fuente en SOLO LECTURA con el
-  conector que corresponda (una hoja de cálculo compartida, un tablero…), usando su `web_url`/`hoja`/
-  `columnas`. Filtra las filas donde el usuario es **responsable** o **líder** (`mi_nombre_en_fuente`).
-  Devuelve por tarea: `código (clave Jira si aplica) · cliente · descripción (≤ 10 palabras) · rol ·
-  fecha_límite · estado`. Si una hoja llega como texto aplanado, mapea **best-effort** y **declara los
-  huecos** (rol o columna indeterminable); no inventes. Jira gana el estado técnico; la fuente externa
-  aporta responsable, líder y dependencias.
+  Jira (estado actual + **último comentario** con fecha y autor como evidencia, y si hubo transición desde
+  el último brief), las `consultas_extra` (aprobador, sin fecha, próximos a vencer; cada issue con su rol) y,
+  si hay `equipo:` (leído del archivo, no de memoria), **el barrido del equipo a cargo**: por persona, qué
+  tiene en desarrollo, cuántas issues **esperan revisión del usuario** (con horas estimadas), hace cuánto
+  no le comenta una issue (o **nunca**), vencidas y sin fecha. Quien no tenga `account_id` se reporta como
+  **hueco de trazabilidad**, no se omite. Devuelve el cruce de alcances con sus contadores, el inventario
+  (máx. ~15 issues propias; di cuántas quedaron fuera), la verificación de cada pendiente y la lista por rol.
+- **`brief-outlook`**, tres tareas y una opcional:
+  1. **Verifica los pendientes de correo** contra **Enviados y el hilo completo**, no contra la bandeja: si
+     hay una respuesta del usuario posterior al compromiso, `RESPONDIDO` con `fecha + asunto` como evidencia.
+  2. Correos **nuevos** que exigen acción (solo si **no** tienen ya respuesta enviada) y la agenda de hoy y
+     mañana (`hora · título · ¿requiere preparación?`). Nada de cuerpos completos.
+  3. *(si hay borradores)* **Cotejo de borradores**: por cada borrador pendiente, busca en Enviados por
+     asunto y destinatario y devuelve `ENVIADO · fecha` **con el cuerpo textual completo** (única excepción
+     a «nada de cuerpos completos»: es el insumo del paso 4-bis) o `NO SALIÓ TODAVÍA` + el término buscado.
+  4. *(si hay `azure_devops:`)* **Cola de pull requests, vista informativa**: con los correos de
+     `azure_devops.remitente` de los últimos 5 días hábiles, un PR está abierto si tiene correo de
+     `asuntos.creado` (o de `asuntos.asignado` con el grupo `azure_devops.grupo_revisor`) y **no** tiene
+     correo de `asuntos.completado`. Por PR: `repo + número · título (≤ 8 palabras) · autor · rama origen → destino · abierto
+     desde · ABIERTO | COMPLETADO (por quién)`. Di siempre que es evidencia de correo, no verificación en
+     el repositorio. Trae aparte el conteo de avisos de `asuntos.pat_vencido` (token vencido o por vencer).
+- **`brief-teams`**: menciones y mensajes directos que siguen esperando al usuario, verificando antes en el
+  hilo si ya respondió. «Sin hallazgos» no es «silencio probado».
+- **`brief-pits`** *(si hay `tareas_externas`)*: lee cada fuente en SOLO LECTURA con el conector que
+  corresponda (una hoja de cálculo compartida, un tablero…), usando su `web_url`/`hoja`/`columnas`. Filtra
+  las filas donde el usuario es **responsable** o **líder** (`mi_nombre_en_fuente`). Devuelve por tarea:
+  `código (clave Jira si aplica) · cliente · descripción (≤ 10 palabras) · rol · fecha_límite · estado`.
+  Si la hoja llega como texto aplanado, mapea **best-effort** y **declara los huecos**; no inventes. Jira
+  gana el estado técnico; la fuente externa aporta responsable, líder y dependencias.
 
 Si un subagente no obtuvo respuesta de su fuente (MCP caído, sin permisos), que lo diga explícito en su
 digest. No inventes lo que no se leyó.
@@ -86,9 +108,8 @@ prometido, no la issue.** Reglas, sin excepción:
 
 1. **Se busca por clave, nunca por título.** Dos puntos fusionados en una sola issue suelen declararse en
    un comentario: un barrido por texto o por rango de claves los reporta «sin ticket» existiendo.
-2. **El `status` de Jira es la evidencia; el comentario del desarrollador no lo es.** Si difieren (el
-   comentario dice «hecho» y el estado no se movió), se dicen los dos: quien mire Jira el día de la entrega
-   solo ve el campo. Eso es una **brecha de estado**.
+2. **El `status` de Jira es la evidencia; el comentario del desarrollador no lo es.** Si difieren, se dicen
+   los dos: quien mire Jira el día de la entrega solo ve el campo. Eso es una **brecha de estado**.
 3. **Los estados de `jira.estados_que_parecen_cerrados` no son cierres** («Redefinido» y compañía). Jira
    los cuenta como hechos y desaparecen de todo filtro de pendientes: se listan aparte y con su nombre.
 4. **Punto sin issue, sin responsable o sin fecha = riesgo nivel 3 desde el día uno**, no al vencer. Crea
@@ -127,37 +148,67 @@ Recorre la lista de pendientes y clasifica cada uno:
 - **Anti-falso-positivo:** un pendiente de «responder X» NO sigue abierto solo porque el correo original
   esté en la bandeja; solo sigue abierto si **no** hay respuesta enviada posterior.
 
+### 4-bis. Aprende de lo que el usuario cambió *(si hay borradores)*
+Es la forma que tiene el sistema de seguir aprendiendo su voz, y no depende de que corrija nada: depende de
+lo que mandó. Para cada borrador que salió:
+- **Compara palabra por palabra** el borrador guardado con lo que de verdad envió: lo que **quitó** (sobra
+  en su voz), lo que **añadió** (falta en el perfil), lo que **reordenó** y lo que **cambió de registro**.
+- **Si hay diferencias con sentido**, anexa una lección a «Lecciones aprendidas» del perfil de voz
+  (`rutas.perfil_voz`, por defecto `<stateDir>/personal/voz.md`): fecha, **el antes, el después y la regla
+  que se deduce**. Sin las dos versiones citadas la lección no vale, porque no se puede auditar.
+- **Si lo mandó tal cual**, no anexes nada: anótalo como acierto en el frontmatter del borrador.
+- Marca el borrador `estado: verificado` con `verificado_el` y un resumen de `diferencias`. Los que lleven
+  más de 30 días verificados se borran; lo que valía ya vive como lección.
+- **Un borrador que sigue `pendiente` varios días es un dato del brief**: un texto que se redactó y nunca
+  salió. Repórtalo con los compromisos de correo.
+- **Techo:** ninguna regla del perfil se reescribe por una sola diferencia. Cambia cuando el mismo patrón
+  aparece **tres veces** o cuando el usuario lo pide.
+
 ### 5. Cruza y detecta (ya con el seguimiento verificado)
 - Riesgos abiertos → sube el nivel de escalamiento si reaparecen sin atención desde el último brief.
 - Tareas vencidas o que vencen hoy (incluye las de tareas externas y las de Jira **sin fecha** o
   **próximas a vencer**).
 - Compromisos que **siguen** esperando respuesta (los cumplidos ya salieron en el paso 4).
 - **Por rol** (`roles` de `fuentes.yaml`): separa lo que EJECUTAS (responsable) de lo que SUPERVISAS
-  (líder) y de lo que APRUEBAS (visto bueno pendiente, regla de 5 minutos). No cuentes la supervisión como
-  ejecución propia.
-- **Equipo a cargo** (si hay `equipo:`): por persona, trabajo ejecutable hoy, vencidas, lo que espera tu
-  revisión y hace cuánto no hay seguimiento. **El trabajo terminado que espera tu revisión es tu cuello
-  de botella**, no falta de capacidad del equipo. Si las reuniones de seguimiento del equipo aparecen
-  canceladas varios días seguidos, el canal formal está apagado: eso es causa raíz, no un dato de color.
+  (líder) y de lo que APRUEBAS (visto bueno pendiente, regla de 5 minutos).
+- **Equipo a cargo** (si hay `equipo:`): por persona, **hace cuánto no hay seguimiento**: lo más reciente
+  entre tu último comentario en una issue suya, la última reunión común y el trabajo conjunto que registra
+  la bitácora (umbrales en `seguimiento_equipo.umbrales_dias`). Dos cosas que no se suavizan: (a) **el
+  trabajo terminado que espera tu revisión es tu cuello de botella**, no falta de capacidad del equipo; (b)
+  si las reuniones de seguimiento aparecen **canceladas varios días seguidos**, el canal formal está apagado
+  y esa es la causa raíz. El calendario subestima: la bitácora también cuenta como señal.
 - Conflictos de prioridad (nunca aceptar dos «#1»).
 
 ### 6. Entrega el brief (conciso, ejecutivo). El orden no se negocia
-1. **Vigía de compromisos y alcances**: abre el brief, **antes de los riesgos y de la #1**. Por cada
-   alcance activo: días hábiles a la entrega, el resultado del cruce de hoy (contadores), los puntos
-   huérfanos, los de estado engañoso (con el nombre del estado), las brechas de estado (status y comentario,
-   los dos) y los bloqueos (desde cuándo y a quién). **Si todos sus puntos están sanos y sin movimiento,
-   va comprimido a 2-3 líneas**: un alcance quieto no puede ocupar la cabecera día tras día.
-2. **Equipo** (solo si eres líder): quien se queda con 0-1 tareas ejecutables hoy, vencidas del equipo y
-   lo detenido esperando tu revisión. Los integrantes nuevos primero.
-3. **Vence hoy o está vencido**, de cualquier frente, incluidos los hitos con el cliente de hoy. La **#1
-   del día** sale de esta tabla antes que de lo interno.
+Empieza por la gente: un alcance en QA no se mueve durante el día, pero una persona sin trabajo pierde el
+día entero. Si el usuario no lidera equipo, el bloque 1 se omite.
+
+1. **Equipo** *(si hay `equipo:`)*, con nombre propio:
+   - **¿Tiene trabajo vivo?** Cuenta solo lo que puede ejecutar hoy (sin iniciar, en desarrollo, en
+     análisis). **Lo que está en revisión no es trabajo suyo: es cola del líder.** Quien queda con 0-1
+     tareas ejecutables **va arriba del todo**: mañana no tiene qué hacer y eso es responsabilidad del líder.
+   - **Vencidas y vence hoy**, con días de atraso y cuántos días lleva la issue sin actualizarse. Una tarea
+     sin iniciar y vencida de alguien sin seguimiento es el peor caso: se nombra primero.
+   - **Cuánto trabajo suyo espera tu revisión**, en horas estimadas, no solo en cantidad.
+   - **Integrantes nuevos primero**: son los que menos levantan la mano.
+2. **Vigía de compromisos y alcances**, antes de los riesgos y de la #1. Por cada alcance activo: días
+   hábiles a la entrega, el resultado del cruce de hoy (contadores), los puntos huérfanos, los de estado
+   engañoso (con el nombre del estado), las brechas de estado (status y comentario, los dos) y los bloqueos
+   (desde cuándo y a quién). **Si todos sus puntos están en QA, sanos o en manos de un tercero, va
+   comprimido a 2-3 líneas**: solo lo que cambió desde ayer y lo que sigue sin dueño.
+3. **Vence hoy o está vencido**, de cualquier frente. Arranca con los hitos de `alcances-scan.js --hitos`
+   y lista **uno por uno los puntos de la agenda que el usuario dictó para hoy** (los compromisos con
+   `fecha_limite` de hoy) con su estado. Un hito de un alcance incumplido sigue siendo de hoy: no se
+   degrada. **La #1 del día sale de esta tabla antes que de lo interno.**
 4. **Prioridad #1 vigente.**
 5. **Seguimiento verificado**: qué se cerró hoy con evidencia (y cuál) y qué sigue realmente pendiente.
 6. **Riesgos abiertos** con su nivel y una mitigación propuesta por cada uno.
 7. **Sin fecha** (riesgo silencioso) · **esperando mi aprobación** · compromisos pendientes de respuesta.
 8. **Foco recomendado** para el día; la decisión es del usuario.
-9. **Fuentes que no respondieron** o huecos declarados (tareas externas, Teams no exhaustivo…): dilo aquí,
-   no lo escondas.
+9. **Fuentes que no respondieron** o huecos declarados (tareas externas, Teams no exhaustivo…).
+10. *(si hay `azure_devops:`)* **Cola de PR, al final, sin rojos ni umbrales**: si los revisores son un
+    grupo sin dueños fijos por repositorio, un PR abierto no es un incumplimiento del usuario ni compite
+    por la #1. Un nombre de rama fuera de la convención se menciona como dato útil, no como alerta.
 
 ### 7. Cierra el loop
 Pregunta con `AskUserQuestion` (2-4 opciones, la recomendada primero) qué prioriza hoy. Registra su
