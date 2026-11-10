@@ -1,0 +1,114 @@
+{
+  "organizacion": "Mi Empresa S.A.S.",
+  "persona": { "nombre": "Nombre Apellido", "identificacion": "<tu documento>", "nombreCorto": "Nombre" },
+
+  "rutas": {
+    "base": "/ruta/a/la/carpeta/del/timesheet",
+    "bitacora": null,
+    "variablesEntorno": { "base": null, "bitacora": null },
+    "plantilla": "formatos/plantilla-timesheet.xlsx",
+    "libros": "timesheet",
+    "carpetaMes": "{lunes:%Y-%m}",
+    "archivoSemana": "Timesheet {lunes:%Y-%m-%d} al {viernes:%Y-%m-%d}.xlsx",
+    "envio": "envio"
+  },
+
+  "libro": {
+    "hoja": "Timesheet Semanal",
+    "dias": 5,
+    "primeraFila": 6,
+    "filasPorDia": 8,
+    "maxFilasPorDia": 20,
+    "filaTotal": 47,
+    "columnas": { "fecha": 1, "cliente": 2, "categoria": 3, "jira": 4, "tarea": 5, "desde": 6,
+                  "hasta": 7, "asignadas": 8, "ejecutadas": 9, "observaciones": 10 },
+    "celdas": { "nombre": "B1", "identificacion": "B2", "desde": "G1", "hasta": "I1" },
+    "etiquetaTotal": "TOTAL SEMANA",
+    "marcaTotal": "TOTAL",
+    "hojaParametros": "parametriza",
+    "columnaParametros": 2,
+    "formatoFecha": "dd/mm/yyyy"
+  },
+
+  "jornada": {
+    "lun": [["08:00", "12:00"], ["13:00", "17:00"]],
+    "mar": [["08:00", "12:00"], ["13:00", "17:00"]],
+    "mie": [["08:00", "12:00"], ["13:00", "17:00"]],
+    "jue": [["08:00", "12:00"], ["13:00", "17:00"]],
+    "vie": [["08:00", "12:00"], ["13:00", "16:00"]]
+  },
+  "almuerzo": ["12:00", "13:00"],
+  "utcOffsetHoras": -5,
+  "cubreMin": 0.5,
+
+  "categorias": ["Reuniones", "Reunión de seguimiento", "Planning", "Análisis", "Desarrollo",
+                 "Revisión técnica", "Pruebas (QA)", "Soporte", "Gestión del proyecto", "Otros"],
+  "guiaCategorias": {
+    "Reuniones": "Residual: comunicación general de la organización o reunión con el cliente que no es de seguimiento.",
+    "Reunión de seguimiento": "Seguimiento de avance con el equipo o con el cliente.",
+    "Planning": "Estimación de horas.",
+    "Otros": "Lo que no cabe en ninguna otra. Debe ser excepcional."
+  },
+  "aliasCategorias": { "Daily": "Reuniones", "Estimación": "Planning", "Revisión de código": "Revisión técnica" },
+  "notasAlias": {},
+  "categoriasLider": ["Planning", "Gestión del proyecto", "Reunión de seguimiento"],
+  "categoriasSinIssue": ["Otros", "Reuniones"],
+  "categoriasReunion": ["Reuniones", "Reunión de seguimiento"],
+  "reunionesExigenIssueDesde": null,
+
+  "clientes": ["Cliente A", "Cliente B", "Interno"],
+  "clienteInterno": "Interno",
+  "guiaClientes": "Cliente A para el proyecto X; Interno para lo que no se factura a nadie.",
+  "clientesRelleno": ["-", "--", "n/a", "na", "n.a.", "ninguno", "sin cliente", "varios", "?", "."],
+  "marcas": { "extra": "Horas extra", "extendida": "Jornada extendida", "sinIssue": "Sin issue" },
+  "formatoClave": "^[A-Z]{2,10}-\\d+$",
+
+  "cobertura": { "minimo": 90.0, "vigenteDesde": null, "nota": "null = la regla solo avisa; con una fecha, bloquea desde ese día." },
+
+  "planeacionInicial": null,
+  "reuniones": {
+    "orden": "1) la issue del proyecto que se trató; 2) la tarea de ceremonias recurrentes del mes; 3) una tarea de reuniones nueva (se crea solo con el OK del usuario, estimación = duración agendada).",
+    "jql": "project = PROY AND issuetype = Reuniones AND assignee = currentUser() AND duedate >= \"<DIA>\""
+  },
+  "equipo": {
+    "obligatorio": false,
+    "asuntoContiene": "Timesheet",
+    "remitentes": ["<correo de Persona 1>", "<correo de Persona 2>"],
+    "menciones": ["con el líder", "<tu nombre>"],
+    "excluir": ["en espera de asignación"]
+  },
+  "excluir": ["proyectos personales", "estudios"],
+  "ejemplosRedaccion": [],
+  "insumosExternos": "Los insumos que llegan de fuera (planillas, exportes) se guardan en <base>/archivos externos/<origen>/.",
+
+  "envio": {
+    "nombreArchivo": "Timesheet {nombre}-{fecha:%d-%m-%Y}.xlsx",
+    "asunto": "Timesheet {nombre} {fecha:%d/%m/%Y}",
+    "asuntoUltimoDia": "Timesheet {nombre} semana {lunes:%d/%m/%Y} al {viernes:%d/%m/%Y} (total de la semana)",
+    "asuntoSet": "Timesheet {fecha:%d/%m/%Y}",
+    "destinatarios": "Para: <jefe directo> | CC: <coordinador>",
+    "reglas": ["Envío diario al final de la jornada.", "Archivo acumulativo de la semana."]
+  },
+  "citas": {},
+  "borrador": { "archivo": "timesheet-borrador-{fecha:%Y-%m-%d}.json" },
+
+  "horasExtra": {
+    "carpeta": "horas extra",
+    "archivo": "Horas extra - {nombre} - corte {corte}{mes} {anio}.xlsx",
+    "patronPlantilla": "Horas extra - *.xlsx",
+    "filas": [11, 21],
+    "columnas": { "fecha": "A", "desde": "B", "hasta": "C", "ed": "D", "en": "E", "edf": "F", "enf": "G", "obs": "J" },
+    "columnasLimpiar": "ABCDEFGHIJKL",
+    "columnasOrden": "ABCDEFGHIJL",
+    "columnasHorasLimpiar": "DEFGHI",
+    "columnasSuma": "DEFG",
+    "celdaNovedades": "A23",
+    "cortes": [{ "hasta": 15, "nombre": "15" }, { "hasta": 31, "nombre": "fin" }],
+    "diurna": ["06:00", "19:00"],
+    "codigosProhibidos": "\\b[A-Z][A-Z0-9]{1,9}-\\d+",
+    "radicarA": "",
+    "festivos": [],
+    "politica": "Cuándo y a quién se radican las horas extra en tu organización."
+  },
+  "notas": []
+}

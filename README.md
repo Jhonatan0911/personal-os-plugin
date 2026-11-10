@@ -133,7 +133,7 @@ timesheet, la planeación de sprint y los recordatorios de Windows.
 | `/consola` | Regenera la consola neuronal (vista HTML local del estado) |
 | `/quien` | Quién sabe de qué, quién está libre, qué hacía cada quien |
 | `/status-celula` | Tablero del equipo con cronograma de ocupación (Gantt) |
-| `/timesheet` | Arma el timesheet desde las líneas `TS` y lo exporta (nunca lo envía) |
+| `/timesheet` | Arma el timesheet desde las líneas `TS` y lo exporta; con un perfil de organización, en el libro semanal de la plantilla corporativa y con horas extra por corte (nunca lo envía) |
 | `/exigencia` | Ve o cambia el dial: fácil · normal · estricto · cuartel |
 | `/os-setup` | Configuración inicial (idempotente: nunca pisa nada) |
 | `/os-on` · `/os-off` | Reactiva / pausa el OS en todas tus sesiones (pausa con doble confirmación) |
