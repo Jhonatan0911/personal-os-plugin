@@ -54,7 +54,10 @@ const vacio = (v) => !txt(v) || /^(null|~|none|-)$/i.test(txt(v));
 
 // ---------------------------------------------------------------- 0. LAYOUT
 
-const rutaLayoutUsuario = path.join(STATE, 'config', 'consola-layout.json');
+// --config-dir <ruta>: carpeta de configuración del usuario si no vive en <stateDir>/config
+// (instalaciones anteriores al plugin la tienen junto al estado, no dentro).
+const CONFIG_DIR = comun.arg('--config-dir', null) ? path.resolve(comun.arg('--config-dir', null)) : path.join(STATE, 'config');
+const rutaLayoutUsuario = path.join(CONFIG_DIR, 'consola-layout.json');
 const rutaLayoutPlugin = path.join(comun.PLUGIN_ROOT, 'plantillas', 'consola-layout.json');
 let LAYOUT = null;
 if (fs.existsSync(rutaLayoutUsuario)) {
@@ -281,6 +284,45 @@ for (const nota of leerNotas('alcances')) {
   });
 }
 
+// --- pendientes personales (opcional): bloques YAML `- id: P-<PREFIJO>-<n>` dentro de los .md de
+//     <stateDir>/personal/. Solo corre si el layout declara `prefijo_item_a_nodo` (P-<PREFIJO> -> nodo).
+//     Es la vista de los proyectos personales del usuario (scope "personal" del layout).
+function bloquesP(texto) {
+  const regs = [];
+  let actual = null, abierta = null;
+  for (const linea of String(texto).split(/\r?\n/)) {
+    if (/^```/.test(linea)) continue;
+    const nuevo = linea.match(/^- id: (P-[A-Z]+-\d+)\s*$/);
+    if (nuevo) { actual = { id: nuevo[1], campos: {} }; regs.push(actual); abierta = null; continue; }
+    if (!actual) continue;
+    const kv = linea.match(/^ {2}([a-z_0-9]+):\s?(.*)$/);
+    if (kv) { abierta = kv[1] in actual.campos ? null : kv[1]; if (abierta) actual.campos[abierta] = kv[2]; continue; }
+    if (abierta && linea.trim()) actual.campos[abierta] += ' ' + linea.trim();
+  }
+  return regs;
+}
+const limpiarP = (v) => String(v || '').replace(/^"(.*)"$/s, '$1').replace(/\s+/g, ' ').trim();
+const PREF = LAYOUT.prefijo_item_a_nodo || null;
+const dirPersonal = path.join(STATE, 'personal');
+if (PREF && fs.existsSync(dirPersonal)) {
+  for (const archivo of fs.readdirSync(dirPersonal)) {
+    if (!archivo.endsWith('.md')) continue;
+    const texto = comun.leerTexto(path.join(dirPersonal, archivo), '');
+    for (const r of bloquesP(texto)) {
+      const c = r.campos;
+      const nodo = PREF[r.id.split('-')[1]];
+      if (!nodo || !byId[nodo]) { aviso(`${r.id} de personal/${archivo} no resuelve a un nodo (prefijo_item_a_nodo), se omite`); continue; }
+      if (/^(hecho|cerrado|resuelto|cumplido)/i.test(limpiarP(c.estado))) continue;
+      ITEMS.push({
+        id: r.id, cli: nodo, clase: 'personal', nivel: Math.min(3, Math.max(1, Number(limpiarP(c.nivel)) || 1)),
+        estado: limpiarP(c.siguiente_paso) === 'true' ? 'siguiente' : estadoCorto(limpiarP(c.estado)),
+        tag: limpiarP(c.titulo).slice(0, 34) || 'pendiente',
+        label: limpiarP(c.detalle) || limpiarP(c.titulo) || '(sin detalle)',
+      });
+    }
+  }
+}
+
 if (sinNodo.length) {
   aviso(`notas sin nodo propio en el layout (añade su proyecto a mapa_proyecto_a_nodo): ${sinNodo.join(', ')}`);
 }
@@ -368,7 +410,7 @@ const salidaDatos =
   `window.ESTADO = ${JSON.stringify(datos, null, 1)};\n`;
 
 // Plantilla: la del usuario (config/consola.html) si decidió personalizarla; si no, la del plugin.
-const rutaPlantillaUsuario = path.join(STATE, 'config', 'consola.html');
+const rutaPlantillaUsuario = path.join(CONFIG_DIR, 'consola.html');
 const rutaPlantillaPlugin = path.join(comun.PLUGIN_ROOT, 'plantillas', 'consola.html');
 const plantilla = comun.leerTexto(rutaPlantillaUsuario, null) || comun.leerTexto(rutaPlantillaPlugin, null);
 if (!plantilla) {

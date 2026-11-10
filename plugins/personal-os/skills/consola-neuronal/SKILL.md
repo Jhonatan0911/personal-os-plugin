@@ -39,7 +39,12 @@ mismo revise, nunca un enlace.
   ficticios "Cliente A", "Cliente B", "PROY"…) y lo avisa: propón al usuario copiarlo a su `config/` y
   poner ahí sus proyectos. Convención: laboral a la DERECHA, personal a la IZQUIERDA, núcleo al centro.
 - **Diseño personalizado (opcional):** si existe `<stateDir>/config/consola.html`, el build la usa en
-  lugar de la plantilla del plugin.
+  lugar de la plantilla del plugin. Si tu configuración vive fuera del estado, pásala con
+  `--config-dir <ruta>` (layout y plantilla se leen de ahí).
+- **Pendientes personales (opcional):** si el layout declara `prefijo_item_a_nodo` (p. ej. `"BOT": "bot"`),
+  el build lee los bloques `- id: P-<PREFIJO>-<n>` de `<stateDir>/personal/*.md` (campos `titulo`,
+  `detalle`, `nivel`, `estado`, `siguiente_paso`) y los cuelga del nodo personal correspondiente.
+  Así se ven los proyectos personales junto a los laborales; el toggle de ámbito los separa.
 - Consola oscura a propósito (es una pantalla, no un documento). Respeta `prefers-reduced-motion`.
 - El pie dice **siempre de qué día son los datos** y avisa en naranja si no son de hoy.
 
