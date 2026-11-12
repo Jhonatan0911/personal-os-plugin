@@ -159,10 +159,10 @@ analista y el botón «Actualizar requerimiento».
     refutador) va en `obs_tecnica`; lo de confianza baja se menciona en `obs` como riesgo en palabras
     («podría subir a 5 h si…»), no se esconde.
   - Mal: «Sin matriz (endpoint_nuevo sin cifra) · 1,5 h senior × 1,6 ≈ 2,5 h · confianza media.»
-    Bien: «Qué hace: el servicio que guarda a un paciente en la lista; antes valida que el CUPS esté
-    habilitado, que no tenga otro registro activo del mismo CUPS y que traiga celular; calcula el
-    vencimiento en días hábiles y deja listo el SMS de ingreso. · Horas: 2,5 h, servicio nuevo con sus
-    reglas. · Lo usa: la card de registro en Acceso.»
+    Bien: «Qué hace: el servicio que guarda una solicitud nueva; antes valida que el servicio pedido esté
+    habilitado, que el cliente no tenga otra solicitud activa del mismo servicio y que traiga un teléfono;
+    calcula el vencimiento en días hábiles y deja lista la notificación. · Horas: 2,5 h, servicio nuevo con
+    sus reglas. · Lo usa: el formulario de registro de la pantalla principal.»
   - El generador avisa por cada `obs` que no empiece con «Qué hace:»: corrígelas antes de publicar.
 - **Responsable por subtarea:** por defecto el dueño del cronograma; la de otra persona (soporte, por
   ejemplo) no suma a su carga y al exportar sale asignada a ella (accountId de `equipo` o buscado en Jira
