@@ -1,5 +1,10 @@
 # Changelog
 
+## 3.2.1
+
+- **migrar-ramas** y **redactar** vuelven a dispararse solas: su descripción tenía «: » sin comillas, el
+  encabezado YAML no se podía leer y Claude Code no sabía cuándo usarlas.
+
 ## 3.2.0
 
 El tablero de planeación de la célula sale de la skill, y seis herramientas del líder entran al plugin,

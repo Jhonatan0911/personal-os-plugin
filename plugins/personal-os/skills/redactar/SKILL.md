@@ -1,6 +1,6 @@
 ---
 name: redactar
-description: Redacta en la voz real del usuario cualquier texto que salga a su nombre — correos, comentarios de Jira, mensajes, anuncios — a partir de su perfil de voz, destilado de lo que él mismo ha enviado. Si el usuario todavía no tiene perfil, le ayuda a armarlo desde sus enviados. Úsala cuando digan "redáctame", "escríbele a", "contéstale a", "arma el correo para", "deja el comentario en Jira", "que suene a mí" o haya que escribir algo que él va a firmar sin que suene a IA genérica. Nunca envía: entrega el texto y él lo manda. No es para redactar en lote los correos pendientes del brief (agente redactor-correos) ni documentos largos.
+description: Redacta en la voz real del usuario cualquier texto que salga a su nombre — correos, comentarios de Jira, mensajes, anuncios — a partir de su perfil de voz, destilado de lo que él mismo ha enviado. Si el usuario todavía no tiene perfil, le ayuda a armarlo desde sus enviados. Úsala cuando digan "redáctame", "escríbele a", "contéstale a", "arma el correo para", "deja el comentario en Jira", "que suene a mí" o haya que escribir algo que él va a firmar sin que suene a IA genérica. Nunca envía; entrega el texto y él lo manda. No es para redactar en lote los correos pendientes del brief (agente redactor-correos) ni documentos largos.
 argument-hint: "[qué hay que escribir y a quién]"
 ---
 
