@@ -1,5 +1,14 @@
 # Changelog
 
+## 3.2.2
+
+- **planear-sprint** estima horas de atención cuando la matriz trae `factor_atencion_aplicado`: la generación
+  del agente es tiempo de máquina, las cifras no se vuelven a multiplicar ni se suben por legado (eso va en
+  `rango`) y la revisión y las pruebas no se recortan.
+- **planear-sprint** planea varios frentes en paralelo por dev (`planeacion.frentes_paralelos`, por defecto 3):
+  nunca propone dedicación exclusiva ni dice que un frente le quita horas a otro.
+- Las referencias de tamaño salen siempre de la matriz, no del texto de la skill.
+
 ## 3.2.1
 
 - **migrar-ramas** y **redactar** vuelven a dispararse solas: su descripción tenía «: » sin comillas, el

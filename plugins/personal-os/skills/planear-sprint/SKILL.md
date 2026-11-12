@@ -23,6 +23,13 @@ ejemplos, referencias) están en `${CLAUDE_SKILL_DIR}`. Los scripts del plugin s
   un buen prompt, revisa, ajusta a los patrones del proyecto y prueba). **Apretada y sin colchón**: ni «a
   mano» ni «la IA lo hace sola»; estimar a mano dio más del doble de lo que luego se aceptó. La cifra
   final la pone el líder.
+- **Horas de atención, no de escritura** (si la matriz trae `factor_atencion_aplicado`): sus cifras ya son
+  las horas del dev para encargar, revisar, ajustar y probar; la generación la hace el agente en tiempo de
+  máquina y no se cuenta. No se vuelven a multiplicar ni se suben «por legado» (esa incertidumbre va en
+  `rango` y en la observación). La revisión y las pruebas no se recortan.
+- **Varios frentes en paralelo**: un dev lleva hasta `planeacion.frentes_paralelos` frentes a la vez (por
+  defecto 3, con varias sesiones de IA). Nunca se propone dedicación exclusiva ni se dice que un frente le
+  «quita» horas a otro: solo se cuida que la suma de atención del día no pase de la capacidad.
 - **La fuente de cifras es la matriz de tiempos.** Si el tipo no existe o tiene `base: null`, se estima
   con criterio, se marca **«sin matriz»** y se reporta para que el líder la fije. Nunca una cifra inventada.
 - **Lo que el cliente no aprobó** (nuevo, o con otra versión distinta a la historia) se estima pero queda
@@ -48,9 +55,9 @@ ejemplos, referencias) están en `${CLAUDE_SKILL_DIR}`. Los scripts del plugin s
 1. Lee `fuentes.yaml` (`jira`, `equipo`, `m365`, `planeacion`). Claves, valores por defecto y perfiles:
    `references/configuracion.md`.
 2. **Matriz:** `planeacion.matriz_archivo` → `planeacion.matriz_tiempos` con tipos → la de ejemplo del
-   plugin (`matriz-tiempos-ejemplo.yaml`), y en ese caso **dilo** en el resumen. Referencias base:
-   componente nuevo con lógica ≈ 1,5-3 h; mostrar un dato ya calculado ≤ 1 h; traslado o refactor ≈ −30 %
-   frente a la cifra a mano.
+   plugin (`matriz-tiempos-ejemplo.yaml`), y en ese caso **dilo** en el resumen. Las referencias de
+   tamaño salen **siempre de la matriz**, nunca de este texto; si trae `factor_atencion_aplicado`, dilo
+   («horas de atención ×<factor>»).
 3. **Propuesta de calibración pendiente:** si `<mineria_dir>/propuesta-matriz.md` es más nueva que la
    matriz, muéstrale al líder en 3-5 líneas qué tipos propone ajustar o crear y pregunta si los aplica
    antes de estimar (`references/calibracion.md`). Sin su OK la matriz no cambia.
@@ -131,11 +138,14 @@ analista y el botón «Actualizar requerimiento».
 - **Fechas:** secuencia por dependencias desde la tarea base; carga diaria ≤ capacidad de desarrollo
   (por defecto 7,5 h de lunes a jueves y 7 h el viernes: el resto es daily, reuniones y soporte); sin
   festivos. Lo pendiente no lleva fecha. Las horas de cada tarea no se inflan por esto. Las subtareas
-  arrancan en el primer día hábil disponible, aunque el sprint ya haya empezado.
+  arrancan en el primer día hábil disponible, aunque el sprint ya haya empezado. La capacidad es de
+  atención y se comparte entre los frentes del dev: otro frente activo no corre este plan si la suma del
+  día cabe.
 - **Línea fija de revisión y pruebas** por historia con lógica (tipo `prueba_funcional_logica`): revisar
   lo que generó la IA cuesta, y DORA muestra que sin esa revisión cae la estabilidad. Va al final del sprint.
-- **Legado e integración no se descuentan por IA**: en repos maduros y conocidos la IA no aceleró
-  (METR). El descuento de copiloto aplica a lo nuevo y acotado (formularios, CRUD, pruebas, traslados).
+- **Legado e integración**: en repos maduros la IA acelera menos (METR). Con una matriz sin
+  `factor_atencion_aplicado`, el descuento de copiloto aplica solo a lo nuevo y acotado. Con factor de
+  atención, la cifra de la matriz manda y el riesgo de legado se expresa en `rango`, no subiendo la base.
 - **Segunda estimación independiente:** además de la suma por matriz (abajo-arriba), estima cada historia
   completa por analogía con una ya hecha (arriba-abajo). Si difieren más de 30 %, revísalo antes de seguir.
 - Cada subtarea dice en su observación el tipo, la cantidad y la **confianza** (alta si el tipo está
@@ -224,6 +234,8 @@ de los mineros, página del catálogo y Monte Carlo: `references/calibracion.md`
 
 - Buscar la rama en el remoto equivocado y afirmar que no existía: vivía en el proyecto de otro cliente.
 - Estimar «a mano»: dio más del doble de lo que se aceptó con copiloto.
+- Decir que un frente nuevo le «quita» horas al plan de un dev, como si trabajara una cosa a la vez: los
+  devs con IA llevan varios frentes en paralelo y la gerencia lo leyó como sobreestimación.
 - Llamar «diferente» a algo que solo el mockup muestra resumido.
 - Dejar en propuesta lo que la historia de Jira no pide (solo estaba en la especificación).
 - Editar directamente datos que el almacén de la página entrega congelados: se clonan antes de editar.

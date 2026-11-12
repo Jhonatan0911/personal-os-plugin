@@ -13,6 +13,7 @@ de organización o de marca.
 | `m365.outlook` | Si hay correo para buscar respuestas y bloqueos | Sin correo: solo Jira |
 | `rutas.perfil_voz` | Voz del usuario para el borrador del correo de escalada | Redacción neutra |
 | `planeacion.capacidad_diaria` | Horas de desarrollo por día para poner fechas | 7,5 h lunes a jueves, 7 h viernes |
+| `planeacion.frentes_paralelos` | Frentes que un dev lleva a la vez con varias sesiones de IA (la capacidad del día se comparte entre ellos) | 3 |
 | `planeacion.matriz_archivo` | Ruta a un YAML de matriz completo (forma de `matriz-tiempos-ejemplo.yaml`) | `<stateDir>/config/estimaciones/matriz-tiempos.yaml` si existe |
 | `planeacion.matriz_tiempos` | Matriz en línea (referencias cortas o tipos con `base`) | — |
 | `planeacion.niveles` | Nombres de nivel válidos | Los de la matriz |
