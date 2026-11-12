@@ -8,6 +8,8 @@
 - **planear-sprint** planea varios frentes en paralelo por dev (`planeacion.frentes_paralelos`, por defecto 3):
   nunca propone dedicación exclusiva ni dice que un frente le quita horas a otro.
 - Las referencias de tamaño salen siempre de la matriz, no del texto de la skill.
+- La matriz por defecto (`matriz-tiempos-ejemplo.yaml`) pasa a ser la del autor: 28 tipos con cifras de
+  planeaciones reales, ya en horas de atención (×0,5). Sin datos de personas ni de clientes: ajústala a tu equipo.
 
 ## 3.2.1
 

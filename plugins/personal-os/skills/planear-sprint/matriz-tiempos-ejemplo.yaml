@@ -1,110 +1,197 @@
-# Matriz de tiempos POR DEFECTO de planear-sprint.
+# Matriz de tiempos de referencia del plugin: la del autor, publicada como punto de partida.
+# Úsala tal cual o cópiala a planeacion.matriz_archivo y AJÚSTALA a tu equipo: son cifras reales de
+# una célula de desarrollo de software de salud, no una verdad universal.
 #
-# Se usa solo cuando <stateDir>/config/fuentes.yaml → planeacion.matriz_tiempos no trae tipos con `base`.
-# Cópiala a esa sección y ajústala con tus datos: estas cifras son un punto de partida, no una verdad.
+# Matriz de tiempos de desarrollo — fuente única para estimar (D-050)
 #
-# Base: desarrollador SENIOR que trabaja con un asistente de IA como copiloto. Es el autor principal:
-# entiende qué va a hacer, escribe un buen prompt, revisa, adapta a los patrones del proyecto y prueba.
-# Sin colchón: la incertidumbre se expresa con `rango`, no inflando la base. La cifra final la pone el líder.
+# Base: desarrollador SENIOR que trabaja con Claude Code como copiloto (es el autor principal: entiende
+# qué va a hacer, escribe un buen prompt, revisa, adapta a los patrones del proyecto y prueba).
+# Las cifras salen de planeaciones reales aceptadas por Jhonatan; cada tipo dice de dónde salió.
+# Sin colchón. La cifra final siempre la pone el líder.
 #
-# Uso: horas = (base + unidad_horas × cantidad) × factor_nivel × factor_familiaridad, redondeo a 0,5 h.
-# `calibrado: false` = cifra de referencia sin contraste con horas reales todavía.
+# Uso: horas = base (o base + unidad × cantidad) × factor_nivel × factor_familiaridad
+# Los tipos se alimentan solos con el minero nocturno (automation/minero-estimaciones): muestras reales
+# de tareas pasadas + horas de los timesheets → propuesta de ajuste que aprueba Jhonatan.
+# `rango` = [optimista, pesimista] para cuando haya incertidumbre; el plan usa `base`.
+# `calibrado: false` = cifra del líder sin contraste con horas reales todavía.
+# La calibración (estimado vs real) se anota en estado/estimaciones/calibracion.md y, cuando un tipo
+# acumula 3 o más muestras con desvío consistente, se ajusta aquí con la fecha y el porqué.
 
-version: 1
+version: 2
+actualizado: 2026-11-12
+# D-057 (12/11/2026, Jhonatan, exigido por gerencia): se estiman SOLO las horas de atención del dev
+# (encargo, revisión, ajuste y prueba); la generación es tiempo de máquina. Todas las cifras de `tipos`
+# (base, unidad_horas y rango) quedaron ×0,5. No volver a multiplicar. Cada dev lleva hasta 3 frentes
+# en paralelo: solo se cuida que la atención del día no pase de capacidad_diaria. Copia previa: .antes-D057
+factor_atencion_aplicado: 0.5
 base_nivel: senior
 
-# Capacidad para poner fechas: horas de desarrollo por día (el resto de la jornada se va en daily,
-# reuniones y soporte). Las horas de cada tarea NO se inflan por esto.
+# Capacidad para poner fechas (Jhonatan, 21/10/2026): 7,5 h de desarrollo por día; viernes 7 h
+# (la jornada es 8,5 / 8: el resto se va en daily, reuniones y soporte). Las horas de cada tarea NO se inflan.
 capacidad_diaria: { lunes_a_jueves: 7.5, viernes: 7 }
 
-# Factor final = nivel × familiaridad. Son dos ejes distintos: un júnior que conoce todo el negocio
-# puede rendir más que un sénior nuevo. Modelo: multiplicadores de COCOMO II (experiencia en la aplicación).
-niveles: { junior: 1.6, semi_senior: 1.25, senior: 1.0, master: 0.85 }
+# Factor final = nivel × familiaridad. Dos ejes (Jhonatan, 21/10/2026): "puedo tener un junior que se conoce
+# todo el negocio y un senior que no sabe nada". Modelo: multiplicadores de COCOMO II (APEX).
+niveles:
+  # Eje técnico. Confirmado por Jhonatan el 21/10/2026. Se recalibra con los primeros 2-3 sprints.
+  junior: 1.6
+  semi_senior: 1.25
+  senior: 1.0
+  master: 0.85
 familiaridad:
-  alta: 0.9    # conoce el flujo de punta a punta y ya tocó ese código
-  media: 1.0   # conoce el producto, no ese módulo
-  nula: 1.3    # nuevo en el negocio, el repo o el cliente
+  # Eje de negocio: cuánto conoce el dev la lógica, el repo y el cliente del frente. Propuesta 21/10/2026.
+  alta: 0.9 # conoce el flujo de punta a punta y ya tocó ese código
+  media: 1.0 # conoce el producto, no ese módulo
+  nula: 1.3 # nuevo en el negocio, el repo o el cliente
 
-# Ajuste de traslados y refactors de código existente frente a la cifra «a mano».
-ajuste_refactor_vs_mano: -0.30
+personas: {}
+  # Nivel y familiaridad por persona de tu equipo (ejemplo; reemplázalo). Solo hechos con fuente y fecha.
+  # ana: { nivel: senior, familiaridad: { facturacion: alta, agendamiento: nula }, fuente: "líder, AAAA-MM-DD" }
+  # luis: { nivel: junior, familiaridad: {}, fuente: "sin declarar" }
 
 tipos:
-  # ---------- Referencias base ----------
-  componente_nuevo_con_logica:
-    descripcion: "Componente nuevo con ítems, reglas o puntaje (pantalla + lógica acotada)"
-    base: 2
-    rango: [1.5, 3]
+  # ---------- Front (Angular) ----------
+  contenedor_tab_y_activacion:
+    descripcion: "Pestaña o contenedor nuevo con sub-pestañas desde arreglo de configuración, módulo compartido (declaraciones e inyección) y lógica única de activación, integrado en varios index"
+    base: 3
+    rango: [2, 4]
+    fuente: "Sprint de escalas clínicas: EscalasModule 3 h + contenedor 1 h + activación 1,5 h + ubicar en 4 index 0,5 h"
     calibrado: false
-  mostrar_resultado_calculado:
-    descripcion: "Mostrar en pantalla un dato o clasificación que ya se calcula con lo que hay"
-    base: 1
-    rango: [0.5, 1]
-    calibrado: false
-  refactor_o_traslado:
-    descripcion: "Traslado o refactor de código existente: la cifra a mano menos 30 % (ajuste_refactor_vs_mano)"
-    base: null        # se calcula: estimación a mano × (1 + ajuste_refactor_vs_mano); dilo en la observación
-    calibrado: false
-
-  # ---------- Front ----------
   extraer_componente_embebido:
-    descripcion: "Sacar una sección embebida en una plantilla grande a un componente propio reutilizable"
-    base: 2
+    descripcion: "Sacar una sección/escala embebida en un template grande a un componente propio reutilizable y llamarlo desde el contenedor"
+    base: 1
     unidad: componente
-    rango: [1.5, 3]
+    rango: [0.75, 1.5]
+    fuente: "Sprint de escalas clínicas: Barthel, Lawton, Fried, MMSE 2 h c/u"
+    calibrado: false
+  trasladar_grupo_componentes:
+    descripcion: "Mover 2-3 componentes que ya existen a un componente/contenedor nuevo y desconectarlos del origen"
+    base: 1.5
+    rango: [1, 2]
+    fuente: "Sprint de escalas clínicas: (EAD-3, VALE y clasificación RN 3 h); (VIF+PHQ-2 3 h; coagulopatías+Chagas 3 h)"
+    calibrado: false
+  trasladar_y_separar_servicio:
+    descripcion: "Trasladar componentes que comparten un servicio singleton y separarlo por tipo"
+    base: 1.75
+    fuente: "Sprint de escalas clínicas: (RQC/SRQ)"
     calibrado: false
   unificar_codigo_duplicado:
-    descripcion: "Unificar N copias de la misma UI o lógica en un componente y reemplazar los usos"
+    descripcion: "Unificar N copias de la misma UI/lógica en un componente y reemplazar los usos"
     base: 0
-    unidad_horas: 1.25
+    unidad_horas: 0.625
     unidad: copia
+    fuente: "Sprint de escalas clínicas: Framingham x4 = 5 h"
     calibrado: false
-  formulario_nuevo:
-    descripcion: "Formulario nuevo (preguntas con opciones, validación y guardado)"
+  configurar_subtab_reutilizables:
+    descripcion: "Armar una sub-pestaña con componentes ya existentes"
+    base: 1
+    fuente: "Sprint de escalas clínicas: (Adultez)"
+    calibrado: false
+  mostrar_resultado_calculado:
+    descripcion: "Mostrar en pantalla un resultado o clasificación que se calcula con datos ya presentes"
     base: 0.5
-    unidad_horas: 0.035   # ~2 min por pregunta
-    unidad: pregunta
+    rango: [0.25, 0.5]
+    fuente: "Sprint de escalas clínicas: (clasificación RN)"
     calibrado: false
   validacion_obligatoria_front:
-    descripcion: "Volver obligatorio un bloque al guardar, con mensaje que nombra lo que falta"
-    base: 1.5
+    descripcion: "Hacer obligatorio un bloque en el guardado del front con mensaje que nombra lo pendiente"
+    base: 0.75
+    fuente: "Sprint de escalas clínicas: (PHQ-2 obligatoria)"
+    calibrado: false
+  campos_solo_lectura_arrastre:
+    descripcion: "Traer campos desde su módulo de origen y dejarlos deshabilitados en el destino"
+    base: 0.75
+    fuente: "Sprint de escalas clínicas: "
+    calibrado: false
+  formulario_nuevo:
+    descripcion: "Formulario o escala nueva (preguntas con opciones, puntaje y clasificación)"
+    base: 0.25
+    unidad_horas: 0.018 # ~2 min por pregunta (Jhonatan: 100 preguntas ≈ 4 h)
+    unidad: pregunta
+    rango_escala_simple: [1, 2.5] # escalas de ≤10 ítems con puntaje: IPSS 2,5; COPD-PS 2; AUDIT 2; KFRE simple 2; Herrera 1,5; Karnofsky 1
+    fuente: "Jhonatan 21/10/2026 (2 min/pregunta) + escalas clínicas nuevas"
+    calibrado: false
+  escala_compleja_nueva:
+    descripcion: "Instrumento con varias secciones o matrices (p. ej. ASSIST desde cero: sustancias x preguntas)"
+    base: 2
+    fuente: "Sprint de escalas clínicas: (ASSIST estimada desde cero)"
     calibrado: false
 
   # ---------- Reutilización ----------
   traer_de_otro_cliente_o_rama:
-    descripcion: "Portar lógica que ya existe en otro cliente, rama o commit (revisarla, traerla y adaptarla)"
-    base: 2
+    descripcion: "Portar lógica que ya existe en otro cliente/rama/commit (revisar cómo está allá, traerla y adaptarla)"
+    base: 1
     unidad: pieza
-    rango: [1, 2]
+    rango: [0.5, 1]
+    fuente: "Sprint de escalas clínicas: (SAD Persons, PHQ-9, GAD-7, ASSIST)"
     calibrado: false
 
   # ---------- Back / BD ----------
   script_bd_simple:
-    descripcion: "Script DDL/DML sencillo con su rollback: tabla catálogo, columna nueva, FK, datos semilla"
-    base: 0.5
-    sin_factor: true      # igual para cualquier nivel: con IA de copiloto no cambia
-    calibrado: false
+    descripcion: "Script DDL/DML sencillo con su rollback: tabla catálogo con sus registros, columna nueva, FK, inserts semilla. Sin lógica de SP."
+    base: 0.25
+    sin_factor: true # 0,5 h finales para cualquier nivel: con Claude de copiloto un júnior lo hace igual de rápido
+    fuente: "Jhonatan, 27/10/2026 (catálogo de motivos + columna se estimó en 4 h; 'no se demora ni 30 minutos, hasta con su rollback')"
+    calibrado: true
   campos_modelo_backend_bd:
-    descripcion: "Agregar campos al modelo del backend y a la BD para que persista lo nuevo"
-    base: 1
+    descripcion: "Agregar campos a clases C# / modelo y a BD para que persista lo nuevo"
+    base: 0.5
     unidad: grupo de campos
+    fuente: "Sprint de escalas clínicas: "
+    calibrado: false
+  parametrizacion_json_modulo:
+    descripcion: "Ids de configuración por cliente de un módulo completo (visible/obligatorio) en el JSON + patrón isVisible/isRequired"
+    base: 2
+    fuente: "Sprint de escalas clínicas: "
     calibrado: false
   sp_mediano:
-    descripcion: "Procedimiento almacenado de complejidad media (nuevo o modificación con lógica)"
-    base: 4
+    descripcion: "Stored procedure de complejidad media (nuevo o modificación con lógica)"
+    base: 2
+    fuente: "Jhonatan 21/10/2026"
+    calibrado: false
+  sp_grande:
+    descripcion: "Stored procedure muy grande / reescritura de lógica central"
+    base: 15
+    fuente: "Jhonatan 21/10/2026"
     calibrado: false
 
   # ---------- Análisis y pruebas ----------
-  barrido_identificacion_ia:
-    descripcion: "Barrido con IA para identificar todos los casos de algo en el código (lista de salida)"
-    base: 0.5
+  barrido_identificacion_claude:
+    descripcion: "Barrido con Claude para identificar todos los casos de algo en el código (lista de salida)"
+    base: 0.25
+    fuente: "Sprint de escalas clínicas: "
     calibrado: false
   prueba_funcional_logica:
-    descripcion: "Revisar lo generado y probar una lógica caso por caso (roles, estados, clientes)"
-    base: 1
+    descripcion: "Probar una lógica caso por caso (ciclos de vida, roles, clientes)"
+    base: 0.5
+    fuente: "Sprint de escalas clínicas: "
     calibrado: false
 
-  # ---------- Por definir (el líder da la cifra o se calibra con el próximo sprint) ----------
-  pantalla_nueva_consulta: { base: null, descripcion: "Pantalla nueva para consultar o descargar datos de una entidad existente", calibrado: false }
+  # ---------- Integraciones / pantallas (semilla de teleconsulta, estimado en Jira, sin calibrar con real) ----------
+  pantalla_nueva_consulta_descarga:
+    descripcion: "Pantalla nueva para ver o descargar documentos de una entidad existente"
+    base: 2
+    fuente: "Teleconsulta (estimado en Jira)"
+    calibrado: false
+  integracion_videollamada_sala:
+    descripcion: "Integrar una sala de videollamada por cita con reglas de acceso"
+    base: 2
+    fuente: "Teleconsulta (estimado en Jira)"
+    calibrado: false
+  pruebas_en_dispositivos:
+    descripcion: "Pruebas guiadas en Android/iPhone con un grupo"
+    base: 0.5
+    fuente: "Teleconsulta "
+    calibrado: false
+  plantillas_mensajeria:
+    descripcion: "Configurar un lote de plantillas de mensajería (Gupshup/Meta) ya redactadas"
+    base: 0.5
+    fuente: "Teleconsulta (8 plantillas)"
+    calibrado: false
+
+  # ---------- Por definir (Jhonatan da la cifra o se calibra con el próximo sprint) ----------
+  modificacion_flujo_plantillas: { base: null, descripcion: "Cambiar un flujo cuyo comportamiento vive en plantillas/configuración", calibrado: false }
+  cambio_solo_bd: { base: null, descripcion: "Cambio resuelto solo con datos/scripts en BD (sin código)", calibrado: false }
   crud_completo: { base: null, descripcion: "CRUD completo (API + pantalla) de una entidad nueva", calibrado: false }
   endpoint_nuevo: { base: null, descripcion: "Endpoint nuevo con lógica de negocio", calibrado: false }
   integracion_externa: { base: null, descripcion: "Integración con un sistema externo (API de tercero)", calibrado: false }
@@ -113,5 +200,5 @@ reglas:
   - "Lo que el cliente no ha aprobado (nuevo o con otra versión) se estima pero queda PENDIENTE DE DEFINICIÓN, sin fecha."
   - "Antes de estimar como nuevo, buscar si existe en otro cliente, otra rama o el historial de git: traerlo cuesta mucho menos."
   - "Reuniones: estimación = duración agendada."
-  - "Ningún tipo lleva colchón; la incertidumbre se expresa con `rango`."
-  - "Un script de BD sencillo es script_bd_simple sin factores; solo los complejos (SP con lógica, migración de datos, tablas grandes) llevan más horas y factores."
+  - "Ningún tipo lleva colchón; la incertidumbre se expresa con `rango`, no inflando la base."
+  - "Scripts de BD (Jhonatan, 27/10/2026): uno sencillo (catálogo, columna, FK, semilla, con rollback) es script_bd_simple = 0,5 h finales, sin multiplicar por nivel ni familiaridad. Solo los complejos (SP con lógica, migración de datos, cambios sobre tablas grandes o TVP) llevan más horas, por la revisión, y ahí sí aplican los factores."
