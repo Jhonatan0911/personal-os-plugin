@@ -1,0 +1,16 @@
+{
+  "_nota": "Copiar a <mesa>/kit/mirilla.json en la fase 6. Cada API ESCUCHA en 'destino' (puerto interno = público + 10000) y TODOS sus llamadores (fronts, otras APIs, scripts de reproducción) apuntan a 'escucha' (puerto público), donde está la mirilla. Las cadenas de BD de la configuración local apuntan a 127.0.0.1:<escucha de la base>, y la mirilla las lleva a staging. HTTP solo a 127.0.0.1; bases solo a hosts-permitidos.json -> staging. No se toca Encrypt/TLS de ninguna cadena. Correr con kit/bin/node-regresion.exe.",
+  "http": [
+    { "nombre": "<ApiUno>", "escucha": 5101, "destino": 15101 },
+    { "nombre": "<ApiDos>", "escucha": 5102, "destino": 15102 }
+  ],
+  "bd": [
+    { "nombre": "SQL staging", "motor": "sql", "escucha": 14330, "host": "<host-staging-confirmado>", "puerto": 1433 },
+    { "nombre": "Mongo staging", "motor": "mongo", "escucha": 27018, "host": "<host-staging-confirmado>", "puerto": 27017 }
+  ],
+  "fronts": [
+    { "nombre": "<FrontUno>", "puerto": 4201 },
+    { "nombre": "<Shell o menú>", "puerto": 4200 }
+  ],
+  "otros": { "4801": "relevo whatsapp", "4802": "relevo sms" }
+}

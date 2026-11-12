@@ -1,12 +1,13 @@
 ---
 name: status-celula
-description: Genera el tablero de estado de la célula con cronograma (Gantt) de ocupación — carriles por persona con el líder primero, colas de revisión e implementación, traza de lo terminado, carga diaria contra la jornada, veredicto por fecha, Status Jira, frentes y timesheets del equipo — cruzando el estado del Personal OS con Jira en solo lectura, y opcionalmente lo sube al tablero compartido del equipo. Úsala cuando digan "/status-celula", "status de la célula", "tablero del equipo", "cronograma del equipo", "hasta cuándo está ocupado cada uno", "quién tiene hueco esta semana", "prepara la mesa de líderes" o "actualiza el tablero compartido". No es el brief del día (eso es brief-diario), ni planear un sprint o estimar historias (planear-sprint), ni registrar tus propias horas (timesheet). Nunca escribe en Jira.
+description: Genera y publica el tablero de planeación de la célula (un Artifact compartido con el equipo) — Gantt por persona con carga diaria, Revisión 1 a 1, Backlog sin dueño, bloqueos y frentes, indicadores de Jira, colas del líder, macros, modo cliente, timesheets, pestaña privada del líder y bandeja — cruzando el estado del Personal OS con Jira en solo lectura y subiendo la foto de cada corrida a su base. Úsala cuando digan "/status-celula", "status de la célula", "tablero del equipo", "tablero de planeación", "cronograma del equipo", "hasta cuándo está ocupado cada uno", "quién tiene hueco esta semana", "prepara la mesa de líderes" o "actualiza el tablero compartido". No es el brief del día (brief-diario), ni planear un sprint o estimar historias (planear-sprint), ni registrar tus propias horas (timesheet). La skill nunca escribe en Jira.
 ---
 
-# Skill — status-celula (tablero de estado de la célula)
+# Skill — status-celula (tablero de planeación de la célula)
 
-Genera **el tablero interactivo con el que el usuario presenta el estado de su célula** en la mesa de
-líderes (o ante quien coordine varios equipos). Tiene dos caras:
+Genera y publica **el tablero de planeación con el que el usuario planea su célula y presenta su estado** en
+la mesa de líderes (o ante quien coordine varios equipos). Es un Artifact con base compartida: el equipo lo
+abre por su enlace y ve lo mismo. Tiene dos caras:
 
 - **La mesa** — lo que necesita que alguien de fuera actúe. El filtro de la sección A es lo que más
   importa: se reporta lo que pide algo a otro líder o a la organización, no el detalle interno.
@@ -15,20 +16,24 @@ líderes (o ante quien coordine varios equipos). Tiene dos caras:
 
 **Tres reglas que no se rompen:**
 
-1. **Jira es solo lectura.** Ni el tablero ni la skill escriben en Jira: todo cambio (fecha, responsable,
-   estado, comentario, titularidad) cae en «Cambios propuestos» y se aplica aparte, uno por uno, con la
-   confirmación explícita del usuario. Un tablero que reasigna solo, reasigna mal.
+1. **La skill nunca escribe en Jira.** El tablero sí puede (crear, transicionar, comentar, reasignar), pero
+   solo cuando quien lo usa lo pide en la página, con su propio conector y una confirmación por cambio. Los
+   movimientos del Gantt son plan, no Jira: quedan en «Cambios del plan» hasta que alguien los lleve.
 2. **Nada se inventa ni se filtra en silencio.** Lo que falte (estimación, issue, fecha, timesheet) se marca
-   como hallazgo; lo que no entre al tablero lo dice la cobertura del motor.
-3. **El tablero es privado.** `<stateDir>/status-celula-<fecha>.html` lleva datos de clientes y del equipo:
-   no se publica salvo que el usuario lo pida. El tablero compartido (sección H) es otra cosa y tiene sus
-   propias reglas de acceso.
+   como hallazgo; lo que no entre lo dicen la cobertura del motor y el resumen del inventario.
+3. **El tablero se comparte solo con quien el líder invita.** Lleva datos de clientes y del equipo. Lo del
+   líder (pestañas Líder y Bandeja) va en la colección `privado`, que solo lee y escribe el dueño.
+4. **El diseño del tablero no se toca a mano en la página publicada.** Vive en `tablero/plantilla.html` de
+   esta carpeta; un cambio publicado a mano se pierde en la siguiente corrida. Todo lo de la célula y la
+   empresa está en configuración (sección 0), nunca en la plantilla.
 
-**Motor:** `status-celula.js` en `<raíz del plugin>/scripts/` (Node, calcula y maqueta; no consulta nada) con
-`plantilla.html` y `ejemplo.json` de esta carpeta. Comandos completos en `references/motor.md`.
-`<raíz del plugin>` es la ruta de la línea **«Scripts del plugin:»** del contexto de la sesión; si no está,
-búscala donde Claude Code instaló `personal-os` y dila antes de usarla. Para verlo sin datos reales:
-`node "<raíz del plugin>/scripts/status-celula.js" --ejemplo --salida "<stateDir>/status-celula-ejemplo.html"`.
+**Scripts** en `<raíz del plugin>/scripts/` (Node, sin dependencias, no consultan nada):
+`status-celula.js` (motor: calcula y audita), `status-celula-inventario.js` (pendientes del Gantt),
+`status-celula-tablero.js` (arma la página) y `status-celula-compartido.js` (lo que se sube a la base).
+Detalle en `references/motor.md`. `<raíz del plugin>` es la ruta de la línea **«Scripts del plugin:»** del
+contexto de la sesión; si no está, búscala donde Claude Code instaló `personal-os` y dila antes de usarla.
+Para ver el tablero sin datos reales: `node "<raíz del plugin>/scripts/status-celula-tablero.js" --config
+"${CLAUDE_SKILL_DIR}/tablero/ejemplo-celula.json" --organizacion "${CLAUDE_SKILL_DIR}/tablero/ejemplo-organizacion.json" --salida <html>`.
 
 ---
 
@@ -49,12 +54,15 @@ búscala donde Claude Code instaló `personal-os` y dila antes de usarla. Para v
 | Proyectos y sitio de Jira | `jira.proyectos[]`, `jira.cloud_id`, `jira.sitio`. Se pasan al conector; nunca se adivinan |
 | Estados que parecen cerrados | `jira.estados_que_parecen_cerrados` (`Redefinido` y compañía: no son cierres) |
 | Festivos, zona y jornada | `~/.claude/personal-os/config.json` → `festivos`, `zonaHoraria`, `timesheet.jornada` (los lee el motor) |
-| Todo lo propio del tablero | Bloque opcional `status_celula:` de `fuentes.yaml` (`references/configuracion.md`) |
+| Todo lo propio del motor | Bloque `status_celula:` de `fuentes.yaml` (`references/configuracion.md`) |
+| El tablero de planeación | `status_celula.tablero_compartido.url` (el Artifact) y `status_celula.tablero`: `celula` (JSON de la célula: carriles, Jira, festivos, jornada, SLA, clientes, textos; formato en `tablero/ejemplo-celula.json`; ahí van también `jira.sitio` para los enlaces a las issues, `roles.lider` y `roles.certifica` con el carril que revisa y el que certifica, `carriles_movil` con los carriles que se ven primero en el celular, y `org.palabras_comunes` con las palabras que no cuentan al agrupar), `organizacion` (nombre, pie y logo de la empresa: `tablero/ejemplo-organizacion.json`) y `extras` (opcional: lo prometido al cliente y los pendientes sin issue, formato en la cabecera de `status-celula-inventario.js`) |
 
 Del bloque `status_celula:` la skill **copia al JSON de datos** `capacidad_factor` (0,8), `sla_revision` (2),
 `sla_implementacion` (5), `limite_wip`, `estados`, `reparto`, `proyectos_propios` y `campo_inicio`; el motor
 no lee `fuentes.yaml`. Si falta algo obligatorio (equipo, proyectos o `cloud_id`), **se pregunta** con el
-modal de preguntas y se guarda. No se inventa.
+modal de preguntas y se guarda. No se inventa. Si falta el JSON de la célula, se arma con el usuario a partir
+de `equipo[]` y `jira` de `fuentes.yaml` copiando `tablero/ejemplo-celula.json`; `status-celula-tablero.js`
+dice qué campo falta si queda incompleto.
 
 ---
 
@@ -135,17 +143,19 @@ propia célula sin avisar. El motor lo audita.
 5. **Escribir el JSON** en `status_celula.carpeta_datos` (por defecto `<stateDir>/_datos/status-celula/`)
    como `datos-<fecha>.json`. Formato en la cabecera de `status-celula.js` (motor); `ejemplo.json` es un caso
    completo ficticio. El formato del motor anterior se acepta tal cual (se convierte solo).
-6. **Generar, con la carga de la semana:**
+6. **Auditar con el motor, con la carga de la semana:**
    `node "<raíz del plugin>/scripts/status-celula.js" "<datos.json>" --carga 5`
-   Sale en `<stateDir>/status-celula-<fecha>.html` (o `--salida`). El motor imprime la **cobertura**: si
-   dice que algo se pierde, se corrige antes de entregar o se dice en la entrega.
-7. **Probar** si se tocó la plantilla o el formato: `node "${CLAUDE_SKILL_DIR}/prueba.js" "<el HTML>"`
-   (necesita jsdom; ver `references/motor.md`). Sale con 0 o se dice qué falló.
-8. **Guardar la actividad del timesheet en las fichas**:
+   Imprime la **cobertura**: si dice que algo se pierde, se corrige antes de publicar o se dice en la entrega.
+7. **Inventario del Gantt:** `node "<raíz del plugin>/scripts/status-celula-inventario.js" --datos "<datos.json>"
+   --config "<celula>" [--extras "<extras>"] --salida "<carpeta_datos>/inventario-<fecha>.json"`. Imprime qué
+   quedó fuera y por qué; «persona sin carril» es normal (gente de fuera: sale en Indicadores de Jira).
+8. **Armar la página:** `node "<raíz del plugin>/scripts/status-celula-tablero.js" --config "<celula>"
+   --organizacion "<organizacion>" --inventario "<inventario>" --salida "<carpeta_datos>/tablero-<fecha>.html"`.
+   Si sale con error, dice qué falta en la configuración: se completa con el usuario, no se inventa.
+9. **Guardar la actividad del timesheet en las fichas**:
    `node "<raíz del plugin>/scripts/status-celula-fichas.js" "<datos.json>"` (sin duplicar; pasa por el
    guardarraíl de datos de personas).
-9. **Tablero compartido**, si está configurado (sección H).
-10. **Abrir el HTML** local y entregar (sección E).
+10. **Subir los datos y publicar la página** (sección H) y entregar (sección E) con el enlace del tablero.
 
 ### C-1 · Todo a la vista: nada se filtra en silencio
 
@@ -235,15 +245,22 @@ reciente** (o de `equipo[].account_id`), nunca de memoria: uno equivocado deja l
 
 ## D · QUÉ HACE EL TABLERO
 
-- **Arrastrar una barra** → mueve sus fechas conservando sus días hábiles; **su borde derecho** → la alarga o
-  acorta; **a otro carril** → la reasigna. **Desde «Sin programar»** (arrastre o clic) → fecha y responsable.
-- **Resaltar huecos**: un día hábil vacío es una pregunta —*¿qué va aquí?*—, no un descanso. El objetivo es
-  planear el futuro del equipo, no mirar el presente.
-- **Solo vencidas**, **Ocultar terminadas**, **Mostrar transversales**, **Compacto / Normal / Amplio**, **▾/▸**
-  para minimizar un carril, tema claro/oscuro (se recuerdan en el navegador).
-- **Pestañas:** Cronograma · Mesa · Líder · Status Jira · Frentes · Timesheets.
-- **Cambios propuestos** acumula todo; **Copiar para Jira** los pasa al portapapeles; **Deshacer** devuelve el
-  tablero a como vino de Jira.
+| Vista | Qué hace | Escribe en |
+|---|---|---|
+| Gantt | Carriles por persona, arrastrar y soltar, editor, carga del día y ocupación de hoy, reuniones de Teams | `plan`; Jira solo con confirmación |
+| Revisión 1 a 1 | Lo abierto de una persona en los proyectos configurados; indicadores que filtran; ficha con «Llevar hasta» | Jira, con confirmación |
+| Backlog sin dueño | Lo sin asignar, con sugerencia de la IA (responsable, prioridad, talla) | `sugerencias`, `backlog`; Jira con confirmación |
+| Bloqueos y frentes | La mesa (sección A) | — |
+| Indicadores de Jira | Las nueve columnas por proyecto, célula, analistas, externos y sin responsable | — |
+| Colas | Revisar, Certificar y Publicar con su SLA | — |
+| Macros y seguimiento | Proyectos macro y los cronogramas de `planear-sprint` | — |
+| Modo cliente | Ocupación por proyecto macro, simulador de prioridad y borrador de correo | Solo el navegador |
+| Timesheets | Envío diario, % con issue y horas «sin tarea» | — |
+| Frentes | Titular y backup; los cambios quedan como propuesta para la reunión de equipo | `propuestas` (dueño) |
+| Líder · Bandeja | La #1, compromisos, riesgos y alcances; tarjetas de decisión | `privado` (solo el dueño) |
+
+Los movimientos del Gantt son **plan**, no Jira: «Cambios del plan» los lista y «Actualizar Jira y
+calendario» trae la foto en vivo con el conector de quien pulsa (la más reciente gana).
 
 ---
 
@@ -292,20 +309,30 @@ dicen que falta plan, no que alguien no trabajó.
 
 ---
 
-## H · TABLERO COMPARTIDO (opcional)
+## H · PUBLICAR EL TABLERO
 
-Si `status_celula.tablero_compartido.url` está configurado, ese Artifact es **la vista oficial para la mesa** y
-el HTML local queda de respaldo. Cada corrida le sube su foto con `status-celula-compartido.js` y **una sola**
-llamada `ArtifactData` `batch`: la foto de Jira solo si es más reciente que la que el tablero ya tiene, con
-`if_version` en cada documento y la pestaña del líder solo para el dueño. Procedimiento y reglas de acceso en
-`references/tablero-compartido.md`.
+1. **Datos:** cada corrida sube su foto con `status-celula-compartido.js` y **una sola** llamada `ArtifactData`
+   `batch`: la foto de Jira solo si es más reciente que la que el tablero ya tiene, con `if_version` en cada
+   documento y la pestaña del líder solo para el dueño.
+2. **Página:** se publica el HTML del paso 8 con la herramienta Artifact al `url` configurado, **sin pasar
+   `capabilities`** (así conserva las que tiene: base con sus reglas, conectores de Jira y Microsoft 365,
+   `sample`, `user`). Antes se lee la versión publicada; si alguien la cambió a mano, se le dice al usuario
+   qué cambió y se lleva a la plantilla antes de publicar encima (regla 4).
+3. **Primera vez** (sin `url`): se publica sin `url` y con las capacidades de `references/tablero-compartido.md`
+   §4, se guarda el enlace en `status_celula.tablero_compartido.url` y se le recuerda al usuario compartirlo.
+
+Procedimiento, reglas de acceso y capacidades en `references/tablero-compartido.md`.
 
 ---
 
 ## I · MANTENIMIENTO
 
-- **Paleta neutra** con claro/oscuro; los frentes toman color de una paleta categórica si el JSON no trae uno.
+- **El diseño vive en `tablero/plantilla.html`** (CSS, vistas e interacción). Lo de la célula entra por
+  `__CONFIG__` y lo de la empresa por `__ORG_*__`; si un texto nuevo nombra a una persona, un proyecto o la
+  empresa, se lee de la configuración, nunca se escribe en la plantilla.
 - Si aparece un frente nuevo, **se agrega primero a `personas/_dominios.md`** (o a los datos); el tablero no
   inventa frentes. Si una persona no tiene carril, el motor lo dice en la cobertura.
-- Después de tocar `plantilla.html` o el motor: `--ejemplo` + `prueba.js` (y, con datos reales, la comparación
-  de `references/motor.md`).
+- **Después de tocar la plantilla, se prueba** con `tablero/prueba-igualdad.js` (necesita jsdom: ver
+  `references/motor.md`): `node prueba-igualdad.js <publicada.html> <generada.html> [<carpeta con la base>]`
+  abre cada vista en las dos y compara lo que pintan; un cambio de diseño a propósito se revisa a ojo en la
+  vista afectada. Con `ejemplo-celula.json` comprueba también que arranca sin errores para otra célula.

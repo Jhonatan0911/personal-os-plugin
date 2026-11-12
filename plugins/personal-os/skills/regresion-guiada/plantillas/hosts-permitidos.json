@@ -1,0 +1,7 @@
+{
+  "_nota": "Copiar a <mesa>/kit/hosts-permitidos.json. REGLA DURA: HTTP/HTTPS solo a localhost. Lo único que sale del equipo son las conexiones de BASE DE DATOS a los hosts de 'staging', por los puertos de 'staging_puertos'. 'staging_web' solo se llena en la pasada post-publicación (sitios de staging desplegados). 'estaticos_web': CDNs de fuentes, íconos y estilos que esos sitios cargan. Cada host lo confirma el responsable como staging (nunca producción).",
+  "staging": [],
+  "staging_puertos": [1433, 27017],
+  "staging_web": [],
+  "estaticos_web": ["fonts.bunny.net", "use.fontawesome.com", "fonts.googleapis.com", "fonts.gstatic.com", "cdnjs.cloudflare.com", "cdn.jsdelivr.net"]
+}

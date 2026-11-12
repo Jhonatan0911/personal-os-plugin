@@ -1,0 +1,14 @@
+# Sección `mesa_nueva` para <stateDir>/config/fuentes.yaml.
+# Lo que falte se pregunta una vez en el modal y se guarda aquí. Nada de credenciales: el PAT
+# lo pide mesa-clonar.ps1 en la terminal y nunca se escribe en este archivo.
+mesa_nueva:
+  azure_devops:
+    organizacion: "<tu-organizacion>"     # https://dev.azure.com/<organizacion>: org viva de los repos
+    proyecto: "<Proyecto>"                # proyecto por defecto de los repos que no están en el catálogo
+    organizacion_legacy: null             # org antigua si tu organización migró (se agrega como remote `legacy`)
+  rama_trabajo: "feature/{mesa}"          # patrón de la rama de trabajo; {mesa} = nombre de la mesa
+  catalogo_repos: null                    # ruta a tu catálogo; por defecto mesa-nueva/catalogo-repos.md junto a este archivo
+  mesa_referencia: null                   # ruta a una mesa tuya ya organizada que sirve de modelo (opcional)
+  raiz_mesas: null                        # carpeta donde viven tus mesas (solo para buscar mesas vecinas; opcional)
+  pat_en_remote_acordado: false           # true si tu equipo acordó trabajar con el PAT en la URL del remote:
+                                          # entonces no se reporta como riesgo (igual nunca se pega `git remote -v`)

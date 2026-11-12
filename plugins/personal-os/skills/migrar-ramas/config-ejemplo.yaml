@@ -1,0 +1,17 @@
+# Sección `migrar_ramas` para <stateDir>/config/fuentes.yaml.
+# Lo que falte se pregunta una vez en el modal y se guarda aquí. Nada de credenciales: los scripts
+# usan la credencial que git ya guardó (o AZDO_PAT de tu sesión) y nunca la escriben.
+migrar_ramas:
+  azure_devops:
+    organizacion: "<tu-organizacion>"   # https://dev.azure.com/<organizacion>; se pasa a cada script con --org
+  lider: null                           # nombre para el título de la página; por defecto owner.nombre
+  pagina_url: null                      # URL de tu página de migración si ya existe (se actualiza, no se crea otra)
+  carpeta_respaldo: null                # carpeta sincronizada (OneDrive, SharePoint…) donde copiar la carpeta de trabajo
+  origen_por_defecto: null              # proyecto del que suelen salir los repos
+  proyecto_transversal: null            # proyecto compartido entre clientes: activa el filtro «Ya existen en …»
+  marca: "Branching V2"                 # texto del encabezado de la página
+  ramas_v2: ["develop", "qa", "staging"]  # ramas que se crean desde `main` al migrar (política de branching)
+  alias_proyectos: {}                   # nombre visible → proyecto real, p. ej. { "<Cliente A>": "<PROYA>" }
+  coordinador: null                     # a quién van las dudas que no nombran a nadie (opcional)
+  lideres: []                           # referencia para la primera pregunta, no asignación:
+  # - { nombre: "<Líder>", clientes: ["<Cliente A>"], proyectos: ["<PROYA>"], nota: "ya migrado" }

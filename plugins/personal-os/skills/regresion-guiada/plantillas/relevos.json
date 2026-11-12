@@ -1,0 +1,12 @@
+{
+  "_nota": "Copiar a <mesa>/kit/relevos.json. REGLA DURA: ninguna petición HTTP sale del equipo. El relevo NO reenvía: cada app local apunta la URL del tercero a 127.0.0.1:<puerto>, el relevo registra lo que la app quiso enviar (destinatarios solo como huella) y responde 'status' + 'respuesta'. Prohibido poner 'destino' o 'host_real' fuera de localhost: el relevo no arranca. Si una operación necesita la respuesta real de un tercero, se marca como 'no probada (tercero)' en la matriz.",
+  "servicios": {
+    "whatsapp":    { "puerto": 4801, "status": 200, "respuesta": { "status": "submitted", "relevo": "local" } },
+    "sms":         { "puerto": 4802, "status": 200, "respuesta": { "status": "ok", "relevo": "local" } },
+    "shortlink":   { "puerto": 4803, "status": 200, "respuesta": { "shortUrl": "http://127.0.0.1:4803/x", "relevo": "local" } },
+    "validadores": { "puerto": 4804, "status": 503, "respuesta": { "relevo": "local", "mensaje": "validador externo deshabilitado en la regresión" }, "_uso": "503 a propósito: la app debe comportarse como cuando la EPS no responde. Uno por EPS si hace falta (4807, 4808…)." },
+    "generico":    { "puerto": 4805, "status": 200, "respuesta": {} },
+    "correo_api":  { "puerto": 4806, "status": 200, "respuesta": { "status": "ok", "relevo": "local" } }
+  },
+  "smtp": { "puerto": 2525 }
+}

@@ -15,14 +15,15 @@ Todos viven en `<raíz del plugin>/scripts/` (Node, sin dependencias). Ninguno c
 
 | Script | Hace | Comando |
 |---|---|---|
-| `status-celula.js` | Calcula (veredictos, colas, cobertura, métricas de Jira y timesheets) y maqueta el HTML | `node status-celula.js <datos.json> [--salida <html>] [--carga N] [--hoy AAAA-MM-DD]` |
+| `status-celula.js` | Calcula y audita (veredictos, colas, cobertura, métricas de Jira y timesheets); imprime cobertura y carga | `node status-celula.js <datos.json> [--carga N] [--hoy AAAA-MM-DD]` |
+| `status-celula-inventario.js` | Pendientes con los que arranca el Gantt (cliente, colas, priorizar) | `node status-celula-inventario.js --datos <datos.json> --config <celula.json> [--extras <extras.json>] --salida <inventario.json>` |
+| `status-celula-tablero.js` | Arma la página del tablero: plantilla + célula + organización + inventario | `node status-celula-tablero.js --config <celula.json> --organizacion <org.json> [--inventario <inv.json>] --salida <html>` |
 | `status-celula.js --convertir` | Pasa un JSON del motor anterior al formato actual y lo guarda | `node status-celula.js <viejo.json> --convertir <nuevo.json>` |
 | `status-celula-jira.js` | Normaliza los volcados del conector al bloque `jira` | `node status-celula-jira.js --corte AAAA-MM-DD --roster <roster.json> --salida <jira.json> --celula <volcados…> [--proyectos …] [--delta …] [--changelog …] [--campo-inicio customfield_X]` |
 | `status-celula-fichas.js` | Escribe en `personas/` qué hizo cada quien según su timesheet, sin duplicar | `node status-celula-fichas.js <datos.json> [--dry-run]` |
 | `status-celula-compartido.js` | Prepara los documentos y el `writes.json` del tablero compartido | ver `tablero-compartido.md` |
 
-- Salida por defecto del HTML: `<stateDir>/status-celula-<corte>.html`. Sin `stateDir` en
-  `~/.claude/personal-os/config.json`, hay que pasar `--salida`.
+- El motor ya no escribe HTML: la página es la que arma `status-celula-tablero.js`.
 - `--carga N` imprime la carga de los próximos N días hábiles por persona (horas asignadas / jornada, «+» si
   hay trabajo sin estimar) con la misma regla de la tira del cronograma. Es para el usuario, no para la mesa.
 - El roster de `status-celula-jira.js` es un JSON con `celula` [{`jira`, `nombre`, `rol`}], `externos`,
@@ -55,12 +56,15 @@ El **formato anterior** (motor en Python: items ya anclados con `recortada`/`fin
 
 ## 4. Probar el tablero
 
-`node "${CLAUDE_SKILL_DIR}/prueba.js" <tablero.html>` carga el HTML en un DOM real y comprueba: sin errores de
-ejecución; un carril por persona con el líder primero; barras, tira de carga y cobertura; la lista de una
-cola; mover una barra deja un cambio y «Deshacer» lo revierte; las cinco secciones de la mesa con sus
-conteos; la pestaña Líder; los TOTALES de Status Jira contra lo calculado; persona → issues → ficha con
-veredicto, fechas, tiempo, comentarios e historial; proponer estado y comentario entra a la cola; frentes y
-aviso de reparto; timesheets (celdas, colores, rojos y horas sin issue).
+`node "${CLAUDE_SKILL_DIR}/tablero/prueba-igualdad.js" <a.html> <b.html> [<carpeta-base>]` carga las dos páginas
+en un DOM real, abre cada vista y compara lo que pintan (sin `<script>` ni `<style>`), además de contar los
+errores de ejecución. Usos:
+
+- **Tras tocar la plantilla:** `a` = la versión publicada (léela con la herramienta Artifact), `b` = la
+  generada. Una diferencia buscada se revisa a ojo en esa vista; cualquier otra es un error.
+- **Con datos:** `<carpeta-base>` tiene una subcarpeta por colección y un `.json` por documento (lo que deja
+  `ArtifactData list` con `out_dir`). Sin ella, las vistas con datos solo muestran su estado vacío.
+- **Otra célula:** con `a` = `b` = la página de `ejemplo-celula.json`, verifica que arranca sin errores.
 
 Necesita **jsdom** (no viene con el plugin): `npm install jsdom` en cualquier carpeta y
 `NODE_PATH=<esa carpeta>/node_modules`. Sale con 0 si todo pasa, 1 si algo falla y 2 si no puede correr. Si no

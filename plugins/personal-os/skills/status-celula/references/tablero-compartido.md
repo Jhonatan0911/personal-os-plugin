@@ -1,8 +1,8 @@
 # Tablero compartido
 
-Léelo solo si `status_celula.tablero_compartido.url` está configurado. Es un Artifact con base de datos
-compartida (la página la mantiene el usuario; esta skill solo le sube los datos de cada corrida). Ahí la mesa
-ve el estado sin que el usuario le pase un archivo; el HTML local sigue saliendo como respaldo y no se comparte.
+El tablero de planeación es un Artifact con base de datos compartida. La skill arma la página desde
+`tablero/plantilla.html` y la publica, y en cada corrida le sube los datos. La mesa y el equipo ven el estado
+por el enlace, sin que el usuario pase un archivo. No hay HTML local de respaldo: la página es la salida.
 
 ## 1. Quién actualiza qué
 
@@ -39,3 +39,17 @@ compromisos y riesgos.
 Sin datos de pacientes, credenciales ni salud; una ausencia se escribe «ausente». Las claves de
 `tablero_compartido.excluir` no aparecen en la foto. La pestaña del líder nunca va a una colección legible
 por todos.
+
+## 4. Capacidades de la página (solo la primera publicación)
+
+En las siguientes se publica **sin** `capabilities` para conservar las que ya tiene. La primera vez se carga
+la skill `artifact-capabilities` y se declaran:
+
+| Capacidad | Para qué |
+|---|---|
+| `db` con reglas: `estado` (leer: view, escribir: owner) · `propuestas` (view / owner) · `privado` (owner / owner) · `cal` (view / owner) · `cal/{self}` (escribir: interact) | La foto, la mesa, la pestaña del líder y el calendario que cada quien suma |
+| `mcp` con el servidor de Jira de `jira.servidor_mcp` (buscar, leer, transiciones, transicionar, comentar, editar, crear, enlazar, buscar cuenta) y el de Microsoft 365 de `m365.servidor_mcp` (`outlook_calendar_search`) | «Actualizar Jira y calendario», la ficha y las reuniones de Teams. Sin Microsoft 365 el calendario queda vacío y la página lo dice |
+| `sample` | La sugerencia de la IA en «Backlog sin dueño» |
+| `user` (perfil) | Saber quién es el dueño y en qué carril está quien mira |
+
+Las colecciones `plan`, `jira`, `cronogramas`, `sugerencias` y `backlog` usan la regla por defecto de la base.

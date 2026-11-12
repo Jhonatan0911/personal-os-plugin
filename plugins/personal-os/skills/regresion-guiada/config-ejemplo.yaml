@@ -1,0 +1,35 @@
+# Sección `regresion` para <stateDir>/config/fuentes.yaml (o un JSON con la misma forma).
+# Lo marcado (*) se pregunta en el modal si falta y se guarda; lo demás tiene valor por defecto.
+# Nunca van aquí cadenas de conexión, claves ni tokens: esos viven en <mesa>/credenciales/ o en variables REGV_*.
+regresion:
+  sistema: "<Nombre del sistema>"              # (*) títulos, página en vivo y textos
+  slug: "<sistema-corto>"                      # (*) ramas docs/regresion-<slug>-<persona> y test/regresion-<slug>-g<N>, nombre del Excel
+  perfil_dir: "<stateDir>/config/regresion/<slug>"   # asignaciones.json, grupos/, instruccion-cliente.md, plantillas propias
+  periodo:                                     # (*) la operación real que se reproduce
+    desde: "AAAA-MM-DD"
+    hasta: "AAAA-MM-DD"
+    nombre: "<mes y año>"                      # cómo se dice en el chat y en la matriz
+  publicacion: "<nombre de la publicación>"    # rama alternativa a producción (null si solo se prueba producción)
+  issue_general: "<PROY-100>"
+  repos:
+    organizacion: "<organizacion>"             # (*)
+    url_plantilla: "https://dev.azure.com/{organizacion}/{proyecto}/_git/{repo}"   # otro servidor git: cámbiala
+    proyectos: ["<Proyecto A>", "<Proyecto B>"]  # dónde buscar ramas de las dependencias externas
+    docs: { proyecto: "<Proyecto>", repo: "docs" }  # repo de documentación funcional (null = sin fase 4)
+  insumos_dir: "insumos"                       # análisis previos (inventario, configuración, uso de BD), relativo a la mesa
+  staging:
+    lectura_autonoma: false                    # true solo con una excepción del líder registrada abajo; si no, OK por consulta
+    escritura_hasta: null                      # "AAAA-MM-DD" | "sin-limite" | null (solo lectura)
+    excepcion: { aprobada_por: null, fecha: null, alcance: null }
+  staging_web: []                              # hosts de staging desplegado para la pasada post-publicación
+  auth: { repo: null, rama: "main" }           # servicio que emite el token para entrar como el mismo usuario
+  bases_legadas: []                            # bases que no existen en el ambiente nuevo (todo uso es riesgo)
+  contacto_de_prueba: false                    # true = §9 de aislamiento.md (mensajes reales al contacto de quien prueba)
+  matriz_plantilla: null                       # .xlsx propio; si no, plantillas/Matriz_Regresion_plantilla.xlsx
+  zona_horaria: null                           # del navegador de Playwright; por defecto la de config.json
+  locale: "es-CO"
+  vista_puerto: 4747
+
+# En la fase 1 la skill escribe <mesa>/kit/perfil.json con lo que leen los scripts:
+#   {"titulo", "app_nombre", "repos": {organizacion, url_plantilla, proyectos},
+#    "staging": {escritura_hasta}, "zona_horaria", "locale"}

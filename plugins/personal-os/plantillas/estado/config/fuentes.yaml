@@ -98,7 +98,18 @@ tareas_externas: []                     # p. ej. un seguimiento en Excel compart
 
 # rutas:                                # opcional; por defecto dentro de la carpeta de estado
 #   borradores: "<stateDir>/personal/borradores"   # textos redactados por el OS pendientes de enviar
-#   perfil_voz: "<stateDir>/personal/voz.md"       # perfil de voz que aprende de lo que envías
+#   perfil_voz: "<stateDir>/personal/voz.md"       # perfil de voz que aprende de lo que envías (skill redactar;
+#                                                  # si no existe, la skill ayuda a armarlo desde tus enviados)
+
+# organizacion:                         # opcional; perfil de tu organización (privado, nunca en el plugin)
+#   nombre: "<Nombre de la empresa>"
+#   marca: "marca/MARCA.md"             # perfil de marca que lee auditar-ux-ui; relativo a esta carpeta.
+#                                       # Formato: skills/auditar-ux-ui/perfiles/marca-ejemplo.md del plugin.
+#                                       # Sin la clave se busca marca/MARCA.md aquí; sin archivo, no se mide Marca.
+
+# informe_desarrollo:                   # opcional; skill informe-desarrollo
+#   referencias:                        # informes anteriores que sirven de referencia de FORMA ("como el de …")
+#     - { nombre: "<proyecto>", ruta: "<ruta al .html o .pdf del informe>" }
 
 planeacion:
   capacidad_diaria: { lunes_a_jueves: 8, viernes: 8 }

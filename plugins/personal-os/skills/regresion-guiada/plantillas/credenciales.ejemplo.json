@@ -1,0 +1,8 @@
+{
+  "_nota": "Copiar a <mesa>/credenciales/conexiones.json y llenar, o usar variables de entorno (mandan si existen): REGV_STAGING_SQL, REGV_STAGING_MONGO. Esta carpeta NUNCA entra a un repo, nunca se imprime y se borra al cerrar.",
+  "staging": {
+    "_uso": "Lo usa scripts/staging.py. El host debe estar en kit/hosts-permitidos.json -> staging. Escribir exige ventana aprobada (kit/perfil.json -> staging.escritura_hasta).",
+    "sqlserver": "Server=<host-staging>[,puerto];Database=<base>;User Id=<usuario>;Password=<CLAVE>;TrustServerCertificate=True;Application Name=regresion",
+    "mongo": "mongodb://<usuario>:<CLAVE>@<host-staging>:<puerto>/?authSource=admin"
+  }
+}

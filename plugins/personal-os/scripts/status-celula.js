@@ -1,17 +1,18 @@
 #!/usr/bin/env node
 'use strict';
 /*
- * Personal OS — Status de la célula: maqueta el tablero HTML a partir de un JSON de datos.
+ * Personal OS — Status de la célula: el motor que calcula y audita los datos de la corrida.
  *
- *   node status-celula.js <datos.json> [--salida <archivo.html>] [--estado <carpeta>]
- *   node status-celula.js --ejemplo [--salida <archivo.html>]
+ *   node status-celula.js <datos.json> [--estado <carpeta>] [--carga [N]]
+ *   node status-celula.js --ejemplo
  *
  * El JSON lo arma la skill `status-celula` cruzando el estado del Personal OS con Jira (solo lectura).
- * Este script NO consulta nada: solo calcula y maqueta. Así el tablero es reproducible y se puede
- * regenerar sin red. Las cifras (veredictos, colas, cobertura, métricas de Jira y de timesheets) se
- * calculan AQUÍ desde los datos crudos: el tablero no puede contradecir a su propia fuente.
+ * Este script NO consulta nada: solo calcula. Las cifras (veredictos, colas, cobertura, métricas de Jira
+ * y de timesheets) se calculan AQUÍ desde los datos crudos. `construir()` lo usan
+ * status-celula-compartido.js (lo que se sube al tablero) y status-celula-fichas.js.
  *
- * Salida por defecto: <stateDir>/status-celula-<corte>.html (archivo local y privado; no se publica).
+ * Imprime la cobertura (lo que se pierde) y, con --carga, la carga de los próximos días. La página que
+ * se ve es el tablero de planeación (status-celula-tablero.js); este motor ya no maqueta una propia.
  *
  * ── Formato del JSON (todo opcional salvo personas e items) ─────────────────────────────────────
  * {
@@ -66,7 +67,6 @@ const path = require('path');
 const C = require('./lib/comun.js');
 const Legado = require('./lib/status-celula-legado.js');
 
-const PLANTILLA = path.join(C.PLUGIN_ROOT, 'skills', 'status-celula', 'plantilla.html');
 const EJEMPLO = path.join(C.PLUGIN_ROOT, 'skills', 'status-celula', 'ejemplo.json');
 
 // Paleta categórica neutra (legible en claro y en oscuro con texto blanco). Sin identidad corporativa.
@@ -86,9 +86,9 @@ const DIAS_CFG = ['dom', 'lun', 'mar', 'mie', 'jue', 'vie', 'sab'];
 
 function uso(msg) {
   if (msg) console.error(msg);
-  console.error('Uso: node status-celula.js <datos.json> [--salida <archivo.html>] [--estado <carpeta>] [--carga [N]]\n' +
+  console.error('Uso: node status-celula.js <datos.json> [--estado <carpeta>] [--carga [N]]\n' +
                 '     node status-celula.js <datos.json> --convertir <salida.json>   (pasa un JSON del formato anterior al actual)\n' +
-                '     node status-celula.js --ejemplo [--salida <archivo.html>]');
+                '     node status-celula.js --ejemplo');
   process.exit(1);
 }
 
@@ -428,23 +428,6 @@ function metricasTimesheets(t, corte, ctx) {
            meta: (cfg.timesheet && cfg.timesheet.metaCoberturaIssue) || 0.9 };
 }
 
-// ── Maquetado ────────────────────────────────────────────────────────────────────────────────
-const escHtml = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
-
-function maquetar(d) {
-  const html = C.leerTexto(PLANTILLA, null);
-  if (html === null) throw new Error('No encuentro la plantilla: ' + PLANTILLA);
-  // Texto de terceros (títulos, comentarios) viaja dentro de un <script>: "</" lo cerraría.
-  const crudo = JSON.stringify(d).replace(/</g, '\\u003c');   // JSON.parse acepta U+2028/2029 tal cual
-  const marca = '<script id="datos" type="application/json">__DATOS_JSON__</script>';
-  if (!html.includes(marca)) throw new Error('La plantilla no tiene el bloque de datos: ' + PLANTILLA);
-  // Primero los títulos y al final los datos: así un texto de los datos nunca se toma por marcador.
-  return html
-    .replace(/__TITULO__/g, () => escHtml(d.titulo || 'Status de la célula'))
-    .replace(/__KICKER__/g, () => escHtml(d.kicker || 'PERSONAL OS · STATUS DE LA CÉLULA'))
-    .replace(marca, () => marca.replace('__DATOS_JSON__', () => crudo));
-}
-
 // ── Carga de los próximos N días hábiles, en texto (la misma regla que la tira del cronograma) ─────
 function cargaTexto(d, n) {
   const fest = new Set(d.festivos || []);
@@ -504,19 +487,12 @@ function main() {
   }
   if (!Array.isArray(datos.personas) || !datos.personas.length) uso('El JSON no trae «personas»: el tablero no tiene carriles.');
 
+  // El motor ya no maqueta una página propia: la salida visible es el tablero de planeación
+  // (status-celula-tablero.js). Aquí solo se calcula y se audita lo que entra.
   const d = construir(datos);
-  let salida = C.arg('--salida', null);
-  if (!salida) {
-    const sd = C.stateDir();
-    if (!sd) uso('No hay stateDir en ~/.claude/personal-os/config.json. Corre /os-setup o pasa --salida <archivo.html>.');
-    salida = path.join(sd, `status-celula-${d.corte}.html`);
-  }
-  salida = path.resolve(salida);
-  fs.mkdirSync(path.dirname(salida), { recursive: true });
-  fs.writeFileSync(salida, maquetar(d), 'utf8');
 
   const pend = d.items.filter((i) => !i.cerrada && !['grupo', 'implementacion', 'redefinido'].includes(i.tipo));
-  console.log('Tablero: ' + salida);
+  console.log('Corte ' + d.corte + ':');
   console.log(`  ${d.personas.length} carriles · ${pend.length} pendientes con fecha · ${pend.filter((i) => i.vencida).length} vencidas · ` +
               `${d.sin_programar.length} sin programar · ${d.colas_resumen.length} colas del líder`);
   const ce = d.capacidad_equipo;

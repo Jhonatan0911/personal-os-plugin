@@ -1,0 +1,366 @@
+<title>Migración de ramas</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Mesa de depuración de ramas: resumen arriba, repos como filas operables, chat lateral. Plantilla de la skill migrar-ramas: todo lo de la organización sale de data.json. */
+:root{
+  --bg:#FFFFFF; --panel:#F1F5F9; --line:#E2E8F0; --fg:#222222; --muted:#5A6275; --soft:#9CA3AF;
+  --brand:#0A1A4F; --head:#1F2B53; --accent:#134095; --accent-2:#1860A5; --on-accent:#FFFFFF;
+  --ok:#2A6349; --ok-bg:#E3F0EA; --warn:#B26B00; --warn-bg:#FBF0DD; --crit:#A8322D; --crit-bg:#F7E3E2;
+  --sans:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,"Cascadia Mono",Consolas,monospace;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#0B1226; --panel:#121B33; --line:#24304F; --fg:#E6EAF2; --muted:#A3ACC2; --soft:#6E7891;
+  --brand:#C9D6EE; --head:#DCE4F5; --accent:#7FA6E8; --accent-2:#9DBBEF; --on-accent:#0B1226;
+  --ok:#7CC4A0; --ok-bg:#16302A; --warn:#E3B05C; --warn-bg:#352A14; --crit:#E58A84; --crit-bg:#3A1C1B; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0B1226; --panel:#121B33; --line:#24304F; --fg:#E6EAF2; --muted:#A3ACC2; --soft:#6E7891;
+  --brand:#C9D6EE; --head:#DCE4F5; --accent:#7FA6E8; --accent-2:#9DBBEF; --on-accent:#0B1226;
+  --ok:#7CC4A0; --ok-bg:#16302A; --warn:#E3B05C; --warn-bg:#352A14; --crit:#E58A84; --crit-bg:#3A1C1B; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font:14px/1.5 var(--sans)}
+.wrap{max-width:1280px;margin:0 auto;padding-block:20px 80px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+header.top{display:flex;flex-wrap:wrap;gap:12px 24px;align-items:flex-end;justify-content:space-between;border-bottom:2px solid var(--brand);padding-bottom:14px}
+.eyebrow{font:500 11px/1 var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+h1{margin:6px 0 0;font:700 26px/1.15 var(--sans);color:var(--head);text-wrap:balance}
+.sub{color:var(--muted);margin:4px 0 0;max-width:70ch}
+.stats{display:flex;flex-wrap:wrap;gap:8px}
+.stat{border:1px solid var(--line);border-radius:6px;padding:6px 12px;min-width:92px}
+.stat b{display:block;font:600 20px/1.1 var(--mono);font-variant-numeric:tabular-nums;color:var(--head)}
+.stat span{font-size:12px;color:var(--muted)}
+.bar{height:6px;background:var(--panel);border-radius:3px;overflow:hidden;margin-top:12px}
+.bar i{display:block;height:100%;background:var(--accent);width:0;transition:width .3s}
+.tools{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--bg);display:flex;flex-wrap:wrap;gap:8px;padding-block:12px;border-bottom:1px solid var(--line)}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--bg)}
+input[type=search],select,textarea{font:inherit;color:var(--fg);background:var(--bg);border:1px solid var(--line);border-radius:6px;padding:7px 10px}
+input[type=search]{flex:1 1 220px;min-width:0}
+button{font:inherit;cursor:pointer;border-radius:6px;border:1px solid var(--line);background:var(--bg);color:var(--fg);padding:6px 12px}
+button:hover{border-color:var(--accent)}
+button:focus-visible,select:focus-visible,input:focus-visible,textarea:focus-visible,summary:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+button.primary{background:var(--accent);border-color:var(--accent);color:var(--on-accent)}
+.note{font-size:12px;color:var(--muted)}
+.list{display:flex;flex-direction:column}
+.repo{border-bottom:1px solid var(--line);padding:14px 0;display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1.4fr) minmax(160px,190px);gap:8px 20px;align-items:start}
+.repo.decided{background:linear-gradient(90deg,var(--panel),transparent 60%)}
+@media (max-width:1024px){.repo{grid-template-columns:minmax(0,1fr) minmax(0,1.2fr)}.repo .acts{grid-column:1/-1;flex-direction:row;flex-wrap:wrap}.repo .acts>*{flex:1 1 130px;width:auto}}
+@media (max-width:640px){.repo{grid-template-columns:minmax(0,1fr)}.repo .acts>*{flex:1 1 calc(50% - 6px)}.repo .acts select{flex-basis:100%}}
+.rhead{display:flex;gap:8px;align-items:flex-start;justify-content:space-between}
+.rname{font:600 15px/1.3 var(--mono);color:var(--head);word-break:break-all;min-width:0}
+button.refresh{flex:none;font-size:12px;padding:3px 9px;color:var(--accent-2);white-space:nowrap}
+button.refresh[aria-busy="true"]{color:var(--warn);border-color:var(--warn)}
+.rstate{margin:4px 0 0;font-size:12px;color:var(--muted)}
+.rstate.wait{color:var(--warn)}
+.pill.nueva{background:var(--warn-bg);color:var(--warn)}
+.meta{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
+.pill{font:500 11px/1 var(--sans);padding:4px 8px;border-radius:999px;background:var(--panel);color:var(--muted);white-space:nowrap}
+.pill.alta{background:var(--ok-bg);color:var(--ok)} .pill.media{background:var(--warn-bg);color:var(--warn)} .pill.baja{background:var(--crit-bg);color:var(--crit)}
+.pill.d-migrar{background:var(--ok-bg);color:var(--ok)} .pill.d-no{background:var(--crit-bg);color:var(--crit)} .pill.d-duda{background:var(--warn-bg);color:var(--warn)} .pill.d-otro{background:var(--panel);color:var(--accent-2);box-shadow:inset 0 0 0 1px var(--accent-2)}
+.acts select{font-size:12.5px;min-width:0}
+.why{margin:6px 0 0;color:var(--fg);font-size:13px}
+.risk{margin:4px 0 0;color:var(--crit);font-size:12.5px}
+.other{margin:4px 0 0;color:var(--warn);font-size:12.5px}
+.exists{margin:6px 0 0;font-size:12.5px;color:var(--accent-2)}
+.pick{display:flex;flex-direction:column;gap:6px;min-width:0}
+.pick select{width:100%;font-family:var(--mono);font-size:12.5px}
+.pick textarea{width:100%;min-height:34px;resize:vertical;font-size:13px}
+.pick .row2{display:flex;gap:6px;flex-wrap:wrap}
+.pick .row2 select{flex:1 1 140px;width:auto}
+.acts{display:flex;flex-direction:column;gap:6px;min-width:0}
+.acts>*{width:100%}
+.acts button.on{background:var(--accent);color:var(--on-accent);border-color:var(--accent)}
+.saved{font-size:12px;color:var(--muted)}
+.fn{margin:0;font-size:13px;padding:8px 10px;background:var(--panel);border-radius:6px}
+.fnb{font-weight:500;color:var(--fg)}
+details.br{grid-column:1/-1}
+details.br summary,details.ex summary{cursor:pointer;color:var(--accent-2);font-size:13px}
+details.ex label{display:flex;gap:6px;align-items:center;font:12.5px var(--mono);padding:2px 0;word-break:break-all}
+.tbl{overflow-x:auto;margin-top:8px}
+table{border-collapse:collapse;width:100%;font-size:12.5px}
+th,td{text-align:left;padding:6px 8px;border-bottom:1px solid var(--line);vertical-align:top}
+th{font:600 11px/1.2 var(--sans);text-transform:uppercase;letter-spacing:.05em;color:var(--muted)}
+td.mono{font-family:var(--mono);white-space:nowrap}
+td.num{font-family:var(--mono);font-variant-numeric:tabular-nums;text-align:right}
+tr.rec td:first-child{box-shadow:inset 3px 0 0 var(--ok)}
+.hist{margin:4px 0 0;padding:0;list-style:none;font-size:12px;color:var(--muted)}
+.hist li{padding:1px 0}
+.hist code{font-family:var(--mono);color:var(--soft)}
+.empty{padding:40px 0;color:var(--muted);text-align:center}
+.chatbtn{position:fixed;right:calc(16px + env(safe-area-inset-right,0px));bottom:calc(16px + env(safe-area-inset-bottom,0px));z-index:20;background:var(--brand);color:var(--bg);border:none;border-radius:999px;padding:12px 18px;font-weight:600;box-shadow:0 4px 14px rgba(10,26,79,.25)}
+aside.chat{position:fixed;top:0;right:0;bottom:0;width:min(440px,100%);z-index:30;background:var(--bg);border-left:1px solid var(--line);display:flex;flex-direction:column;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);padding-right:env(safe-area-inset-right,0px);box-shadow:-8px 0 24px rgba(0,0,0,.12)}
+.chat header{display:flex;justify-content:space-between;align-items:center;padding:12px 16px;border-bottom:1px solid var(--line)}
+.chat header b{color:var(--head)}
+.msgs{flex:1;overflow-y:auto;padding:12px 16px;display:flex;flex-direction:column;gap:10px}
+.msg{padding:8px 12px;border-radius:8px;max-width:92%;white-space:pre-wrap;font-size:13.5px}
+.msg.u{align-self:flex-end;background:var(--accent);color:var(--on-accent)}
+.msg.a{align-self:flex-start;background:var(--panel)}
+.chat form{display:flex;gap:8px;padding:12px 16px;border-top:1px solid var(--line)}
+.chat form textarea{flex:1;min-height:40px;resize:none}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+
+<div class="wrap">
+  <header class="top">
+    <div>
+      <div class="eyebrow" id="eyebrow">Branching V2</div>
+      <h1 id="titulo">Migración de ramas</h1>
+      <p class="sub">Repos pendientes de migrar. Para cada uno, escoge la rama que va a la organización nueva y la decisión; si no va a su destino por defecto, usa «Va a otro proyecto». Las decisiones se guardan solas y Claude las lee para armar el plan de migración.</p>
+    </div>
+    <div class="stats" id="stats"></div>
+  </header>
+  <div class="bar"><i id="prog"></i></div>
+
+  <div class="tools">
+    <input type="search" id="q" placeholder="Buscar repo, rama, autor o ticket…" aria-label="Buscar">
+    <select id="fDest" aria-label="Destino"><option value="">Todos los destinos</option></select>
+    <select id="fConf" aria-label="Confianza"><option value="">Toda confianza</option><option value="alta">Confianza alta</option><option value="media">Confianza media</option><option value="baja">Confianza baja</option></select>
+    <select id="fDec" aria-label="Decisión"><option value="">Decididos y pendientes</option><option value="pend">Sin decidir</option><option value="migrar">Migrar</option><option value="no">No migrar</option><option value="duda">Duda</option><option value="otro">Va a otro proyecto</option></select>
+    <select id="fOtro" aria-label="Otros"><option value="">Todos</option><option value="clave" id="optClave">Con rama del cliente</option><option value="otro">Con nota de la recomendación</option><option value="existe">Ya existen en otro proyecto</option><option value="trans" id="optTrans">Ya existen en el proyecto transversal</option></select>
+    <button id="acceptAll" title="Marca «Migrar» con la rama recomendada en los visibles de confianza alta aún sin decidir">Aceptar recomendadas (alta)</button>
+  </div>
+  <p class="note" id="status">Cargando datos…</p>
+  <div class="list" id="list"></div>
+</div>
+
+<button class="chatbtn" id="openChat" hidden>Preguntar a Claude</button>
+<aside class="chat" id="chat" hidden aria-label="Chat sobre las ramas">
+  <header><b>Historia de ramas</b><button id="closeChat">Cerrar</button></header>
+  <div class="msgs" id="msgs">
+    <div class="msg a">Pregúntame por un repo o una rama. Por ejemplo: «¿qué trae esta rama?», «¿quién tocó por última vez este repo?» o «¿qué repos tienen ramas de otro cliente?».</div>
+  </div>
+  <form id="chatForm"><textarea id="chatIn" placeholder="Escribe tu pregunta…" aria-label="Pregunta"></textarea><button class="primary" id="send">Enviar</button></form>
+</aside>
+
+<script>
+const $ = s => document.querySelector(s);
+let META = {}, DATA = [], BY = {}, DEC = {}, RAM = {}, REF = {}, db = null, me = null, canWrite = true, CLAVE = null;
+const hm = d => d ? new Date(d).toLocaleString("es-CO", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" }) : "";
+
+/* Refresco: Claude escribe en `ramas/<repo>` las ramas leídas de nuevo en Azure; aquí se superponen a data.json
+   conservando el análisis de las ramas que ya existían. Las nuevas llegan sin análisis. */
+function overlay(){
+  DATA.forEach(x => {
+    const o = RAM[x.n];
+    if (!o) { x.ramas = x._base; x.nuevas = []; return; }
+    const old = Object.fromEntries(x._base.map(r => [r.r, r]));
+    x.ramas = o.ramas.map(r => ({ ...r, s: old[r.r]?.s || "", fn: old[r.r]?.fn || "", nueva: !old[r.r] }));
+    x.nuevas = x.ramas.filter(r => r.nueva).map(r => r.r);
+  });
+}
+const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const fmt = d => d ? d.slice(0,10) : "—";
+const docId = n => n.replace(/[^A-Za-z0-9_\-.~:@+]/g, "_");
+
+async function boot(){
+  try { const r = await fetch("data.json"); META = await r.json(); DATA = META.repos; }
+  catch(e){ $("#status").textContent = "No se pudieron cargar los datos de las ramas."; return; }
+  const dests = META.destinos || [];
+  $("#eyebrow").textContent = `${META.marca || "Branching V2"} · ${(META.origen||[]).join(", ")} → ${dests.join(" / ")}`;
+  $("#titulo").textContent = `Migración de ramas · ${META.lider || ""}`.replace(/ · $/, "");
+  document.title = `Migración de ramas ${META.lider ? "· " + META.lider : ""}`.trim();
+  $("#fDest").innerHTML += dests.map(d => `<option>${esc(d)}</option>`).join("");
+  if (dests.length < 2) $("#fDest").hidden = true;
+  try { CLAVE = META.clave ? new RegExp(META.clave, "i") : null; } catch(e){ CLAVE = null; }
+  if (!CLAVE) $("#optClave").remove(); else $("#optClave").textContent = `Con rama del cliente (${META.clave})`;
+  if (!META.transversal) $("#optTrans").remove(); else $("#optTrans").textContent = `Ya existen en ${META.transversal}`;
+  $("#status").textContent = `Datos de Azure DevOps del ${META.generado}. ${DATA.length} repos, ${DATA.reduce((a,x)=>a+x.ramas.length,0)} ramas.`;
+  DATA.forEach(x => { BY[x.n] = x; x._base = x.ramas; x.nuevas = []; });
+  render();
+  const claude = window.claude;
+  if (!claude) { $("#status").textContent += " Las decisiones no se guardan fuera de claude.ai."; return; }
+  claude.use("db").then(d => {
+    db = d;
+    if (!db) { $("#status").textContent += " Sin acceso a la base de decisiones: solo lectura."; canWrite = false; render(); return; }
+    db.collection("decisiones").onSnapshot(s => { DEC = {}; s.docs.forEach(d => DEC[d.data().repo] = d.data()); render(); },
+      () => { $("#status").textContent += " Se perdió la conexión con la base de decisiones."; });
+    db.collection("ramas").onSnapshot(s => { RAM = {}; s.docs.forEach(d => RAM[d.data().repo] = d.data()); overlay(); render(); }, () => {});
+    db.collection("refrescos").onSnapshot(s => { REF = {}; s.docs.forEach(d => REF[d.data().repo] = d.data()); render(); }, () => {});
+  });
+  claude.use("user").then(async u => { if (!u) return; me = await u.id(); const w = await u.can("data.write"); if (w === false) { canWrite = false; render(); } });
+  claude.use("sample").then(s => { if (s) { SAMPLE = s; $("#openChat").hidden = false; } });
+}
+
+function destOf(x){ return DEC[x.n]?.destino || x.dest; }
+
+function filtered(){
+  const q = $("#q").value.trim().toLowerCase(), fd = $("#fDest").value, fc = $("#fConf").value, fx = $("#fDec").value, fo = $("#fOtro").value;
+  return DATA.filter(x => {
+    if (fd && !destOf(x).includes(fd)) return false;
+    if (fc && x.rec.confianza !== fc) return false;
+    const d = DEC[x.n];
+    if (fx === "pend" && d) return false;
+    if (fx && fx !== "pend" && (!d || d.decision !== fx)) return false;
+    if (fo === "clave" && !(CLAVE && x.ramas.some(r => CLAVE.test(r.r)))) return false;
+    if (fo === "otro" && !x.rec.nota) return false;
+    if (fo === "existe" && !(x.otros||[]).length) return false;
+    if (fo === "trans" && !(META.transversal && (x.otros||[]).includes(META.transversal))) return false;
+    if (q) { const hay = (x.n + " " + x.ramas.map(r => r.r + " " + r.a + " " + r.fn + " " + r.s + " " + r.m).join(" ")).toLowerCase(); if (!hay.includes(q)) return false; }
+    return true;
+  });
+}
+
+function render(){
+  const all = DATA.length, dec = Object.keys(DEC).filter(k => BY[k]).length;
+  const cnt = k => Object.values(DEC).filter(d => d.decision === k).length;
+  $("#stats").innerHTML = [["Pendientes", all], ["Decididos", dec], ["Migrar", cnt("migrar")], ["Otro proyecto", cnt("otro")], ["No migrar", cnt("no")], ["Duda", cnt("duda")]]
+    .map(([l, v]) => `<div class="stat"><b>${v}</b><span>${l}</span></div>`).join("");
+  $("#prog").style.width = all ? (dec / all * 100) + "%" : "0";
+  const rows = filtered();
+  const open = new Set([...document.querySelectorAll("details[open]")].map(d => d.className + "|" + d.dataset.repo));
+  const focus = document.activeElement?.id;
+  $("#list").innerHTML = rows.length ? rows.map(row).join("") : `<div class="empty">Ningún repo coincide con el filtro.</div>`;
+  open.forEach(k => { const [c, n] = k.split("|"); const d = document.querySelector(`details.${c}[data-repo="${CSS.escape(n)}"]`); if (d) d.open = true; });
+  if (focus) document.getElementById(focus)?.focus();
+}
+
+function row(x){
+  const d = DEC[x.n], sel = d?.rama || x.rec.recomendada, id = docId(x.n);
+  const dis = canWrite ? "" : "disabled";
+  const opts = x.ramas.map(r => `<option value="${esc(r.r)}" ${r.r === sel ? "selected" : ""}>${esc(r.r)} · ${fmt(r.f)} · ${esc(r.a || "?")}${r.ad != null ? ` · +${r.ad}/−${r.at}` : ""}${r.r === x.rec.recomendada ? " ★" : ""}</option>`).join("");
+  const extras = new Set(d?.extras || []);
+  const ex = x.ramas.length > 1 ? `<details class="ex" data-repo="${esc(x.n)}"><summary>Ramas adicionales${extras.size ? ` (${extras.size})` : ""}</summary>${x.ramas.filter(r => r.r !== sel).map(r => `<label><input type="checkbox" data-extra="${esc(r.r)}" data-repo="${esc(x.n)}" ${extras.has(r.r) ? "checked" : ""} ${dis}>${esc(r.r)}</label>`).join("")}</details>` : "";
+  const dp = d ? `<span class="pill d-${d.decision}">${{migrar:"Migrar",no:"No migrar",duda:"Duda",otro:"Va a " + esc((d.destino||[])[0] || "otro proyecto")}[d.decision]}${d.decision==="migrar"||d.decision==="otro"?": "+esc(d.rama):""}</span>` : "";
+  const btn = (k, t) => `<button data-act="${k}" data-repo="${esc(x.n)}" class="${d?.decision === k ? "on" : ""}" ${dis}>${t}</button>`;
+  const otro = d?.decision === "otro" ? (d.destino||[])[0] : "";
+  const popts = (META.proyectos || []).filter(p => !(META.origen||[]).includes(p)).map(p => `<option value="${esc(p)}" ${p === otro ? "selected" : ""}>${esc(p)}${(x.otros||[]).includes(p) ? " · ya existe ahí" : ""}</option>`).join("");
+  const osel = `<select id="oth-${id}" data-repo="${esc(x.n)}" data-otro="1" aria-label="Proyecto destino" ${otro ? "" : "hidden"} ${dis}><option value="">¿A qué proyecto?</option>${popts}</select>`;
+  const branches = x.ramas.map(r => `<tr class="${r.r === x.rec.recomendada ? "rec" : ""}"><td class="mono">${esc(r.r)}${r.b ? " <span class=pill>base</span>" : ""}${r.nueva ? " <span class='pill nueva'>nueva</span>" : ""}</td><td class="mono">${fmt(r.f)}</td><td>${esc(r.a)}</td><td class="num">${r.ad ?? ""}</td><td class="num">${r.at ?? ""}</td><td>${r.fn ? `<b class="fnb">${esc(r.fn)}</b><br>` : ""}<span class="note">${esc(r.s || r.m)}</span><ul class="hist">${(r.h||[]).slice(0,6).map(h => `<li><code>${esc(h[0])}</code> ${esc(h[1])}: ${esc(h[2])}</li>`).join("")}</ul></td></tr>`).join("");
+  return `<article class="repo ${d ? "decided" : ""}">
+    <div>
+      <div class="rhead"><div class="rname">${esc(x.n)}</div>${db ? `<button class="refresh" data-refresh="${esc(x.n)}" aria-busy="${REF[x.n]?.estado === "pendiente"}" title="Pide a Claude volver a leer las ramas de este repo en ${esc(x.o || "el origen")}" ${dis}>↻ Refrescar ramas</button>` : ""}</div>
+      ${refState(x)}
+      <div class="meta"><span class="pill">${esc(x.o || "")}</span>${x.nuevas.length ? `<span class="pill nueva">${x.nuevas.length} rama${x.nuevas.length === 1 ? "" : "s"} nueva${x.nuevas.length === 1 ? "" : "s"}</span>` : ""}${destOf(x).map(t => `<span class="pill">→ ${esc(t)}</span>`).join("")}<span class="pill">${x.ramas.length} rama${x.ramas.length===1?"":"s"}</span>${x.rec.confianza ? `<span class="pill ${x.rec.confianza}">Confianza ${x.rec.confianza}</span>` : ""}${dp}</div>
+      ${(x.ya||[]).length ? `<p class="exists">Ya hay un repo con este nombre en: <b>${x.ya.map(esc).join(", ")}</b></p>` : ""}
+      ${(x.otros||[]).length ? `<p class="exists">Ya existe en: <b>${x.otros.map(esc).join(", ")}</b>${META.transversal && x.otros.includes(META.transversal) ? " · revisar si va como transversal y no se duplica en el cliente" : ""}</p>` : ""}
+      ${x.rec.porque ? `<p class="why"><b>Recomendada: ${esc(x.rec.recomendada)}.</b> ${esc(x.rec.porque)}</p>` : ""}
+      ${x.rec.riesgo ? `<p class="risk">Riesgo: ${esc(x.rec.riesgo)}</p>` : ""}
+      ${x.rec.nota ? `<p class="other">${esc(x.rec.nota)}</p>` : ""}
+    </div>
+    <div class="pick">
+      <label class="note" for="sel-${id}">Rama a migrar</label>
+      <select id="sel-${id}" data-repo="${esc(x.n)}" ${dis}>${opts}</select>
+      <p class="fn" id="fn-${id}">${fnText(x, sel)}</p>
+      ${ex}
+      <textarea id="nota-${id}" data-repo="${esc(x.n)}" placeholder="Nota (opcional)" ${dis}>${esc(d?.nota || "")}</textarea>
+      ${d ? `<span class="saved">Guardado ${fmt(d.fecha)} ${d.fecha ? d.fecha.slice(11,16) : ""}</span>` : ""}
+    </div>
+    <div class="acts">${btn("migrar","Migrar")}${btn("no","No migrar")}${btn("duda","Duda")}${(META.proyectos||[]).length ? `<button data-otrobtn="1" data-repo="${esc(x.n)}" class="${otro ? "on" : ""}" title="El repo no va al destino del cliente sino a otro proyecto de Azure (transversal, otro cliente…)" ${dis}>Va a otro proyecto</button>${osel}` : ""}</div>
+    <details class="br" data-repo="${esc(x.n)}"><summary>Ver ramas, autores e historial</summary>
+      <div class="tbl"><table><thead><tr><th>Rama</th><th>Último commit</th><th>Autor</th><th>Adelante</th><th>Atrás</th><th>Qué trae · últimos commits</th></tr></thead><tbody>${branches}</tbody></table></div>
+    </details>
+  </article>`;
+}
+
+function refState(x){
+  const f = REF[x.n], o = RAM[x.n];
+  if (f?.estado === "pendiente") return `<p class="rstate wait">Refresco pedido ${hm(f.pedido)} · esperando a que Claude lo lea en Azure</p>`;
+  if (f?.estado === "error") return `<p class="rstate wait">No se pudo refrescar: ${esc(f.error || "error")}</p>`;
+  if (o) return `<p class="rstate">Ramas al ${hm(o.fecha)}${x.nuevas.length ? ` · nuevas: ${x.nuevas.map(esc).join(", ")}` : " · sin ramas nuevas"}</p>`;
+  return "";
+}
+
+async function pedirRefresco(repo){
+  if (!db || !canWrite || REF[repo]?.estado === "pendiente") return;
+  try { await db.collection("refrescos").doc(docId(repo)).set({ repo, estado: "pendiente", pedido: new Date().toISOString(), por: me || "" }); }
+  catch(e){ $("#status").textContent = "No se pudo pedir el refresco. Intenta de nuevo."; }
+}
+
+function fnText(x, rama){
+  const r = x.ramas.find(b => b.r === rama); if (!r) return "";
+  return `<b>Qué trae:</b> ${esc(r.fn || r.s || r.m || "Sin descripción")} <span class="note">· ${fmt(r.f)} · ${esc(r.a || "?")}</span>`;
+}
+
+function form(repo){
+  const id = docId(repo), x = BY[repo];
+  const rama = document.getElementById("sel-" + id).value, nota = document.getElementById("nota-" + id).value.trim();
+  const extras = [...document.querySelectorAll(`input[data-extra][data-repo="${CSS.escape(repo)}"]:checked`)].map(i => i.dataset.extra).filter(r => r !== rama);
+  return { rama, nota, destino: x.dest, extras };
+}
+
+async function decide(repo, decision){
+  if (!db || !canWrite) return;
+  const f = form(repo), prev = DEC[repo];
+  if (decision === "otro") {
+    const p = document.getElementById("oth-" + docId(repo))?.value;
+    if (!p) return;
+    f.destino = [p];
+  }
+  if (prev && prev.decision === decision && prev.rama === f.rama && (prev.nota||"") === f.nota
+      && (prev.destino||[]).join() === f.destino.join() && (prev.extras||[]).join() === f.extras.join()) return;
+  try { await db.collection("decisiones").doc(docId(repo)).set({ repo, decision, ...f, origen: BY[repo].o || "", por: me || "", fecha: new Date().toISOString() }); }
+  catch(e){ $("#status").textContent = e.code === "invalid_argument" ? "No tienes permiso para guardar decisiones en esta página." : "No se pudo guardar la decisión. Intenta de nuevo."; if (e.code === "invalid_argument") { canWrite = false; render(); } }
+}
+
+document.addEventListener("click", e => {
+  const b = e.target.closest("button[data-act]"); if (b) decide(b.dataset.repo, b.dataset.act);
+  const rf = e.target.closest("button[data-refresh]"); if (rf) pedirRefresco(rf.dataset.refresh);
+  const o = e.target.closest("button[data-otrobtn]");
+  if (o) { const s = document.getElementById("oth-" + docId(o.dataset.repo)); if (s) { s.hidden = false; s.focus(); } }
+});
+document.addEventListener("change", e => {
+  const t = e.target, repo = t.dataset.repo; if (!repo || !t.matches("select, input[data-extra]")) return;
+  if (t.dataset.otro) { if (t.value) decide(repo, "otro"); return; }
+  if (t.id?.startsWith("sel-")) { const fnEl = document.getElementById("fn-" + docId(repo)); if (fnEl) fnEl.innerHTML = fnText(BY[repo], t.value); }
+  if (DEC[repo]) decide(repo, DEC[repo].decision);
+});
+document.addEventListener("focusout", e => {
+  const t = e.target; if (t.matches("textarea[data-repo]") && DEC[t.dataset.repo]) decide(t.dataset.repo, DEC[t.dataset.repo].decision);
+});
+["q","fDest","fConf","fDec","fOtro"].forEach(i => $("#" + i).addEventListener("input", render));
+$("#acceptAll").onclick = async () => {
+  if (!db || !canWrite) return;
+  const rows = filtered().filter(x => x.rec.confianza === "alta" && !DEC[x.n]);
+  if (!rows.length) { $("#status").textContent = "No hay repos visibles de confianza alta sin decidir."; return; }
+  if (!confirm(`Se marcarán ${rows.length} repos como «Migrar» con la rama recomendada. ¿Seguir?`)) return;
+  $("#status").textContent = `Guardando ${rows.length} decisiones…`;
+  let ok = 0;
+  for (const x of rows) { try { await db.collection("decisiones").doc(docId(x.n)).set({ repo: x.n, decision: "migrar", rama: x.rec.recomendada, nota: "Aceptada la recomendación (confianza alta)", destino: x.dest, extras: [], origen: x.o || "", por: me || "", fecha: new Date().toISOString() }); ok++; } catch(e){ break; } }
+  $("#status").textContent = `${ok} de ${rows.length} recomendaciones de confianza alta marcadas como «Migrar».`;
+};
+
+/* ---- chat ---- */
+let SAMPLE = null, TURNS = [], CTL = null;
+const rules = () => `Eres el asistente de la migración de repositorios en Azure DevOps (organización ${META.org}): del proyecto ${(META.origen||[]).join(", ")} a ${(META.destinos||[]).join(", ")}. Respondes en español, breve y concreto, a ${META.lider || "el líder técnico"}. Usa SOLO los datos que devuelven las herramientas (ramas, fechas, autores, commits adelante/atrás de la base, resúmenes y últimos commits). Si un dato no está, dilo. Cita nombres de rama y fechas exactas. No decides por el líder: muestras datos. Para ver un repo usa getRepo; para buscar por texto (ticket, autor, palabra) usa buscar.`;
+const TOOLS = [
+  { name: "getRepo", description: "Devuelve un repo pendiente con su recomendación, la decisión guardada y todas sus ramas (fecha, autor, adelante/atrás, resumen y últimos commits).",
+    inputSchema: { type: "object", properties: { repo: { type: "string", description: "Nombre exacto o aproximado del repo" } }, required: ["repo"] },
+    execute: ({ repo }) => {
+      const q = String(repo).toLowerCase(); const x = BY[repo] || DATA.find(r => r.n.toLowerCase() === q) || DATA.find(r => r.n.toLowerCase().includes(q));
+      if (!x) throw new Error("No hay un repo pendiente con ese nombre");
+      return { repo: x.n, origen: x.o, base: x.base, destino: destOf(x), yaExisteEn: x.otros || [], recomendacion: x.rec, decision: DEC[x.n] || null,
+        ramas: x.ramas.map(r => ({ rama: r.r, fecha: fmt(r.f), autor: r.a, adelante: r.ad, atras: r.at, funcional: r.fn, resumen: r.s, ultimos: (r.h||[]).slice(0,10) })) };
+    } },
+  { name: "buscar", description: "Busca un texto (ticket, autor, palabra, cliente) en nombres de repo, ramas, autores, resúmenes y mensajes de commit. Devuelve hasta 25 coincidencias {repo, rama, fecha, autor, resumen}.",
+    inputSchema: { type: "object", properties: { texto: { type: "string" } }, required: ["texto"] },
+    execute: ({ texto }) => {
+      const q = String(texto).toLowerCase(), out = [];
+      for (const x of DATA) for (const r of x.ramas) {
+        const hay = [x.n, r.r, r.a, r.fn, r.s, r.m, ...(r.h||[]).map(h => h.join(" "))].join(" ").toLowerCase();
+        if (hay.includes(q)) out.push({ repo: x.n, rama: r.r, fecha: fmt(r.f), autor: r.a, funcional: r.fn, resumen: r.s });
+        if (out.length >= 25) return out;
+      }
+      return out;
+    } },
+];
+function addMsg(cls, text){ const d = document.createElement("div"); d.className = "msg " + cls; d.textContent = text; $("#msgs").append(d); $("#msgs").scrollTop = 1e9; return d; }
+$("#openChat").onclick = () => { $("#chat").hidden = false; $("#openChat").hidden = true; $("#chatIn").focus(); };
+$("#closeChat").onclick = () => { CTL?.abort(); $("#chat").hidden = true; $("#openChat").hidden = false; };
+$("#chatIn").addEventListener("keydown", e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); $("#chatForm").requestSubmit(); } });
+$("#chatForm").addEventListener("submit", async e => {
+  e.preventDefault();
+  const text = $("#chatIn").value.trim(); if (!text || !SAMPLE) return;
+  $("#chatIn").value = ""; addMsg("u", text); TURNS.push({ role: "user", content: text });
+  const bubble = addMsg("a", "Pensando…"); $("#send").disabled = true; CTL = new AbortController();
+  try {
+    const { text: ans } = await SAMPLE([{ role: "user", content: rules() }, ...TURNS.slice(-10)], { tools: TOOLS, signal: CTL.signal, onText: ({ text }) => { bubble.textContent = text; } });
+    TURNS.push({ role: "assistant", content: ans });
+  } catch (err) {
+    const msg = { not_granted: "El chat necesita tu permiso para usar Claude.", rate_limited: "Demasiadas preguntas seguidas. Espera un momento.", tools_unavailable: "Esta vista no permite consultar los datos desde el chat.", cancelled: "" }[err.code];
+    bubble.textContent = err.text || msg || "No se pudo responder. Intenta de nuevo.";
+    TURNS.pop();
+  } finally { $("#send").disabled = false; }
+});
+
+boot();
+</script>

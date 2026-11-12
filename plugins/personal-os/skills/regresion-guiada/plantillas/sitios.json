@@ -1,0 +1,11 @@
+{
+  "_nota": "Copiar a <mesa>/kit/sitios.json. 'modo' = local (corrida base) o staging (pasada post-publicación por pantalla). La variable REGV_MODO manda. Las URLs de staging las confirma el responsable como staging, nunca producción.",
+  "modo": "local",
+  "local": {
+    "menu": "http://127.0.0.1:4200",
+    "<app>": "http://localhost:4201"
+  },
+  "staging": {
+    "menu": "https://<host-de-staging>/<ruta-del-menu>"
+  }
+}

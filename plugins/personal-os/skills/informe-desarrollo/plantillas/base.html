@@ -1,0 +1,179 @@
+<!doctype html>
+<!--
+  Esqueleto del informe. Copia este archivo al proyecto y reemplaza los {{PLACEHOLDER}}.
+  Las secciones de ejemplo de abajo son ANDAMIO: borra las que no correspondan al plan de
+  secciones aprobado en la Fase 2. No las rellenes por completarlas.
+  Sistema de estilos ya probado en impresion A4 apaisada.
+-->
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>{{TITULO}}</title>
+<style>
+  @page { size: A4 landscape; margin: 13mm 15mm; }
+  :root{
+    --ink:#16202b; --muted:#5b6b7c; --line:#d5dde5; --soft:#f1f5f9;
+    --blue:#1b5e9c; --blue-soft:#e7f0f9; --blue-line:#4a86c5;
+    --amber:#c98134; --amber-soft:#fdf4ea;
+    --green:#4e8055; --green-soft:#eef5ee;
+    --slate:#64748b;
+  }
+  *{ box-sizing:border-box; }
+  body{
+    font-family:"Segoe UI", system-ui, -apple-system, sans-serif;
+    color:var(--ink); font-size:10.5pt; line-height:1.5; margin:0;
+    -webkit-print-color-adjust:exact; print-color-adjust:exact;
+  }
+  .page{ break-after:page; page-break-after:always; }
+  .page:last-child{ break-after:auto; page-break-after:auto; }
+  h1{ font-size:24pt; margin:0 0 6px; letter-spacing:-.3px; }
+  h2{ font-size:15pt; margin:0 0 4px; color:var(--blue); letter-spacing:-.2px; }
+  h3{ font-size:11pt; margin:11px 0 4px; }
+  p{ margin:0 0 8px; }
+  ul{ margin:0 0 8px; padding-left:16px; }
+  li{ margin-bottom:3px; }
+  code{ font-family:Consolas,"Courier New",monospace; font-size:9pt; background:var(--soft);
+        padding:1px 4px; border-radius:3px; }
+  .rule{ height:3px; background:var(--blue); width:56px; margin:8px 0 14px; border-radius:2px; }
+  .sec-head{ border-bottom:1px solid var(--line); padding-bottom:8px; margin-bottom:14px; }
+  .sec-head .kicker{ font-size:8pt; letter-spacing:1.4px; text-transform:uppercase;
+                     color:var(--muted); font-weight:600; }
+  .lead{ color:var(--muted); font-size:10pt; }
+  /* ---------- portada ---------- */
+  .cover{ height:170mm; display:flex; flex-direction:column; justify-content:center; }
+  .cover .brand{ font-size:9pt; letter-spacing:2.4px; text-transform:uppercase;
+                 color:var(--blue); font-weight:700; margin-bottom:20px; }
+  .cover .sub{ font-size:13pt; color:var(--muted); margin:2px 0 26px; }
+  .cover .meta{ display:flex; gap:44px; border-top:1px solid var(--line); padding-top:16px;
+                margin-top:8px; flex-wrap:wrap; }
+  .cover .meta div{ font-size:9.5pt; }
+  .cover .meta span{ display:block; font-size:8pt; letter-spacing:1.1px; text-transform:uppercase;
+                     color:var(--muted); font-weight:600; margin-bottom:3px; }
+  /* ---------- layout ---------- */
+  .cols2{ column-count:2; column-gap:22px; }
+  .grid2{ display:grid; grid-template-columns:1fr 1fr; gap:18px; }
+  .grid3{ display:grid; grid-template-columns:repeat(3,1fr); gap:14px; }
+  .card{ border:1px solid var(--line); border-radius:6px; padding:9px 12px; background:#fff;
+         break-inside:avoid; }
+  .card h4{ margin:0 0 5px; font-size:10pt; color:var(--blue); }
+  .card p{ margin:0; font-size:9.5pt; color:var(--muted); }
+  .card.accent{ border-left:3px solid var(--blue); }
+  table{ width:100%; border-collapse:collapse; font-size:9pt; }
+  th{ background:var(--blue); color:#fff; text-align:left; padding:6px 8px; font-weight:600;
+      font-size:8.5pt; letter-spacing:.3px; }
+  td{ padding:5px 8px; border-bottom:1px solid var(--line); vertical-align:top; }
+  tr:nth-child(even) td{ background:#fafcfe; }
+  td.mono, th.mono{ font-family:Consolas,"Courier New",monospace; font-size:8.5pt; }
+  .tag{ display:inline-block; font-size:8pt; padding:1px 7px; border-radius:10px;
+        border:1px solid var(--line); background:var(--soft); color:var(--muted); font-weight:600; }
+  .tag.ok{ background:var(--green-soft); border-color:var(--green); color:#2f5c37; }
+  .tag.wip{ background:var(--amber-soft); border-color:var(--amber); color:#8a5316; }
+  .note{ font-size:9pt; color:var(--muted); border-left:3px solid var(--line);
+         padding:6px 0 6px 11px; margin-top:12px; }
+  .pending{ background:#fff6e6; border:1px dashed var(--amber); border-radius:5px;
+            padding:8px 11px; font-size:9pt; color:#8a5316; margin-top:10px; }
+  svg{ display:block; width:100%; height:auto; }
+  /* los diagramas grandes se ajustan al alto util de la pagina A4 apaisada */
+  svg.fig-a{ height:143mm; width:100%; }
+  svg.fig-b{ height:143mm; width:100%; }
+  .figcap{ font-size:8.5pt; color:var(--muted); margin-top:7px; text-align:center; }
+</style>
+</head>
+<body>
+
+<!-- ============ PORTADA ============ -->
+<section class="page cover">
+  <div class="brand">{{ORGANIZACION}}</div>
+  <h1>{{TITULO}}</h1>
+  <div class="sub">{{SUBTITULO: una linea que dice de que tipo de documento se trata}}</div>
+  <p class="lead" style="max-width:165mm">
+    {{TRES LINEAS: que es esto, para que sirve, y que abarca. Sin tecnologias.}}
+  </p>
+  <div class="meta">
+    <div><span>Preparado por</span>{{AUTOR}}</div>
+    <div><span>Dirigido a</span>{{DESTINATARIO}}</div>
+    <!-- Solicitado por: BORRA esta fila si no se sabe quien lo pidio. Nunca dejes
+         "pendiente de confirmar" en la portada de un entregable. -->
+    <div><span>Solicitado por</span>{{SOLICITANTE}}</div>
+    <div><span>Fecha</span>{{FECHA}}</div>
+    <div><span>Alcance</span>{{ALCANCE}}</div>
+    <div><span>Version</span>1.0</div>
+  </div>
+</section>
+
+<!-- ============ SECCION DE TEXTO + TARJETAS ============ -->
+<section class="page">
+  <div class="sec-head">
+    <div class="kicker">Seccion 1</div>
+    <h2>{{TITULO DE SECCION}}</h2>
+    <div class="lead">{{una linea de que va la seccion}}</div>
+  </div>
+
+  <p>{{parrafo de negocio}}</p>
+
+  <h3>{{Subtitulo}}</h3>
+  <table>
+    <thead><tr><th>{{Columna}}</th><th>{{Columna}}</th></tr></thead>
+    <tbody>
+      <tr><td><strong>{{dato}}</strong></td><td>{{explicacion}}</td></tr>
+    </tbody>
+  </table>
+
+  <h3>{{Actores}}</h3>
+  <div class="grid3" style="margin-top:8px">
+    <div class="card accent"><h4>{{Actor}}</h4><p>{{que hace, una linea}}</p></div>
+  </div>
+
+  <div class="note">{{aclaracion al pie, si hace falta}}</div>
+</section>
+
+<!-- ============ SECCION DE DIAGRAMA (pagina completa) ============ -->
+<section class="page">
+  <div class="sec-head">
+    <div class="kicker">Seccion N &middot; Flujograma</div>
+    <h2>{{TITULO}}</h2>
+    <div class="lead">{{que muestra el diagrama}}</div>
+  </div>
+  <svg class="fig-a" viewBox="0 0 1180 700" xmlns="http://www.w3.org/2000/svg">
+    <style>
+      .lbl{ font:600 11.5px "Segoe UI",sans-serif; fill:#16202b; }
+      .lane{ font:700 11px "Segoe UI",sans-serif; fill:#16202b; }
+      .lanesub{ font:400 8.5px "Segoe UI",sans-serif; fill:#7b8794; }
+      .ph{ font:700 10.5px "Segoe UI",sans-serif; fill:#ffffff; }
+      .bx{ font:400 10.5px "Segoe UI",sans-serif; fill:#243447; }
+      .flow{ stroke:#475569; stroke-width:1.6; fill:none; }
+      .back{ stroke:#94a3b8; stroke-width:1.4; fill:none; stroke-dasharray:4 3; }
+    </style>
+    <!-- carriles por actor real, columnas por fase real -->
+  </svg>
+  <div class="figcap">Figura A &middot; {{pie que dice algo que el dibujo no puede decir}}</div>
+</section>
+
+<!-- ============ SECCION DE ESTADO ============
+     SOLO para un informe de DIAGNOSTICO (ver Fase 0 de la skill).
+     En un informe de ORIENTACION esta seccion NO existe: ni esta tabla, ni el bloque .pending,
+     ni un resumen de ellos. El avance y los pendientes se llevan en el tracker del proyecto.
+     Si el proposito es orientacion, BORRA esta seccion completa. -->
+<section class="page">
+  <div class="sec-head">
+    <div class="kicker">Seccion N</div>
+    <h2>Estado del desarrollo</h2>
+    <div class="lead">Que esta hecho, que esta probado y donde, y que no.</div>
+  </div>
+  <table>
+    <thead><tr><th>Componente</th><th>Estado</th><th>Nota</th></tr></thead>
+    <tbody>
+      <tr><td>{{componente}}</td><td><span class="tag ok">Implementado</span></td><td>{{donde se probo}}</td></tr>
+      <tr><td>{{componente}}</td><td><span class="tag wip">En definicion</span></td><td>{{que falta acordar}}</td></tr>
+    </tbody>
+  </table>
+  <div class="pending">
+    <strong>Por definir.</strong> {{lo que falta acordar, como preguntas, con dueno si se sabe}}
+  </div>
+  <div class="note">
+    Este informe no cubre: {{lo que quedo fuera del alcance}}.
+  </div>
+</section>
+
+</body>
+</html>

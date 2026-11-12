@@ -1,5 +1,46 @@
 # Changelog
 
+## 3.2.0
+
+El tablero de planeación de la célula sale de la skill, y seis herramientas del líder entran al plugin,
+todas configurables.
+
+- **status-celula** arma y publica el **tablero de planeación compartido** (Gantt por persona, colas de
+  revisión, certificación y publicación, macros, modo cliente, ocupación de hoy y festivos). La plantilla
+  lee la célula (`status_celula.tablero` → `celula.json`, `extras.json`) y la organización
+  (`organizacion.json`: marca, conectores) de la configuración; los módulos que no uses (calendario,
+  timesheets, bandeja) se apagan solos. `status-celula-tablero.js` arma la página, `prueba-igualdad.js`
+  compara contra una publicada y `/status-celula ejemplo` la muestra con una célula de ejemplo. Quién revisa
+  y quién certifica (`roles`), el sitio de Jira (`jira.sitio`) y los carriles del celular (`carriles_movil`)
+  también salen de la configuración: la plantilla no trae nombres de ninguna célula.
+- **migrar-ramas**: nota por líder, `coordinador` opcional para las dudas sin dueño y recordatorio de
+  revocar el token al cerrar la migración. **mesa-nueva** usa `raiz_mesas` para encontrar una mesa vecina
+  con la configuración ya apuntando a pruebas. **redactar** lee entera la sección del perfil para escribir
+  fuera de la organización. **regresion-guiada**: forma de `DEPENDENCIAS_EXTERNAS.json`, más reglas del
+  reglamento (relaciones entre datos, tipos de prueba, formato del Excel, orden por riesgo) y la plantilla
+  del Excel sin nombres de cliente.
+- **informe-desarrollo**: informe de orientación (o diagnóstico, si se pide) de un desarrollo ya
+  construido, con levantamiento por subagentes y auditoría de un dev sin contexto. Sección opcional
+  `informe_desarrollo`.
+- **redactar**: textos que salen a tu nombre, en tu voz, desde tu perfil de voz (`rutas.perfil_voz`).
+  Nunca envía.
+- **auditar-ux-ui**: auditoría de UX, UI y marca con tres porcentajes y modo «hasta la meta», con el
+  perfil de marca de tu organización (`organizacion.marca`).
+- **mesa-nueva**: monta una mesa de trabajo multi-repo de Azure DevOps (clonado con el PAT fuera del
+  chat, rama base elegida por el líder, mapas por repo, contratos, wrappers de BD de solo lectura). La
+  organización, la rama de trabajo y el catálogo de repos salen de la sección `mesa_nueva` de
+  `fuentes.yaml`; el catálogo vive fuera del plugin.
+- **migrar-ramas**: depuración y migración de repos entre proyectos de Azure DevOps (Branching V2) con
+  página de decisiones por repo. La organización, el proyecto transversal, las ramas V2, los alias de
+  proyecto y la tabla de líderes salen de la sección `migrar_ramas`; los scripts reciben `--org`.
+- **`regresion-guiada`** (nueva): conduce en 10 fases la regresión de un sistema antes de publicarlo —
+  reparto por persona, ramas, base de conocimiento por proyecto, lectura del periodo de referencia en
+  staging, arranque en localhost con aislamiento de red (proxy-sumidero, relevo de terceros, guardia, firewall
+  opcional), reproducción por API y por pantalla con el mismo usuario, errores por causa, revisión con el
+  responsable y cobertura por inventario. Lo del cliente (repos, periodo, publicación, bases legadas, ventana
+  de escritura) va en la sección `regresion` de `fuentes.yaml` y en un perfil (`regresion.perfil_dir`).
+  La lectura de staging pide OK por consulta salvo excepción registrada (`staging.lectura_autonoma`).
+
 ## 3.1.1
 
 La Worklist del líder se lee más fácil:

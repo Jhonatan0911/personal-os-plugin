@@ -1,0 +1,117 @@
+{
+  "pagina": {
+    "titulo": "Planeación · Célula Ejemplo",
+    "subtitulo": "Cliente Ejemplo · jornada 8 h",
+    "pie_uso": "Uso interno · célula Ejemplo"
+  },
+  "corte": "",
+  "nombres": {
+    "lider": "Ana",
+    "analista": "Luis"
+  },
+  "revision_inicial": "marta",
+  "roles": {
+    "lider": "ana",
+    "certifica": "luis"
+  },
+  "carriles_movil": [
+    "ana",
+    "luis"
+  ],
+  "lanes": [
+    {
+      "id": "ana",
+      "nm": "Ana Pérez",
+      "rl": "Líder técnica",
+      "account_id": "000000:00000000-0000-0000-0000-000000000001",
+      "nombre_jira": "Ana Pérez",
+      "correo": "ana@ejemplo.com",
+      "celula": 1,
+      "rol_jira": "Líder"
+    },
+    {
+      "id": "luis",
+      "nm": "Luis Gómez",
+      "rl": "Analista del cliente",
+      "account_id": "000000:00000000-0000-0000-0000-000000000002",
+      "nombre_jira": "Luis Gómez",
+      "correo": "luis@ejemplo.com",
+      "analista": 1
+    },
+    {
+      "id": "marta",
+      "nm": "Marta Ruiz",
+      "rl": "Desarrolladora",
+      "dev": true,
+      "account_id": "000000:00000000-0000-0000-0000-000000000003",
+      "nombre_jira": "Marta Ruiz",
+      "correo": "marta@ejemplo.com",
+      "celula": 2,
+      "rol_jira": "Desarrolladora"
+    },
+    {
+      "id": "pedro",
+      "nm": "Pedro Díaz",
+      "rl": "Desarrollador",
+      "dev": true,
+      "account_id": "000000:00000000-0000-0000-0000-000000000004",
+      "nombre_jira": "Pedro Díaz",
+      "correo": "pedro@ejemplo.com",
+      "celula": 3,
+      "rol_jira": "Desarrollador"
+    }
+  ],
+  "jira": {
+    "sitio": "https://tu-sitio.atlassian.net",
+    "cloud": "00000000-0000-0000-0000-000000000000",
+    "servidor_mcp": "Atlassian Rovo",
+    "proyectos_cliente": [
+      "CLI"
+    ],
+    "proyecto_transversal": "",
+    "nombres": {
+      "CLI": "Cliente Ejemplo"
+    },
+    "proyectos_crear": [
+      "CLI"
+    ],
+    "transversal_fuera": []
+  },
+  "m365": {
+    "servidor_mcp": "Microsoft 365"
+  },
+  "festivos": [],
+  "jornada": {
+    "normal": 8,
+    "viernes": 8,
+    "efectiva_normal": 7,
+    "efectiva_viernes": 7,
+    "horas_por_dia_estimadas": 6.5
+  },
+  "sla": {
+    "revisar": 2,
+    "certificar": 2,
+    "publicar": 5
+  },
+  "clientes": {
+    "cli": {
+      "nm": "Cliente Ejemplo",
+      "pr": [
+        "CLI"
+      ],
+      "re": "ejemplo"
+    }
+  },
+  "ia": {
+    "contexto": "una célula de desarrollo de software (cliente Ejemplo)",
+    "frentes": "Marta: módulo de pagos · Pedro: integraciones · Luis: analista del cliente"
+  },
+  "modulos": {
+    "calendario": false,
+    "timesheets": false,
+    "bandeja": false
+  },
+  "sprint_etiqueta": "SPRINT",
+  "sprint_plan": "",
+  "sprints": []
+}

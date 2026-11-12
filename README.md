@@ -139,10 +139,14 @@ timesheet, la planeación de sprint y los recordatorios de Windows.
 | `/os-on` · `/os-off` | Reactiva / pausa el OS en todas tus sesiones (pausa con doble confirmación) |
 
 Skills que se activan por lo que pides: `brief-diario`, `planear-sprint` («planeemos el sprint de…»),
-`checkpoint` / `retomar` («guarda el avance», «en qué quedamos»), `personas`, `status-celula`,
+`checkpoint` / `retomar` («guarda el avance», «en qué quedamos»), `personas`, `status-celula` (también
+arma y publica el tablero de planeación compartido),
 `timesheet`, `consola-neuronal`, `tablero-diario`, `cerrar-tarea`, `reconciliar`, y las del flujo del
-líder: `mapa-criticidad`, `revisar-pr`, `certificar-funcional`, `worklist-lider` («la cabina del líder»)
-y `maestro-skills`.
+líder: `mapa-criticidad`, `revisar-pr`, `certificar-funcional`, `worklist-lider` («la cabina del líder»),
+`mesa-nueva` («monta una mesa»: workspace multi-repo de Azure DevOps), `migrar-ramas` («migrar ramas»,
+Branching V2 entre proyectos de Azure DevOps), `regresion-guiada` («arranca la regresión»),
+`informe-desarrollo` («informe del desarrollo»), `redactar` (textos en tu voz, sin enviar),
+`auditar-ux-ui` (UX, UI y marca con porcentaje) y `maestro-skills`.
 Agentes: `brief-jira`, `brief-outlook`, `brief-teams` (solo lectura), `redactor-correos` (redacta,
 nunca envía), `revisor-estimacion` (revisor adversarial de los planes de sprint) y
 `refutador-requerimiento` (paso 0, con modo corto y normas por país).

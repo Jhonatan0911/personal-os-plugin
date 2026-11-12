@@ -1,0 +1,32 @@
+{
+  "_nota": "Reparto del líder. Se copia a <mesa>/asignaciones.json desde el perfil de la regresión (regresion.perfil_dir) o se arma con el Excel de reparto. Una entrada por persona; cada proyecto con su rama de producción y, si sale con la publicación en curso, la rama de esa publicación.",
+  "corte": "<AAAA-MM-DD>",
+  "issue_general": "<PROY-100>",
+  "ventana_golden_master": { "desde": "<AAAA-MM-DD>", "hasta": "<AAAA-MM-DD>" },
+  "pendientes_reparto": [],
+  "personas": [
+    {
+      "nombre": "<Nombre Apellido>",
+      "correo": "<correo@dominio>",
+      "grupo": 1,
+      "grupo_nombre": "<Módulo o grupo>",
+      "issue": "<PROY-101>",
+      "plan_claude": "<Pro|Max>",
+      "proyectos": [
+        {
+          "aplicativo": "<Aplicativo>",
+          "sitio_iis": "",
+          "organizacion": "<organizacion>",
+          "proyecto_azure": "<Proyecto>",
+          "repo": "<repo>",
+          "rama_produccion": "",
+          "rama_publicacion": null,
+          "rama_a_probar": "",
+          "commit": "",
+          "confirmado": false,
+          "alertas": []
+        }
+      ]
+    }
+  ]
+}

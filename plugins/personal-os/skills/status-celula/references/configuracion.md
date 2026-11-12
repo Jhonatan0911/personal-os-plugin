@@ -58,16 +58,31 @@ status_celula:
   roster_jira: "<ruta al roster de status-celula-jira.js>"   # si no, se arma desde equipo[] y externos
   timesheets:
     remitentes: [{ nombre: "<persona>", correo: "<remitente>" }]   # si no, equipo[].correo
-  salida_html: "<stateDir>"                          # status-celula-<fecha>.html
   mesa: { nombre: "mesa de líderes", con: "<quien la coordina>" }
   mesa_excluir:                   # temas que el usuario sacó de la mesa: no vuelven sin que él lo pida
     - { tema: "<qué>", por_que: "<razón>", donde_queda: "<dónde se sigue>" }
-  tablero_compartido:             # sección H de la skill; sin él no se sube nada
+  tablero_compartido:             # sección H de la skill; sin url se publica uno nuevo y se guarda aquí
     url: "<url del Artifact>"
     nombre: "<nombre del tablero>"
     personas_extra: []            # displayNames de fuera cuyas issues también ve el tablero
     excluir: []                   # claves que no deben aparecer en la foto
+  tablero:                        # de dónde arma la página status-celula-tablero.js
+    celula: "<ruta al JSON de la célula>"           # formato: tablero/ejemplo-celula.json de la skill
+    organizacion: "<ruta al perfil de la empresa>"  # formato: tablero/ejemplo-organizacion.json
+    extras: "<ruta a extras.json>"                  # opcional: lo prometido al cliente y pendientes sin issue
 ```
+
+**El JSON de la célula** (`tablero.celula`) lleva lo que la página necesita para hablar de tu equipo:
+`pagina` (título, subtítulo, pie), `nombres` (líder y analista, para los textos), `lanes[]` (carril por
+persona: `id`, `nm`, `rl`, `account_id`, `nombre_jira` exacto, `correo`, `dev`, `fuera`, `celula` = orden en
+la tabla de la célula, `analista` = orden en la de analistas, `rol_jira`, `solo_colas`), `jira` (`cloud`,
+`servidor_mcp`, `proyectos_cliente`, `proyecto_transversal`, `nombres`, `proyectos_crear`,
+`transversal_fuera`), `m365.servidor_mcp`, `festivos`, `jornada` (`normal`, `viernes`, `efectiva_*`,
+`horas_por_dia_estimadas`), `sla`, `clientes` (modo cliente), `ia` (contexto y frentes para la sugerencia del
+backlog), `estados` (opcional: nombres de las colas), `modulos` (opcional: `calendario`, `timesheets`,
+`bandeja`, `macros`, `cliente`, `backlog`, `frentes` en `false` quitan su pestaña o su lectura; todo está
+encendido por defecto) y lo del sprint. **El perfil de la empresa** es aparte
+porque lo comparten todos los líderes de la misma organización.
 
 La skill copia al JSON `capacidad_factor`, `sla_*`, `limite_wip`, `proyectos_propios`, `estados` (más
 `no_cierre` desde `jira.estados_que_parecen_cerrados`), `reparto` y `externos` (como `jira.externos`). El
