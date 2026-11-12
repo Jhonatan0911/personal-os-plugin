@@ -1,5 +1,9 @@
 # Changelog
 
+## 3.3.2
+
+- **planear-sprint**: la observación de cada subtarea se escribe en lenguaje claro desde el primer análisis, con tres partes fijas («Qué hace · Horas · Depende de», o «Por qué está en espera»). La traza técnica (tipo de matriz, factores, confianza, ajustes del revisor y del refutador) pasa a `obs_tecnica`. `generar_cronograma.py` avisa por cada observación que no empiece con «Qué hace:».
+
 ## 3.3.1
 
 - status-celula: en la pestaña ⚙ Configuración, la lista «Carriles que se ven en el celular» (y toda casilla de la pestaña) se veía rota en el celular, porque el ancho completo de los campos de texto también se aplicaba a las casillas. Ahora cada carril es una pastilla con su casilla al lado, y las pastillas se reparten en filas según el ancho de la pantalla.

@@ -492,6 +492,11 @@ def main(argv):
         avisos.append("sin jira.cloud_id: la página no consultará ni exportará a Jira (pásalo en el plan o con --perfil)")
     if not cfg["jira"]["sitio"]:
         avisos.append("sin jira.sitio: no habrá enlaces «Abrir en Jira»")
+    vagas = [it.get("titulo", "?")[:60] for h in plan["historias"] for it in h.get("items", [])
+             if it.get("estado") != "descartada" and not (it.get("obs") or "").lstrip().startswith("Qué hace:")]
+    if vagas:
+        avisos.append(f"{len(vagas)} observaciones no empiezan con «Qué hace:» (el líder no entiende qué hará el dev; "
+                      "la jerga de matriz va en obs_tecnica): " + "; ".join(vagas[:5]) + (" …" if len(vagas) > 5 else ""))
     p0 = ((exp.get("chequeos") or {}).get("p0") or {}).get("estado") if exp else None
     linea_equipo = capacidad_real(equipo, plan, festivos, asignado["nombre"], avisos) if equipo else ""
     print(f"ok {out} · {len(hus)} historias · propuesto {tot:g} h · pendiente de definición {pen:g} h"

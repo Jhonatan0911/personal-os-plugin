@@ -148,8 +148,22 @@ analista y el botón «Actualizar requerimiento».
   atención, la cifra de la matriz manda y el riesgo de legado se expresa en `rango`, no subiendo la base.
 - **Segunda estimación independiente:** además de la suma por matriz (abajo-arriba), estima cada historia
   completa por analogía con una ya hecha (arriba-abajo). Si difieren más de 30 %, revísalo antes de seguir.
-- Cada subtarea dice en su observación el tipo, la cantidad y la **confianza** (alta si el tipo está
-  calibrado, baja si es «sin matriz»). Lo de confianza baja se muestra como riesgo, no se esconde.
+- **La observación (`obs`) la lee el líder, no la máquina: lenguaje claro desde el primer análisis.**
+  Tres partes fijas, en palabras de negocio:
+  `Qué hace: <qué construye el dev y para qué; qué valida, qué guarda, quién lo usa> · Horas: <por qué
+  esa cifra, en una frase> · Depende de: <quién responde y qué pregunta del correo es>` (en una subtarea
+  en espera, `Por qué está en espera:` en vez de `Depende de`). Quien no conoce el código debe entender
+  qué va a hacer el dev sin abrir la descripción. Nada de jerga sola: ni tipo de matriz, factores,
+  «Revisor (fecha)», «Refutador», RN-xx, P-xx o CA-xx sin explicar.
+  - La traza técnica (tipo y cantidad de la matriz, factores, **confianza**, ajustes del revisor y del
+    refutador) va en `obs_tecnica`; lo de confianza baja se menciona en `obs` como riesgo en palabras
+    («podría subir a 5 h si…»), no se esconde.
+  - Mal: «Sin matriz (endpoint_nuevo sin cifra) · 1,5 h senior × 1,6 ≈ 2,5 h · confianza media.»
+    Bien: «Qué hace: el servicio que guarda a un paciente en la lista; antes valida que el CUPS esté
+    habilitado, que no tenga otro registro activo del mismo CUPS y que traiga celular; calcula el
+    vencimiento en días hábiles y deja listo el SMS de ingreso. · Horas: 2,5 h, servicio nuevo con sus
+    reglas. · Lo usa: la card de registro en Acceso.»
+  - El generador avisa por cada `obs` que no empiece con «Qué hace:»: corrígelas antes de publicar.
 - **Responsable por subtarea:** por defecto el dueño del cronograma; la de otra persona (soporte, por
   ejemplo) no suma a su carga y al exportar sale asignada a ella (accountId de `equipo` o buscado en Jira
   por nombre; nunca se adivina).
@@ -240,6 +254,9 @@ de los mineros, página del catálogo y Monte Carlo: `references/calibracion.md`
 - Dejar en propuesta lo que la historia de Jira no pide (solo estaba en la especificación).
 - Editar directamente datos que el almacén de la página entrega congelados: se clonan antes de editar.
 - Exportar subtareas con una descripción fija de una línea: el dev no sabía qué hacer sin volver a preguntar.
+- Entregar el primer análisis con observaciones en jerga de matriz y revisor («Sin matriz (endpoint_nuevo
+  sin cifra) · 1,5 h senior × 1,6»): el líder abrió el cronograma de un plan de 48 subtareas y no entendió
+  qué tenía que hacer el dev en ninguna. Hubo que reescribirlas todas.
 - Correr las fases para que el plan «quepa»: el desborde se muestra como atraso, no se esconde.
 - Exportar antes de clasificar lo que chocaba con la norma o el producto: una subtarea hacía que llenar un
   formulario disparara facturación, y se descubrió con las subtareas ya en Jira.
