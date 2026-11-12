@@ -29,7 +29,8 @@ abre por su enlace y ve lo mismo. Tiene dos caras:
 
 **Scripts** en `<raíz del plugin>/scripts/` (Node, sin dependencias, no consultan nada):
 `status-celula.js` (motor: calcula y audita), `status-celula-inventario.js` (pendientes del Gantt),
-`status-celula-tablero.js` (arma la página) y `status-celula-compartido.js` (lo que se sube a la base).
+`status-celula-tablero.js` (arma la página), `status-celula-config.js` (baja lo guardado en la pestaña
+⚙ Configuración) y `status-celula-compartido.js` (lo que se sube a la base).
 Detalle en `references/motor.md`. `<raíz del plugin>` es la ruta de la línea **«Scripts del plugin:»** del
 contexto de la sesión; si no está, búscala donde Claude Code instaló `personal-os` y dila antes de usarla.
 Para ver el tablero sin datos reales: `node "<raíz del plugin>/scripts/status-celula-tablero.js" --config
@@ -39,9 +40,9 @@ Para ver el tablero sin datos reales: `node "<raíz del plugin>/scripts/status-c
 
 ## Cuándo no se usa
 
-- **El brief del día** (prioridades, correos, riesgos del líder): rief-diario. Este tablero toma su #1, no lo reemplaza.
-- **Planear un sprint, estimar historias o armar subtareas**: planear-sprint. Aquí no se estima.
-- **Registrar las horas propias**: 	imesheet. Aquí solo se audita el timesheet del equipo.
+- **El brief del día** (prioridades, correos, riesgos del líder): `brief-diario`. Este tablero toma su #1, no lo reemplaza.
+- **Planear un sprint, estimar historias o armar subtareas**: `planear-sprint`. Aquí no se estima.
+- **Registrar las horas propias**: `timesheet`. Aquí solo se audita el timesheet del equipo.
 
 ---
 
@@ -55,14 +56,22 @@ Para ver el tablero sin datos reales: `node "<raíz del plugin>/scripts/status-c
 | Estados que parecen cerrados | `jira.estados_que_parecen_cerrados` (`Redefinido` y compañía: no son cierres) |
 | Festivos, zona y jornada | `~/.claude/personal-os/config.json` → `festivos`, `zonaHoraria`, `timesheet.jornada` (los lee el motor) |
 | Todo lo propio del motor | Bloque `status_celula:` de `fuentes.yaml` (`references/configuracion.md`) |
-| El tablero de planeación | `status_celula.tablero_compartido.url` (el Artifact) y `status_celula.tablero`: `celula` (JSON de la célula: carriles, Jira, festivos, jornada, SLA, clientes, textos; formato en `tablero/ejemplo-celula.json`; ahí van también `jira.sitio` para los enlaces a las issues, `roles.lider` y `roles.certifica` con el carril que revisa y el que certifica, `carriles_movil` con los carriles que se ven primero en el celular, y `org.palabras_comunes` con las palabras que no cuentan al agrupar), `organizacion` (nombre, pie y logo de la empresa: `tablero/ejemplo-organizacion.json`) y `extras` (opcional: lo prometido al cliente y los pendientes sin issue, formato en la cabecera de `status-celula-inventario.js`) |
+| El tablero de planeación | `status_celula.tablero_compartido.url` (el Artifact) y `status_celula.tablero`: `celula` (JSON de la célula: carriles, Jira, festivos, jornada, SLA, clientes, textos; formato en `tablero/ejemplo-celula.json`; ahí van también `jira.sitio` para los enlaces a las issues, `roles.lider` y `roles.certifica` con el carril que revisa y el que certifica, `carriles_movil` con los carriles que se ven primero en el celular, y `org.palabras_comunes` con las palabras que no cuentan al agrupar), `organizacion` (nombre, pie y logo de la empresa: `tablero/ejemplo-organizacion.json`) y `extras` (opcional: lo prometido al cliente y los pendientes sin issue, formato en la cabecera de `status-celula-inventario.js`) y `motor` (opcional: `motor.json` junto a la célula, con los ajustes del motor que se cambian desde la página) |
+| Lo guardado en la pestaña ⚙ Configuración | La base del tablero: `config/celula`, `config/organizacion`, `privado/config_extras`, `privado/config_motor`. **Manda sobre los archivos**: se baja en el paso 0 de la sección C |
 
 Del bloque `status_celula:` la skill **copia al JSON de datos** `capacidad_factor` (0,8), `sla_revision` (2),
 `sla_implementacion` (5), `limite_wip`, `estados`, `reparto`, `proyectos_propios` y `campo_inicio`; el motor
-no lee `fuentes.yaml`. Si falta algo obligatorio (equipo, proyectos o `cloud_id`), **se pregunta** con el
-modal de preguntas y se guarda. No se inventa. Si falta el JSON de la célula, se arma con el usuario a partir
-de `equipo[]` y `jira` de `fuentes.yaml` copiando `tablero/ejemplo-celula.json`; `status-celula-tablero.js`
-dice qué campo falta si queda incompleto.
+no lee `fuentes.yaml`. **Si existe `motor.json`, cada clave que traiga reemplaza a la de `status_celula:`**
+(también `estados.no_cierre`, `externos`, `timesheets.remitentes`, `mesa`, `mesa_excluir` y
+`tablero_compartido.personas_extra`/`excluir`): es lo que el líder cambió en la página. Si falta algo
+obligatorio (equipo, proyectos o `cloud_id`), **se pregunta** con el modal de preguntas y se guarda. No se
+inventa.
+
+**Un líder nuevo no edita JSON a mano.** Si falta el JSON de la célula, se arma lo mínimo con lo que ya haya
+en `fuentes.yaml` (`equipo[]`, `jira`) partiendo de `tablero/ejemplo-celula.json` y `ejemplo-organizacion.json`,
+se publica el tablero y se le dice: «abre ⚙ Configuración, completa tu equipo, Jira, clientes, jornada y logo,
+y dale Guardar; vuelve a pedir el status para que traiga Jira con eso». `status-celula-tablero.js` dice qué
+campo falta si queda incompleto.
 
 ---
 
@@ -134,6 +143,9 @@ propia célula sin avisar. El motor lo audita.
 
 ## C · CÓMO SE GENERA
 
+0. **Bajar la configuración guardada en la página** (si ya hay tablero publicado): `ArtifactData` `list` de
+   `config` y `privado` y `status-celula-config.js --aplicar` (`references/tablero-compartido.md` §2-bis).
+   Todo lo que sigue usa los archivos ya sincronizados; si el script sale con 1, no se regenera.
 1. **Leer el estado** (personas, riesgos, compromisos, alcances, `tablero.md`) y el acuerdo de equipo.
 2. **Leer Jira en SOLO LECTURA** (sección B) y normalizar con `status-celula-jira.js`.
 3. **Aplicar el filtro de la sección A** a la mesa. Lo técnico se descarta aquí, no después. El cronograma
@@ -150,7 +162,8 @@ propia célula sin avisar. El motor lo audita.
    --config "<celula>" [--extras "<extras>"] --salida "<carpeta_datos>/inventario-<fecha>.json"`. Imprime qué
    quedó fuera y por qué; «persona sin carril» es normal (gente de fuera: sale en Indicadores de Jira).
 8. **Armar la página:** `node "<raíz del plugin>/scripts/status-celula-tablero.js" --config "<celula>"
-   --organizacion "<organizacion>" --inventario "<inventario>" --salida "<carpeta_datos>/tablero-<fecha>.html"`.
+   --organizacion "<organizacion>" --inventario "<inventario>" [--extras "<extras>"] [--motor "<motor>"]
+   --salida "<carpeta_datos>/tablero-<fecha>.html"` (extras y motor solo los precarga la pestaña ⚙ Configuración).
    Si sale con error, dice qué falta en la configuración: se completa con el usuario, no se inventa.
 9. **Guardar la actividad del timesheet en las fichas**:
    `node "<raíz del plugin>/scripts/status-celula-fichas.js" "<datos.json>"` (sin duplicar; pasa por el
@@ -258,6 +271,7 @@ reciente** (o de `equipo[].account_id`), nunca de memoria: uno equivocado deja l
 | Timesheets | Envío diario, % con issue y horas «sin tarea» | — |
 | Frentes | Titular y backup; los cambios quedan como propuesta para la reunión de equipo | `propuestas` (dueño) |
 | Líder · Bandeja | La #1, compromisos, riesgos y alcances; tarjetas de decisión | `privado` (solo el dueño) |
+| ⚙ Configuración | Solo el dueño: página y logo, equipo (con búsqueda del accountId en Jira), Jira, clientes, jornada, festivos, SLA, pestañas, asistente, sprint, motor y extras; valida con las mismas reglas que el armador | `config` (célula y organización: se aplican al guardar) y `privado` (extras y motor: al regenerar) |
 
 Los movimientos del Gantt son **plan**, no Jira: «Cambios del plan» los lista y «Actualizar Jira y
 calendario» trae la foto en vivo con el conector de quien pulsa (la más reciente gana).
@@ -317,7 +331,8 @@ dicen que falta plan, no que alguien no trabajó.
 2. **Página:** se publica el HTML del paso 8 con la herramienta Artifact al `url` configurado, **sin pasar
    `capabilities`** (así conserva las que tiene: base con sus reglas, conectores de Jira y Microsoft 365,
    `sample`, `user`). Antes se lee la versión publicada; si alguien la cambió a mano, se le dice al usuario
-   qué cambió y se lleva a la plantilla antes de publicar encima (regla 4).
+   qué cambió y se lleva a la plantilla antes de publicar encima (regla 4). Si su declaración guardada no
+   trae la regla de `config`, esa vez se publica con las capacidades completas (`tablero-compartido.md` §4).
 3. **Primera vez** (sin `url`): se publica sin `url` y con las capacidades de `references/tablero-compartido.md`
    §4, se guarda el enlace en `status_celula.tablero_compartido.url` y se le recuerda al usuario compartirlo.
 
@@ -328,11 +343,15 @@ Procedimiento, reglas de acceso y capacidades en `references/tablero-compartido.
 ## I · MANTENIMIENTO
 
 - **El diseño vive en `tablero/plantilla.html`** (CSS, vistas e interacción). Lo de la célula entra por
-  `__CONFIG__` y lo de la empresa por `__ORG_*__`; si un texto nuevo nombra a una persona, un proyecto o la
-  empresa, se lee de la configuración, nunca se escribe en la plantilla.
+  `__CONFIG__`, lo de la empresa por `__ORG_*__` y lo que solo precarga la pestaña ⚙ Configuración por
+  `__AJUSTES__`; si un texto nuevo nombra a una persona, un proyecto o la empresa, se lee de la configuración,
+  nunca se escribe en la plantilla. La aplicación arranca desde `window.__ARRANCAR` cuando el arranque del
+  final resolvió la configuración (la de la base si la hay; si no, la incrustada).
+- **Un campo nuevo de configuración** se agrega en tres lugares: el formulario de `renderConfig`, `cfValidar`
+  (si es obligatorio, con la misma regla que `status-celula-tablero.js`) y `references/configuracion.md`.
 - Si aparece un frente nuevo, **se agrega primero a `personas/_dominios.md`** (o a los datos); el tablero no
   inventa frentes. Si una persona no tiene carril, el motor lo dice en la cobertura.
 - **Después de tocar la plantilla, se prueba** con `tablero/prueba-igualdad.js` (necesita jsdom: ver
   `references/motor.md`): `node prueba-igualdad.js <publicada.html> <generada.html> [<carpeta con la base>]`
   abre cada vista en las dos y compara lo que pintan; un cambio de diseño a propósito se revisa a ojo en la
-  vista afectada. Con `ejemplo-celula.json` comprueba también que arranca sin errores para otra célula.
+  vista afectada, o se aparta con `--ignorar "<selector>,…"` para probar que todo lo demás pinta igual. Con `ejemplo-celula.json` comprueba también que arranca sin errores para otra célula.

@@ -140,7 +140,8 @@ timesheet, la planeación de sprint y los recordatorios de Windows.
 
 Skills que se activan por lo que pides: `brief-diario`, `planear-sprint` («planeemos el sprint de…»),
 `checkpoint` / `retomar` («guarda el avance», «en qué quedamos»), `personas`, `status-celula` (también
-arma y publica el tablero de planeación compartido),
+arma y publica el tablero de planeación compartido, que se configura desde su pestaña ⚙ Configuración sin
+editar JSON),
 `timesheet`, `consola-neuronal`, `tablero-diario`, `cerrar-tarea`, `reconciliar`, y las del flujo del
 líder: `mapa-criticidad`, `revisar-pr`, `certificar-funcional`, `worklist-lider` («la cabina del líder»),
 `mesa-nueva` («monta una mesa»: workspace multi-repo de Azure DevOps), `migrar-ramas` («migrar ramas»,

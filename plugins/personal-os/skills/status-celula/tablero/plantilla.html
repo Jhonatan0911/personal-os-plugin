@@ -790,6 +790,35 @@ details.copc>summary::after{content:" ▾"}
 .cproy-num{display:inline-grid;place-items:center;min-width:24px;height:24px;border-radius:99px;background:var(--panel);font-size:var(--fs-s)}
 .cproy-row .pnm-t{font-weight:600;color:var(--ink)}
 .cproy-res .pill{vertical-align:baseline}
+/* ⚙ Configuración: secciones plegables, rejilla de campos y barra de guardar fija arriba */
+#vistaConfig code{font-family:var(--f-mono);font-size:var(--fs-s);background:var(--panel);padding:0 4px;border-radius:4px}
+.cf-bar{position:sticky;top:0;z-index:4;display:flex;flex-wrap:wrap;gap:8px;align-items:center;justify-content:space-between;background:var(--card);border:1px solid var(--line);border-radius:var(--r-m,8px);padding:8px 12px;box-shadow:0 2px 8px rgba(0,0,0,.06)}
+.cf-estado{font-size:var(--fs-m);color:var(--muted)} .cf-estado.sucio{color:var(--warn-text,var(--warn));font-weight:600}
+.cf-acts{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.cf-sec{border:1px solid var(--line);border-radius:var(--r-m,8px);background:var(--card)}
+.cf-sec>summary{display:flex;flex-wrap:wrap;gap:8px;align-items:center;justify-content:space-between;padding:10px 12px;font-size:var(--fs-b);color:var(--deep);font-weight:600;cursor:pointer}
+.cf-sec>summary .pill{font-weight:400;font-size:var(--fs-xs)}
+.cf-cuerpo{padding:0 12px 12px;display:flex;flex-direction:column;gap:10px;min-width:0}
+.cf-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,220px),1fr));gap:10px 12px}
+.cf-f{display:flex;flex-direction:column;gap:3px;font-size:var(--fs-s);color:var(--muted);min-width:0}
+.cf-f.cf-ancho{grid-column:1 / -1}
+.cf-f input,.cf-f select,.cf-f textarea,#cf-json{border:1px solid var(--line);border-radius:6px;padding:6px 8px;background:var(--bg);color:var(--ink);width:100%;min-width:0}
+.cf-f input[readonly]{background:var(--panel);color:var(--muted)}
+.cf-f textarea{resize:vertical}
+.cf-f small,.cf-c small{color:var(--muted);font-size:var(--fs-xs)}
+.cf-req{color:var(--crit);font-style:normal}
+.cf-c{display:flex;gap:6px;align-items:center;font-size:var(--fs-m);color:var(--ink)}
+.cf-filas{display:flex;flex-direction:column;gap:8px}
+.cf-fila{border:1px solid var(--line);border-radius:var(--r-s,6px);padding:10px;background:var(--bg);display:flex;flex-direction:column;gap:8px;min-width:0}
+.cf-fh{display:flex;flex-wrap:wrap;gap:6px;align-items:center;justify-content:space-between}
+.cf-fh b{color:var(--deep);font-size:var(--fs-m)}
+.cf-busca{display:flex;flex-wrap:wrap;gap:6px;font-size:var(--fs-s);color:var(--muted)}
+.cf-logo{display:flex;flex-wrap:wrap;gap:10px;align-items:flex-end}
+.cf-lt{font-size:var(--fs-s);color:var(--muted);flex-basis:100%}
+.cf-lprev{display:inline-flex;align-items:center;justify-content:center;min-width:120px;min-height:44px;padding:8px 12px;background:var(--band);color:var(--band-soft);border-radius:6px;font-size:var(--fs-s)}
+#cf-json{font-size:var(--fs-s);min-height:220px}
+#vistaConfig h3 small{font-weight:400}
+@media (max-width:640px){ .cf-bar{top:0} .cf-sec>summary{padding:10px} }
 </style>
 
 <button type="button" class="skip" id="saltarGantt">Saltar al cronograma</button>
@@ -811,7 +840,7 @@ details.copc>summary::after{content:" ▾"}
   <nav class="vistas" aria-label="Vistas">
     <div class="vgrp" role="group" aria-labelledby="vgl-plan"><span class="vgl" id="vgl-plan" aria-hidden="true">Planear</span><div class="vbts"><button class="vbtn" data-vista="gantt" aria-current="page">Gantt</button><button class="vbtn" data-vista="rev">Revisión 1 a 1</button><button class="vbtn" data-vista="backlog">Backlog sin dueño</button></div></div>
     <div class="vgrp" role="group" aria-labelledby="vgl-seg"><span class="vgl" id="vgl-seg" aria-hidden="true">Seguimiento</span><div class="vbts"><button class="vbtn" data-vista="estado">Bloqueos y frentes</button><button class="vbtn" data-vista="jira">Indicadores de Jira</button><button class="vbtn" data-vista="colas">Colas</button><button class="vbtn" data-vista="macros">Macros y seguimiento</button><button class="vbtn" data-vista="cliente">Modo cliente</button></div></div>
-    <div class="vgrp" role="group" aria-labelledby="vgl-eq"><span class="vgl" id="vgl-eq" aria-hidden="true">Equipo</span><div class="vbts"><button class="vbtn" data-vista="ts">Timesheets</button><button class="vbtn" data-vista="frentes">Frentes</button><button class="vbtn" data-vista="lider" hidden>Líder</button><button class="vbtn" data-vista="bandeja" hidden>Bandeja</button></div></div>
+    <div class="vgrp" role="group" aria-labelledby="vgl-eq"><span class="vgl" id="vgl-eq" aria-hidden="true">Equipo</span><div class="vbts"><button class="vbtn" data-vista="ts">Timesheets</button><button class="vbtn" data-vista="frentes">Frentes</button><button class="vbtn" data-vista="lider" hidden>Líder</button><button class="vbtn" data-vista="bandeja" hidden>Bandeja</button><button class="vbtn" data-vista="config" hidden>⚙ Configuración</button></div></div>
   </nav>
   <div class="kpis" id="kpis"></div>
   <span hidden><span id="corte"></span><button id="btnJira" type="button"></button></span>
@@ -875,6 +904,7 @@ details.copc>summary::after{content:" ▾"}
 </style>
 <section id="vistaBandeja" class="vista" hidden aria-label="Bandeja de decisiones"></section>
 <section id="vistaCliente" class="vista" hidden aria-label="Modo cliente"></section>
+<section id="vistaConfig" class="vista" hidden aria-label="Configuración del tablero"></section>
 <footer class="pie"><span>__PIE_ORG__</span><span>__PIE_USO__</span></footer>
 
 <div id="modalRoot"></div>
@@ -883,8 +913,10 @@ details.copc>summary::after{content:" ▾"}
 
 <script id="cfg" type="application/json">__CONFIG__</script>
 <script id="inv" type="application/json">__INVENTARIO__</script>
+<script id="ajustes" type="application/json">__AJUSTES__</script>
 <script>
-(function(){
+// La aplicación arranca cuando el arranque de abajo resolvió qué configuración usar.
+window.__ARRANCAR=function(){
 "use strict";
 const CFG = JSON.parse(document.getElementById("cfg").textContent);
 const CORTE = CFG.corte||"";
@@ -1858,9 +1890,9 @@ function renderLider(){
 
 function wireFk(root){ root.querySelectorAll("[data-fk]").forEach(el=>{ el.style.cursor="pointer"; el.tabIndex=0; el.setAttribute("role","button"); el.onclick=e=>{ e.stopPropagation(); if(ISKEY.test(el.dataset.fk)) fichaJira(el.dataset.fk); }; });
   root.querySelectorAll("tr.clk").forEach(tr=>{ if(!tr.hasAttribute("tabindex")) tr.tabIndex=0; }); } // filas que se abren con clic también se abren con Enter
-const VISTAS={gantt:"vistaGantt", rev:"vistaRev", backlog:"vistaBacklog", macros:"vistaMacros", estado:"vistaEstado", jira:"vistaJira", colas:"vistaColas", ts:"vistaTs", frentes:"vistaFrentes", lider:"vistaLider", bandeja:"vistaBandeja", cliente:"vistaCliente"};
+const VISTAS={gantt:"vistaGantt", rev:"vistaRev", backlog:"vistaBacklog", macros:"vistaMacros", estado:"vistaEstado", jira:"vistaJira", colas:"vistaColas", ts:"vistaTs", frentes:"vistaFrentes", lider:"vistaLider", bandeja:"vistaBandeja", cliente:"vistaCliente", config:"vistaConfig"};
 let VISTA="gantt";
-function renderVista(){ if(VISTA==="rev") renderRev(); else if(VISTA==="backlog"){ if(!BL_SUCIO) renderBacklog(); } else if(VISTA==="macros") renderMacros(); else if(VISTA==="estado") renderEstado(); else if(VISTA==="jira") renderStatusJira(); else if(VISTA==="colas") renderColas(); else if(VISTA==="ts") renderTs(); else if(VISTA==="frentes") renderFrentes(); else if(VISTA==="lider") renderLider(); else if(VISTA==="bandeja") renderBandeja(); else if(VISTA==="cliente") renderCliente();
+function renderVista(){ if(VISTA==="rev") renderRev(); else if(VISTA==="backlog"){ if(!BL_SUCIO) renderBacklog(); } else if(VISTA==="macros") renderMacros(); else if(VISTA==="estado") renderEstado(); else if(VISTA==="jira") renderStatusJira(); else if(VISTA==="colas") renderColas(); else if(VISTA==="ts") renderTs(); else if(VISTA==="frentes") renderFrentes(); else if(VISTA==="lider") renderLider(); else if(VISTA==="bandeja") renderBandeja(); else if(VISTA==="cliente") renderCliente(); else if(VISTA==="config") renderConfig();
   document.querySelectorAll(".vista tr.clk:not([tabindex]),#vistaRev tr.clk:not([tabindex])").forEach(tr=>tr.tabIndex=0); }
 function setVista(v){ VISTA=v; document.body.dataset.vista=v; Object.entries(VISTAS).forEach(([k,id])=>{ const el=$(id); if(el) el.hidden=k!==v; });
   document.querySelectorAll("[data-vista]").forEach(b=>{ if(b.dataset.vista===v) b.setAttribute("aria-current","page"); else b.removeAttribute("aria-current"); }); renderVista();
@@ -1879,7 +1911,7 @@ function suscribirTablero(){
     const mio=MI_ID&&nx[MI_ID]; if(!AUTO_MI&&mio&&!IS_OWNER&&MCP&&MI_LANE){ AUTO_MI=true; if(Date.now()-new Date(mio.at||0).getTime()>6*3600000){
       window.claude.use("permissions").then(p=>p?p.state("mcp:"+SERVER_M365).catch(()=>"unavailable"):"unavailable").then(st=>{ if(st==="granted") sumarMiCalendario(); }).catch(()=>{}); } } }, ()=>{});
   // se clona: lo que entrega db viene congelado y el .sort de los riesgos lo rompía (la pestaña quedaba en blanco)
-  db.collection("privado").onSnapshot(s=>{ LIDER=null; LIDER_ERR=""; const bj=[]; s.docs.forEach(d=>{ if(d.id==="lider") LIDER=JSON.parse(JSON.stringify(d.data()||{})); else if(d.id.indexOf("bandeja_")===0) bj.push(Object.assign(JSON.parse(JSON.stringify(d.data()||{})),{_id:d.id})); }); BANDEJA=bj; if(VISTA==="lider") renderLider(); if(VISTA==="bandeja") renderBandeja(); }, e=>{ LIDER_ERR=(e&&(e.code||e.message))||"error"; if(VISTA==="lider") renderLider(); });
+  db.collection("privado").onSnapshot(s=>{ LIDER=null; LIDER_ERR=""; const bj=[]; s.docs.forEach(d=>{ if(d.id==="lider") LIDER=JSON.parse(JSON.stringify(d.data()||{})); else if(d.id==="config_extras"||d.id==="config_motor"){ CF_PRIV[d.id]=JSON.parse(JSON.stringify(d.data()||{})); if(VISTA==="config"&&!CF_SUCIO) renderConfig(true); } else if(d.id.indexOf("bandeja_")===0) bj.push(Object.assign(JSON.parse(JSON.stringify(d.data()||{})),{_id:d.id})); }); BANDEJA=bj; if(VISTA==="lider") renderLider(); if(VISTA==="bandeja") renderBandeja(); }, e=>{ LIDER_ERR=(e&&(e.code||e.message))||"error"; if(VISTA==="lider") renderLider(); });
   db.collection("propuestas").onSnapshot(s=>{ PROPUESTAS={}; s.docs.forEach(d=>{ const v=Object.assign({},d.data()); const fr=v.frente; delete v.frente; if(fr) PROPUESTAS[fr]=v; }); if(VISTA==="frentes") renderFrentes(); }, ()=>{});
 }
 
@@ -2868,6 +2900,261 @@ function abrirCambios(){
 }
 $("verCambios").onclick=()=>abrirCambios();
 
+// ---- ⚙ Configuración: lo que antes se editaba a mano en los JSON de la célula, la organización, los extras y el motor ----
+// Célula y organización van a la colección «config» (la leen todos, solo el dueño escribe) y se aplican al recargar.
+// Extras y motor van a «privado» (solo el dueño): los usa la skill la próxima vez que regenera el tablero.
+const CF_PRIV={}; let CF=null, CF0="", CF_SUCIO=false, CF_MSG="", CF_MSG_OK=false, CF_ERR=[], CF_BUSCA=null, CF_LISTO=false;
+const CF_ABIERTAS=new Set(["pagina","equipo"]); const CF_NUEVOS=new WeakSet();
+const cfClon=o=>JSON.parse(JSON.stringify(o==null?null:o));
+const CF_ETQ={normal:"Jornada lunes a jueves", viernes:"Jornada viernes", efectiva_normal:"Horas efectivas lunes a jueves", efectiva_viernes:"Horas efectivas viernes", horas_por_dia_estimadas:"Horas estimables por día"};
+function cfDesdeActiva(){ const A=window.__CFG_ACTIVA||{}; const sm=o=>{ const c=cfClon(o||{}); delete c._meta; return c; };
+  return { celula:cfClon(A.celula||CFG), organizacion:cfClon(A.organizacion||{}),
+    extras:CF_PRIV.config_extras?sm(CF_PRIV.config_extras):cfClon(A.extras||{comprometido:{},manuales:[]}),
+    motor:CF_PRIV.config_motor?sm(CF_PRIV.config_motor):cfClon(A.motor||{}) }; }
+function cfGet(p){ return p.split(".").reduce((o,k)=>o==null?undefined:o[k], CF); }
+function cfSet(p,v){ const ks=p.split("."); let o=CF;
+  for(let i=0;i<ks.length-1;i++){ const k=ks[i]; if(o[k]==null||typeof o[k]!=="object") o[k]=/^\d+$/.test(ks[i+1])?[]:{}; o=o[k]; }
+  const k=ks[ks.length-1]; if(v===undefined){ if(!Array.isArray(o)) delete o[k]; } else o[k]=v; }
+function cfValor(el){ const t=el.dataset.t, x=el.value;
+  if(t==="chk") return el.checked?true:undefined;
+  if(t==="mod") return el.checked?undefined:false;            // los módulos están encendidos salvo que digan false
+  if(t==="num"){ const s=x.trim().replace(",","."); if(s==="") return undefined; const n=Number(s); return Number.isFinite(n)?n:s; }
+  if(t==="lista"){ const a=x.split(/[,\n]/).map(s=>s.trim()).filter(Boolean); return a.length?a:undefined; }
+  if(t==="fechas"){ const a=x.split(/[\s,;]+/).map(s=>s.trim()).filter(Boolean); return a.length?a:undefined; }
+  if(t==="json"){ if(!x.trim()) return undefined; return JSON.parse(x); }
+  const s=t==="area"?x.replace(/\s+$/,""):x.trim(); return s===""?undefined:s; }
+function cfCampo(t,p,lab,o){ o=o||{}; const v=cfGet(p); const ay=o.ayuda?`<small>${esc(o.ayuda)}</small>`:"";
+  const ph=o.ph?` placeholder="${esc(o.ph)}"`:""; const ro=o.ro?` readonly title="${esc(o.ro)}"`:"";
+  if(t==="chk"||t==="mod"){ const on=t==="mod"?v!==false:!!v; return `<label class="cf-c"><input type="checkbox" data-p="${p}" data-t="${t}" ${on?"checked":""}> <span>${esc(lab)}</span>${ay}</label>`; }
+  let inp;
+  if(t==="area"||t==="fechas"||t==="json"){ const val=t==="fechas"?(v||[]).join("\n"):t==="json"?JSON.stringify(v==null?(o.vacio===undefined?null:o.vacio):v,null,2):(v==null?"":v);
+    inp=`<textarea data-p="${p}" data-t="${t}" rows="${o.filas||3}"${ph}>${esc(val)}</textarea>`; }
+  else if(t==="sel"){ const op=(o.vacia?[["",o.vacia]]:[]).concat(o.opts||[]);
+    inp=`<select data-p="${p}" data-t="sel">${op.map(([k,n])=>`<option value="${esc(k)}" ${String(v==null?"":v)===String(k)?"selected":""}>${esc(n)}</option>`).join("")}</select>`; }
+  else { const val=t==="lista"?(v||[]).join(", "):t==="num"?(v==null?"":String(v).replace(".",",")):(v==null?"":v);
+    inp=`<input data-p="${p}" data-t="${t}"${t==="num"?' inputmode="decimal"':""}${o.tipo?` type="${o.tipo}"`:""} value="${esc(val)}"${ph}${ro}>`; }
+  return `<label class="cf-f${o.ancho?" cf-"+o.ancho:""}"><span>${esc(lab)}${o.req?' <i class="cf-req" aria-label="obligatorio">*</i>':""}</span>${inp}${ay}</label>`; }
+// Lista de objetos (personas, pendientes, externos…): una tarjeta por fila, con subir, bajar y quitar.
+function cfFilas(p,cols,nuevo,o){ o=o||{}; const a=cfGet(p)||[];
+  const filas=a.map((x,i)=>`<div class="cf-fila"><div class="cf-fh"><b>${esc((o.titulo&&o.titulo(x,i))||("Fila "+(i+1)))}</b><span class="cf-acts">
+      <button class="btn sm" data-acc="subir" data-lista="${p}" data-i="${i}" ${i?"":"disabled"} aria-label="Subir">↑</button><button class="btn sm" data-acc="bajar" data-lista="${p}" data-i="${i}" ${i<a.length-1?"":"disabled"} aria-label="Bajar">↓</button><button class="btn sm danger" data-acc="quitar" data-lista="${p}" data-i="${i}">Quitar</button></span></div>
+    <div class="cf-grid">${cols.map(c=>cfCampo(c.t||"txt",`${p}.${i}.${c.k}`,c.lab,Object.assign({},c,{ro:c.ro&&c.ro(x)?c.ro(x):""}))).join("")}</div>${o.extra?o.extra(x,i):""}</div>`).join("");
+  return `<div class="cf-filas">${filas||`<div class="empty">${esc(o.vacio||"Sin filas todavía.")}</div>`}</div><button class="btn sm" data-acc="agregar" data-lista="${p}" data-nuevo="${esc(JSON.stringify(nuevo))}">+ ${esc(o.agregar||"Agregar")}</button>`; }
+// Mapa clave → valor (nombres de proyecto, clientes, lo prometido): la clave se puede renombrar.
+function cfMapa(p,cols,nuevo,o){ o=o||{}; const m=cfGet(p)||{};
+  const filas=Object.keys(m).map(k=>`<div class="cf-fila"><div class="cf-grid">
+      <label class="cf-f"><span>${esc(o.clave||"Clave")}</span><input class="cf-k" data-mapa="${p}" data-k="${esc(k)}" value="${esc(k)}"></label>
+      ${cols?cols.map(c=>cfCampo(c.t||"txt",`${p}.${k}.${c.k}`,c.lab,c)).join(""):cfCampo(o.t||"txt",`${p}.${k}`,o.valor||"Valor",{ancho:"ancho"})}
+    </div><div class="cf-acts"><button class="btn sm danger" data-acc="quitar-k" data-mapa="${p}" data-k="${esc(k)}">Quitar</button></div></div>`).join("");
+  return `<div class="cf-filas">${filas||`<div class="empty">${esc(o.vacio||"Nada todavía.")}</div>`}</div><button class="btn sm" data-acc="agregar-k" data-mapa="${p}" data-nuevo="${esc(JSON.stringify(nuevo))}">+ ${esc(o.agregar||"Agregar")}</button>`; }
+function cfSlug(nm,ocupados){ const b=String(nm||"").normalize("NFD").replace(/[̀-ͯ]/g,"").toLowerCase().replace(/[^a-z0-9 ]/g,"").trim().split(/\s+/)[0]||"persona";
+  let s=b, n=2; while(ocupados.has(s)) s=b+(n++); return s; }
+function cfValidar(C){ const e=[]; const c=C.celula||{}, o=C.organizacion||{}; const req=(x,m)=>{ if(!x) e.push(m); };
+  const num=x=>typeof x==="number"&&Number.isFinite(x);
+  req(c.pagina&&c.pagina.titulo,"Página: falta el título.");
+  const lanes=Array.isArray(c.lanes)?c.lanes:[]; req(lanes.length,"Equipo: agrega al menos una persona.");
+  const ids=new Set();
+  lanes.forEach((l,i)=>{ const n=l.nm||("persona "+(i+1));
+    if(!l.nm) e.push(`Equipo · persona ${i+1}: falta el nombre.`);
+    if(!l.id||!/^[a-z0-9_-]+$/.test(l.id)) e.push(`Equipo · ${n}: el identificador va en minúsculas, sin espacios ni tildes.`);
+    else if(ids.has(l.id)) e.push(`Equipo: el identificador «${l.id}» está repetido.`);
+    ids.add(l.id);
+    if(l.correo&&!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(l.correo)) e.push(`Equipo · ${n}: el correo no parece válido.`);
+    ["celula","analista"].forEach(k=>{ if(l[k]!=null&&!num(l[k])) e.push(`Equipo · ${n}: el orden «${k}» debe ser un número.`); }); });
+  req(c.nombres&&c.nombres.lider,"Equipo: falta el nombre corto del líder (para los textos).");
+  const r=c.roles||{}; [["lider","quien revisa (líder)"],["certifica","quien certifica"]].forEach(([k,t])=>{ if(r[k]&&!ids.has(r[k])) e.push(`Equipo: «${t}» apunta a alguien que ya no está en el equipo.`); });
+  if(c.revision_inicial&&!ids.has(c.revision_inicial)) e.push("Equipo: la persona con la que abre Revisión 1 a 1 ya no está en el equipo.");
+  (c.carriles_movil||[]).forEach(id=>{ if(!ids.has(id)) e.push(`Equipo: «${id}» está en los carriles del celular pero ya no está en el equipo.`); });
+  const j=c.jira||{};
+  req(j.cloud,"Jira: falta el cloudId."); req(j.servidor_mcp,"Jira: falta el nombre del conector.");
+  req((j.proyectos_cliente||[]).length,"Jira: falta al menos un proyecto del cliente.");
+  req((j.proyectos_crear||[]).length,"Jira: falta al menos un proyecto donde crear tareas.");
+  if(j.sitio&&!/^https:\/\/[^\/\s]+/.test(j.sitio)) e.push("Jira: el sitio debe empezar por https://");
+  req(c.m365&&c.m365.servidor_mcp,"Microsoft 365: falta el nombre del conector.");
+  const jo=c.jornada||{}; Object.keys(CF_ETQ).forEach(k=>{ if(!(num(jo[k])&&jo[k]>=0&&jo[k]<=24)) e.push(`Calendario: «${CF_ETQ[k]}» debe ser un número de horas.`); });
+  const s=c.sla||{}; [["revisar","Revisar"],["certificar","Certificar"],["publicar","Publicar"]].forEach(([k,t])=>{ if(!(num(s[k])&&s[k]>=0)) e.push(`Calendario: el SLA de «${t}» debe ser un número de días.`); });
+  req(c.ia&&c.ia.contexto,"Asistente: falta el contexto de la célula.");
+  (c.festivos||[]).forEach(f=>{ if(!/^\d{4}-\d{2}-\d{2}$/.test(f)||isNaN(new Date(f+"T12:00:00"))) e.push(`Calendario: «${f}» no es una fecha AAAA-MM-DD.`); });
+  Object.entries(c.clientes||{}).forEach(([k,v])=>{ if(!v||!v.nm) e.push(`Clientes · ${k}: falta el nombre.`); if(v&&v.re){ try{ new RegExp(v.re,"i"); }catch(_){ e.push(`Clientes · ${k}: el patrón de texto no es válido.`); } } });
+  if(c.sprints!=null&&!Array.isArray(c.sprints)) e.push("Sprint: las reservas deben ser una lista.");
+  req(o.nombre&&o.pie&&o.logo&&o.logo.src,"Organización: faltan el nombre, el pie o el logo.");
+  if(o.logo&&o.logo.src&&o.logo.src.length>180000) e.push("Organización: el logo pesa demasiado (máximo unos 130 KB).");
+  const m=C.motor||{};
+  if(m.capacidad_factor!=null&&!(num(m.capacidad_factor)&&m.capacidad_factor>0&&m.capacidad_factor<=1)) e.push("Motor: el factor de capacidad va entre 0 y 1 (por ejemplo 0,8).");
+  ["sla_revision","sla_implementacion","limite_wip"].forEach(k=>{ if(m[k]!=null&&!num(m[k])) e.push(`Motor: «${k}» debe ser un número.`); });
+  ((C.extras||{}).manuales||[]).forEach((x,i)=>{ if(!x.key||!x.titulo) e.push(`Extras · pendiente ${i+1}: faltan la clave o el título.`); if(x.persona&&!ids.has(x.persona)) e.push(`Extras · ${x.key||i+1}: la persona «${x.persona}» no está en el equipo.`); });
+  return e; }
+function cfFecha(t){ return t?new Date(t).toLocaleString("es-CO",{dateStyle:"short",timeStyle:"short"}):""; }
+function cfBarra(){ const b=$("cf-bar"); if(!b) return; CF_SUCIO=JSON.stringify(CF)!==CF0;
+  $("cf-guardar").disabled=!CF_SUCIO||!db||!canWrite; $("cf-descartar").disabled=!CF_SUCIO;
+  $("cf-estado").textContent=CF_SUCIO?"Hay cambios sin guardar":"Sin cambios"; $("cf-estado").className="cf-estado"+(CF_SUCIO?" sucio":""); }
+function renderConfig(forzar){ const box=$("vistaConfig"); if(!box) return;
+  if(!IS_OWNER){ box.innerHTML=`<div class="vhead"><h2>Configuración</h2></div><div class="empty">Solo el dueño del tablero cambia su configuración.</div>`; return; }
+  if(!CF||(forzar&&!CF_SUCIO)){ CF=cfDesdeActiva(); CF0=JSON.stringify(CF); }
+  const A=window.__CFG_ACTIVA||{}; const fc=(A.fuente||{}).celula;
+  const enUso=fc&&fc.t?`guardada aquí el ${cfFecha(fc.t)}`:`la de la última vez que se armó el tablero${A.generado?" ("+cfFecha(A.generado)+")":""}`;
+  const L=(CF.celula.lanes||[]); const optL=L.map(l=>[l.id,l.nm||l.id]);
+  const sec=(id,tit,cuando,cuerpo)=>`<details class="cf-sec" data-sec="${id}" ${CF_ABIERTAS.has(id)?"open":""}><summary><span>${esc(tit)}</span><span class="pill ${cuando==="guardar"?"ok":"rev"}">${cuando==="guardar"?"Se aplica al guardar":"Se aplica al regenerar"}</span></summary><div class="cf-cuerpo">${cuerpo}</div></details>`;
+  const logo=(CF.organizacion.logo||{});
+  const busca=i=>CF_BUSCA&&CF_BUSCA.i===i?`<div class="cf-busca">${CF_BUSCA.msg?esc(CF_BUSCA.msg):(CF_BUSCA.us||[]).map((u,k)=>`<button class="btn sm" data-acc="elegir" data-i="${i}" data-u="${k}">${esc(u.displayName)}${u.emailAddress?" · "+esc(u.emailAddress):""}</button>`).join("")||"Sin resultados."}</div>`:"";
+  box.innerHTML=`<div class="vhead"><h2>Configuración del tablero</h2><span class="corte">En uso: ${esc(enUso)}</span></div>
+  <p class="hint">Aquí está lo que antes se editaba a mano en los JSON. Lo marcado <b>«Se aplica al guardar»</b> lo ven todos en cuanto guardas (la página se recarga). Lo marcado <b>«Se aplica al regenerar»</b> se usa la próxima vez que armes el tablero desde Claude Code (<code>/status-celula</code>), que baja esta configuración sola antes de leer Jira.</p>
+  <div class="cf-bar" id="cf-bar"><span class="cf-estado" id="cf-estado"></span><span class="cf-acts"><button class="btn" id="cf-descartar" type="button">Descartar cambios</button><button class="btn primary" id="cf-guardar" type="button">Guardar</button></span></div>
+  ${CF_MSG?`<div class="callout ${CF_MSG_OK?"cli":"warn"}" role="status">${esc(CF_MSG)}</div>`:""}
+  ${CF_ERR.length?`<div class="callout warn" role="alert"><b>Corrige esto antes de guardar:</b><ul class="ilist">${CF_ERR.map(x=>`<li>${esc(x)}</li>`).join("")}</ul></div>`:""}
+  ${sec("pagina","Página y organización","guardar",`<div class="cf-grid">
+      ${cfCampo("txt","celula.pagina.titulo","Título de la página",{req:1,ancho:"ancho"})}
+      ${cfCampo("txt","celula.pagina.subtitulo","Subtítulo",{ancho:"ancho",ayuda:"Debajo del título: clientes y jornada, por ejemplo."})}
+      ${cfCampo("txt","celula.pagina.pie_uso","Pie: uso",{ph:"Uso interno · célula"})}
+      ${cfCampo("txt","organizacion.nombre","Nombre de la organización",{req:1})}
+      ${cfCampo("txt","organizacion.pie","Pie: organización",{req:1,ph:"Empresa SAS · Ciudad, País"})}
+      ${cfCampo("lista","celula.org.palabras_comunes","Palabras a ignorar al cruzar reuniones",{ayuda:"Separadas por coma; p. ej. el nombre de la empresa."})}
+    </div>
+    <div class="cf-logo"><span class="cf-lt">Logo (en blanco, sobre la banda oscura)</span><span class="cf-lprev">${logo.src?`<img src="${esc(logo.src)}" alt="" height="28">`:"Sin logo"}</span>
+      <label class="btn sm">Cambiar logo<input type="file" accept="image/png,image/svg+xml,image/jpeg,image/webp" data-t="logo" hidden></label>
+      ${cfCampo("txt","organizacion.logo.alt","Texto alternativo",{})}</div>`)}
+  ${sec("equipo","Equipo y carriles","guardar",`<div class="cf-grid">
+      ${cfCampo("txt","celula.nombres.lider","Nombre corto del líder",{req:1,ayuda:"Como aparece en los textos: «lo actualiza …»."})}
+      ${cfCampo("txt","celula.nombres.analista","Nombre corto de la analista",{})}
+      ${cfCampo("sel","celula.roles.lider","Quien revisa (líder)",{opts:optL,vacia:"— la primera persona —"})}
+      ${cfCampo("sel","celula.roles.certifica","Quien certifica",{opts:optL,vacia:"— la primera con orden de analista —"})}
+      ${cfCampo("sel","celula.revision_inicial","Revisión 1 a 1 abre con",{opts:optL,vacia:"— la primera persona —"})}
+    </div>
+    <div class="cf-f"><span>Carriles que se ven en el celular</span><div class="chk">${L.map(l=>`<label><input type="checkbox" data-multi="celula.carriles_movil" value="${esc(l.id)}" ${(CF.celula.carriles_movil||[]).includes(l.id)?"checked":""}> ${esc(l.nm||l.id)}</label>`).join("")}</div></div>
+    <h3>Personas (un carril cada una, en este orden)</h3>
+    ${cfFilas("celula.lanes",[
+      {k:"nm",lab:"Nombre visible",req:1},{k:"rl",lab:"Rol o frentes",ancho:"ancho"},
+      {k:"id",lab:"Identificador",req:1,ro:x=>CF_NUEVOS.has(x)?"":"No se cambia: el plan guardado lo usa.",ayuda:"Minúsculas, sin espacios."},
+      {k:"nombre_jira",lab:"Nombre exacto en Jira"},{k:"account_id",lab:"accountId de Jira"},{k:"correo",lab:"Correo",tipo:"email"},
+      {k:"rol_jira",lab:"Rol en la tabla de Jira"},{k:"celula",t:"num",lab:"Orden en la tabla de la célula",ayuda:"Vacío = no sale en esa tabla."},
+      {k:"analista",t:"num",lab:"Orden como analista",ayuda:"Vacío = no es analista."},
+      {k:"dev",t:"chk",lab:"Desarrolla (cuenta en «Solo developers»)"},{k:"solo_colas",t:"chk",lab:"Solo colas (no recibe tareas)"},{k:"fuera",t:"chk",lab:"Salió del equipo"}
+    ],{id:"",nm:""},{agregar:"Persona",vacio:"Agrega la primera persona del equipo.",titulo:(x,i)=>x.nm||("Persona "+(i+1)),
+      extra:(x,i)=>`<div class="cf-acts"><button class="btn sm" data-acc="buscar" data-i="${i}" ${MCP?"":`disabled title="Jira no está disponible en esta vista"`}>Buscar en Jira por el nombre</button></div>${busca(i)}`})}`)}
+  ${sec("jira","Jira y Microsoft 365","guardar",`<div class="cf-grid">
+      ${cfCampo("txt","celula.jira.sitio","Sitio de Jira",{ph:"https://tu-sitio.atlassian.net"})}
+      ${cfCampo("txt","celula.jira.cloud","cloudId",{req:1})}
+      ${cfCampo("txt","celula.jira.servidor_mcp","Conector de Jira (nombre en claude.ai)",{req:1})}
+      ${cfCampo("txt","celula.m365.servidor_mcp","Conector de Microsoft 365",{req:1})}
+      ${cfCampo("lista","celula.jira.proyectos_cliente","Proyectos del cliente",{req:1,ayuda:"Claves separadas por coma."})}
+      ${cfCampo("txt","celula.jira.proyecto_transversal","Proyecto transversal",{ayuda:"El de la empresa que comparten varias células."})}
+      ${cfCampo("lista","celula.jira.proyectos_crear","Proyectos donde se crean tareas",{req:1})}
+      ${cfCampo("lista","celula.jira.transversal_fuera","Issues del transversal que no son de la célula")}
+      ${cfCampo("lista","celula.jira.analistas_fuera","Analistas de fuera (nombre en Jira)")}
+    </div><h3>Nombre de cada proyecto</h3>
+    ${cfMapa("celula.jira.nombres",null,"",{clave:"Clave del proyecto",valor:"Nombre",agregar:"Proyecto"})}`)}
+  ${sec("clientes","Clientes (modo cliente)","guardar",`<p class="hint">Cada cliente agrupa proyectos y un patrón de texto para reconocerlo en títulos y reuniones.</p>
+    ${cfMapa("celula.clientes",[{k:"nm",lab:"Nombre"},{k:"pr",t:"lista",lab:"Proyectos"},{k:"re",lab:"Patrón (expresión regular)"}],{nm:"",pr:[],re:""},{clave:"Identificador",agregar:"Cliente"})}`)}
+  ${sec("calendario","Calendario, jornada y SLA","guardar",`<div class="cf-grid">
+      ${Object.keys(CF_ETQ).map(k=>cfCampo("num","celula.jornada."+k,CF_ETQ[k],{req:1})).join("")}
+      ${cfCampo("num","celula.sla.revisar","SLA Revisar (días hábiles)",{req:1})}
+      ${cfCampo("num","celula.sla.certificar","SLA Certificar (días hábiles)",{req:1})}
+      ${cfCampo("num","celula.sla.publicar","SLA Publicar (días hábiles)",{req:1})}
+      ${cfCampo("fechas","celula.festivos","Festivos (AAAA-MM-DD, uno por línea)",{filas:6})}
+    </div>`)}
+  ${sec("modulos","Pestañas y lecturas","guardar",`<div class="chk">${[["calendario","Calendario de Teams"],["timesheets","Timesheets"],["bandeja","Bandeja"],["macros","Macros y seguimiento"],["cliente","Modo cliente"],["backlog","Backlog sin dueño"],["frentes","Frentes"]].map(([k,t])=>cfCampo("mod","celula.modulos."+k,t)).join("")}</div>`)}
+  ${sec("ia","Asistente del backlog","guardar",`<div class="cf-grid">
+      ${cfCampo("txt","celula.ia.contexto","Contexto de la célula",{req:1,ancho:"ancho",ph:"una célula de desarrollo de software de …"})}
+      ${cfCampo("area","celula.ia.frentes","Quién lleva qué frente",{ancho:"ancho",filas:4})}</div>`)}
+  ${sec("sprint","Sprint","guardar",`<div class="cf-grid">
+      ${cfCampo("txt","celula.sprint_etiqueta","Etiqueta del sprint")}
+      ${cfCampo("area","celula.sprint_plan","Plan del sprint",{ancho:"ancho"})}
+      ${cfCampo("json","celula.sprints","Reservas de capacidad (JSON)",{ancho:"ancho",vacio:[],filas:4,ayuda:"Lista de reservas; déjala en [] si no hay."})}</div>`)}
+  ${sec("motor","Motor del status","regenerar",`<div class="cf-grid">
+      ${cfCampo("num","motor.capacidad_factor","Factor de capacidad",{ph:"0,8",ayuda:"Parte de la jornada que es trabajo efectivo."})}
+      ${cfCampo("num","motor.sla_revision","Días que espera la cola de revisión")}
+      ${cfCampo("num","motor.sla_implementacion","Días que espera la de publicación")}
+      ${cfCampo("num","motor.limite_wip","Máximo «en desarrollo» por persona",{ayuda:"Vacío = no se mide."})}
+      ${cfCampo("lista","motor.proyectos_propios","Proyectos propios",{ayuda:"Lo de otros proyectos sale como transversal."})}
+      ${cfCampo("txt","motor.campo_inicio","Campo de fecha de inicio",{ph:"customfield_10015"})}
+      ${cfCampo("num","motor.reparto.titular","Frentes como titular por persona")}
+      ${cfCampo("num","motor.reparto.backup","Frentes como backup por persona")}
+    </div><h3>Estados de tu Jira <small class="mini">(separados por coma; «Nombre*» compara por prefijo)</small></h3><div class="cf-grid">
+      ${[["revision","Revisión"],["certificacion","Certificación"],["implementacion","Implementación"],["pausa","Pausa"],["desarrollo","Desarrollo"]].map(([k,t])=>cfCampo("lista","motor.estados."+k,t)).join("")}
+      ${cfCampo("lista","motor.estados.no_cierre","Estados que Jira cuenta como cerrados sin estarlo",{ph:"Redefinido, Won't Do"})}
+    </div><h3>Personas de fuera que cargan tus proyectos</h3>
+    ${cfFilas("motor.externos",[{k:"jira",lab:"Nombre exacto en Jira"},{k:"nombre",lab:"Nombre corto"},{k:"lider",lab:"Su líder"}],{jira:"",nombre:"",lider:""},{agregar:"Externo",vacio:"Nadie de fuera.",titulo:x=>x.nombre||x.jira||"Externo"})}
+    <h3>Remitentes de timesheets</h3>
+    ${cfFilas("motor.timesheets.remitentes",[{k:"nombre",lab:"Persona"},{k:"correo",lab:"Correo",tipo:"email"}],{nombre:"",correo:""},{agregar:"Remitente",vacio:"Si está vacío se usan los correos del equipo.",titulo:x=>x.nombre||"Remitente"})}
+    <h3>Mesa de líderes</h3><div class="cf-grid">${cfCampo("txt","motor.mesa.nombre","Nombre de la mesa")}${cfCampo("txt","motor.mesa.con","Quién la coordina")}</div>
+    ${cfFilas("motor.mesa_excluir",[{k:"tema",lab:"Tema"},{k:"por_que",lab:"Por qué sale"},{k:"donde_queda",lab:"Dónde se sigue"}],{tema:"",por_que:"",donde_queda:""},{agregar:"Tema fuera de la mesa",vacio:"Ningún tema excluido.",titulo:x=>x.tema||"Tema"})}
+    <div class="cf-grid">${cfCampo("lista","motor.tablero_compartido.personas_extra","Personas de fuera que también ve el tablero")}${cfCampo("lista","motor.tablero_compartido.excluir","Claves que no deben salir en la foto")}</div>`)}
+  ${sec("extras","Prometido al cliente y pendientes sin issue","regenerar",`<h3>Prometido al cliente</h3>
+    ${cfMapa("extras.comprometido",null,"",{clave:"Clave de Jira",valor:"Por qué está prometido",agregar:"Compromiso",vacio:"Nada prometido por fuera de Jira."})}
+    <h3>Pendientes que aún no tienen issue</h3>
+    ${cfFilas("extras.manuales",[{k:"key",lab:"Clave",req:1,ph:"M-ALGO"},{k:"titulo",lab:"Título",req:1,ancho:"ancho"},
+      {k:"grupo",t:"sel",lab:"Grupo",opts:[["cliente","Cliente"],["bloqueado","Bloqueado"],["priorizar","Priorizar"]]},
+      {k:"persona",t:"sel",lab:"Persona",opts:optL,vacia:"Sin responsable"},{k:"proyecto",lab:"Proyecto"},{k:"fin",lab:"Fecha fin",tipo:"date"},
+      {k:"estado",lab:"Estado",ph:"Sin issue"},{k:"nota",lab:"Nota",ancho:"ancho"}],{key:"",titulo:"",grupo:"priorizar",estado:"Sin issue"},
+      {agregar:"Pendiente",vacio:"Ningún pendiente sin issue.",titulo:x=>(x.key?x.key+" · ":"")+(x.titulo||"Pendiente")})}`)}
+  <details class="cf-sec" data-sec="json" ${CF_ABIERTAS.has("json")?"open":""}><summary><span>Avanzado: todo en JSON</span></summary><div class="cf-cuerpo">
+    <p class="hint">Lo mismo de arriba en un solo JSON, para copiar la configuración de otra célula o tocar algo que no tiene campo. Las claves que no reconoce el formulario se conservan.</p>
+    <textarea id="cf-json" rows="14" class="mono" aria-label="Configuración completa en JSON">${esc(JSON.stringify(CF,null,2))}</textarea>
+    <div class="cf-acts"><button class="btn sm" data-acc="json">Aplicar este JSON al formulario</button><button class="btn sm" data-acc="copiar">Copiar</button></div></div></details>`;
+  cfBarra(); cfCablear(); }
+function cfCablear(){ const box=$("vistaConfig"); if(CF_LISTO) return; CF_LISTO=true;
+  const rr=()=>{ renderConfig(); };
+  box.addEventListener("toggle",ev=>{ const d=ev.target; if(d&&d.dataset&&d.dataset.sec){ if(d.open) CF_ABIERTAS.add(d.dataset.sec); else CF_ABIERTAS.delete(d.dataset.sec); } },true);
+  box.addEventListener("input",ev=>{ const el=ev.target; if(!el.dataset||!el.dataset.p) return; const t=el.dataset.t;
+    if(["chk","mod","sel","json","logo"].includes(t)) return;
+    cfSet(el.dataset.p,cfValor(el)); CF_MSG=""; cfBarra(); });
+  box.addEventListener("change",ev=>{ const el=ev.target; const ds=el.dataset||{};
+    if(ds.t==="logo"){ const f=el.files&&el.files[0]; if(!f) return;
+      if(f.size>130000){ CF_MSG="El logo pesa "+Math.round(f.size/1024)+" KB; usa uno de 130 KB o menos (mejor SVG o PNG optimizado)."; CF_MSG_OK=false; rr(); return; }
+      const fr=new FileReader(); fr.onload=()=>{ const src=String(fr.result); const im=new Image();
+        im.onload=()=>{ const alto=28, ancho=Math.max(1,Math.round((im.naturalWidth||120)*alto/(im.naturalHeight||alto)));
+          CF.organizacion.logo=Object.assign({},CF.organizacion.logo,{src,ancho,alto,alt:(CF.organizacion.logo||{}).alt||CF.organizacion.nombre||""}); rr(); };
+        im.onerror=()=>{ CF_MSG="No se pudo leer esa imagen."; CF_MSG_OK=false; rr(); }; im.src=src; }; fr.readAsDataURL(f); return; }
+    if(ds.multi){ const sel=new Set([...box.querySelectorAll(`[data-multi="${ds.multi}"]`)].filter(x=>x.checked).map(x=>x.value));
+      cfSet(ds.multi,(CF.celula.lanes||[]).map(l=>l.id).filter(id=>sel.has(id))); cfBarra(); return; }
+    if(ds.mapa&&el.classList.contains("cf-k")){ const m=cfGet(ds.mapa)||{}; const nk=el.value.trim(), vk=ds.k;
+      if(nk===vk) return; if(!nk||/[.\s]/.test(nk)||Object.prototype.hasOwnProperty.call(m,nk)){ CF_MSG=`La clave «${nk}» no sirve: no puede estar vacía, llevar espacios o puntos, ni repetirse.`; CF_MSG_OK=false; rr(); return; }
+      const nm={}; Object.keys(m).forEach(k=>{ nm[k===vk?nk:k]=m[k]; }); cfSet(ds.mapa,nm); CF_MSG=""; rr(); return; }
+    if(!ds.p) return;
+    if(ds.t==="json"){ try{ cfSet(ds.p,cfValor(el)); CF_MSG=""; }catch(e){ CF_MSG="El JSON de «"+ds.p.split(".").pop()+"» no es válido: "+e.message; CF_MSG_OK=false; rr(); return; } cfBarra(); return; }
+    if(["chk","mod","sel"].includes(ds.t)){ cfSet(ds.p,cfValor(el)); cfBarra(); return; }
+    // un carril nuevo toma su identificador del nombre; cambiar un nombre refresca los selectores de personas
+    const mm=ds.p.match(/^celula\.lanes\.(\d+)\.nm$/);
+    if(mm){ const l=CF.celula.lanes[Number(mm[1])]; if(l&&CF_NUEVOS.has(l)&&!l.id){ l.id=cfSlug(l.nm,new Set(CF.celula.lanes.map(x=>x.id).filter(Boolean))); } rr(); } });
+  box.addEventListener("click",async ev=>{ const b=ev.target.closest("[data-acc],#cf-guardar,#cf-descartar"); if(!b||b.disabled) return;
+    if(b.id==="cf-guardar") return cfGuardar();
+    if(b.id==="cf-descartar"){ CF=JSON.parse(CF0); CF_ERR=[]; CF_MSG=""; CF_BUSCA=null; return rr(); }
+    const acc=b.dataset.acc, i=Number(b.dataset.i);
+    if(acc==="agregar"){ const a=cfGet(b.dataset.lista)||[]; const n=JSON.parse(b.dataset.nuevo||"{}"); a.push(n); cfSet(b.dataset.lista,a); if(b.dataset.lista==="celula.lanes") CF_NUEVOS.add(n); return rr(); }
+    if(acc==="quitar"){ const a=cfGet(b.dataset.lista)||[]; const x=a[i];
+      if(b.dataset.lista==="celula.lanes"&&!CF_NUEVOS.has(x)&&b.dataset.arm!=="1"){ b.dataset.arm="1"; b.classList.add("arm"); b.textContent="¿Quitar? Clic otra vez"; setTimeout(()=>{ if(b.isConnected){ b.dataset.arm=""; b.classList.remove("arm"); b.textContent="Quitar"; } },4000); return; }
+      a.splice(i,1); if(b.dataset.lista==="celula.lanes"&&x){ const id=x.id; if(CF.celula.carriles_movil) CF.celula.carriles_movil=CF.celula.carriles_movil.filter(z=>z!==id); }
+      CF_BUSCA=null; return rr(); }
+    if(acc==="subir"||acc==="bajar"){ const a=cfGet(b.dataset.lista)||[]; const j=acc==="subir"?i-1:i+1; if(j<0||j>=a.length) return; [a[i],a[j]]=[a[j],a[i]]; CF_BUSCA=null; return rr(); }
+    if(acc==="agregar-k"){ const m=cfGet(b.dataset.mapa)||{}; let k="NUEVO", n=2; while(Object.prototype.hasOwnProperty.call(m,k)) k="NUEVO"+(n++); m[k]=JSON.parse(b.dataset.nuevo||'""'); cfSet(b.dataset.mapa,m); return rr(); }
+    if(acc==="quitar-k"){ const m=cfGet(b.dataset.mapa)||{}; delete m[b.dataset.k]; return rr(); }
+    if(acc==="buscar"){ const l=CF.celula.lanes[i]; const q=(l&&(l.nombre_jira||l.nm)||"").replace(/^[^\p{L}]+/u,"").trim(); if(!q){ CF_BUSCA={i,msg:"Escribe primero el nombre."}; return rr(); }
+      CF_BUSCA={i,msg:"Buscando en Jira…"}; rr();
+      try{ const r=await jcall("lookupJiraAccountId",{searchString:q}); const us=((((r||{}).data||{}).users||{}).users||(r&&r.users)||[]).filter(u=>!u.accountType||u.accountType==="atlassian");
+        CF_BUSCA={i,us,msg:us.length?"":"Jira no encontró a nadie con «"+q+"»."}; }catch(e){ CF_BUSCA={i,msg:jiraErr(e)}; }
+      return rr(); }
+    if(acc==="elegir"){ const u=CF_BUSCA&&CF_BUSCA.us&&CF_BUSCA.us[Number(b.dataset.u)]; const l=CF.celula.lanes[i]; if(!u||!l) return;
+      l.account_id=u.accountId; l.nombre_jira=u.displayName; if(u.emailAddress&&!l.correo) l.correo=u.emailAddress; CF_BUSCA=null; return rr(); }
+    if(acc==="json"){ try{ const x=JSON.parse($("cf-json").value); if(!x||typeof x!=="object"||!x.celula||!x.organizacion) throw new Error("debe traer al menos «celula» y «organizacion»");
+        CF={celula:x.celula, organizacion:x.organizacion, extras:x.extras||{comprometido:{},manuales:[]}, motor:x.motor||{}}; CF_MSG="JSON aplicado al formulario. Revisa y guarda."; CF_MSG_OK=true; }
+      catch(e){ CF_MSG="Ese JSON no se pudo usar: "+e.message; CF_MSG_OK=false; } return rr(); }
+    if(acc==="copiar"){ navigator.clipboard.writeText($("cf-json").value).then(()=>{ b.textContent="Copiado"; },()=>{ b.textContent="No se pudo copiar"; }); } });
+}
+async function cfGuardar(){ CF_ERR=cfValidar(CF); CF_MSG="";
+  if(CF_ERR.length){ renderConfig(); const e=document.querySelector("#vistaConfig .callout.warn"); if(e&&e.scrollIntoView) e.scrollIntoView({block:"center"}); return; }
+  if(!db||!IS_OWNER||!canWrite){ CF_MSG="Solo el dueño del tablero puede guardar, y con la base conectada."; CF_MSG_OK=false; return renderConfig(); }
+  const antes=JSON.parse(CF0), meta={t:Date.now(), por:MI_ID||""};
+  const docs=[["config","celula","celula"],["config","organizacion","organizacion"],["privado","config_extras","extras"],["privado","config_motor","motor"]]
+    .filter(([,,k])=>JSON.stringify(CF[k])!==JSON.stringify(antes[k]));
+  const g=$("cf-guardar"); if(g){ g.disabled=true; g.textContent="Guardando…"; }
+  try{ for(const [col,id,k] of docs) await db.collection(col).doc(id).set(Object.assign(cfClon(CF[k]),{_meta:meta})); }
+  catch(e){ CF_MSG="No se pudo guardar: "+(e&&(e.message||e.code)||"error")+". Nada se perdió: vuelve a intentarlo."; CF_MSG_OK=false; return renderConfig(); }
+  const recarga=docs.some(([col])=>col==="config");
+  CF0=JSON.stringify(CF); CF_SUCIO=false;
+  CF_MSG=recarga?"Guardado. La página se recarga con la configuración nueva para todos.":"Guardado. Se aplica la próxima vez que regeneres el tablero (/status-celula en Claude Code).";
+  CF_MSG_OK=true; renderConfig();
+  if(recarga){ try{ sessionStorage.removeItem("tablero-config-recarga"); }catch(e){} setTimeout(()=>{ try{ location.reload(); }catch(e){} },900); } }
+
 // ---- Arranque ----
 const VISTAS_APAGADAS=new Set(Object.entries(MOD_VISTA).filter(([k])=>!MOD(k)).map(([,v])=>v));
 VISTAS_APAGADAS.forEach(v=>{ const b=document.querySelector(`[data-vista="${v}"]`); if(b) b.remove(); });
@@ -2885,6 +3172,8 @@ if(window.claude&&window.claude.use){
     db=d; PLAN={}; render(); setSync("Conectando al plan compartido…");
     try{ const u=await window.claude.use("user"); if(u&&u.isOwner){ IS_OWNER=!!(await u.isOwner()); } if(u&&u.can){ const w=await u.can("data.write"); if(w===false){ canWrite=false; } }
       const lb=document.querySelector('[data-vista="lider"]'); if(lb) lb.hidden=!IS_OWNER; const bb=document.querySelector('[data-vista="bandeja"]'); if(bb) bb.hidden=!IS_OWNER; // la vista privada solo la ve el dueño
+      const cb=document.querySelector('[data-vista="config"]'); if(cb) cb.hidden=!IS_OWNER; // la configuración solo la cambia el dueño
+      if(VISTA==="config") renderConfig();
       if(u&&u.id){ MI_ID=await u.id(); const em=u.email?await u.email():null; MI_LANE=em?(CORREO_LANE[String(em).toLowerCase().split("@")[0]]||null):null;
         if(!MI_LANE){ try{ const g=localStorage.getItem("gantt-soy"); if(g&&NOMBRE[g]) MI_LANE=g; }catch(_){} } } }catch(e){}
     db.collection("plan").onSnapshot(snap=>{
@@ -2894,6 +3183,51 @@ if(window.claude&&window.claude.use){
     suscribirTablero(); suscribirBacklog();
   });
 }
+};
+</script>
+<script>
+// ---- Arranque: la configuración guardada desde la pestaña ⚙ Configuración (colección «config» de la base)
+// manda sobre la que trae la página. Se espera la base un momento para no pintar dos veces; si tarda, se
+// pinta con la de la página y, si luego aparece una guardada distinta, se recarga una sola vez.
+(function(){
+"use strict";
+const el=id=>document.getElementById(id);
+const clon=o=>JSON.parse(JSON.stringify(o));
+const sinMeta=o=>{ const c=clon(o||{}); delete c._meta; return c; };
+let AJ={}; try{ AJ=JSON.parse(el("ajustes").textContent)||{}; }catch(e){}
+const BASE_CFG=el("cfg").textContent;
+const imgLogo=document.querySelector(".band .logo");
+const ORG_PAGINA={ nombre:(AJ.organizacion||{}).nombre||"", pie:(AJ.organizacion||{}).pie||"",
+  logo:Object.assign({}, (AJ.organizacion||{}).logo||{}, imgLogo?{src:imgLogo.getAttribute("src")||""}:{}) };
+function aplicar(docs){
+  let cfg=JSON.parse(BASE_CFG), org=clon(ORG_PAGINA); const fuente={celula:"pagina", organizacion:"pagina"};
+  if(docs&&docs.celula&&Array.isArray(docs.celula.lanes)){ cfg=sinMeta(docs.celula); fuente.celula=docs.celula._meta||{}; }
+  if(docs&&docs.organizacion&&docs.organizacion.nombre){ org=sinMeta(docs.organizacion); fuente.organizacion=docs.organizacion._meta||{}; }
+  cfg.org=Object.assign({}, cfg.org, {nombre:(cfg.org&&cfg.org.nombre)||org.nombre});
+  el("cfg").textContent=JSON.stringify(cfg);
+  window.__CFG_ACTIVA={celula:cfg, organizacion:org, fuente, generado:AJ.generado||0,
+    extras:clon(AJ.extras||{comprometido:{},manuales:[]}), motor:clon(AJ.motor||{})};
+  // lo que vive fuera del script de la aplicación: título, banda, logo y pie
+  const p=cfg.pagina||{};
+  document.title=p.titulo||document.title;
+  const h1=document.querySelector(".band h1"); if(h1&&p.titulo) h1.textContent=p.titulo;
+  const sub=document.querySelector(".band .sub"); if(sub) sub.textContent=p.subtitulo||"";
+  if(imgLogo&&org.logo){ if(org.logo.src) imgLogo.setAttribute("src",org.logo.src); imgLogo.alt=org.logo.alt||org.nombre||"";
+    if(org.logo.ancho) imgLogo.width=org.logo.ancho; if(org.logo.alto) imgLogo.height=org.logo.alto; }
+  const pie=document.querySelectorAll("footer.pie span"); if(pie[0]) pie[0].textContent=org.pie||""; if(pie[1]) pie[1].textContent=p.pie_uso||"";
+}
+let arrancado=false;
+function arrancar(docs){ if(arrancado) return; arrancado=true; try{ aplicar(docs); }catch(e){ console.error("Configuración guardada inválida; se usa la de la página",e); try{ aplicar(null); }catch(_){} } window.__ARRANCAR(); }
+const huella=docs=>JSON.stringify([docs&&docs.celula&&docs.celula._meta, docs&&docs.organizacion&&docs.organizacion._meta]);
+async function leer(){ const d=await window.claude.use("db"); if(!d) return null; const s=await d.collection("config").get(); const o={}; s.docs.forEach(x=>{ o[x.id]=x.data(); }); return o; }
+if(!(window.claude&&window.claude.use)){ arrancar(null); return; }
+const espera=setTimeout(()=>arrancar(null),2500);
+leer().then(docs=>{
+  if(!arrancado){ clearTimeout(espera); arrancar(docs); return; }
+  // llegó tarde: si trae una configuración guardada, se recarga una sola vez para aplicarla
+  if(docs&&(docs.celula||docs.organizacion)){ const h=huella(docs); let ya=""; try{ ya=sessionStorage.getItem("tablero-config-recarga")||""; }catch(e){}
+    if(ya!==h){ try{ sessionStorage.setItem("tablero-config-recarga",h); }catch(e){} location.reload(); } }
+}).catch(()=>{ clearTimeout(espera); arrancar(null); });
 })();
 </script>
 

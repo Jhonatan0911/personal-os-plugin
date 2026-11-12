@@ -3,7 +3,11 @@
 const fs = require('fs');
 const { JSDOM, VirtualConsole } = require('jsdom');
 const path = require('path');
-const [A, B, DBDIR] = process.argv.slice(2);
+// --ignorar "<selector>,<selector>" quita esos elementos de las dos fotos (una diferencia buscada, p. ej. una pestaña nueva).
+const argv = process.argv.slice(2);
+const iIgn = argv.indexOf('--ignorar');
+const IGNORAR = iIgn >= 0 ? argv.splice(iIgn, 2)[1] : '';
+const [A, B, DBDIR] = argv;
 // Base simulada: cada subcarpeta de DBDIR es una colección y cada .json un documento. Solo lectura.
 let DB = null, USER = null;
 if (DBDIR) {
@@ -39,10 +43,10 @@ async function cargar(ruta) {
   const doc = dom.window.document;
   const foto = () => {
     const c = doc.body.cloneNode(true);
-    c.querySelectorAll('script,style').forEach(s => s.remove());
+    c.querySelectorAll('script,style' + (IGNORAR ? ',' + IGNORAR : '')).forEach(s => s.remove());
     return c.innerHTML.replace(/\s+/g, ' ');
   };
-  const vistas = [...doc.querySelectorAll('[data-vista]')].map(b => b.dataset.vista);
+  const vistas = [...doc.querySelectorAll('[data-vista]')].filter(b => !(IGNORAR && b.matches(IGNORAR))).map(b => b.dataset.vista);
   const fotos = { inicio: foto() };
   for (const v of vistas) {
     const b = doc.querySelector(`[data-vista="${v}"]`); if (b) b.click();

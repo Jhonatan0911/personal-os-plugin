@@ -1,5 +1,24 @@
 # Changelog
 
+## 3.3.0
+
+El tablero de planeación se configura desde la propia página: nadie tiene que editar JSON a mano.
+
+- **Pestaña ⚙ Configuración** en el tablero (solo la ve el dueño): página y logo, equipo con búsqueda del
+  accountId en Jira, Jira y Microsoft 365, clientes, jornada, festivos, SLA, pestañas, asistente, sprint,
+  ajustes del motor y lo prometido al cliente. Valida con las mismas reglas del armador antes de guardar y
+  conserva las claves que el formulario no conoce (hay un editor de JSON completo para el resto).
+- **Guardar y listo:** la célula y la organización van a la colección `config` de la base y la página las
+  aplica al abrir, para todos; los extras y el motor van a `privado` y entran al regenerar.
+- **`status-celula-config.js`** (nuevo) baja lo guardado en la página a los archivos antes de regenerar, con
+  respaldo y en el mismo orden de claves; si alguien editó un archivo a mano después, prepara la subida.
+- `status-celula-tablero.js` acepta `--extras` y `--motor` para que la pestaña los precargue; `motor.json`
+  manda sobre el bloque `status_celula:` de `fuentes.yaml`.
+- Un tablero ya publicado necesita la regla `config` (lectura: view, escritura: owner): la skill la agrega
+  una sola vez al republicar (`tablero-compartido.md` §4).
+- `prueba-igualdad.js` acepta `--ignorar "<selector>"` para probar que todo lo demás pinta igual.
+- Corregidos los nombres de skills que salían rotos en «Cuándo no se usa» de status-celula.
+
 ## 3.2.2
 
 - **planear-sprint** estima horas de atención cuando la matriz trae `factor_atencion_aplicado`: la generación

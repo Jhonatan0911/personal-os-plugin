@@ -6,8 +6,15 @@
  *   - la célula      --config <json>         personas, Jira, festivos, jornada, SLA, clientes, textos
  *   - la empresa     --organizacion <json>   nombre, pie y logo (perfil de organización)
  *   - el inventario  --inventario <json>     lista de pendientes que arranca el Gantt ([] si no hay)
+ *   - los extras     --extras <json>         opcional: lo prometido al cliente y pendientes sin issue
+ *   - el motor       --motor <json>          opcional: ajustes del motor (capacidad, estados, reparto…)
  *
- *   node status-celula-tablero.js --config celula.json --organizacion org.json --inventario inv.json --salida tablero.html
+ *   node status-celula-tablero.js --config celula.json --organizacion org.json --inventario inv.json \
+ *     [--extras extras.json] [--motor motor.json] --salida tablero.html
+ *
+ * Extras y motor no cambian lo que pinta la página: la pestaña Configuración los precarga para editarlos.
+ * Lo que se guarde desde esa pestaña queda en la base del artifact y manda sobre lo de aquí
+ * (status-celula-config.js lo baja a estos archivos antes de regenerar).
  *
  * Valida lo mínimo que la página necesita para arrancar y sale con 1 (sin escribir) si falta algo.
  */
@@ -25,6 +32,10 @@ const leerJson = (r, nombre) => {
 const cfg = leerJson(arg('config'), 'config');
 const org = leerJson(arg('organizacion'), 'organizacion');
 const inv = arg('inventario') ? leerJson(arg('inventario'), 'inventario') : [];
+// Opcionales: lo que la pestaña Configuración muestra y guarda, aunque solo se aplica al regenerar.
+const opcional = n => (arg(n) && fs.existsSync(arg(n))) ? leerJson(arg(n), n) : null;
+const extras = opcional('extras') || { comprometido: {}, manuales: [] };
+const motor = opcional('motor') || {};
 const salida = arg('salida');
 if (!salida) { console.error('Falta --salida'); process.exit(1); }
 
@@ -65,6 +76,12 @@ const marcas = {
   __ORG_LOGO_SRC__: escHtml(org.logo.src),
   __CONFIG__: enScript(JSON.stringify(cfg)),
   __INVENTARIO__: enScript(JSON.stringify(inv)),
+  // El logo no se repite aquí (ya va en la <img>); la pestaña lo toma de la página.
+  __AJUSTES__: enScript(JSON.stringify({
+    generado: Date.now(),
+    organizacion: { nombre: org.nombre, pie: org.pie, logo: Object.assign({}, org.logo, { src: undefined }) },
+    extras, motor,
+  })),
 };
 for (const [m, v] of Object.entries(marcas)) {
   if (!html.includes(m)) { console.error(`La plantilla no trae la marca ${m}: ¿plantilla equivocada?`); process.exit(1); }

@@ -22,6 +22,7 @@ Todos viven en `<raíz del plugin>/scripts/` (Node, sin dependencias). Ninguno c
 | `status-celula-jira.js` | Normaliza los volcados del conector al bloque `jira` | `node status-celula-jira.js --corte AAAA-MM-DD --roster <roster.json> --salida <jira.json> --celula <volcados…> [--proyectos …] [--delta …] [--changelog …] [--campo-inicio customfield_X]` |
 | `status-celula-fichas.js` | Escribe en `personas/` qué hizo cada quien según su timesheet, sin duplicar | `node status-celula-fichas.js <datos.json> [--dry-run]` |
 | `status-celula-compartido.js` | Prepara los documentos y el `writes.json` del tablero compartido | ver `tablero-compartido.md` |
+| `status-celula-config.js` | Baja a los archivos lo guardado en la pestaña ⚙ Configuración (o prepara la subida si el archivo es más nuevo) | `node status-celula-config.js --base <dir> --celula <json> --organizacion <json> [--extras <json>] [--motor <json>] [--subir <dir>] [--aplicar]` (ver `tablero-compartido.md` §2-bis) |
 
 - El motor ya no escribe HTML: la página es la que arma `status-celula-tablero.js`.
 - `--carga N` imprime la carga de los próximos N días hábiles por persona (horas asignadas / jornada, «+» si

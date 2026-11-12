@@ -70,7 +70,17 @@ status_celula:
     celula: "<ruta al JSON de la célula>"           # formato: tablero/ejemplo-celula.json de la skill
     organizacion: "<ruta al perfil de la empresa>"  # formato: tablero/ejemplo-organizacion.json
     extras: "<ruta a extras.json>"                  # opcional: lo prometido al cliente y pendientes sin issue
+    motor: "<ruta a motor.json>"                    # opcional: lo de este bloque que el líder cambia en la página
 ```
+
+**La pestaña ⚙ Configuración del tablero edita todo esto sin tocar archivos.** Lo que se guarda ahí queda en
+la base del artifact y manda: la skill lo baja con `status-celula-config.js` antes de regenerar
+(`tablero-compartido.md` §2-bis). En `motor.json` van las claves de este bloque que se pueden cambiar desde la
+página (`capacidad_factor`, `sla_revision`, `sla_implementacion`, `limite_wip`, `proyectos_propios`,
+`campo_inicio`, `estados` (con `no_cierre`), `reparto`, `externos`, `timesheets.remitentes`,
+`mesa`, `mesa_excluir`, `tablero_compartido.personas_extra` y `.excluir`); **cada clave que traiga reemplaza
+a la de `fuentes.yaml`**. Las rutas (`carpeta_datos`, `roster_jira`, `tablero.*`, `acuerdo_frentes_fuente`)
+y la `url` del tablero se quedan en `fuentes.yaml`: son del equipo del líder, no de la página.
 
 **El JSON de la célula** (`tablero.celula`) lleva lo que la página necesita para hablar de tu equipo:
 `pagina` (título, subtítulo, pie), `nombres` (líder y analista, para los textos), `lanes[]` (carril por
@@ -85,8 +95,9 @@ encendido por defecto) y lo del sprint. **El perfil de la empresa** es aparte
 porque lo comparten todos los líderes de la misma organización.
 
 La skill copia al JSON `capacidad_factor`, `sla_*`, `limite_wip`, `proyectos_propios`, `estados` (más
-`no_cierre` desde `jira.estados_que_parecen_cerrados`), `reparto` y `externos` (como `jira.externos`). El
-motor no lee `fuentes.yaml`.
+`no_cierre` desde `jira.estados_que_parecen_cerrados`, salvo que `motor.json` ya traiga `estados.no_cierre`),
+`reparto` y `externos` (como `jira.externos`), tomando primero lo de `motor.json`. El motor no
+lee `fuentes.yaml`.
 
 ## 3. Si falta algo
 
