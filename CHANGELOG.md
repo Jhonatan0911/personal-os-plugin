@@ -1,5 +1,9 @@
 # Changelog
 
+## 3.3.1
+
+- status-celula: en la pestaña ⚙ Configuración, la lista «Carriles que se ven en el celular» (y toda casilla de la pestaña) se veía rota en el celular, porque el ancho completo de los campos de texto también se aplicaba a las casillas. Ahora cada carril es una pastilla con su casilla al lado, y las pastillas se reparten en filas según el ancho de la pantalla.
+
 ## 3.3.0
 
 El tablero de planeación se configura desde la propia página: nadie tiene que editar JSON a mano.

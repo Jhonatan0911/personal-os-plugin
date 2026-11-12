@@ -803,6 +803,10 @@ details.copc>summary::after{content:" ▾"}
 .cf-f{display:flex;flex-direction:column;gap:3px;font-size:var(--fs-s);color:var(--muted);min-width:0}
 .cf-f.cf-ancho{grid-column:1 / -1}
 .cf-f input,.cf-f select,.cf-f textarea,#cf-json{border:1px solid var(--line);border-radius:6px;padding:6px 8px;background:var(--bg);color:var(--ink);width:100%;min-width:0}
+.cf-f input[type=checkbox],.cf-f input[type=radio]{width:auto;flex:0 0 auto;margin:0;padding:0}
+.cf-f .chk{gap:6px 8px}
+.cf-f .chk label{display:inline-flex;align-items:center;gap:6px;padding:5px 10px;border:1px solid var(--line);border-radius:999px;background:var(--bg);cursor:pointer;white-space:nowrap;max-width:100%}
+.cf-f .chk label:has(input:checked){border-color:var(--deep);background:var(--panel)}
 .cf-f input[readonly]{background:var(--panel);color:var(--muted)}
 .cf-f textarea{resize:vertical}
 .cf-f small,.cf-c small{color:var(--muted);font-size:var(--fs-xs)}
