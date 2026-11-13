@@ -1,5 +1,9 @@
 # Changelog
 
+## 3.4.1
+
+- **planear-sprint:** «+ Modelo de BD» abre un borrador que no se guarda hasta darle «Guardar»; antes, un clic dejaba guardada una tabla vacía «Nueva_Tabla». El editor tiene «Quitar el modelo».
+
 ## 3.4.0
 
 - **planear-sprint · modelo de BD por subtarea:** el ítem acepta `modelo` (tablas nuevas y existentes, columnas con llave, referencia y null). En la página se abre como diagrama de relaciones con zoom y un editor para borrar o agregar tablas y columnas, guardar (queda como decisión) y aprobar; el modelo sale en la descripción de Jira. El generador lo valida.
