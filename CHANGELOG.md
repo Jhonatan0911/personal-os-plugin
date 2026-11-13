@@ -1,5 +1,11 @@
 # Changelog
 
+## 3.4.0
+
+- **planear-sprint · modelo de BD por subtarea:** el ítem acepta `modelo` (tablas nuevas y existentes, columnas con llave, referencia y null). En la página se abre como diagrama de relaciones con zoom y un editor para borrar o agregar tablas y columnas, guardar (queda como decisión) y aprobar; el modelo sale en la descripción de Jira. El generador lo valida.
+- **Panel de la subtarea más claro:** «Análisis previo de la IA y notas del líder» (no va a Jira) y, siempre visible debajo, «Descripción que se crea en Jira» como tarjeta. Corregido el fondo oscuro que heredaba la cabecera de la descripción.
+- **Las notas del líder mandan:** el analista de la página las sigue sobre el borrador y el expediente («Ajustar con el analista a mis notas»), y la skill exige leer la base de la página antes de regenerar y dar `id` a toda subtarea escrita a mano.
+
 ## 3.3.2
 
 - **planear-sprint**: la observación de cada subtarea se escribe en lenguaje claro desde el primer análisis, con tres partes fijas («Qué hace · Horas · Depende de», o «Por qué está en espera»). La traza técnica (tipo de matriz, factores, confianza, ajustes del revisor y del refutador) pasa a `obs_tecnica`. `generar_cronograma.py` avisa por cada observación que no empiece con «Qué hace:».

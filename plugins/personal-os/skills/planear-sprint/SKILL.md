@@ -164,6 +164,17 @@ analista y el botón «Actualizar requerimiento».
     calcula el vencimiento en días hábiles y deja lista la notificación. · Horas: 2,5 h, servicio nuevo con
     sus reglas. · Lo usa: el formulario de registro de la pantalla principal.»
   - El generador avisa por cada `obs` que no empiece con «Qué hace:»: corrígelas antes de publicar.
+- **Modelo de BD en toda subtarea que crea o cambia tablas** (campo `modelo` del ítem): las tablas nuevas y
+  las existentes que solo se leen, con columnas (`n`, `t`, `pk`, `fk: "Tabla.Columna"`, `nulo`) y una `nota`
+  por tabla. Los nombres de las tablas y columnas existentes se verifican en el código o el modelo EF del repo
+  (archivo:línea), nunca se suponen. Lo que ya vive en otra tabla se lee, no se copia (p. ej. datos de contacto).
+  En la página, el líder lo ve como diagrama de relaciones, lo edita (borrar o agregar tablas y columnas) y lo
+  aprueba; el modelo aprobado sale en la descripción de Jira y manda sobre el texto.
+- **Las notas del líder mandan.** Antes de regenerar el cronograma o tocar una historia, lee su documento en la
+  base de la página (`plan/<historia>` con ArtifactData) y trabaja sobre él: conserva sus ediciones, ids y
+  estados, y si una nota del líder contradice la descripción (menos validaciones, otro alcance), ajusta la
+  descripción a la nota y dilo; si deja un criterio de la historia sin cubrir, avísale para que lo hable con el
+  cliente. Toda subtarea escrita a mano en la base lleva `id` único, o sus botones no responden.
 - **Responsable por subtarea:** por defecto el dueño del cronograma; la de otra persona (soporte, por
   ejemplo) no suma a su carga y al exportar sale asignada a ella (accountId de `equipo` o buscado en Jira
   por nombre; nunca se adivina).
@@ -257,6 +268,11 @@ de los mineros, página del catálogo y Monte Carlo: `references/calibracion.md`
 - Entregar el primer análisis con observaciones en jerga de matriz y revisor («Sin matriz (endpoint_nuevo
   sin cifra) · 1,5 h senior × 1,6»): el líder abrió el cronograma de un plan de 48 subtareas y no entendió
   qué tenía que hacer el dev en ninguna. Hubo que reescribirlas todas.
+- Regenerar sobre el plan local sin leer la base de la página: el líder había reducido a una sola validación
+  una subtarea y había aceptado otras; se pisaban. Y subtareas movidas a mano sin `id` dejaron muertos los
+  botones de la página.
+- Guardar en una tabla nueva datos que ya existían en otra (los celulares del paciente): lo detectó el líder
+  revisando el modelo; por eso el modelo de BD se muestra como diagrama antes de aceptar.
 - Correr las fases para que el plan «quepa»: el desborde se muestra como atraso, no se esconde.
 - Exportar antes de clasificar lo que chocaba con la norma o el producto: una subtarea hacía que llenar un
   formulario disparara facturación, y se descubrió con las subtareas ya en Jira.

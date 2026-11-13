@@ -128,10 +128,38 @@ a{color:var(--action)}
 .opl{display:flex;gap:8px;align-items:flex-start}
 .opx>.res{margin-left:0;white-space:normal}
 textarea.dsc{width:100%;min-height:150px;font:12.5px/1.45 ui-monospace,Consolas,monospace;resize:vertical;box-sizing:border-box}
-details.desc{font-size:12px}
-details.desc summary{cursor:pointer;color:var(--deep);font-weight:600;display:flex;gap:6px;align-items:center;flex-wrap:wrap}
-details.desc[open] summary{margin-bottom:5px}
-details.desc .row{margin-top:4px}
+.obs em{font-style:normal;font-weight:400;color:var(--muted)}
+div.desc{font-size:12px;display:flex;flex-direction:column;gap:6px;background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:8px 10px;box-shadow:0 1px 2px rgba(var(--shade-rgb),.06)}
+div.desc .dsh{color:var(--deep);font-weight:600;display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.chk{display:inline-flex;align-items:center;gap:4px;font-size:11.5px;font-weight:600;padding:1px 9px;border-radius:99px;border:1px solid color-mix(in srgb,var(--ok) 45%,transparent);color:var(--ok);background:color-mix(in srgb,var(--ok) 8%,transparent)}
+.chk.no{border-color:color-mix(in srgb,var(--warn) 45%,transparent);color:var(--warn);background:color-mix(in srgb,var(--warn) 8%,transparent)}
+.it textarea.dsc{background:var(--card)}
+/* Modelo de BD */
+.modal.er{max-width:1220px;height:90vh;border-radius:16px;padding:18px 20px;gap:14px;box-shadow:0 24px 60px rgba(var(--shade-rgb),.35)}
+.modal.er .btn{border-radius:8px;padding:7px 14px;transition:background .15s,box-shadow .15s}
+.modal.er .btn:hover{box-shadow:0 2px 8px rgba(var(--shade-rgb),.14)}
+.modal.er .btn.sm{padding:4px 10px}
+.erw{display:grid;grid-template-columns:minmax(0,1fr) 450px;gap:14px;min-height:0;flex:1}
+.ercv{border:1px solid var(--line);border-radius:14px;overflow:auto;min-height:0;
+  background-color:var(--panel);background-image:radial-gradient(color-mix(in srgb,var(--soft) 45%,transparent) 1px,transparent 1px);background-size:18px 18px}
+.ercv svg{display:block}
+.ered{overflow:auto;min-height:0;display:flex;flex-direction:column;gap:10px;font-size:12px;padding:2px 4px 2px 2px}
+.ert{border:1px solid var(--line);border-left:4px solid var(--action);border-radius:12px;padding:10px 10px 10px 12px;background:var(--card);display:flex;flex-direction:column;gap:7px;
+  box-shadow:0 1px 2px rgba(var(--shade-rgb),.06),0 6px 16px rgba(var(--shade-rgb),.07)}
+.ert.ex{border-left-color:var(--soft);background:color-mix(in srgb,var(--panel) 55%,var(--card))}
+.ert .th{display:flex;gap:6px;align-items:center}.ert .th input{flex:1;font-weight:600;font-size:13px}
+.erc{display:grid;grid-template-columns:minmax(0,1.4fr) 92px 22px minmax(0,1fr) 22px 24px;gap:4px 5px;align-items:center}
+.erc .hd{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.04em}
+.modal.er input[type=text],.modal.er select{border:1px solid var(--line);border-radius:7px;padding:4px 8px;background:var(--bg);min-width:0;font-size:12px;transition:border-color .15s,box-shadow .15s}
+.modal.er input[type=text]:focus,.modal.er select:focus{outline:none;border-color:var(--action);box-shadow:0 0 0 3px color-mix(in srgb,var(--action) 22%,transparent)}
+.modal.er input[type=checkbox]{accent-color:var(--action);width:15px;height:15px;margin:0 auto;cursor:pointer}
+.modal.er input:disabled,.modal.er select:disabled{opacity:.75}
+.erx{width:22px;height:22px;border-radius:50%;border:0;background:transparent;color:var(--muted);cursor:pointer;font-size:12px;line-height:22px;padding:0;transition:background .15s,color .15s}
+.erx:hover{background:var(--crit-bg);color:var(--crit)}
+.erleg{display:flex;gap:12px;flex-wrap:wrap;font-size:12px;color:var(--muted);align-items:center;margin-top:4px}
+.erz-b{display:inline-flex;gap:2px}.erz-b .btn{min-width:30px}
+.erleg i{display:inline-block;width:12px;height:12px;border-radius:4px;vertical-align:-2px;margin-right:4px}
+@media(max-width:820px){.erw{grid-template-columns:1fr}.modal.er{height:auto}}
 .res.ok{color:var(--ok)} .res.bad{color:var(--crit)}
 .ro{font-size:12px;color:var(--warn)}
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
@@ -328,10 +356,11 @@ function itemHtml(k,it){
       <label>vence <input type="date" data-f="fin" data-id="${it.id}" value="${it.fin||""}" ${ro?"disabled":""}></label>
       <label>responsable <select data-f="resp" data-id="${it.id}" ${ro?"disabled":""}>${[MAIN].concat(GENTE.filter(n=>!esMain(n))).concat(respOf(it)&&!GENTE.includes(respOf(it).nombre)?[respOf(it).nombre]:[]).map(n=>`<option ${(respOf(it)?respOf(it).nombre:MAIN)===n?"selected":""}>${esc(n)}</option>`).join("")}<option value="__otro">Otra persona…</option></select></label></div>
     ${respOf(it)?`<div class="ro">No suma a la carga de ${esc(MAIN)}: la hace ${esc(respOf(it).nombre)}.</div>`:""}
-    ${it.estado==="espera"||it.obs?`<label class="obs"><span>Observación · qué falta para destrabarla</span><textarea data-f="obs" data-id="${it.id}" ${ro?"disabled":""} placeholder="Qué se espera, de quién y desde cuándo">${esc(it.obs||"")}</textarea></label>`:""}
-    ${it.jira?"":`<details class="desc" ${OPEN.has(it.id)?"open":""}><summary>Descripción para Jira ${it.desc&&it.desc.trim().length>=DESC_MIN?`<span class="pill ok">redactada</span>`:`<span class="pill warn">sin redactar · se redacta al exportar</span>`}</summary>
-      <textarea class="dsc" aria-label="Descripción para Jira" data-f="desc" data-id="${it.id}" ${ro?"disabled":""} placeholder="Contexto, qué hacer, dónde, criterios de aceptación…">${esc(it.desc||"")}</textarea>
-      ${ro?"":`<div class="row"><button class="btn sm" data-a="redac" data-id="${it.id}">${it.desc?"Mejorar con el analista":"Redactar con el analista"}</button><span class="res" id="rd-${it.id}"></span></div>`}</details>`}
+    <label class="obs"><span>Análisis previo de la IA y notas del líder <em>· no va a Jira; el analista lo toma en cuenta al redactar</em></span><textarea data-f="obs" data-id="${it.id}" ${ro?"disabled":""} placeholder="Qué hace, por qué esas horas, de qué depende. Escribe aquí tus decisiones: mandan sobre la descripción">${esc(it.obs||"")}</textarea></label>
+    ${it.modelo?`<div class="row"><button class="btn sm erb" data-er="${it.id}">🗄 Ver modelo de BD · ${it.modelo.tablas.length} tablas</button>${it.modelo.aprobado?`<span class="pill ok">Modelo aprobado ${fmt(it.modelo.aprobado.fecha)}</span>`:`<span class="pill warn">Modelo sin aprobar</span>`}</div>`:(ro?"":`<div class="row"><button class="btn sm" data-a="addmod" data-id="${it.id}">+ Modelo de BD</button></div>`)}
+    ${it.jira?"":`<div class="desc"><div class="dsh">Descripción que se crea en Jira ${it.desc&&it.desc.trim().length>=DESC_MIN?`<span class="chk">✓ redactada</span>`:`<span class="chk no">sin redactar · se redacta al exportar</span>`}</div>
+      <textarea class="dsc" aria-label="Descripción que se crea en Jira" data-f="desc" data-id="${it.id}" ${ro?"disabled":""} placeholder="Contexto, qué hacer, dónde, criterios de aceptación…">${esc(it.desc||"")}</textarea>
+      ${ro?"":`<div class="row"><button class="btn sm" data-a="redac" data-id="${it.id}">${it.desc?"Ajustar con el analista a mis notas":"Redactar con el analista"}</button><span class="res" id="rd-${it.id}"></span></div>`}</div>`}
     <div class="r3">${btns}</div></div>`;
 }
 function openPend(){
@@ -397,6 +426,7 @@ document.addEventListener("click",ev=>{
   else if(a==="trs"){loadTransitions(k);return;}
   else if(a==="pickt"){s.transicion={id:b.dataset.tid,nombre:b.dataset.tn,aplicada:null};}
   else if(a==="redac"&&it){redactarUna(k,it,$("rd-"+it.id),b);return;}
+  else if(a==="addmod"&&it){it.modelo={tablas:[{nombre:"Nueva_Tabla",tipo:"nueva",columnas:[{n:"Id",t:"int",pk:true}]}],aprobado:null};save(k);render();erOpen(k,it.id);return;}
   else return;
   save(k);render();
 });
@@ -418,6 +448,107 @@ document.addEventListener("input",ev=>{
   if(f&&(f==="titulo"||f==="obs"||f==="desc")){const it=s.items.find(x=>x.id===ev.target.dataset.id);if(it){it[f]=ev.target.value;save(SEL);}}
   else if(c){const cm=s.comentarios.find(x=>x.id===c);if(cm){cm.texto=ev.target.value;save(SEL);}}
 });
+// ---- Modelo de BD de una subtarea: diagrama de relaciones y edición para aprobarlo ----
+// it.modelo = {tablas:[{nombre, tipo:"nueva"|"existente", nota?, columnas:[{n, t, pk?, fk?:"Tabla.Columna", nulo?, nota?}]}], aprobado:null|{fecha}}
+let ERK=null,ERID=null,ERM=null,ERRO=false,ERDIRTY=false,ERZ="fit";
+function erIt(){return ERK&&ST[ERK]?ST[ERK].items.find(x=>x.id===ERID):null;}
+function erOpen(k,id){const it=ST[k].items.find(x=>x.id===id);if(!it||!it.modelo)return;ERK=k;ERID=id;ERM=JSON.parse(JSON.stringify(it.modelo));ERRO=!canWrite||!!it.jira;ERDIRTY=false;ERZ=1;erRender();}
+function erTab(m,n){n=String(n||"").toLowerCase();return m.tablas.findIndex(t=>t.nombre.toLowerCase()===n);}
+function erLayout(m){
+  const W=270,HH=34,RH=21,GX=90,GY=34,PAD=24;
+  // las nuevas en las primeras columnas (balanceadas por alto) y las existentes, que solo se leen, en la última
+  const nuevas=m.tablas.map((t,i)=>i).filter(i=>m.tablas[i].tipo!=="existente"),exist=m.tablas.map((t,i)=>i).filter(i=>m.tablas[i].tipo==="existente");
+  const nN=Math.max(1,Math.min(2,Math.ceil(nuevas.length/3))),ncol=nN+(exist.length?1:0);
+  const colY=new Array(ncol).fill(PAD),pos={};
+  const poner=(ti,c)=>{const t=m.tablas[ti];const hgt=HH+RH*Math.max(1,t.columnas.length)+8;pos[ti]={x:PAD+c*(W+GX),y:colY[c],w:W,h:hgt,HH,RH};colY[c]+=hgt+GY;};
+  nuevas.forEach(ti=>{let c=0;for(let j=1;j<nN;j++)if(colY[j]<colY[c])c=j;poner(ti,c);});
+  exist.forEach(ti=>poner(ti,ncol-1));
+  return{pos,W:PAD*2+ncol*W+(ncol-1)*GX,H:Math.max(...colY)+PAD};
+}
+function erSvg(m){
+  const L=erLayout(m),P=L.pos;let edges="",nodes="";
+  m.tablas.forEach((t,ti)=>t.columnas.forEach((c,ci)=>{if(!c.fk)return;const [tn,cn]=String(c.fk).split(".");const tj=erTab(m,tn);if(tj<0||!P[tj])return;
+    const a=P[ti],b=P[tj];const ri=b?Math.max(0,m.tablas[tj].columnas.findIndex(x=>x.n.toLowerCase()===String(cn||"").toLowerCase())):0;
+    const y1=a.y+a.HH+a.RH*ci+a.RH/2+4,y2=b.y+b.HH+b.RH*ri+b.RH/2+4;
+    const der=b.x>a.x+10,iz=b.x+b.w<a.x-10;let x1,x2,cx;
+    if(der){x1=a.x+a.w;x2=b.x;cx=(x1+x2)/2;edges+=`<path d="M${x1} ${y1} C${cx} ${y1},${cx} ${y2},${x2} ${y2}" class="ere"/>`;}
+    else if(iz){x1=a.x;x2=b.x+b.w;cx=(x1+x2)/2;edges+=`<path d="M${x1} ${y1} C${cx} ${y1},${cx} ${y2},${x2} ${y2}" class="ere"/>`;}
+    else{x1=a.x+a.w;x2=b.x+b.w;cx=Math.max(x1,x2)+40;edges+=`<path d="M${x1} ${y1} C${cx} ${y1},${cx} ${y2},${x2} ${y2}" class="ere"/>`;}
+    edges+=`<circle cx="${x2}" cy="${y2}" r="3.5" class="erd"/>`;}));
+  m.tablas.forEach((t,ti)=>{const p=P[ti];if(!p)return;const ex=t.tipo==="existente";
+    nodes+=`<g><rect x="${p.x}" y="${p.y}" width="${p.w}" height="${p.h}" rx="12" class="ern ${ex?"ex":""}" filter="url(#ersh)"/>
+      <path d="M${p.x} ${p.y+12} a12 12 0 0 1 12 -12 h${p.w-24} a12 12 0 0 1 12 12 v${p.HH-12} h${-p.w} z" class="erh ${ex?"ex":""}"/>
+      <text x="${p.x+12}" y="${p.y+21}" class="ertt">${esc(t.nombre)}</text>
+      <text x="${p.x+p.w-10}" y="${p.y+21}" class="ertg" text-anchor="end">${ex?"existente · solo lectura":"nueva"}</text>`;
+    t.columnas.forEach((c,ci)=>{const y=p.y+p.HH+p.RH*ci+4;
+      nodes+=`${ci%2?`<rect x="${p.x+1}" y="${y}" width="${p.w-2}" height="${p.RH}" class="erz"/>`:""}
+        <text x="${p.x+10}" y="${y+14.5}" class="eri">${c.pk?"🔑":c.fk?"🔗":""}</text>
+        <text x="${p.x+30}" y="${y+14.5}" class="erc1 ${c.pk?"pk":""}">${esc(c.n)}${c.nulo?"?":""}</text>
+        <text x="${p.x+p.w-10}" y="${y+14.5}" class="erc2" text-anchor="end">${esc(c.t||"")}</text>`;});
+    if(!t.columnas.length)nodes+=`<text x="${p.x+12}" y="${p.y+p.HH+18}" class="erc2">sin columnas</text>`;
+    nodes+=`</g>`;});
+  const sz=ERZ==="fit"?`width="100%" style="max-width:${L.W}px;height:auto"`:`width="${Math.round(L.W*ERZ)}" height="${Math.round(L.H*ERZ)}"`;
+  return`<svg xmlns="http://www.w3.org/2000/svg" ${sz} viewBox="0 0 ${L.W} ${L.H}" role="img" aria-label="Diagrama de relaciones">
+  <defs><filter id="ersh" x="-10%" y="-10%" width="120%" height="130%"><feDropShadow dx="0" dy="3" stdDeviation="5" flood-color="#0F1218" flood-opacity=".16"/></filter></defs>
+  <style>.ern{fill:var(--card);stroke:color-mix(in srgb,var(--action) 35%,var(--line));stroke-width:1}.ern.ex{stroke:var(--soft);stroke-dasharray:5 4}
+  .erh{fill:var(--action)}.erh.ex{fill:var(--soft)}.ertt{fill:#fff;font:600 13px var(--f-body)}.ertg{fill:#fff;opacity:.85;font:10.5px var(--f-body)}
+  .erz{fill:color-mix(in srgb,var(--panel) 70%,var(--card))}.eri{font-size:11px}.erc1{fill:var(--ink);font:12px var(--f-mono)}.erc1.pk{font-weight:700}.erc2{fill:var(--muted);font:11px var(--f-mono)}
+  .ere{fill:none;stroke:var(--action);stroke-width:1.8;opacity:.55;stroke-linecap:round}.erd{fill:var(--card);stroke:var(--action);stroke-width:2}</style>${edges}${nodes}</svg>`;
+}
+function erEditor(){const dis=ERRO?"disabled":"";
+  const fks=ERM.tablas.flatMap(t=>t.columnas.filter(c=>c.pk||/_?id$/i.test(c.n)).map(c=>t.nombre+"."+c.n));
+  return`<datalist id="erfk">${fks.map(f=>`<option value="${esc(f)}">`).join("")}</datalist>`+ERM.tablas.map((t,ti)=>`<div class="ert ${t.tipo==="existente"?"ex":""}">
+    <div class="th"><input type="text" aria-label="Nombre de la tabla" data-et="${ti}" data-ef="nombre" value="${esc(t.nombre)}" ${dis}>
+      <select aria-label="Tipo de tabla" data-et="${ti}" data-ef="tipo" ${dis}><option value="nueva" ${t.tipo!=="existente"?"selected":""}>nueva</option><option value="existente" ${t.tipo==="existente"?"selected":""}>existente</option></select>
+      ${ERRO?"":`<button class="erx" title="Borrar la tabla" data-ex="t" data-et="${ti}">✕</button>`}</div>
+    <div class="erc"><span class="hd">columna</span><span class="hd">tipo</span><span class="hd">PK</span><span class="hd">referencia (FK)</span><span class="hd">null</span><span></span>
+    ${t.columnas.map((c,ci)=>`<input type="text" aria-label="Columna" data-et="${ti}" data-ec="${ci}" data-ef="n" value="${esc(c.n)}" ${dis}>
+      <input type="text" aria-label="Tipo" data-et="${ti}" data-ec="${ci}" data-ef="t" value="${esc(c.t||"")}" ${dis}>
+      <input type="checkbox" aria-label="Llave primaria" data-et="${ti}" data-ec="${ci}" data-ef="pk" ${c.pk?"checked":""} ${dis}>
+      <input type="text" list="erfk" aria-label="Referencia" data-et="${ti}" data-ec="${ci}" data-ef="fk" value="${esc(c.fk||"")}" placeholder="—" title="Tabla.Columna a la que apunta" ${dis}>
+      <input type="checkbox" aria-label="Permite null" data-et="${ti}" data-ec="${ci}" data-ef="nulo" ${c.nulo?"checked":""} ${dis}>
+      ${ERRO?"<span></span>":`<button class="erx" title="Borrar la columna" data-ex="c" data-et="${ti}" data-ec="${ci}">✕</button>`}`).join("")}</div>
+    ${ERRO?"":`<div><button class="btn sm" data-ex="addc" data-et="${ti}">+ columna</button></div>`}
+    ${t.nota?`<div style="color:var(--muted)">${esc(t.nota)}</div>`:""}</div>`).join("")+(ERRO?"":`<div><button class="btn sm" data-ex="addt">+ tabla</button></div>`);}
+function erRender(){const it=erIt();if(!it)return;
+  const nN=ERM.tablas.filter(t=>t.tipo!=="existente").length,nE=ERM.tablas.length-nN;
+  $("modal").innerHTML=`<div class="overlay"><div class="modal er" role="dialog" aria-label="Modelo de BD"><div style="display:flex;gap:12px;justify-content:space-between;align-items:flex-start">
+    <div style="flex:1;min-width:0"><h2 style="margin:0;font-size:16px">Modelo de BD · ${esc(it.titulo)}</h2><div class="erleg"><span><i style="background:var(--action)"></i>${nN} nuevas</span><span><i style="background:var(--mid);opacity:.55"></i>${nE} existentes (solo se leen)</span><span>🔑 llave primaria · 🔗 referencia · <b>?</b> admite null</span>
+      ${ERM.aprobado?`<span class="pill ok">Aprobado ${fmt(ERM.aprobado.fecha)}</span>`:`<span class="pill warn">Sin aprobar</span>`}${ERDIRTY?`<span class="pill warn">Cambios sin guardar</span>`:""}</div></div>
+    <div class="row" style="flex:none"><span class="erz-b"><button class="btn sm" data-ex="zo" title="Alejar">−</button><button class="btn sm" data-ex="zf" title="Ajustar al ancho">Ajustar</button><button class="btn sm" data-ex="zi" title="Acercar">+</button></span><button class="btn" data-ex="close">Cerrar</button></div></div>
+    <div class="erw"><div class="ercv" id="ercv">${erSvg(ERM)}</div><div class="ered" id="ered">${erEditor()}</div></div>
+    ${ERRO?"":`<div class="row" style="justify-content:flex-end"><span class="res" id="erres"></span><button class="btn" data-ex="save">Guardar cambios</button><button class="btn pri" data-ex="ok">Guardar y aprobar el modelo</button></div>`}</div></div>`;}
+function erResumen(a,b){const L=[],na=new Map(a.tablas.map(t=>[t.nombre,t])),nb=new Map(b.tablas.map(t=>[t.nombre,t]));
+  a.tablas.forEach(t=>{if(!nb.has(t.nombre))L.push("quitó la tabla "+t.nombre);});
+  b.tablas.forEach(t=>{if(!na.has(t.nombre)){L.push("agregó la tabla "+t.nombre);return;}const o=na.get(t.nombre),oc=new Set(o.columnas.map(c=>c.n)),nc=new Set(t.columnas.map(c=>c.n));
+    const q=[...oc].filter(c=>!nc.has(c)),g=[...nc].filter(c=>!oc.has(c));if(q.length)L.push(`en ${t.nombre} quitó ${q.join(", ")}`);if(g.length)L.push(`en ${t.nombre} agregó ${g.join(", ")}`);});
+  return L;}
+function erGuardar(aprobar){const it=erIt();if(!it||ERRO)return;const cambios=erResumen(it.modelo,ERM);
+  ERM.tablas.forEach(t=>t.columnas=t.columnas.filter(c=>String(c.n||"").trim()));
+  ERM.aprobado=aprobar?{fecha:TODAY}:(cambios.length?null:ERM.aprobado);
+  it.modelo=JSON.parse(JSON.stringify(ERM));ERDIRTY=false;save(ERK);
+  if(cambios.length||aprobar)anotar([{texto:`${aprobar?"Aprobó":"Ajustó"} el modelo de BD de «${it.titulo}»${cambios.length?": "+cambios.join("; "):""}`,fuente:ERK}],[],`Modelo de BD en ${ERK}`);
+  render();erRender();const r=$("erres");if(r){r.textContent=aprobar?"Modelo aprobado: sale en la descripción de Jira.":"Guardado.";r.className="res ok";}}
+document.addEventListener("click",ev=>{
+  const o=ev.target.closest&&ev.target.closest("button[data-er]");if(o){erOpen(SEL,o.dataset.er);return;}
+  const b=ev.target.closest&&ev.target.closest("[data-ex]");if(!b||!ERM)return;const x=b.dataset.ex,ti=Number(b.dataset.et),ci=Number(b.dataset.ec);
+  if(x==="zf"||x==="zi"||x==="zo"){const cur=ERZ==="fit"?($("ercv").firstElementChild.getBoundingClientRect().width/Number($("ercv").firstElementChild.getAttribute("viewBox").split(" ")[2])):ERZ;ERZ=x==="zf"?"fit":Math.max(.4,Math.min(2,cur*(x==="zi"?1.2:1/1.2)));$("ercv").innerHTML=erSvg(ERM);return;}
+  if(x==="close"){if(ERDIRTY&&!confirm("Hay cambios sin guardar en el modelo. ¿Cerrar y perderlos?"))return;ERM=null;$("modal").innerHTML="";return;}
+  if(ERRO)return;
+  if(x==="save"){erGuardar(false);return;} if(x==="ok"){erGuardar(true);return;}
+  if(x==="t"){if(!confirm(`¿Borrar la tabla ${ERM.tablas[ti].nombre} del modelo?`))return;ERM.tablas.splice(ti,1);}
+  else if(x==="c")ERM.tablas[ti].columnas.splice(ci,1);
+  else if(x==="addc")ERM.tablas[ti].columnas.push({n:"Columna",t:"varchar(50)"});
+  else if(x==="addt")ERM.tablas.push({nombre:"Nueva_Tabla",tipo:"nueva",columnas:[{n:"Id",t:"int",pk:true}]});
+  else return;
+  ERDIRTY=true;erRender();});
+document.addEventListener("input",ev=>{const e=ev.target;if(!ERM||ERRO||!e.dataset||e.dataset.ef===undefined)return;const t=ERM.tablas[Number(e.dataset.et)];if(!t)return;
+  const f=e.dataset.ef,v=e.type==="checkbox"?e.checked:e.value;
+  if(e.dataset.ec!==undefined){const c=t.columnas[Number(e.dataset.ec)];if(!c)return;if(f==="fk"||f==="t")c[f]=v.trim()||undefined;else c[f]=v;}else t[f]=v;
+  ERDIRTY=true;$("ercv").innerHTML=erSvg(ERM);});
+document.addEventListener("change",ev=>{const e=ev.target;if(ERM&&e.dataset&&e.dataset.ef==="tipo")erRender();});
+function modeloMD(m){if(!m||!m.tablas||!m.tablas.length)return"";
+  return `\n\n**Modelo de BD ${m.aprobado?"aprobado por el líder el "+fmt(m.aprobado.fecha):"propuesto (sin aprobar)"}:**\n`+m.tablas.map(t=>`- \`${t.nombre}\` (${t.tipo==="existente"?"existente, solo lectura":"nueva"}): `+t.columnas.map(c=>`${c.n}${c.pk?" PK":""}${c.t?" "+c.t:""}${c.nulo?" null":""}${c.fk?" → "+c.fk:""}`).join(", ")).join("\n");}
 // Recordar qué descripciones están abiertas entre redibujos
 const OPEN=new Set();
 document.addEventListener("toggle",ev=>{const d=ev.target;if(d&&d.matches&&d.matches("details.desc")){const id=d.querySelector("[data-id]");if(id){if(d.open)OPEN.add(id.dataset.id);else OPEN.delete(id.dataset.id);}}},true);
@@ -456,7 +587,7 @@ function opLabel(o){return o.tipo==="sub"?`Crear subtarea en <b>${o.k}</b>: ${es
 // ---- Descripción de la subtarea: se interpreta la solución, nunca sale solo el título ----
 const DESC_MIN=120;
 function ctxSub(k,it){const hu=HMAP[k];return{historia:{clave:k,titulo:hu.t,que_hay_hoy:hu.nota,escalas:hu.esc},
-  subtarea:{titulo:it.titulo,horas:it.horas,inicio:it.ini,vence:it.fin,observacion:it.obs||null,tipo_matriz:it.tipo||null,borrador:it.desc||null},
+  subtarea:{titulo:it.titulo,horas:it.horas,inicio:it.ini,vence:it.fin,notas_del_lider_y_analisis_previo:it.obs||null,modelo_bd:it.modelo||null,tipo_matriz:it.tipo||null,borrador:it.desc||null},
   otras_subtareas_de_la_historia:ST[k].items.filter(x=>x!==it&&x.estado!=="descartada").map(x=>x.titulo),
   descripcion_base_del_sprint:DESC_SUB,responsable:respOf(it)?respOf(it).nombre:MAIN};}
 function expRel(){if(!EXPD)return{};const E=EXPD;return{resumen:E.resumen,decisiones:E.decisiones,pendientes:(E.pendientes||[]).filter(p=>p.estado!=="resuelto"),riesgos:E.riesgos,hallazgos_codigo:E.hallazgos_codigo};}
@@ -466,6 +597,7 @@ Reglas:
 - Una subtarea aceptada y con horas ya no tiene nada pendiente: NO escribas «Por confirmar», «pendiente de definir», preguntas ni opciones. Si el borrador trae algo así, quítalo. Lo único permitido es una dependencia de orden con otra subtarea («necesita el script de PROY-142»).
 - Conserva del borrador lo técnico útil: rutas, archivo:línea, nombres de tablas, columnas, SP, endpoints y decisiones ya tomadas. Recorta lo demás.
 - Usa SOLO lo que está en el CONTEXTO y el EXPEDIENTE; nunca inventes nombres, valores ni fechas.
+- MANDAN las notas del líder (subtarea.notas_del_lider_y_analisis_previo) y el modelo de BD (subtarea.modelo_bd): si el borrador o el expediente dicen otra cosa (más validaciones, otras columnas, otro alcance), sigue al líder y quita del borrador lo que contradiga. Las tablas y columnas salen del modelo de BD, no del borrador.
 Markdown en español, sin títulos de nivel 1, máximo unas 150 palabras, con estas secciones:
 **Objetivo** — una línea.
 **Qué hacer** — de 2 a 6 pasos técnicos numerados.
@@ -477,7 +609,7 @@ CONTEXTO: ${JSON.stringify(ctxSub(k,it))}
 EXPEDIENTE: ${JSON.stringify(expRel()).slice(0,60000)}`;
   const {text}=await sample([{role:"user",content:prompt}],{signal,modelTier:"complex",cache:false});
   return String(text||"").trim();}
-function pieDesc(k,it){return `\n\n---\n*Historia:* ${k} · *Estimación:* ${h(it.horas||0)} h · *Del* ${fmt(it.ini)} *al* ${fmt(it.fin)} · *Responsable:* ${respOf(it)?respOf(it).nombre:MAIN}\n*Planeada en el cronograma «${document.title}» el ${fmt(TODAY)}.*`;}
+function pieDesc(k,it){return modeloMD(it.modelo)+`\n\n---\n*Historia:* ${k} · *Estimación:* ${h(it.horas||0)} h · *Del* ${fmt(it.ini)} *al* ${fmt(it.fin)} · *Responsable:* ${respOf(it)?respOf(it).nombre:MAIN}\n*Planeada en el cronograma «${document.title}» el ${fmt(TODAY)}.*`;}
 async function redactarUna(k,it,out,btn){
   if(!sample){if(out){out.textContent="El analista necesita abrir la página con tu sesión de claude.ai.";out.className="res bad";}return;}
   btn.disabled=true;if(out){out.textContent="Interpretando la solución…";out.className="res";}

@@ -58,3 +58,15 @@ consulta ni exporta; si nombra un expediente que no existe o al que le faltan fu
   entrega, estado, nota}`. Al cerrar o mover la entrega, actualiza ese documento con `if_version`.
 - **Compromiso con fecha**: si el sprint tiene una entrega comprometida, propón crear su nota en
   `<stateDir>/alcances/` con el cronograma como fuente viva (los puntos se leen de ahí, no se copian).
+
+
+## Panel de cada subtarea (desde 3.4.0)
+
+- **Análisis previo de la IA y notas del líder** (`obs`): no va a Jira. Es lo que la IA dedujo del código y de
+  las definiciones, y donde el líder escribe sus decisiones. El analista de la página («Ajustar con el analista a
+  mis notas») trata esas notas y el modelo de BD como mandatorios sobre el borrador.
+- **Descripción que se crea en Jira** (`desc`): siempre visible debajo; es exactamente lo que sale al exportar,
+  más el modelo de BD y el pie de estimación.
+- **🗄 Ver modelo de BD** (si el ítem trae `modelo`, o «+ Modelo de BD» para crearlo): diagrama de relaciones
+  (tablas nuevas en azul, existentes en gris, 🔑 llave, 🔗 referencia, zoom) y editor para borrar o agregar
+  tablas y columnas. «Guardar» anota el cambio como decisión; «Guardar y aprobar» marca el modelo aprobado.

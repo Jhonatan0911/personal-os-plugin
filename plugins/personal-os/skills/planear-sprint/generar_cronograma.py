@@ -57,7 +57,10 @@ plan.json (campos):
      "coment": "Comentario opcional para Jira", "ficticia": false,
      "items": [{"titulo": "...", "horas": 2, "ini": "2026-03-02", "fin": "2026-03-02",
                 "estado": "propuesta|espera", "obs": "opcional", "tipo": "id de la matriz (opcional)",
-                "desc": "borrador markdown de la descripción para Jira"}]}
+                "desc": "borrador markdown de la descripción para Jira",
+                "modelo": {"tablas": [{"nombre": "Tabla", "tipo": "nueva|existente", "nota": "opcional",
+                           "columnas": [{"n": "Id", "t": "int", "pk": true, "fk": "Otra.Id", "nulo": false}]}],
+                           "aprobado": null}}]}
   ]
 }
 Los ítems salen como «propuesta» (el líder los acepta en la página) o «espera» (pendiente de definición).
@@ -413,9 +416,15 @@ def main(argv):
                  "estado": it.get("estado", "propuesta"), "autor": "claude"}
             if x["estado"] not in ("propuesta", "espera"):
                 falla(f"estado inválido «{x['estado']}» en {h['key']} (usa propuesta o espera)")
-            for campo in ("obs", "desc", "tipo"):
+            for campo in ("obs", "desc", "tipo", "modelo"):
                 if it.get(campo):
                     x[campo] = it[campo]
+            if x.get("modelo"):
+                m = x["modelo"]
+                if not isinstance(m, dict) or not isinstance(m.get("tablas"), list) or not all(
+                        t.get("nombre") and isinstance(t.get("columnas"), list) for t in m["tablas"]):
+                    falla(f"«modelo» inválido en {h['key']} «{it['titulo'][:50]}»: usa {{tablas:[{{nombre, tipo, columnas:[{{n, t, pk, fk, nulo}}]}}]}}")
+                m.setdefault("aprobado", None)
             if not x.get("desc") and any(it.get(c) for c in CAMPOS_INSTRUCCION):
                 x["desc"] = componer_desc(it, h["key"], cas)
                 compuestas += 1
