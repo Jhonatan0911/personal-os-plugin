@@ -1,0 +1,100 @@
+{
+  "titulo": "PROY-500 · Refactor del módulo de citas (requerimiento completo)",
+  "subtitulo": "Ejemplo ficticio del modo multi-sprint: 7 sprints, 2 escenarios de personas",
+  "asignado": {"nombre": "Ana", "accountId": null},
+  "proyecto": "PROY",
+  "jira": {"sitio": "tu-sitio.atlassian.net", "cloud_id": "", "servidor_mcp": "Atlassian Rovo", "tipo_subtarea": "Subtarea", "campo_inicio": null},
+  "correo": {"servidor_mcp": ""},
+  "lider": "Persona 1",
+  "quien_define": "el cliente",
+  "inicio": "2026-03-02",
+  "festivos": ["2026-03-23", "2026-04-02", "2026-04-03"],
+  "meta": {"fin_desarrollo": "2026-03-13", "entrega": "2026-03-27", "texto": "Meta de gerencia: desarrollo terminado el 13/03 y entrega al cliente el 27/03."},
+  "texto_nueva": "Nuevo: entra solo si el cliente lo confirma.",
+  "descripcion_subtarea": "Subtarea del requerimiento PROY-500.",
+  "personas": ["Ana"],
+  "cuentas": {},
+  "capacidad": [7.5, 7],
+  "epica": "PROY-500",
+  "correos_busqueda": ["Refactor módulo de citas"],
+  "sprints": [
+    {"id": "S01", "nombre": "Doble registro de pagos", "orden": 1, "estado": "hecho", "responsable": "Ana", "avance": "Terminado y revisado"},
+    {"id": "S02", "nombre": "Escalas del módulo 5", "orden": 2, "estado": "en_revision", "responsable": "Ana", "avance": "Casi terminado; falta la revisión"},
+    {"id": "S03", "nombre": "Salud ocupacional", "orden": 3, "estado": "en_revision", "responsable": "Ana", "avance": "Listo; falta revisión y puesta en producción"},
+    {"id": "S04", "nombre": "Ciclos de vida: guardado", "orden": 4, "estado": "en_curso", "responsable": "Ana",
+     "fases": [["dev", "Desarrollo", "2026-03-02", "2026-03-13"]]},
+    {"id": "S05", "nombre": "Ciclos de vida: juventud a vejez", "orden": 5, "estado": "planeado", "responsable": "Ana"},
+    {"id": "S06", "nombre": "Reportes del requerimiento", "orden": 6, "estado": "planeado", "responsable": "Ana"},
+    {"id": "S07", "nombre": "Ajustes finales", "orden": 7, "estado": "por_planear", "responsable": "Ana", "inicio_min": "2026-03-09"}
+  ],
+  "escenarios": [
+    {"id": "solo-ana", "nombre": "Solo Ana", "asignacion": {}},
+    {"id": "con-p2", "nombre": "Ana + Persona 2", "asignacion": {"S06": "Persona 2 (por definir)", "S07": "Persona 2 (por definir)"}, "desde": "2026-03-04"}
+  ],
+  "historias": [
+    {"key": "PROY-501", "t": "Doble registro de pagos", "sprint": "S01", "nota": "Terminado; no aporta horas.", "esc": [], "items": []},
+    {"key": "PROY-502", "t": "Escalas del módulo 5", "sprint": "S02", "nota": "Solo queda la revisión del PR.", "esc": [["Escalas", "ok"]],
+     "items": [
+       {"id": "S02-a", "titulo": "Ajustes que pida la revisión del PR", "horas": 4, "estado": "propuesta", "cierre": true,
+        "obs": "Qué hace: corrige lo que salga en la revisión del PR de las escalas. · Horas: 4 h, ajustes menores. · Depende de: la revisión del líder."},
+       {"id": "S02-b", "titulo": "Pruebas de las escalas", "horas": 3, "estado": "propuesta", "tipo": "prueba_funcional_logica",
+        "obs": "Qué hace: prueba de punta a punta cada escala con sus cálculos. · Horas: 3 h. · Depende de: nada."}
+     ]},
+    {"key": "PROY-503", "t": "Salud ocupacional", "sprint": "S03", "nota": "Listo; falta revisión y puesta en producción.", "esc": [],
+     "items": [
+       {"id": "S03-a", "titulo": "Revisión funcional con el usuario líder", "horas": 3, "estado": "propuesta", "cierre": true,
+        "obs": "Qué hace: recorre el módulo con el usuario líder y anota ajustes. · Horas: 3 h. · Depende de: la agenda del usuario líder."},
+       {"id": "S03-b", "titulo": "Puesta en producción (scripts y despliegue)", "horas": 2, "estado": "propuesta", "cierre": true, "depende": ["S03-a"],
+        "obs": "Qué hace: deja listos los scripts de publicación y rollback y acompaña el despliegue. · Horas: 2 h. · Depende de: la revisión funcional."}
+     ]},
+    {"key": "PROY-504", "t": "Guardado de los ciclos de vida (primeros tres)", "sprint": "S04", "keys": ["PROY-504", "PROY-505"],
+     "nota": "La historia del plan agrupa dos claves de Jira con el mismo cambio.", "esc": [["Guardado por ciclo", "dif"]],
+     "items": [
+       {"id": "S04-a", "titulo": "Cambio de guardado en el ciclo Primera infancia", "horas": 6, "estado": "propuesta", "comparte": "guardado-ciclo-vida",
+        "obs": "Qué hace: guarda el ciclo con el servicio nuevo y quita la copia local. · Horas: 6 h, el primero fija el patrón. · Depende de: nada."},
+       {"id": "S04-b", "titulo": "Cambio de guardado en el ciclo Infancia", "horas": 5, "estado": "propuesta", "comparte": "guardado-ciclo-vida", "depende": ["S04-a"],
+        "obs": "Qué hace: aplica el mismo patrón al ciclo Infancia. · Horas: 5 h. · Depende de: el patrón del primer ciclo."},
+       {"id": "S04-c", "titulo": "Cambio de guardado en el ciclo Adolescencia", "horas": 5, "estado": "propuesta", "comparte": "guardado-ciclo-vida", "depende": ["S04-a"],
+        "obs": "Qué hace: aplica el mismo patrón al ciclo Adolescencia. · Horas: 5 h. · Depende de: el patrón del primer ciclo."},
+       {"id": "S04-d", "titulo": "Revisión y pruebas de los tres ciclos", "horas": 4, "estado": "propuesta", "tipo": "prueba_funcional_logica",
+        "obs": "Qué hace: prueba el guardado de los tres ciclos y revisa lo que generó la IA. · Horas: 4 h. · Depende de: los tres cambios."}
+     ]},
+    {"key": "PROY-506", "t": "Guardado de los ciclos Juventud, Adultez y Vejez", "sprint": "S05", "nota": "Mismo cambio que S04 en tres ciclos más.", "esc": [["Guardado por ciclo", "dif"]],
+     "items": [
+       {"id": "S05-a", "titulo": "Cambio de guardado en el ciclo Juventud", "horas": 5, "estado": "propuesta", "comparte": "guardado-ciclo-vida", "depende": ["S04-a"],
+        "obs": "Qué hace: aplica el patrón de S04 al ciclo Juventud. · Horas: 5 h. · Depende de: el patrón de S04."},
+       {"id": "S05-b", "titulo": "Cambio de guardado en el ciclo Adultez", "horas": 5, "estado": "propuesta", "comparte": "guardado-ciclo-vida",
+        "obs": "Qué hace: aplica el patrón al ciclo Adultez. · Horas: 5 h. · Depende de: nada nuevo."},
+       {"id": "S05-c", "titulo": "Cambio de guardado en el ciclo Vejez", "horas": 6, "estado": "propuesta", "comparte": "guardado-ciclo-vida",
+        "obs": "Qué hace: aplica el patrón al ciclo Vejez, que tiene una sección más. · Horas: 6 h. · Depende de: nada nuevo."},
+       {"id": "S05-d", "titulo": "Validaciones del guardado en Vejez", "horas": 6, "estado": "propuesta",
+        "obs": "Qué hace: valida los campos obligatorios antes de guardar el ciclo Vejez. · Horas: 6 h. · Depende de: nada."},
+       {"id": "S05-e", "titulo": "Mover las pruebas del guardado al módulo de pruebas", "horas": 6, "estado": "propuesta", "comparte": "pruebas-al-modulo-comun",
+        "obs": "Qué hace: pasa las pruebas del guardado al módulo común para no repetirlas por ciclo. · Horas: 6 h. · Depende de: nada."},
+       {"id": "S05-f", "titulo": "Revisión y pruebas de los tres ciclos", "horas": 4, "estado": "propuesta", "tipo": "prueba_funcional_logica",
+        "obs": "Qué hace: prueba el guardado de los tres ciclos. · Horas: 4 h. · Depende de: los cambios del sprint."}
+     ]},
+    {"key": "PROY-507", "t": "Reportes del requerimiento", "sprint": "S06", "nota": "Reportes nuevos sobre lo guardado.", "esc": [["Reporte consolidado", "nueva"]],
+     "items": [
+       {"id": "S06-a", "titulo": "Reporte consolidado por ciclo", "horas": 8, "estado": "propuesta",
+        "obs": "Qué hace: consulta y pantalla del consolidado por ciclo de vida. · Horas: 8 h. · Depende de: nada."},
+       {"id": "S06-b", "titulo": "Exportar el consolidado a Excel", "horas": 6, "estado": "propuesta", "depende": ["S06-a"],
+        "obs": "Qué hace: botón de exportar con las mismas columnas. · Horas: 6 h. · Depende de: el reporte consolidado."},
+       {"id": "S06-c", "titulo": "Reporte por sede", "horas": 6, "estado": "propuesta",
+        "obs": "Qué hace: filtro y totales por sede. · Horas: 6 h. · Depende de: nada."},
+       {"id": "S06-d", "titulo": "Pruebas de los reportes en el módulo de pruebas", "horas": 4, "estado": "propuesta", "comparte": "pruebas-al-modulo-comun", "responsable": "Ana",
+        "obs": "Qué hace: agrega las pruebas de los reportes al módulo común. · Horas: 4 h. · Depende de: nada. La hace Ana aunque el sprint cambie de dueño."},
+       {"id": "S06-e", "titulo": "Revisión y pruebas de los reportes", "horas": 4, "estado": "propuesta", "tipo": "prueba_funcional_logica",
+        "obs": "Qué hace: prueba los reportes contra datos de ejemplo. · Horas: 4 h. · Depende de: los reportes."},
+       {"id": "S06-f", "titulo": "Indicador nuevo que se mencionó en la reunión", "horas": 10, "estado": "espera",
+        "obs": "Qué hace: un indicador que no está en la historia. · Horas: 10 h. · Por qué está en espera: lo define el cliente; preguntado el 2026-02-27."}
+     ]},
+    {"key": "PROY-508", "t": "Ajustes finales", "sprint": "S07", "nota": "Lo que deje el piloto.", "esc": [],
+     "items": [
+       {"id": "S07-a", "titulo": "Documentación del cambio", "horas": 4, "estado": "propuesta",
+        "obs": "Qué hace: guía corta del cambio para soporte. · Horas: 4 h. · Depende de: nada."},
+       {"id": "S07-b", "titulo": "Ajustes de la retroalimentación del piloto", "horas": 16, "estado": "espera",
+        "obs": "Qué hace: ajustes que salgan del piloto. · Horas: 16 h. · Por qué está en espera: el piloto no ha empezado."}
+     ]}
+  ]
+}

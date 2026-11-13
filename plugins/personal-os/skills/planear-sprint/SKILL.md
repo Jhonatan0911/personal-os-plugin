@@ -91,6 +91,13 @@ Lanza en **un solo mensaje**:
 2. **Un buscador de reutilización** (Explore): lo mismo contra otros clientes, ramas e historial
    (`git log -G`, otros proyectos u organizaciones del mismo producto) para cada pieza que el mapeador
    marque como nueva.
+   - **Comparación automática contra otros clientes:** si la mesa de trabajo tiene `MESA.json` con
+     `compararClientes` (`base: {cliente, rama, repos}` y `otros: [{cliente, rama, carpeta, repos}]`), el
+     buscador revisa **cada pieza** en el cliente base y en cada cliente de `otros`, en sus carpetas locales
+     (`carpeta` con `<repo>` reemplazado por el nombre del repo), en solo lectura (`git show`/`git grep`
+     sobre la rama dada; `git fetch` solo de esos remotos). La tabla de piezas lleva **una columna por
+     cliente** (igual · con diferencia · no está · «no lo encontré en <remoto/ref>»). Nunca adivines remotos
+     ni ramas fuera de esa lista; si falta una carpeta, dilo y propón clonarla (con OK del usuario).
 3. **Lectura de documentos** (en el hilo principal o con un agente general): historias + especificación
    + mockups + transcripción + correos → lista de **piezas del requerimiento** con su criterio de
    aceptación y sus pendientes.
@@ -251,6 +258,28 @@ Con lo que devuelvan (`references/paso0.md`):
    proyecto (categoría de planeación de su configuración); las horas extra siguen las reglas de la skill
    `timesheet`.
 
+## Modo requerimiento multi-sprint
+
+Úsalo cuando el líder quiera planear **todo un requerimiento** de varios sprints en un solo cronograma (piezas
+que se repiten entre sprints, varias personas, una meta de gerencia). Se activa con solo poner `sprints` en el
+plan; sin ese campo todo funciona como un sprint.
+
+- **Un expediente por requerimiento** (no por sprint) y **un solo `plan.json`**: los sprints solo agrupan
+  historias (`sprint` en cada historia; `keys` si una historia del plan junta varias claves de Jira). Los
+  sprints hechos o en revisión aportan solo lo que les queda.
+- `sprints[]` con su `estado` y `responsable`, `meta` (`fin_desarrollo`, `entrega`) y `escenarios[]` de
+  personas (quién toma cada sprint; `desde` = cuándo entra la persona nueva). El responsable de la subtarea
+  manda sobre el del sprint.
+- En los ítems: `id` (lo pone el generador si falta), `depende`, `cierre` (revisión y pruebas al final de su
+  sprint; `prueba_funcional_logica` lo es por defecto) y `comparte` (misma pieza en varios sprints).
+- **Las fechas las calcula el generador** con el primer escenario (por persona, en el orden de los sprints y
+  sus dependencias, sin pasar la capacidad del día); la página recalcula al cambiar de escenario o reasignar un
+  sprint. El desborde frente a la meta sale como atraso, nunca se comprime.
+- Lee sus avisos (historia sin sprint, sprint inexistente, escenario con un sprint desconocido) y pásale al
+  líder el resumen por sprint, por persona y por escenario que imprime.
+
+Campos, cálculo y comportamiento de la página: `references/cronograma.md` §6. Ejemplo: `plan-multisprint-ejemplo.json`.
+
 ## Fase 5 · Calibración (cuando haya datos)
 
 Compara lo estimado con lo **registrado**, por tipo, y propone ajustes a la matriz (P50 como `base`, P80
@@ -295,11 +324,12 @@ de los mineros, página del catálogo y Monte Carlo: `references/calibracion.md`
 | `references/especificacion.md` | Fases 1-bis y 2: ficha de impacto, escenarios de calidad y ADR, subtarea-instrucción, cortes |
 | `references/paso0.md` | Fase 0 (nivel del caso) y Fase 3: encargo al refutador, cómo bajar sus recortes, DoR por niveles y chequeo del paso 0 |
 | `references/niveles.md` | Contrato de los niveles de caso (A/B/C u otros) que comparten todas las piezas del flujo |
-| `references/cronograma.md` | Fase 4: generar, publicar, cómo se comporta la página, exportar y registrar |
+| `references/cronograma.md` | Fase 4: generar, publicar, cómo se comporta la página, exportar y registrar; §6 modo multi-sprint |
 | `modelo_png.py` | Fase 4, tras exportar: imagen PNG del modelo de BD de una subtarea para incrustarla en Jira |
 | `references/calibracion.md` | Fase 0 si hay propuesta pendiente, y Fase 5 |
 | `generar_cronograma.py` | Se **ejecuta**: valida el plan y el expediente, aplica perfil y marca, genera el HTML |
 | `cronograma-plantilla.html`, `analista-bloque.html` | Los usa el generador; no se leen |
 | `matriz-tiempos-ejemplo.yaml` | Matriz por defecto si el usuario no tiene la suya |
 | `plan-ejemplo.json` | Ejemplo ficticio del plan |
+| `plan-multisprint-ejemplo.json` | Ejemplo ficticio del modo requerimiento multi-sprint (sprints, meta, escenarios) |
 | `expediente-ejemplo.json` | Ejemplo ficticio del expediente v2 (lo valida el generador) |

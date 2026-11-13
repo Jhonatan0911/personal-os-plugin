@@ -1,6 +1,7 @@
 <style>
 /* «hidden» manda sobre los display de las clases (.chatp, .layout, .upd): sin esto el chat oculto tapa la página */
 [hidden]{display:none!important}
+.tab-req .layout,.tab-req #vbar,.tab-req #vg{display:none!important}
 /* Pestañas Cronograma | Requerimiento bajo los indicadores; chat del analista como botón flotante */
 .tabs{display:flex;gap:2px;padding:0 max(16px,env(safe-area-inset-right,0px)) 0 max(16px,env(safe-area-inset-left,0px));border-bottom:1px solid var(--line);background:var(--bg);position:sticky;top:env(safe-area-inset-top,0px);z-index:20;overflow-x:auto}
 .tab{border:0;background:transparent;padding:10px 14px;font-weight:600;color:var(--muted);border-bottom:3px solid transparent;white-space:nowrap}
@@ -105,7 +106,8 @@ function renderExp(){
   const bar=document.createElement("div");bar.className="tabs";bar.setAttribute("role","tablist");
   bar.innerHTML='<button class="tab" role="tab" data-tab="crono" aria-selected="true">Cronograma</button><button class="tab" role="tab" data-tab="req" aria-selected="false">Requerimiento</button>';
   kp.after(bar);lay.after(an);
-  function ver(v){bar.querySelectorAll(".tab").forEach(b=>b.setAttribute("aria-selected",b.dataset.tab===v));lay.hidden=v!=="crono";an.hidden=v!=="req";if(v==="crono")window.dispatchEvent(new Event("resize"));try{localStorage.setItem("crono-tab",v);}catch(e){}}
+  // la pestaña Requerimiento oculta el cronograma con una clase (no con «hidden»): en modo multi-sprint, «hidden» lo maneja la vista general
+  function ver(v){bar.querySelectorAll(".tab").forEach(b=>b.setAttribute("aria-selected",b.dataset.tab===v));document.body.classList.toggle("tab-req",v==="req");an.hidden=v!=="req";if(v==="crono")window.dispatchEvent(new Event("resize"));try{localStorage.setItem("crono-tab",v);}catch(e){}}
   bar.onclick=e=>{const b=e.target.closest(".tab");if(b)ver(b.dataset.tab);};
   let ini="crono";try{ini=localStorage.getItem("crono-tab")||"crono";}catch(e){}ver(location.hash==="#requerimiento"?"req":ini);
   const fab=$("anFab"),cp=$("anChat");

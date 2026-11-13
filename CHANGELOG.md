@@ -1,5 +1,13 @@
 # Changelog
 
+## 3.6.0
+
+- **planear-sprint · modo requerimiento multi-sprint:** un solo cronograma para todo un requerimiento de varios sprints. Se activa con `sprints` en el plan (sin ese campo, todo igual que antes). Campos nuevos opcionales: `sprints[]` (estado, responsable, inicio mínimo, avance, fases), `meta` (fin de desarrollo y entrega), `escenarios[]` de personas (quién toma cada sprint y desde cuándo entra la persona nueva); en la historia `sprint` y `keys`; en el ítem `id`, `responsable`, `depende`, `cierre` y `comparte`.
+- **Calendario por persona** en el generador y en la página (mismo algoritmo): sprints en orden, revisión y pruebas al final de cada sprint, dependencias, capacidad diaria con festivos y préstamos, lo en espera sin fecha. El desborde frente a la meta sale como atraso (horas que no caben y fin estimado), nunca se comprime.
+- **Vista general** (abre por defecto con sprints): Gantt por persona con una barra por sprint y color por estado, líneas de meta y entrega, totales y holgura o atraso por persona, selector de escenario, reasignar un sprint completo (recalcula, queda guardado y anotado), «Aplicar fechas del escenario» y piezas que se repiten entre sprints. **Vista de sprint**: la página de siempre filtrada por sprint y por persona. La exportación a Jira no cambia.
+- El generador valida los campos nuevos (historia sin sprint, sprint inexistente, escenario con un sprint desconocido, dependencias rotas, ids repetidos) e imprime el resumen por sprint, por persona y por escenario. Ejemplo ficticio: `plan-multisprint-ejemplo.json`.
+- **Fase 1:** si la mesa tiene `MESA.json` con `compararClientes`, el buscador de reutilización revisa cada pieza en el cliente base y en cada cliente de `otros` (carpetas locales, solo lectura) y la tabla de piezas lleva una columna por cliente.
+
 ## 3.5.2
 
 - **planear-sprint · el paso 1 del exportador ya no reescribe lo revisado:** «Interpretar y redactar descripciones» solo redacta las subtareas sin descripción; las ya redactadas se conservan tal cual. Con borrador, el analista ya no recorta a 150 palabras: conserva pasos, reglas con sus cifras, valores de catálogos, «Qué NO tocar», criterios CA-n, contexto, condicionados, bloqueos de terceros, la nota del mockup y «Si dudas, pregunta». No inventa campos ni cifras, no vuelve fijo lo configurable y no da por adjunto ni por resuelto lo que no lo está.

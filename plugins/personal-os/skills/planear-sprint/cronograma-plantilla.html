@@ -162,6 +162,42 @@ div.desc .dsh{color:var(--deep);font-weight:600;display:flex;gap:8px;align-items
 @media(max-width:820px){.erw{grid-template-columns:1fr}.modal.er{height:auto}}
 .res.ok{color:var(--ok)} .res.bad{color:var(--crit)}
 .ro{font-size:12px;color:var(--warn)}
+/* Modo requerimiento multi-sprint: barra de vistas y vista general (solo si el plan trae «sprints») */
+.vbar{display:flex;flex-wrap:wrap;gap:8px 16px;align-items:center;padding:8px max(16px,env(safe-area-inset-right,0px)) 8px max(16px,env(safe-area-inset-left,0px));border-bottom:1px solid var(--line);background:var(--panel);font-size:13px}
+.vbar select{border:1px solid var(--line);border-radius:6px;padding:4px 8px;background:var(--card);max-width:100%}
+.vbar label{display:inline-flex;gap:6px;align-items:center;flex-wrap:wrap;min-width:0}
+.vbar .sinfo{color:var(--muted);display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+.vg{padding:14px max(16px,env(safe-area-inset-right,0px)) 30px max(16px,env(safe-area-inset-left,0px));display:flex;flex-direction:column;gap:16px;min-width:0}
+.vg h2{margin:0;font-size:17px;color:var(--deep)} .vg h3{margin:0 0 6px;font-size:12px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted)}
+.vg .meta{display:flex;flex-wrap:wrap;gap:6px 18px;font-size:13px;color:var(--muted)} .vg .meta b{color:var(--ink);font-variant-numeric:tabular-nums}
+.vg .meta .c b,.vg td.c,.vg .c{color:var(--crit)} .vg td.ok{color:var(--ok)}
+.tw{overflow-x:auto;border:1px solid var(--line);border-radius:8px}
+.vg table{border-collapse:collapse;width:100%;font-size:13px}
+.vg th,.vg td{text-align:left;padding:6px 8px;border-top:1px solid var(--line);vertical-align:top}
+.vg th{border-top:0;font-size:11.5px;color:var(--muted);font-weight:600;background:var(--panel);white-space:nowrap}
+.vg td.n,.vg th.n{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+.vg td select{border:1px solid var(--line);border-radius:5px;padding:2px 6px;background:var(--bg);max-width:190px}
+.pill.st-hecho{background:var(--ok-bg);color:var(--ok)} .pill.st-en_revision{background:var(--warn-bg);color:var(--warn)}
+.pill.st-en_curso{background:var(--action);color:#fff} .pill.st-planeado{background:var(--prop);color:var(--action)} .pill.st-por_planear{background:var(--panel);color:var(--muted);border:1px dashed var(--soft)}
+.og{position:relative;min-width:max-content}
+.og .ohd{position:relative;height:34px;margin-left:var(--olab);border-bottom:1px solid var(--line)}
+.og .ohd span{position:absolute;top:2px;font-size:11px;color:var(--muted);white-space:nowrap;border-left:1px solid var(--line);padding-left:3px;height:30px}
+.og .ohd span.mes{font-weight:600;color:var(--ink);top:0;height:14px;border-left:0}
+.og .orow{display:flex;border-bottom:1px solid var(--line)}
+.og .olab{position:sticky;left:0;z-index:2;width:var(--olab);flex:none;background:var(--card);padding:6px 8px;font-size:12.5px;display:flex;flex-direction:column;gap:2px;border-right:1px solid var(--line)}
+.og .olab small{color:var(--muted)}
+.og .olane{position:relative;flex:none}
+.og .ob{position:absolute;height:22px;border-radius:5px;font-size:11px;line-height:14px;padding:4px 6px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;color:#fff;background:var(--action);cursor:pointer;border:0;text-align:left}
+.og .ob.st-hecho{background:var(--ok)} .og .ob.st-en_revision{background:var(--warn)} .og .ob.st-planeado{background:var(--mid)}
+.og .ob.st-por_planear{background:repeating-linear-gradient(135deg,var(--soft) 0 7px,color-mix(in srgb,var(--soft) 70%,#fff) 7px 14px);color:var(--ink)}
+.og .ob.tarde{box-shadow:inset 0 -3px 0 var(--crit)}
+.og .oline{position:absolute;top:0;bottom:0;width:0;border-left:2px dashed var(--crit);z-index:1;pointer-events:none}
+.og .oline.ent{border-left:2px solid var(--deep)}
+.og .oline i{position:absolute;top:0;left:4px;font-size:10.5px;font-style:normal;white-space:nowrap;background:var(--card);color:var(--crit);padding:0 3px;border-radius:3px}
+.og .oline.ent i{color:var(--deep);top:14px}
+.ogw{overflow-x:auto;border:1px solid var(--line);border-radius:8px;--olab:170px}
+@media (max-width:640px){.ogw{--olab:110px}.vg td select{max-width:130px}}
+.pill.comp{background:transparent;border:1px solid var(--mid);color:var(--mid)}
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
 </style>
 
@@ -171,7 +207,9 @@ div.desc .dsh{color:var(--deep);font-weight:600;display:flex;gap:8px;align-items
   <div class="acts"><span class="pill" id="jstat">Jira: sin consultar</span><span class="pill" id="sstat">Guardado: conectando…</span><button class="btn" id="bBackup" title="Descargar o copiar todo lo planeado como respaldo">Respaldo</button><button class="btn pri" id="bExport">Cambios para Jira</button></div>
 </div></div>
 <div class="kpis" id="kpis"></div>
-<div class="layout">
+<div class="vbar" id="vbar" hidden></div>
+<section class="vg" id="vg" aria-label="Vista general del requerimiento" hidden></section>
+<div class="layout" id="lay">
   <section class="gwrap" aria-label="Cronograma">
     <div class="gscroll"><div class="grid" id="grid"></div></div>
     <div class="legend">
@@ -190,20 +228,25 @@ div.desc .dsh{color:var(--deep);font-weight:600;display:flex;gap:8px;align-items
 (function(){
 "use strict";
 const CFG=__CFG__;
+const MS=Array.isArray(CFG.sprints)&&CFG.sprints.length>0; // modo requerimiento multi-sprint (plan con «sprints»)
 const J=CFG.jira||{};
 const CLOUD=J.cloud_id||"", SERVER=J.servidor_mcp||"Atlassian Rovo", SITIO=String(J.sitio||"").replace(/^https?:\/\//,"").replace(/\/+$/,""),
   TIPO_SUB=J.tipo_subtarea||"Subtarea", CAMPO_INI=J.campo_inicio||null, DUENO_CTA=(CFG.asignado&&CFG.asignado.accountId)||null,
-  PROYECTO=CFG.proyecto, FIN_DEV=CFG.fin_desarrollo, DESC_SUB=CFG.descripcion_subtarea, LIDER=CFG.lider||"el líder",
+  PROYECTO=CFG.proyecto, DESC_SUB=CFG.descripcion_subtarea, LIDER=CFG.lider||"el líder",
   CAP_LJ=Number(CFG.capacidad[0]), CAP_V=Number(CFG.capacidad[1]);
+let FIN_DEV=CFG.fin_desarrollo; // en la vista de un sprint (modo multi-sprint) pasa a ser el fin de ese sprint
 const urlIssue=k=>SITIO?"https://"+SITIO+"/browse/"+encodeURIComponent(k):"";
 const FEST=new Set(CFG.festivos||[]);
-const PHASES=CFG.fases;
+let PHASES=CFG.fases;
 const PHASES2=CFG.fases_replan||[]; // fases replaneadas (rojo), debajo de las del cliente para no perder lo prometido
-const DAYS=[];(function(){const d=new Date(CFG.inicio+"T12:00:00");const e=new Date(CFG.fin+"T12:00:00");while(d<=e){if(d.getDay()>0&&d.getDay()<6)DAYS.push(iso(d));d.setDate(d.getDate()+1);}})();
+// Días hábiles (lunes a viernes; los festivos se muestran con carga 0) entre dos fechas
+function rango(a,b){const L=[],d=new Date(a+"T12:00:00"),e=new Date(b+"T12:00:00");while(d<=e){if(d.getDay()>0&&d.getDay()<6)L.push(iso(d));d.setDate(d.getDate()+1);}return L;}
+let DAYS=rango(CFG.inicio,CFG.fin);
 function iso(d){return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");}
 const TODAY=iso(new Date());
 const DN=["dom","lun","mar","mié","jue","vie","sáb"];
-function di(s){if(!s)return -1;let i=DAYS.indexOf(s);if(i>=0)return i;for(let k=0;k<DAYS.length;k++)if(DAYS[k]>=s)return k;return DAYS.length-1;}
+function diIn(D,s){if(!s)return -1;let i=D.indexOf(s);if(i>=0)return i;for(let k=0;k<D.length;k++)if(D[k]>=s)return k;return D.length-1;}
+function di(s){return diIn(DAYS,s);}
 function jor(s){if(FEST.has(s))return 0;return new Date(s+"T12:00:00").getDay()===5?CAP_V:CAP_LJ;}
 function fmt(s){if(!s)return"—";const p=s.split("-");return p[2]+"/"+p[1];}
 function h(n){return(Math.round(n*10)/10).toString().replace(".",",");}
@@ -231,7 +274,7 @@ let SEL=KEYS[0], db=null, canWrite=false, LIVE={}, SUBS={}, mcp=null, sample=nul
 const saveTimers={}, INFLIGHT={};
 // Nunca redibujar el panel mientras se escribe en él: borraría lo que no se ha guardado
 function editando(){const a=document.activeElement;return !!(a&&a.closest&&(a.closest("#side")||a.closest("#modal"))&&a.matches("input,textarea,select"));}
-function softRender(){renderKpis();renderGrid();if(!editando())renderSide();}
+function softRender(){if(MS&&VIEW==="general"){if(!editando())renderGeneral();return;}renderKpis();renderGrid();if(!editando())renderSide();}
 function save(key){ if(!db||!canWrite)return; clearTimeout(saveTimers[key]); saveTimers[key]=setTimeout(()=>{ saveTimers[key]=null; INFLIGHT[key]=true; db.collection("plan").doc(key).set(JSON.parse(JSON.stringify(Object.assign({},ST[key],{actualizado:new Date().toISOString()})))).finally(()=>{INFLIGHT[key]=false;}).then(()=>{$("sstat").textContent="Guardado";$("sstat").className="pill ok";}).catch(e=>{$("sstat").textContent="No se guardó: "+(e&&e.code||"error");$("sstat").className="pill crit";}); },500); }
 
 // ---- Cálculos ----
@@ -241,7 +284,9 @@ function huVino(k){const x=huHoras(k);return x.w>0&&x.w>=x.a+x.p;}
 // ---- Responsable por subtarea: por defecto el dueño del cronograma; otra persona no suma a su carga ----
 const MAIN=CFG.asignado.nombre, GENTE=CFG.personas||[], CUENTAS=Object.assign({},CFG.cuentas||{},DUENO_CTA?{[MAIN]:DUENO_CTA}:{});
 const esMain=n=>n===MAIN||String(n).startsWith(MAIN+" ")||MAIN.startsWith(String(n)+" ");
-const respOf=it=>(it.resp&&it.resp.nombre&&!esMain(it.resp.nombre))?it.resp:null;
+// En modo multi-sprint, la subtarea sin responsable propio es del responsable de su sprint en el escenario activo
+const respOf=it=>{const r=(it.resp&&it.resp.nombre)?it.resp:(MS?respSprintObj(keyOf(it)):null);return(r&&!esMain(r.nombre))?r:null;};
+const quien=it=>respOf(it)?respOf(it).nombre:MAIN;
 // ---- Capacidad real (CFG.equipo, de fuentes.yaml): quien no produce PR o está prestado no tiene capacidad ese día. Sin equipo, igual que siempre ----
 const EQUIPO=CFG.equipo||[];
 const mismo=(a,b)=>{a=String(a||"");b=String(b||"");return !!a&&!!b&&(a===b||a.startsWith(b+" ")||b.startsWith(a+" "));};
@@ -256,20 +301,22 @@ function equipoKpi(){
     const fuera=dias.filter(d=>prestadoEn(p.nombre,d)).length;
     if(dias.length&&fuera===dias.length){notas.push(`${p.nombre}: prestada a ${p.prestado.a} desde ${fmt(p.prestado.desde)}`);return;}
     n++;if(fuera)notas.push(`${p.nombre}: prestada a ${p.prestado.a} desde ${fmt(p.prestado.desde)} (${fuera} de ${dias.length} días)`);});
-  const malas=[];KEYS.forEach(k=>ST[k].items.forEach(it=>{if(!vivo(it)||!it.ini)return;const q=respOf(it)?respOf(it).nombre:MAIN;
+  const malas=[];vkeys().forEach(k=>ST[k].items.forEach(it=>{if(!vivo(it)||!it.ini)return;const q=respOf(it)?respOf(it).nombre:MAIN;
     const d=DAYS.find(x=>x>=it.ini&&x<=(it.fin||it.ini)&&prestadoEn(q,x));if(d)malas.push(`${k} · ${it.titulo.slice(0,50)} · ${q} prestada el ${fmt(d)}`);}));
   return `<span class="${n?"":"c"}" title="${esc(notas.join("\n")||"Todos producen PR y nadie está prestado")}">Producen PR (${fmt(dias[0]||DAYS[0])} al ${fmt(FIN_DEV)}): <b>${n} de ${EQUIPO.length}</b>${notas.length?" · "+esc(notas.join(" · ")):""}</span>`
     +(malas.length?`<span class="c" title="${esc(malas.join("\n"))}">Subtareas con su responsable prestado en esa fecha: <b>${malas.length}</b> · ${esc(malas[0])}${malas.length>1?" …":""}</span>`:"");
 }
-const enCarga=it=>(it.estado==="aceptada"||it.jira)&&it.ini&&!respOf(it);
-// Reparto real por día: cada subtarea toma la capacidad que queda desde su inicio y lo que no cabe pasa al día siguiente (no se duplica)
-function reparto(){
-  const cap=DAYS.map(d=>jorDe(MAIN,d)), por={}, sobra={};
-  const orden=[];KEYS.forEach((k,ki)=>ST[k].items.forEach((it,ii)=>{if(enCarga(it))orden.push({k,it,ki,ii});}));
+const enCarga=(it,p)=>(it.estado==="aceptada"||it.jira)&&it.ini&&(p===MAIN?!respOf(it):!!respOf(it)&&mismo(respOf(it).nombre,p));
+// Reparto real por día: cada subtarea toma la capacidad que queda desde su inicio y lo que no cabe pasa al día siguiente (no se duplica).
+// Con varios sprints se reparte sobre todo el requerimiento (RD) para que la carga de un sprint vea la de los vecinos.
+function reparto(p){
+  p=p||MAIN;const D=MS?RD:DAYS;
+  const cap=D.map(d=>jorDe(p,d)), por={}, sobra={};
+  const orden=[];KEYS.forEach((k,ki)=>ST[k].items.forEach((it,ii)=>{if(enCarga(it,p))orden.push({k,it,ki,ii});}));
   orden.sort((a,b)=>(a.it.ini<b.it.ini?-1:a.it.ini>b.it.ini?1:a.ki-b.ki||a.ii-b.ii));
-  orden.forEach(({it})=>{let r=Number(it.horas)||0;const m={};for(let i=Math.max(0,di(it.ini));i<DAYS.length&&r>1e-9;i++){const t=Math.min(r,cap[i]);if(t>0){cap[i]-=t;m[i]=t;r-=t;}}
+  orden.forEach(({it})=>{let r=Number(it.horas)||0;const m={};for(let i=Math.max(0,diIn(D,it.ini));i<D.length&&r>1e-9;i++){const t=Math.min(r,cap[i]);if(t>0){cap[i]-=t;m[i]=t;r-=t;}}
     por[it.id]=m;if(r>1e-9)sobra[it.id]=r;});
-  const load=DAYS.map((d,i)=>jorDe(MAIN,d)-cap[i]);return{por,sobra,load};}
+  const load=D.map((d,i)=>jorDe(p,d)-cap[i]);return{por,sobra,load,D,off:Math.max(0,D.indexOf(DAYS[0]))};}
 // Programar en secuencia desde una fecha: en el orden de las historias y de sus subtareas, llenando la capacidad diaria y arrastrando lo que no cabe
 function programar(desde){
   const tocadas=new Set(), cal={};
@@ -287,8 +334,8 @@ function programar(desde){
 function colW(){const sc=document.querySelector(".gscroll");const cs=getComputedStyle(document.documentElement);
   const lab=parseFloat(cs.getPropertyValue("--lab"))||250, min=parseFloat(cs.getPropertyValue("--colw"))||46;
   const w=sc?sc.clientWidth:0; return w?Math.max(min,Math.floor((w-lab-2)/DAYS.length)):min;}
-let rzT=null; window.addEventListener("resize",()=>{clearTimeout(rzT);rzT=setTimeout(()=>renderGrid(),120);});
-function render(){renderKpis();renderGrid();renderSide();}
+let rzT=null; window.addEventListener("resize",()=>{clearTimeout(rzT);rzT=setTimeout(()=>{if(MS&&VIEW==="general")renderGeneral();else renderGrid();},120);});
+function render(){if(MS){renderVista();if(VIEW==="general"){renderGeneral();return;}}renderKpis();renderGrid();renderSide();}
 function sigHabil(){const d=new Date(TODAY+"T12:00:00");do{d.setDate(d.getDate()+1);}while(d.getDay()===0||d.getDay()===6||FEST.has(iso(d)));return iso(d);}
 document.addEventListener("click",ev=>{const b=ev.target.closest&&ev.target.closest("#bProg");if(!b||!canWrite)return;
   const desde=($("pDesde")&&$("pDesde").value)||sigHabil();
@@ -296,12 +343,12 @@ document.addEventListener("click",ev=>{const b=ev.target.closest&&ev.target.clos
   const t=programar(desde);t.forEach(k=>save(k));render();
   anotar([{texto:`Reprogramó el sprint en secuencia desde el ${fmt(desde)} (${t.size} historias movidas), a ${h(CAP_LJ)} h por día y ${h(CAP_V)} el viernes`,fuente:"cronograma"}],[],`Reprogramado desde ${desde}`);});
 function renderKpis(){
-  let a=0,p=0,w=0,fin="";KEYS.forEach(k=>{const x=huHoras(k);a+=x.a;p+=x.p;w+=x.w;ST[k].items.forEach(it=>{if(vivo(it)&&it.fin&&it.fin>fin)fin=it.fin;});});
-  let cap=0;DAYS.forEach(d=>{if(d<=FIN_DEV)cap+=jorDe(MAIN,d);});
+  let a=0,p=0,w=0,fin="";vkeys().forEach(k=>{const x=huHoras(k);a+=x.a;p+=x.p;w+=x.w;ST[k].items.forEach(it=>{if(vivo(it)&&it.fin&&it.fin>fin)fin=it.fin;});});
+  const yo=carga();let cap=0;DAYS.forEach(d=>{if(d<=FIN_DEV)cap+=jorDe(yo,d);});
   const pend=countOps();
   $("kpis").innerHTML=`<span>Aceptadas: <b>${h(a)} h</b></span><span>Propuestas sin aceptar: <b>${h(p)} h</b></span><span class="v">Pendiente de definición: <b>${h(w)} h</b> <button class="btn sm" id="bPend">Ver pendientes por definir</button></span>
-  <span>Capacidad de desarrollo (${fmt(DAYS[0])} al ${fmt(FIN_DEV)}): <b>${h(cap)} h</b></span><span class="${fin>FIN_DEV?"c":""}">Fin de desarrollo según el plan: <b>${fmt(fin)}</b> (cronograma ${fmt(FIN_DEV)})</span><span>Cambios por exportar: <b>${pend}</b></span>${equipoKpi()}
-  ${canWrite?`<span><label>Programar desde <input type="date" id="pDesde" value="${($("pDesde")&&$("pDesde").value)||sigHabil()}"></label> <button class="btn sm" id="bProg" title="Reparte las subtareas aceptadas en el orden de las historias, llenando ${h(CAP_LJ)} h por día (viernes ${h(CAP_V)}) y pasando al día siguiente lo que no cabe">Programar en secuencia</button></span>`:""}`;
+  <span>Capacidad de desarrollo${MS?" de "+esc(yo):""} (${fmt(DAYS[0])} al ${fmt(FIN_DEV)}): <b>${h(cap)} h</b></span><span class="${fin>FIN_DEV?"c":""}">Fin de desarrollo según el plan: <b>${fmt(fin)}</b> (${MS?"sprint":"cronograma"} ${fmt(FIN_DEV)})</span><span>Cambios por exportar: <b>${pend}</b></span>${equipoKpi()}
+  ${canWrite&&!MS?`<span><label>Programar desde <input type="date" id="pDesde" value="${($("pDesde")&&$("pDesde").value)||sigHabil()}"></label> <button class="btn sm" id="bProg" title="Reparte las subtareas aceptadas en el orden de las historias, llenando ${h(CAP_LJ)} h por día (viernes ${h(CAP_V)}) y pasando al día siguiente lo que no cabe">Programar en secuencia</button></span>`:""}${MS?`<span>Fechas: las calcula el escenario «${esc(escAct().nombre)}» (Vista general → «Aplicar fechas del escenario»)</span>`:""}`;
 }
 function renderGrid(){
   const g=$("grid"), cw=colW(); g.style.setProperty("--nd",DAYS.length); g.style.setProperty("--colw",cw+"px");
@@ -317,8 +364,8 @@ function renderGrid(){
   if(PHASES2.length)html+=`<div class="ph corner rep" style="grid-row:2;grid-column:1">Replaneado · entrega ${fmt(PHASES2[PHASES2.length-1][3])}</div>`+fila(PHASES2,2,"rep","Replaneado · ");
   const rd=PHASES2.length?3:2;
   html+=`<div class="dh corner" style="grid-row:${rd};grid-column:1">Historia</div>`+DAYS.map((d,i)=>{const dt=new Date(d+"T12:00:00");return`<div class="dh ${d===TODAY?"today":""} ${FEST.has(d)?"fest":""}" style="grid-row:${rd};grid-column:${i+2}" title="${FEST.has(d)?"Festivo":""}"><b>${dt.getDate()}</b>${DN[dt.getDay()]}</div>`;}).join("");
-  const R=reparto(), load=R.load;
-  KEYS.forEach(k=>{
+  const yo=carga(), R=reparto(yo), load=R.load, off=R.off;
+  vkeys().forEach(k=>{
     const hu=HMAP[k], s=ST[k], x=huHoras(k), lv=LIVE[k], v=huVino(k);
     const its=s.items.filter(it=>(it.estado==="aceptada"||it.jira)&&it.ini&&it.fin); // en el Gantt solo lo aceptado
     const nprop=s.items.filter(it=>it.estado==="propuesta"&&!it.jira).length;
@@ -330,15 +377,16 @@ function renderGrid(){
     html+=`<div class="lane ${k===SEL?"sel":""}" data-k="${k}" style="height:${nrows*26+12}px">`;
     const ti=DAYS.indexOf(TODAY); if(ti>=0)html+=`<div class="tc" style="left:${ti*cw}px"></div>`;
     DAYS.forEach((d,i)=>{if(FEST.has(d))html+=`<div class="fc" style="left:${i*cw}px"></div>`;});
-    its.forEach((it,r)=>{const a=di(it.ini),b=Math.max(a,di(it.fin)),o=respOf(it),m=R.por[it.id]||{},sb=R.sobra[it.id];
-      const dias=Object.keys(m).map(i=>fmt(DAYS[i])+": "+h(m[i])+" h").join(" · ");
-      html+=`<div class="bar ${it.jira?"enjira":""} ${o?"otro":""}" style="top:${6+r*26}px;height:22px;left:${a*cw+2}px;width:${(b-a+1)*cw-4}px" title="${esc((it.jira?it.jira+" · ":"")+it.titulo+" · "+h(it.horas||0)+" h · "+fmt(it.ini)+"–"+fmt(it.fin)+(o?" · "+o.nombre+" (no suma a la carga de "+MAIN+")":dias?" · reparto: "+dias:"")+(sb?" · no caben "+h(sb)+" h":""))}"><span class="x">${it.jira?esc(it.jira)+" · ":""}${h(it.horas||0)} h</span>${o?` <b>${esc(o.nombre.split(" ")[0])}</b> ·`:""} ${esc(it.titulo)}</div>`;});
+    its.forEach((it,r)=>{const a=di(it.ini),b=Math.max(a,di(it.fin)),o=yo===MAIN?respOf(it):(mismo(quien(it),yo)?null:{nombre:quien(it)}),m=R.por[it.id]||{},sb=R.sobra[it.id];
+      const dias=Object.keys(m).map(i=>fmt(R.D[i])+": "+h(m[i])+" h").join(" · ");
+      html+=`<div class="bar ${it.jira?"enjira":""} ${o?"otro":""}" style="top:${6+r*26}px;height:22px;left:${a*cw+2}px;width:${(b-a+1)*cw-4}px" title="${esc((it.jira?it.jira+" · ":"")+it.titulo+" · "+h(it.horas||0)+" h · "+fmt(it.ini)+"–"+fmt(it.fin)+(o?" · "+o.nombre+" (no suma a la carga de "+yo+")":dias?" · reparto: "+dias:"")+(sb?" · no caben "+h(sb)+" h":""))}"><span class="x">${it.jira?esc(it.jira)+" · ":""}${h(it.horas||0)} h</span>${o?` <b>${esc(o.nombre.split(" ")[0])}</b> ·`:""} ${esc(it.titulo)}</div>`;});
     if(!its.length&&!x.w&&nprop)html+=`<div class="hint" style="top:14px">Sin subtareas aceptadas · ${nprop} propuesta${nprop>1?"s":""} en el panel</div>`;
     if(x.w){html+=`<div class="bar vino" style="top:${6+its.length*26}px;height:22px;left:2px;width:${Math.min(DAYS.length,6)*cw-4}px">Pendiente de definición · ${h(x.w)} h</div>`;}
     html+=`</div>`;
   });
-  html+=`<div class="ll">Carga de ${esc(MAIN)} (h/día)</div><div class="load">`+DAYS.map((d,i)=>{const j=jorDe(MAIN,d),v=load[i];if(!j)return`<div class="lc none">${jor(d)?(prestadoEn(MAIN,d)?"prest.":"sin PR"):"fest."}</div>`;const c=v===0?"none":(v>j*1.05?"over":(v>=j*.85?"full":"lo"));const det=[];KEYS.forEach(k=>ST[k].items.forEach(it=>{const m=R.por[it.id];if(m&&m[i])det.push(k+" "+h(m[i])+" h · "+it.titulo.slice(0,50));}));return`<div class="lc ${c}" title="${esc(fmt(d)+": "+h(v)+" de "+h(j)+" h"+(det.length?"\n"+det.join("\n"):""))}">${v?h(v):"·"}</div>`;}).join("")+`</div>`;
-  const sobra=Object.values(R.sobra).reduce((s,x)=>s+x,0); if(sobra>1e-9)html+=`<div class="ll" style="grid-column:1 / -1;color:var(--crit)">No caben ${h(sobra)} h de ${esc(MAIN)} antes del ${fmt(DAYS[DAYS.length-1])}: desbordan el sprint.</div>`;
+  html+=`<div class="ll">Carga de ${esc(yo)} (h/día)</div><div class="load">`+DAYS.map((d,i)=>{const j=jorDe(yo,d),v=load[i+off]||0;if(!j)return`<div class="lc none">${jor(d)?(prestadoEn(yo,d)?"prest.":"sin PR"):"fest."}</div>`;const c=v===0?"none":(v>j*1.05?"over":(v>=j*.85?"full":"lo"));const det=[];KEYS.forEach(k=>ST[k].items.forEach(it=>{const m=R.por[it.id];if(m&&m[i+off])det.push(k+" "+h(m[i+off])+" h · "+it.titulo.slice(0,50));}));return`<div class="lc ${c}" title="${esc(fmt(d)+": "+h(v)+" de "+h(j)+" h"+(det.length?"\n"+det.join("\n"):""))}">${v?h(v):"·"}</div>`;}).join("")+`</div>`;
+  const sobra=Object.values(R.sobra).reduce((s,x)=>s+x,0); if(sobra>1e-9)html+=`<div class="ll" style="grid-column:1 / -1;color:var(--crit)">No caben ${h(sobra)} h de ${esc(yo)} antes del ${fmt(R.D[R.D.length-1])}: desbordan el ${MS?"requerimiento":"sprint"}.</div>`;
+  if(MS&&!vkeys().length)html+=`<div class="ll" style="grid-column:1 / -1">${FPER?`${esc(FPER)} no tiene subtareas en este sprint.`:"Este sprint no tiene historias en el plan."}</div>`;
   g.innerHTML=html;
 }
 function itemHtml(k,it){
@@ -354,8 +402,9 @@ function itemHtml(k,it){
     <div class="r2">${est}<label>h <input type="number" min="0" step="0.5" data-f="horas" data-id="${it.id}" value="${it.horas??""}" ${ro?"disabled":""}></label>
       <label>inicio <input type="date" data-f="ini" data-id="${it.id}" value="${it.ini||""}" ${ro?"disabled":""}></label>
       <label>vence <input type="date" data-f="fin" data-id="${it.id}" value="${it.fin||""}" ${ro?"disabled":""}></label>
-      <label>responsable <select data-f="resp" data-id="${it.id}" ${ro?"disabled":""}>${[MAIN].concat(GENTE.filter(n=>!esMain(n))).concat(respOf(it)&&!GENTE.includes(respOf(it).nombre)?[respOf(it).nombre]:[]).map(n=>`<option ${(respOf(it)?respOf(it).nombre:MAIN)===n?"selected":""}>${esc(n)}</option>`).join("")}<option value="__otro">Otra persona…</option></select></label></div>
-    ${respOf(it)?`<div class="ro">No suma a la carga de ${esc(MAIN)}: la hace ${esc(respOf(it).nombre)}.</div>`:""}
+      <label>responsable <select data-f="resp" data-id="${it.id}" ${ro?"disabled":""}>${MS?selRespMS(k,it):[MAIN].concat(GENTE.filter(n=>!esMain(n))).concat(respOf(it)&&!GENTE.includes(respOf(it).nombre)?[respOf(it).nombre]:[]).map(n=>`<option ${(respOf(it)?respOf(it).nombre:MAIN)===n?"selected":""}>${esc(n)}</option>`).join("")}<option value="__otro">Otra persona…</option></select></label></div>
+    ${MS?(it.comparte?`<div class="row"><span class="pill comp" title="Pieza que se repite o se comparte entre sprints">Pieza compartida «${esc(it.comparte)}»${(()=>{const o=comparteEn(it.comparte).filter(s=>s!==HMAP[k].sprint);return o.length?" · también en "+esc(o.join(", ")):"";})()}</span></div>`:"")
+      :(respOf(it)?`<div class="ro">No suma a la carga de ${esc(MAIN)}: la hace ${esc(respOf(it).nombre)}.</div>`:"")}
     <label class="obs"><span>Análisis previo de la IA y notas del líder <em>· no va a Jira; el analista lo toma en cuenta al redactar</em></span><textarea data-f="obs" data-id="${it.id}" ${ro?"disabled":""} placeholder="Qué hace, por qué esas horas, de qué depende. Escribe aquí tus decisiones: mandan sobre la descripción">${esc(it.obs||"")}</textarea></label>
     ${it.modelo?`<div class="row"><button class="btn sm erb" data-er="${it.id}">🗄 Ver modelo de BD · ${it.modelo.tablas.length} tablas</button>${it.modelo.aprobado?`<span class="pill ok">Modelo aprobado ${fmt(it.modelo.aprobado.fecha)}</span>`:`<span class="pill warn">Modelo sin aprobar</span>`}</div>`:(ro?"":`<div class="row"><button class="btn sm" data-a="addmod" data-id="${it.id}">+ Modelo de BD</button></div>`)}
     ${it.jira?"":`<div class="desc"><div class="dsh">Descripción que se crea en Jira ${it.desc&&it.desc.trim().length>=DESC_MIN?`<span class="chk">✓ redactada</span>`:`<span class="chk no">sin redactar · se redacta al exportar</span>`}</div>
@@ -373,15 +422,16 @@ function openPend(){
     <div class="row" style="justify-content:flex-end"><button class="btn" data-close="1">Cerrar</button></div></div></div>`;
 }
 document.addEventListener("click",ev=>{
-  const g=ev.target.closest&&ev.target.closest("[data-goto]"); if(g){SEL=g.dataset.goto;$("modal").innerHTML="";renderGrid();renderSide();return;}
+  const g=ev.target.closest&&ev.target.closest("[data-goto]"); if(g){SEL=g.dataset.goto;$("modal").innerHTML="";if(MS){FPER="";setVista(SMAP[HMAP[SEL].sprint]?HMAP[SEL].sprint:SIN);return;}renderGrid();renderSide();return;}
   if(ev.target.closest&&ev.target.closest("[data-close]")){$("modal").innerHTML="";return;}
   if(ev.target.closest&&ev.target.closest("#bPend"))openPend();
 });
 function renderSide(){
+  if(!SEL||!HMAP[SEL]){$("side").innerHTML=`<div class="empty">Elige una historia del cronograma.</div>`;return;}
   const k=SEL,hu=HMAP[k],s=ST[k],x=huHoras(k),lv=LIVE[k];
   const subs=SUBS[k]||[];
   const tr=s.transicion;
-  $("side").innerHTML=`<div><h2><span class="k">${k}</span>${esc(hu.t)}</h2>
+  $("side").innerHTML=`<div><h2><span class="k">${k}</span>${esc(hu.t)}</h2>${MS?`<div class="row" style="margin-top:6px">${SMAP[hu.sprint]?`<span class="pill">${esc(hu.sprint+" · "+(SMAP[hu.sprint].nombre||""))}</span>`:`<span class="pill warn">Sin sprint</span>`}${(hu.keys||[]).length?`<span class="pill" title="Claves de Jira que agrupa esta historia del plan; las subtareas se crean bajo ${esc(k)}">Agrupa: ${esc(hu.keys.join(", "))}</span>`:""}</div>`:""}
     <div class="row" style="margin-top:6px">${hu.ficticia?`<span class="pill warn">Historia de ejemplo: aún no existe en Jira, no se consulta ni se exporta</span>`:`${lv?`<span class="pill">Jira: ${esc(lv.status)}</span>`:`<span class="pill">Jira: sin consultar</span>`}${SITIO?`<a href="${esc(urlIssue(k))}" target="_blank" rel="noopener">Abrir en Jira</a>`:""}`}</div></div>
     ${!canWrite?`<div class="ro">Vista de solo lectura: solo el líder edita y exporta.</div>`:""}
     <div class="note ${huVino(k)?"vino":""}">${esc(hu.nota)}</div>
@@ -406,8 +456,8 @@ function renderSide(){
 document.addEventListener("pointerdown",ev=>{if(ev.target.closest&&ev.target.closest("#side button"))ev.preventDefault();});
 document.addEventListener("click",ev=>{
   const mv=ev.target.closest("button[data-mv]");
-  if(mv&&canWrite){const k=mv.dataset.mk,i=KEYS.indexOf(k),j=i+Number(mv.dataset.mv);if(j<0||j>=KEYS.length)return;
-    KEYS.splice(i,1);KEYS.splice(j,0,k);renderGrid();if(db)db.collection("orden").doc("actual").set({keys:KEYS.slice()}).catch(()=>{});return;}
+  if(mv&&canWrite){const k=mv.dataset.mk,V=vkeys(),d=Number(mv.dataset.mv),nb=V[V.indexOf(k)+d];if(!nb)return; // se mueve junto a su vecina visible
+    KEYS.splice(KEYS.indexOf(k),1);KEYS.splice(KEYS.indexOf(nb)+(d>0?1:0),0,k);renderGrid();if(db)db.collection("orden").doc("actual").set({keys:KEYS.slice()}).catch(()=>{});return;}
   const r=ev.target.closest("[data-k]");
   if(r&&r.closest("#grid")){SEL=r.dataset.k;renderGrid();renderSide();return;}
   const b=ev.target.closest("button[data-a]"); if(!b||!canWrite)return;
@@ -436,7 +486,9 @@ document.addEventListener("change",ev=>{
   if(f==="resp"){const it=s.items.find(x=>x.id===ev.target.dataset.id);if(!it)return;let n=ev.target.value;
     if(n==="__otro"){n=(prompt("Nombre de la persona, tal como aparece en Jira:")||"").trim();if(!n){renderSide();return;}}
     const antes=respOf(it)?respOf(it).nombre:MAIN;
-    it.resp=esMain(n)?null:{nombre:n,accountId:CUENTAS[n]||null};
+    if(MS&&n==="__sprint"){delete it.resp;n=quien(it);} // vuelve al responsable del sprint en el escenario activo
+    else if(MS)it.resp={nombre:n,accountId:CUENTAS[n]||null}; // con sprints, elegir al dueño también es explícito (manda sobre el sprint)
+    else it.resp=esMain(n)?null:{nombre:n,accountId:CUENTAS[n]||null};
     save(SEL);render();if(antes!==n)anotar([{texto:`«${it.titulo}» pasa de ${antes} a ${n}${n!==MAIN?` (no suma a la carga de ${MAIN})`:""}`,fuente:SEL}],[],`Responsable en ${SEL}`);return;}
   if(f){const it=s.items.find(x=>x.id===ev.target.dataset.id);if(!it)return;let v=ev.target.value;if(f==="horas")v=v===""?null:Number(v);it[f]=v||null;if(f==="titulo")it[f]=ev.target.value;save(SEL);renderKpis();renderGrid();}
   if(c){const cm=s.comentarios.find(x=>x.id===c);if(cm){cm.texto=ev.target.value;save(SEL);renderKpis();}}
@@ -603,8 +655,8 @@ async function cuentaDe(it){const o=respOf(it);if(!o){if(DUENO_CTA)return DUENO_
   const ns=(r.payload&&r.payload.issues&&r.payload.issues.nodes)||[];
   for(const n of ns){const a=n.fields&&n.fields.assignee;if(a&&a.accountId&&pal.every(p=>norm(a.displayName).includes(p))){CACHE_CTA[o.nombre]=a.accountId;o.accountId=a.accountId;return a.accountId;}}
   throw{code:"tool_error",message:`no encontré a «${o.nombre}» entre los responsables de Jira de los últimos 6 meses; escribe su nombre como aparece en Jira`};}
-function opLabel(o){return o.tipo==="sub"?`Crear subtarea en <b>${o.k}</b>: ${esc(o.it.titulo)} · ${h(o.it.horas||0)} h · ${fmt(o.it.ini)}–${fmt(o.it.fin)} · ${esc(respOf(o.it)?respOf(o.it).nombre:MAIN)}`
-  :o.tipo==="com"?`Comentar en <b>${o.k}</b>: «${esc(o.c.texto.slice(0,140))}${o.c.texto.length>140?"…":""}»`:`Cambiar <b>${o.k}</b> a «${esc(o.t.nombre)}»`;}
+function opLabel(o){return (MS&&SMAP[HMAP[o.k].sprint]?`<span class="pill">${esc(HMAP[o.k].sprint)}</span> `:"")+(o.tipo==="sub"?`Crear subtarea en <b>${o.k}</b>: ${esc(o.it.titulo)} · ${h(o.it.horas||0)} h · ${fmt(o.it.ini)}–${fmt(o.it.fin)} · ${esc(respOf(o.it)?respOf(o.it).nombre:MAIN)}`
+  :o.tipo==="com"?`Comentar en <b>${o.k}</b>: «${esc(o.c.texto.slice(0,140))}${o.c.texto.length>140?"…":""}»`:`Cambiar <b>${o.k}</b> a «${esc(o.t.nombre)}»`);}
 
 // ---- Descripción de la subtarea: se interpreta la solución, nunca sale solo el título ----
 const DESC_MIN=120;
@@ -641,11 +693,11 @@ async function redactarUna(k,it,out,btn){
 // ---- Respaldo: todo lo planeado en JSON (para restaurar) y en Markdown (para leer) ----
 let dl=null;
 const ESTN={aceptada:"Aceptada",propuesta:"Propuesta",espera:"Pendiente de definición",descartada:"Descartada"};
-function respaldoJSON(){return JSON.stringify({cronograma:document.title,generado:new Date().toISOString(),orden:KEYS.slice(),plan:ST,expediente:EXPD},null,1);}
+function respaldoJSON(){return JSON.stringify(Object.assign({cronograma:document.title,generado:new Date().toISOString(),orden:KEYS.slice(),plan:ST,expediente:EXPD},MS?{escenario:ESC}:{}),null,1);}
 function respaldoMD(){
   let s=`# ${document.title}\n\nRespaldo del ${fmt(TODAY)}. Fases del cliente: ${PHASES.map(p=>p[1]+" "+fmt(p[2])+"–"+fmt(p[3])).join(" · ")}.`;
   if(PHASES2.length)s+=`\nReplaneado: ${PHASES2.map(p=>p[1]+" "+fmt(p[2])+"–"+fmt(p[3])).join(" · ")}.`;
-  KEYS.forEach(k=>{const hu=HMAP[k],x=huHoras(k);s+=`\n\n## ${k} · ${hu.t}\n${hu.ficticia?"_Historia de ejemplo, aún no existe en Jira._\n":""}${hu.nota?hu.nota+"\n":""}Aceptadas ${h(x.a)} h · propuestas ${h(x.p)} h · pendientes ${h(x.w)} h\n`;
+  KEYS.forEach(k=>{const hu=HMAP[k],x=huHoras(k);s+=`\n\n## ${k} · ${hu.t}${MS&&hu.sprint?" · "+hu.sprint:""}\n${hu.ficticia?"_Historia de ejemplo, aún no existe en Jira._\n":""}${hu.nota?hu.nota+"\n":""}Aceptadas ${h(x.a)} h · propuestas ${h(x.p)} h · pendientes ${h(x.w)} h\n`;
     ST[k].items.forEach(it=>{const r=respOf(it);s+=`\n### [${ESTN[it.estado]||it.estado}] ${it.titulo}\n${h(it.horas||0)} h · ${it.ini?fmt(it.ini)+"–"+fmt(it.fin):"sin fecha"} · ${r?r.nombre:MAIN}${it.jira?" · Jira "+it.jira:""}\n`;
       if(it.obs)s+=`\n> ${String(it.obs).replace(/\n/g,"\n> ")}\n`;if(it.desc)s+=`\n${it.desc}\n`;});
     ST[k].comentarios.forEach(c=>{if(c.texto)s+=`\n**Comentario para Jira${c.enviado?" (publicado)":""}:** ${c.texto}\n`;});});
@@ -693,7 +745,7 @@ function anotar(dec,est,resumen){ if(!db||!canWrite||(!dec.length&&!est.length))
 $("bExport").addEventListener("click",()=>{
   const L=ops(), nsub=L.filter(o=>o.tipo==="sub").length;
   $("modal").innerHTML=`<div class="overlay" id="ov"><div class="modal wide" role="dialog" aria-label="Cambios para Jira"><h2>Cambios para Jira (${L.length})</h2>
-    ${!canWrite?`<div class="ro">Solo el líder puede exportar.</div>`:""}
+    ${!canWrite?`<div class="ro">Solo el líder puede exportar.</div>`:""}${MS?`<div class="empty">Todos los sprints. Cada subtarea va bajo su historia de Jira; el sprint solo agrupa. Responsables según el escenario «${esc(escAct().nombre)}»${Object.keys(ESC.reasig).length?" con sus reasignaciones":""}, salvo las subtareas con responsable propio.</div>`:""}
     ${L.length?`<div class="empty">Revisa cada cambio. Se escriben en Jira solo los marcados, uno por uno, con tu cuenta.${nsub?` Ninguna subtarea sale solo con su título: el paso 1 interpreta la solución y redacta la descripción de las que no la tienen (las ya redactadas se conservan tal cual); la revisas y la corriges aquí antes del paso 2.`:""}</div>`+L.map((o,i)=>`<div class="op opx"><label class="opl"><input type="checkbox" data-op="${i}" checked ${canWrite?"":"disabled"}><span>${opLabel(o)}</span><span class="res" id="res${i}"></span></label>
       ${o.tipo==="sub"?`<textarea class="dsc" data-od="${i}" aria-label="Descripción de ${esc(o.it.titulo)}" ${canWrite?"":"disabled"} placeholder="Sin descripción todavía: el paso 1 la redacta.">${esc(o.it.desc||"")}</textarea><span class="res" id="rdx${i}"></span>`:""}</div>`).join(""):`<div class="empty">No hay nada pendiente: acepta subtareas, escribe un comentario o elige un cambio de estado.</div>`}
     <div class="row" style="justify-content:flex-end"><button class="btn" id="bClose">Cerrar</button>${L.length&&canWrite&&nsub?`<button class="btn pri" id="bPrep">1 · Interpretar y redactar descripciones</button>`:""}${L.length&&canWrite?`<button class="btn ${nsub?"":"pri"}" id="bRun">${nsub?"2 · ":""}Escribir en Jira</button>`:""}</div></div></div>`;
@@ -755,6 +807,159 @@ async function runOps(L,btn){
 }
 function alertBox(t){$("modal").innerHTML=`<div class="overlay"><div class="modal"><div>${esc(t)}</div><div class="row" style="justify-content:flex-end"><button class="btn" onclick="this.closest('.overlay').remove()">Cerrar</button></div></div></div>`;}
 
+// ==== Modo requerimiento multi-sprint (plan con «sprints») ====
+// Vista general: Gantt por persona con una barra por sprint, meta, totales, escenarios y reasignación de sprints.
+// Vista de sprint: la página de siempre filtrada por sprint y por persona. Sin «sprints» nada de esto se usa.
+// El calendario (planificar) es el mismo que calcula generar_cronograma.py: si cambias uno, cambia el otro.
+const SIN="__sin";
+const SPR=MS?CFG.sprints.slice().sort((a,b)=>(Number(a.orden)||0)-(Number(b.orden)||0)):[]; // estable: en empate, el orden del plan
+const SMAP=Object.fromEntries(SPR.map(s=>[s.id,s]));
+const META=CFG.meta||{}, FD_META=META.fin_desarrollo||CFG.fin_desarrollo, ENTREGA=META.entrega||CFG.fin;
+const ESCS=(CFG.escenarios&&CFG.escenarios.length)?CFG.escenarios:[{id:"plan",nombre:"Plan base",asignacion:{}}];
+const ESTSP={por_planear:"Por planear",planeado:"Planeado",en_curso:"En curso",en_revision:"En revisión",hecho:"Hecho"};
+const CIERRE_TIPOS=["prueba_funcional_logica","pruebas_en_dispositivos"]; // revisión y pruebas: al final de su sprint
+const esCierre=it=>it.cierre===true||(it.cierre!==false&&CIERRE_TIPOS.includes(it.tipo));
+let ESC={id:ESCS[0].id,reasig:{}}, VIEW=MS?"general":null, FPER="";
+const escAct=()=>ESCS.find(e=>e.id===ESC.id)||ESCS[0];
+const escDef=sid=>(escAct().asignacion||{})[sid]||(SMAP[sid]&&SMAP[sid].responsable)||MAIN;
+const respSprint=sid=>SMAP[sid]?(ESC.reasig[sid]||escDef(sid)):MAIN;
+function respSprintObj(k){const hu=k&&HMAP[k];if(!hu)return null;const n=respSprint(hu.sprint);return{nombre:n,accountId:CUENTAS[n]||null};}
+let KOF=new WeakMap();
+function keyOf(it){let k=KOF.get(it);if(k)return k;KOF=new WeakMap();for(const kk in ST)ST[kk].items.forEach(x=>KOF.set(x,kk));return KOF.get(it)||null;}
+const deSprint=(k,v)=>v===SIN?!SMAP[HMAP[k].sprint]:HMAP[k].sprint===v;
+function vkeys(){if(!MS||VIEW==="general")return KEYS;let L=KEYS.filter(k=>deSprint(k,VIEW));
+  if(FPER)L=L.filter(k=>ST[k].items.some(it=>it.estado!=="descartada"&&mismo(quien(it),FPER)));return L;}
+function gente(){const L=[],add=n=>{n=String(n||"").trim();if(n&&!L.some(x=>mismo(x,n)))L.push(n);};
+  add(MAIN);GENTE.forEach(add);SPR.forEach(s=>add(s.responsable));ESCS.forEach(e=>Object.values(e.asignacion||{}).forEach(add));
+  Object.values(ESC.reasig).forEach(add);KEYS.forEach(k=>ST[k].items.forEach(it=>{if(it.resp&&it.resp.nombre)add(it.resp.nombre);}));return L;}
+function carga(){if(!MS)return MAIN;if(FPER)return FPER;if(!SMAP[VIEW])return MAIN;const n=respSprint(VIEW);return esMain(n)?MAIN:(gente().find(x=>mismo(x,n))||n);}
+function selRespMS(k,it){const ex=it.resp&&it.resp.nombre?it.resp.nombre:null,L=gente();if(ex&&!L.includes(ex))L.push(ex);
+  return`<option value="__sprint" ${ex?"":"selected"}>Del sprint (${esc(respSprint(HMAP[k].sprint))})</option>`+L.map(n=>`<option ${ex===n?"selected":""}>${esc(n)}</option>`).join("");}
+function comparteEn(tag){const S=[];KEYS.forEach(k=>ST[k].items.forEach(it=>{if(it.comparte===tag&&it.estado!=="descartada"){const s=HMAP[k].sprint||"sin sprint";if(!S.includes(s))S.push(s);}}));return S;}
+function fmtL(s){if(!s)return"—";const p=s.split("-");return p[2]+"/"+p[1]+"/"+p[0];}
+// Días del requerimiento: desde la fecha más temprana conocida hasta dos años después del inicio
+const RD=MS?(()=>{let a=CFG.inicio;HUS.forEach(hu=>hu.items.forEach(it=>{if(it.ini&&it.ini<a)a=it.ini;}));SPR.forEach(s=>(s.fases||[]).forEach(f=>{if(f[2]&&f[2]<a)a=f[2];}));
+  const e=new Date(CFG.inicio+"T12:00:00");e.setDate(e.getDate()+730);return rango(a,iso(e));})():[];
+// Calendario por persona: sprints en su orden (los «hecho» no aportan), dentro de cada sprint primero el desarrollo y al final
+// la revisión y las pruebas, luego las dependencias («depende»). Llena la capacidad del día sin pasarla; lo «espera» no lleva fecha.
+function planificar(){
+  const esc=escAct(),G=gente(),cn=n=>{n=String(n||"")||MAIN;if(esMain(n))return MAIN;return G.find(x=>mismo(x,n))||n;};
+  const base=[MAIN].concat(SPR.map(s=>s.responsable||MAIN));
+  const desdeDe=p=>esc.desde&&!base.some(b=>mismo(b,p))?esc.desde:null;
+  const i0=Math.max(0,diIn(RD,CFG.inicio));
+  const mk=p=>{const ds=desdeDe(p);return{cap:RD.map((d,i)=>i<i0||(ds&&d<ds)?0:jorDe(p,d)),cur:i0};};
+  const quienP=(s,it)=>cn(it.resp&&it.resp.nombre?it.resp.nombre:respSprint(s.id));
+  const L=[];
+  SPR.forEach(s=>{if(s.estado==="hecho")return;const ks=KEYS.filter(k=>HMAP[k].sprint===s.id);
+    [false,true].forEach(c=>ks.forEach(k=>ST[k].items.forEach(it=>{if(it.estado==="espera"||it.estado==="descartada"||esCierre(it)!==c)return;L.push({k,it,s,p:quienP(s,it)});})));});
+  const pos=new Map();L.forEach((x,i)=>{if(x.it.id&&!pos.has(x.it.id))pos.set(x.it.id,i);});
+  const dep=L.map((x,i)=>(Array.isArray(x.it.depende)?x.it.depende:[]).map(d=>pos.get(d)).filter(j=>j!==undefined&&j!==i));
+  let order=L.map((x,i)=>i);
+  if(dep.some(d=>d.length)){const done=new Array(L.length).fill(false);order=[];
+    while(order.length<L.length){let pick=-1;for(let i=0;i<L.length;i++)if(!done[i]&&dep[i].every(j=>done[j])){pick=i;break;}
+      if(pick<0)pick=done.indexOf(false); // ciclo: se rompe en el orden del plan
+      done[pick]=true;order.push(pick);}}
+  const cals={},res=new Array(L.length);
+  order.forEach(i=>{const x=L[i],c=cals[x.p]||(cals[x.p]=mk(x.p));
+    let e=c.cur;if(x.s.inicio_min)e=Math.max(e,diIn(RD,x.s.inicio_min));
+    dep[i].forEach(j=>{if(res[j]&&res[j].b!=null)e=Math.max(e,res[j].b);});
+    const hh=Number(x.it.horas)||0;let r=hh,a=null,b=null,k=e,antes=0;
+    while(k<RD.length&&c.cap[k]<=1e-9)k++;
+    if(r<=1e-9){if(k<RD.length)a=b=k;}
+    else while(r>1e-9&&k<RD.length){const t=Math.min(r,c.cap[k]);if(t>1e-9){if(a===null)a=k;b=k;c.cap[k]-=t;r-=t;if(RD[k]<=FD_META)antes+=t;}if(r>1e-9)k++;}
+    if(b!==null)c.cur=Math.max(c.cur,b);
+    res[i]={k:x.k,it:x.it,s:x.s.id,p:x.p,h:hh,a,b,ini:a!==null?RD[a]:null,fin:b!==null?RD[b]:null,antes,sobra:r>1e-9?r:0};});
+  const per={},spr={},P=p=>per[p]||(per[p]={p,h:0,antes:0,espera:0,fin:null,sprints:[],sobra:0}),S=id=>spr[id]||(spr[id]={h:0,espera:0,por:{}});
+  res.forEach(r=>{const q=P(r.p);q.h+=r.h;q.antes+=r.antes;q.sobra+=r.sobra;if(r.fin&&(!q.fin||r.fin>q.fin))q.fin=r.fin;if(!q.sprints.includes(r.s))q.sprints.push(r.s);
+    const z=S(r.s);z.h+=r.h;const b=z.por[r.p]||(z.por[r.p]={ini:null,fin:null,h:0});b.h+=r.h;if(r.ini&&(!b.ini||r.ini<b.ini))b.ini=r.ini;if(r.fin&&(!b.fin||r.fin>b.fin))b.fin=r.fin;});
+  SPR.forEach(s=>{if(s.estado==="hecho")return;KEYS.filter(k=>HMAP[k].sprint===s.id).forEach(k=>ST[k].items.forEach(it=>{if(it.estado!=="espera")return;
+    const n=Number(it.horas)||0,q=P(quienP(s,it));q.espera+=n;if(!q.sprints.includes(s.id))q.sprints.push(s.id);S(s.id).espera+=n;}));});
+  Object.values(per).forEach(q=>{const c=mk(q.p);q.cap=RD.reduce((t,d,i)=>t+(d<=FD_META?c.cap[i]:0),0);q.despues=Math.max(0,q.h-q.antes);});
+  return{res,per,spr,sinSprint:KEYS.filter(k=>!SMAP[HMAP[k].sprint]).length};}
+function guardarEsc(){if(db&&canWrite)db.collection("escenario").doc("actual").set({id:ESC.id,reasig:Object.assign({},ESC.reasig)}).catch(()=>{});}
+function renderVista(){
+  const gen=VIEW==="general";$("vbar").hidden=false;$("vg").hidden=!gen;$("kpis").hidden=gen;$("lay").hidden=gen;
+  const sinN=KEYS.filter(k=>!SMAP[HMAP[k].sprint]).length;
+  let html=`<label>Ver <select id="vSel" aria-label="Vista"><option value="general" ${gen?"selected":""}>Vista general del requerimiento</option>${SPR.map(s=>`<option value="${esc(s.id)}" ${VIEW===s.id?"selected":""}>${esc(s.id+" · "+(s.nombre||""))} (${esc(ESTSP[s.estado]||s.estado||"")})</option>`).join("")}${sinN?`<option value="${SIN}" ${VIEW===SIN?"selected":""}>Historias sin sprint (${sinN})</option>`:""}</select></label>`;
+  if(!gen){const s=SMAP[VIEW];const P=gente().filter(n=>KEYS.some(k=>deSprint(k,VIEW)&&ST[k].items.some(it=>it.estado!=="descartada"&&mismo(quien(it),n))));
+    html+=`<label>Persona <select id="vPer" aria-label="Filtrar por persona"><option value="">Todas</option>${P.map(n=>`<option ${FPER===n?"selected":""}>${esc(n)}</option>`).join("")}</select></label>`;
+    if(s)html+=`<span class="sinfo"><span class="pill st-${esc(s.estado||"")}">${esc(ESTSP[s.estado]||s.estado||"")}</span>Responsable: <b>${esc(respSprint(s.id))}</b>${s.avance?" · "+esc(s.avance):""}</span>`;
+    $("leyCarga").textContent=`Fila de carga: horas de desarrollo por día de ${carga()} (${h(CAP_LJ)} h; viernes ${h(CAP_V)} h)`;}
+  html+=`<span class="sinfo">Escenario: <b>${esc(escAct().nombre||escAct().id)}</b>${Object.keys(ESC.reasig).length?" · con reasignaciones":""}</span>`;
+  $("vbar").innerHTML=html;}
+// Vista de un sprint: los días van del primer al último día de sus subtareas (las guardadas y las del escenario) o de sus fases
+function setVista(v){VIEW=v;if(v==="general"){render();return;}
+  const s=SMAP[v],PL=planificar();let a=null,b=null;const add=d=>{if(!d)return;if(!a||d<a)a=d;if(!b||d>b)b=d;};
+  PL.res.forEach(r=>{if(r.s===v){add(r.ini);add(r.fin);}});
+  KEYS.forEach(k=>{if(deSprint(k,v))ST[k].items.forEach(it=>{if(vivo(it)){add(it.ini);add(it.fin);}});});
+  ((s&&s.fases)||[]).forEach(f=>{add(f[2]);add(f[3]);});
+  if(!a)a=b=CFG.inicio;
+  let D=rango(a,b);if(!D.length)D=[a];
+  while(D.length<10){const d=new Date(D[D.length-1]+"T12:00:00");do d.setDate(d.getDate()+1);while(d.getDay()===0||d.getDay()===6);D.push(iso(d));}
+  DAYS=D;
+  PHASES=s&&s.fases&&s.fases.length?s.fases:[["dev",s?s.id+" · "+(s.nombre||""):"Historias sin sprint",D[0],D[D.length-1]]];
+  const fdev=s&&s.fases&&s.fases.find(f=>f[0]==="dev");FIN_DEV=fdev?fdev[3]:FD_META;
+  const V=vkeys();if(!V.includes(SEL))SEL=V[0]||null;
+  render();window.scrollTo(0,0);}
+function renderGeneral(){
+  const PL=planificar(),FD=FD_META,EN=ENTREGA,esc1=escAct();
+  const pers=Object.values(PL.per).sort((a,b)=>a.p===MAIN?-1:b.p===MAIN?1:a.p.localeCompare(b.p));
+  const tot=pers.reduce((t,q)=>t+q.h,0),esp=pers.reduce((t,q)=>t+q.espera,0),desp=pers.reduce((t,q)=>t+q.despues,0);
+  const fin=pers.reduce((f,q)=>q.fin&&q.fin>f?q.fin:f,"");
+  const nrx=Object.keys(ESC.reasig).length;
+  let html=`<div><h2>Vista general del requerimiento · ${SPR.length} sprints</h2>${META.texto?`<div class="empty" style="margin-top:4px">${esc(META.texto)}</div>`:""}</div>
+  <div class="row"><label>Escenario <select id="gEsc" aria-label="Escenario">${ESCS.map(e=>`<option value="${esc(e.id)}" ${e.id===ESC.id?"selected":""}>${esc(e.nombre||e.id)}</option>`).join("")}</select></label>${esc1.desde?`<span class="pill">Las personas nuevas entran el ${fmtL(esc1.desde)}</span>`:""}${nrx?`<span class="pill warn">${nrx} sprint${nrx>1?"s":""} reasignado${nrx>1?"s":""}</span><button class="btn sm" id="gRx">Quitar reasignaciones</button>`:""}${canWrite?`<button class="btn sm pri" id="gApl" title="Escribe en cada subtarea (sin clave de Jira) las fechas que calcula este escenario">Aplicar fechas del escenario</button>`:""}<span class="res" id="gRes"></span></div>
+  <div class="meta"><span>Horas propuestas: <b>${h(tot)} h</b></span><span>En espera (sin fecha): <b>${h(esp)} h</b></span><span>Fin de desarrollo (meta): <b>${fmtL(FD)}</b></span>${EN&&EN!==FD?`<span>Entrega: <b>${fmtL(EN)}</b></span>`:""}<span class="${fin&&fin>FD?"c":""}">Fin estimado: <b>${fmtL(fin)}</b></span><span class="${desp>1e-9?"c":""}">${desp>1e-9?`Atraso: <b>${h(desp)} h</b> no caben antes del ${fmtL(FD)}`:`Cabe antes del ${fmtL(FD)}`}</span>${PL.sinSprint?`<span class="c">Historias sin sprint (no se programan): <b>${PL.sinSprint}</b></span>`:""}</div>`;
+  // Gantt por persona: una barra por sprint (lo que esa persona hace de ese sprint)
+  const i0=Math.max(0,diIn(RD,CFG.inicio));let iz=Math.max(diIn(RD,EN||FD),diIn(RD,FD));PL.res.forEach(r=>{if(r.b!=null&&r.b>iz)iz=r.b;});iz=Math.min(RD.length-1,iz+2);
+  const n=Math.max(1,iz-i0+1),lab=window.innerWidth<=640?110:170,avail=Math.max(200,($("vg").clientWidth||900)-lab-4),cw=Math.max(6,Math.floor(avail/n)),W=n*cw;
+  const xEnd=d=>{let i=-1;for(let j=i0;j<=iz;j++)if(RD[j]<=d)i=j;return(i-i0+1)*cw;};
+  let hd="";for(let j=0;j<n;j++){const d=RD[i0+j],dt=new Date(d+"T12:00:00");
+    if(j===0||d.slice(8)<=RD[i0+j-1].slice(8))hd+=`<span class="mes" style="left:${j*cw}px">${["ene","feb","mar","abr","may","jun","jul","ago","sep","oct","nov","dic"][dt.getMonth()]} ${dt.getFullYear()}</span>`;
+    if(dt.getDay()===1)hd+=`<span style="left:${j*cw}px;top:14px;height:20px">${cw*5>=24?dt.getDate():""}</span>`;}
+  const lineas=et=>`<div class="oline" style="left:${xEnd(FD)}px" title="Fin de desarrollo (meta) ${fmtL(FD)}">${et?`<i>Meta ${fmt(FD)}</i>`:""}</div>${EN&&EN!==FD?`<div class="oline ent" style="left:${xEnd(EN)}px" title="Entrega ${fmtL(EN)}">${et?`<i>Entrega ${fmt(EN)}</i>`:""}</div>`:""}`;
+  const filas=pers.map((q,qi)=>{const B=[];SPR.forEach(s=>{const z=PL.spr[s.id],x=z&&z.por[q.p];if(x&&x.ini)B.push({s,x,a:diIn(RD,x.ini),b:diIn(RD,x.fin)});});
+    const ends=[];B.forEach(o=>{let r=ends.findIndex(e=>e<o.a);if(r<0){r=ends.length;ends.push(o.b);}else ends[r]=o.b;o.r=r;});
+    const at=q.despues>1e-9;
+    return`<div class="orow"><div class="olab"><b>${esc(q.p)}</b><small>${h(q.h)} h · ${at?`<span class="c">atraso ${h(q.despues)} h</span>`:`holgura ${h(q.cap-q.h)} h`}</small></div>
+      <div class="olane" style="width:${W}px;height:${Math.max(1,ends.length)*26+8}px">${lineas(qi===0)}${B.map(o=>`<button class="ob st-${esc(o.s.estado||"")} ${o.x.fin>FD?"tarde":""}" data-vsp="${esc(o.s.id)}" style="top:${4+o.r*26}px;left:${(o.a-i0)*cw+1}px;width:${Math.max(cw,(o.b-o.a+1)*cw)-2}px" title="${esc(o.s.id+" · "+(o.s.nombre||"")+" · "+q.p+" · "+h(o.x.h)+" h · "+fmt(o.x.ini)+"–"+fmt(o.x.fin)+(o.x.fin>FD?" · termina después de la meta":""))}">${esc(o.s.id)} · ${h(o.x.h)} h</button>`).join("")}</div></div>`;}).join("");
+  html+=`<div><h3>Calendario por persona</h3><div class="ogw"><div class="og"><div class="ohd" style="width:${W}px">${hd}</div>${filas||`<div class="empty" style="padding:10px">No hay horas por programar.</div>`}</div></div>
+    <div class="legend" style="border:0;padding:6px 0 0">${["en_curso","en_revision","planeado","por_planear"].map(e=>`<span><i class="sw" style="${e==="por_planear"?"background:var(--soft)":`background:var(--${e==="en_curso"?"action":e==="en_revision"?"warn":"mid"})`}"></i>${ESTSP[e]}</span>`).join("")}<span><i class="sw" style="border-left:2px dashed var(--crit);border-radius:0"></i>Meta (fin de desarrollo)</span><span>Raya roja abajo: el sprint termina después de la meta</span><span>Clic en una barra: abre el sprint</span></div></div>`;
+  html+=`<div><h3>Por persona</h3><div class="tw"><table><thead><tr><th>Persona</th><th>Sprints</th><th class="n">Horas propuestas</th><th class="n">En espera</th><th class="n">Capacidad hasta ${fmt(FD)}</th><th class="n">Holgura o atraso</th><th class="n">Fin estimado</th></tr></thead><tbody>${pers.map(q=>{const at=q.despues>1e-9;
+    return`<tr><td>${esc(q.p)}</td><td>${esc(q.sprints.join(", "))}</td><td class="n">${h(q.h)}</td><td class="n">${q.espera?h(q.espera):"—"}</td><td class="n">${h(q.cap)}</td><td class="n ${at?"c":"ok"}">${at?`Atraso: ${h(q.despues)} h no caben`:`Holgura: ${h(q.cap-q.h)} h`}</td><td class="n ${q.fin&&q.fin>FD?"c":""}">${fmtL(q.fin)}</td></tr>`;}).join("")}</tbody></table></div></div>`;
+  const G=gente();
+  html+=`<div><h3>Sprints</h3><div class="tw"><table><thead><tr><th>Sprint</th><th>Estado</th><th>Responsable${canWrite?"":" (simulación)"}</th><th class="n">Horas</th><th class="n">En espera</th><th>Fechas</th><th>Avance</th><th></th></tr></thead><tbody>${SPR.map(s=>{const z=PL.spr[s.id]||{h:0,espera:0,por:{}},ps=Object.values(z.por);
+    const a=ps.reduce((m,x)=>x.ini&&(!m||x.ini<m)?x.ini:m,null),b=ps.reduce((m,x)=>x.fin&&(!m||x.fin>m)?x.fin:m,null),R=respSprint(s.id),rx=ESC.reasig[s.id];let sel=false;
+    return`<tr><td><b>${esc(s.id)}</b> · ${esc(s.nombre||"")}</td><td><span class="pill st-${esc(s.estado||"")}">${esc(ESTSP[s.estado]||s.estado||"")}</span></td>
+      <td><select data-rsp="${esc(s.id)}" aria-label="Responsable de ${esc(s.id)}">${G.map(n=>{const on=!sel&&mismo(n,R);if(on)sel=true;return`<option ${on?"selected":""}>${esc(n)}</option>`;}).join("")}<option value="__otro">Otra persona…</option></select>${rx?` <span class="pill warn" title="En el escenario es ${esc(escDef(s.id))}">reasignado</span>`:""}</td>
+      <td class="n">${s.estado==="hecho"?"—":h(z.h)}</td><td class="n">${z.espera?h(z.espera):"—"}</td><td>${a?fmt(a)+"–"+fmt(b):"—"}${b&&b>FD?` <span class="pill crit">después de la meta</span>`:""}</td><td>${esc(s.avance||"")}</td><td><button class="btn sm" data-vsp="${esc(s.id)}">Abrir</button></td></tr>`;}).join("")}</tbody></table></div></div>`;
+  const C={};KEYS.forEach(k=>ST[k].items.forEach(it=>{if(!it.comparte||it.estado==="descartada")return;const c=C[it.comparte]||(C[it.comparte]={sp:[],n:0,h:0,k:[]});
+    c.n++;c.h+=Number(it.horas)||0;const sp=HMAP[k].sprint||"sin sprint";if(!c.sp.includes(sp))c.sp.push(sp);if(!c.k.includes(k))c.k.push(k);}));
+  const CL=Object.entries(C).filter(([,c])=>c.n>1);
+  if(CL.length)html+=`<div><h3>Piezas que se repiten o se comparten entre sprints</h3><div class="tw"><table><thead><tr><th>Pieza</th><th>Sprints</th><th class="n">Subtareas</th><th class="n">Horas</th><th>Historias</th></tr></thead><tbody>${CL.map(([t,c])=>`<tr><td>${esc(t)}</td><td>${esc(c.sp.join(", "))}</td><td class="n">${c.n}</td><td class="n">${h(c.h)}</td><td>${esc(c.k.join(", "))}</td></tr>`).join("")}</tbody></table></div><div class="empty" style="margin-top:4px">Sale de «comparte» en cada subtarea: conviene hacerlas juntas o con el mismo patrón.</div></div>`;
+  $("vg").innerHTML=html;}
+function aplicarEscenario(){const PL=planificar(),t=new Set();let n=0,fin="";
+  PL.res.forEach(r=>{if(r.fin&&r.fin>fin)fin=r.fin;if(r.it.jira||!r.ini)return;if(r.it.ini!==r.ini||r.it.fin!==r.fin){r.it.ini=r.ini;r.it.fin=r.fin;t.add(r.k);n++;}});
+  t.forEach(k=>save(k));const rx=Object.entries(ESC.reasig).map(([s,p])=>s+" a "+p);
+  if(n)anotar([{texto:`Aplicó las fechas del escenario «${escAct().nombre}»${rx.length?" (reasignó "+rx.join(", ")+")":""}: ${n} subtareas en ${t.size} historias; fin estimado ${fmtL(fin)}`,fuente:"cronograma"}],[],`Fechas del escenario ${escAct().nombre}`);
+  return n;}
+if(MS){
+  document.addEventListener("change",ev=>{const e=ev.target;if(!e||!e.id&&!(e.dataset&&e.dataset.rsp))return;
+    if(e.id==="vSel"){FPER="";setVista(e.value);return;}
+    if(e.id==="vPer"){FPER=e.value;setVista(VIEW);return;}
+    if(e.id==="gEsc"){ESC={id:e.value,reasig:{}};guardarEsc();render();return;}
+    if(e.dataset&&e.dataset.rsp){const sid=e.dataset.rsp;let n=e.value;
+      if(n==="__otro"){n=(prompt("Nombre de la persona, tal como aparece en Jira (o «Persona 2 (por definir)»):")||"").trim();if(!n){render();return;}}
+      const antes=respSprint(sid);if(mismo(n,escDef(sid)))delete ESC.reasig[sid];else ESC.reasig[sid]=n;guardarEsc();
+      if(!mismo(antes,n))anotar([{texto:`Reasignó el sprint ${sid} de ${antes} a ${n} (escenario «${escAct().nombre}»)`,fuente:"cronograma"}],[],`Reasignación de ${sid}`);
+      render();}});
+  document.addEventListener("click",ev=>{const t=ev.target.closest&&ev.target.closest("[data-vsp],#gRx,#gApl");if(!t)return;
+    if(t.dataset.vsp){FPER="";setVista(t.dataset.vsp);return;}
+    if(t.id==="gRx"){ESC.reasig={};guardarEsc();render();return;}
+    if(t.id==="gApl"&&canWrite){if(!confirm(`¿Escribir en las subtareas sin clave de Jira las fechas del escenario «${escAct().nombre}»? Las que ya están en Jira no cambian.`))return;
+      const n=aplicarEscenario();render();const r=$("gRes");if(r){r.textContent=n?`${n} subtareas con fechas nuevas`:"Las fechas ya eran las de este escenario";r.className="res ok";}}});
+}
+
 // ---- Arranque ----
 $("leyCarga").textContent=`Fila de carga: horas de desarrollo por día de ${MAIN} (${h(CAP_LJ)} h; viernes ${h(CAP_V)} h)`;
 render();
@@ -764,12 +969,15 @@ render();
   mcp=m; sample=smp; dl=dls; canWrite=!!(user&&user.isOwner&&user.isOwner()); db=dbx;
   if(db)db.collection("expediente").doc("actual").onSnapshot(s=>{const v=s&&s.data?s.data():null;EXPD=v?JSON.parse(JSON.stringify(v)):null;},()=>{});
   let first=true;
-  if(db)db.collection("orden").doc("actual").onSnapshot(s=>{const v=s&&s.data?s.data():null;if(v&&Array.isArray(v.keys)){aplicarOrden(v.keys);renderGrid();}},()=>{});
+  if(db)db.collection("orden").doc("actual").onSnapshot(s=>{const v=s&&s.data?s.data():null;if(v&&Array.isArray(v.keys)){aplicarOrden(v.keys);if(MS)softRender();else renderGrid();}},()=>{});
+  if(db&&MS)db.collection("escenario").doc("actual").onSnapshot(s=>{const v=s&&s.data?s.data():null; // escenario y reasignaciones que dejó el líder
+    if(v&&ESCS.some(e=>e.id===v.id)){ESC={id:v.id,reasig:Object.assign({},v.reasig||{})};softRender();if(!(VIEW==="general"))renderVista();}},()=>{});
   if(db){db.collection("plan").onSnapshot(snap=>{let changed=false;snap.docs.forEach(d=>{const v=d.data();
   if(!v||!HMAP[d.id]||saveTimers[d.id]||INFLIGHT[d.id]||(d.metadata&&d.metadata.hasPendingWrites))return;
   if(d.id===SEL&&editando())return; // la historia que se está editando no se pisa con lo remoto
   const remote=JSON.parse(JSON.stringify({items:v.items||[],comentarios:v.comentarios||[],transicion:v.transicion||null})); // el almacén entrega objetos congelados: se clonan para poder editarlos
   remote.items.forEach(x=>{if(!x.desc){const m=HMAP[d.id].items.find(y=>y.desc&&y.titulo===x.titulo);if(m)x.desc=m.desc;}}); // borradores del plan para lo guardado antes de que existieran
+  if(MS)remote.items.forEach(x=>{const m=HMAP[d.id].items.find(y=>(x.id&&y.id===x.id)||y.titulo===x.titulo);if(m)["cierre","depende","comparte"].forEach(f=>{if(x[f]===undefined&&m[f]!==undefined)x[f]=m[f];});}); // campos del plan multi-sprint que la base aún no tiene
   if(JSON.stringify(remote)===JSON.stringify({items:ST[d.id].items,comentarios:ST[d.id].comentarios,transicion:ST[d.id].transicion}))return; // eco de nuestro guardado: no redibujar
   ST[d.id]=remote; changed=true;});$("sstat").textContent=canWrite?"Guardado":"Solo lectura";$("sstat").className="pill "+(canWrite?"ok":"");if(changed||first){first=false;softRender();}},()=>{$("sstat").textContent="Guardado: sin acceso";$("sstat").className="pill warn";});}
   else{$("sstat").textContent="Guardado: no disponible (inicia sesión)";$("sstat").className="pill warn";canWrite=false;}
