@@ -70,3 +70,22 @@ consulta ni exporta; si nombra un expediente que no existe o al que le faltan fu
 - **🗄 Ver modelo de BD** (si el ítem trae `modelo`, o «+ Modelo de BD» para crearlo): diagrama de relaciones
   (tablas nuevas en azul, existentes en gris, 🔑 llave, 🔗 referencia, zoom) y editor para borrar o agregar
   tablas y columnas. «Guardar» anota el cambio como decisión; «Guardar y aprobar» marca el modelo aprobado.
+
+
+## Modelo de BD en Jira (desde 3.5.0)
+
+La subtarea que trae `modelo` sale a Jira con el modelo completo en la descripción (una tabla por cada tabla
+de BD, las existentes que solo se leen y la lista de relaciones) **y el diagrama como imagen incrustada**:
+
+1. Después de que el líder exporte, por cada subtarea creada que tenga `modelo`, genera la imagen con el mismo
+   dibujo de la página: `python <skill>/modelo_png.py <plan.json o el documento de la base> <id o parte del título> <salida.png>`
+   (necesita Edge o Chrome; sale a doble resolución). Lee el documento de la base de la página, no el plan
+   local: ahí están las ediciones y la aprobación del líder.
+2. Sube la imagen con la operación `uploadAttachmentToJiraIssue` del conector de Atlassian (`discover` →
+   `executeWrite`): fase 1 con `filePath` devuelve un `uploadCommand`; córrelo en la terminal y toma el `fileId`.
+3. Incrústala en la descripción con `editJiraIssue` e `inlineFileId` (queda al final de la descripción, debajo
+   del modelo en texto). No corras la fase 2 para ese mismo archivo: duplicaría el adjunto.
+4. Es una escritura en Jira: confírmala con el líder antes, issue por issue o en un solo OK para el lote.
+
+Sin terminal (el líder solo en la página): el botón **⬇ Imagen PNG** del visor descarga la misma imagen para
+adjuntarla a mano.

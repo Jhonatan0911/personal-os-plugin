@@ -1,5 +1,9 @@
 # Changelog
 
+## 3.5.0
+
+- **planear-sprint · el modelo de BD llega completo a Jira:** la descripción de la subtarea lleva una tabla por cada tabla de BD (columna, tipo, PK, referencia, null), las tablas existentes que se leen y la lista de relaciones. El diagrama va como imagen: `modelo_png.py` la genera con el mismo dibujo de la página (Edge o Chrome headless, doble resolución) y la skill la sube e incrusta en la descripción con `uploadAttachmentToJiraIssue` + `editJiraIssue` (con OK del líder). En la página, el botón «⬇ Imagen PNG» del visor descarga la misma imagen.
+
 ## 3.4.1
 
 - **planear-sprint:** «+ Modelo de BD» abre un borrador que no se guarda hasta darle «Guardar»; antes, un clic dejaba guardada una tabla vacía «Nueva_Tabla». El editor tiene «Quitar el modelo».

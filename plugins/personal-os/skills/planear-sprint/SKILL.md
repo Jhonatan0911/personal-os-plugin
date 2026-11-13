@@ -170,6 +170,8 @@ analista y el botón «Actualizar requerimiento».
   (archivo:línea), nunca se suponen. Lo que ya vive en otra tabla se lee, no se copia (p. ej. datos de contacto).
   En la página, el líder lo ve como diagrama de relaciones, lo edita (borrar o agregar tablas y columnas) y lo
   aprueba; el modelo aprobado sale en la descripción de Jira y manda sobre el texto.
+  Tras exportar, la imagen del diagrama se genera con `modelo_png.py` y se incrusta en la descripción de la
+  subtarea en Jira (con OK del líder): `references/cronograma.md`, «Modelo de BD en Jira».
 - **Las notas del líder mandan.** Antes de regenerar el cronograma o tocar una historia, lee su documento en la
   base de la página (`plan/<historia>` con ArtifactData) y trabaja sobre él: conserva sus ediciones, ids y
   estados, y si una nota del líder contradice la descripción (menos validaciones, otro alcance), ajusta la
@@ -294,6 +296,7 @@ de los mineros, página del catálogo y Monte Carlo: `references/calibracion.md`
 | `references/paso0.md` | Fase 0 (nivel del caso) y Fase 3: encargo al refutador, cómo bajar sus recortes, DoR por niveles y chequeo del paso 0 |
 | `references/niveles.md` | Contrato de los niveles de caso (A/B/C u otros) que comparten todas las piezas del flujo |
 | `references/cronograma.md` | Fase 4: generar, publicar, cómo se comporta la página, exportar y registrar |
+| `modelo_png.py` | Fase 4, tras exportar: imagen PNG del modelo de BD de una subtarea para incrustarla en Jira |
 | `references/calibracion.md` | Fase 0 si hay propuesta pendiente, y Fase 5 |
 | `generar_cronograma.py` | Se **ejecuta**: valida el plan y el expediente, aplica perfil y marca, genera el HTML |
 | `cronograma-plantilla.html`, `analista-bloque.html` | Los usa el generador; no se leen |

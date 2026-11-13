@@ -515,7 +515,7 @@ function erRender(){const it=erIt();if(!it)return;
   $("modal").innerHTML=`<div class="overlay"><div class="modal er" role="dialog" aria-label="Modelo de BD"><div style="display:flex;gap:12px;justify-content:space-between;align-items:flex-start">
     <div style="flex:1;min-width:0"><h2 style="margin:0;font-size:16px">Modelo de BD · ${esc(it.titulo)}</h2><div class="erleg"><span><i style="background:var(--action)"></i>${nN} nuevas</span><span><i style="background:var(--mid);opacity:.55"></i>${nE} existentes (solo se leen)</span><span>🔑 llave primaria · 🔗 referencia · <b>?</b> admite null</span>
       ${ERM.aprobado?`<span class="pill ok">Aprobado ${fmt(ERM.aprobado.fecha)}</span>`:`<span class="pill warn">Sin aprobar</span>`}${ERDIRTY?`<span class="pill warn">Cambios sin guardar</span>`:""}</div></div>
-    <div class="row" style="flex:none"><span class="erz-b"><button class="btn sm" data-ex="zo" title="Alejar">−</button><button class="btn sm" data-ex="zf" title="Ajustar al ancho">Ajustar</button><button class="btn sm" data-ex="zi" title="Acercar">+</button></span><button class="btn" data-ex="close">Cerrar</button></div></div>
+    <div class="row" style="flex:none"><button class="btn sm" data-ex="png" title="Descargar el diagrama como imagen para Jira">⬇ Imagen PNG</button><span class="erz-b"><button class="btn sm" data-ex="zo" title="Alejar">−</button><button class="btn sm" data-ex="zf" title="Ajustar al ancho">Ajustar</button><button class="btn sm" data-ex="zi" title="Acercar">+</button></span><button class="btn" data-ex="close">Cerrar</button></div></div>
     <div class="erw"><div class="ercv" id="ercv">${erSvg(ERM)}</div><div class="ered" id="ered">${erEditor()}</div></div>
     ${ERRO?"":`<div class="row" style="justify-content:flex-end">${ERNUEVO?`<span class="res">Borrador: no se guarda hasta que le des «Guardar».</span>`:`<button class="btn" data-ex="delmod" style="margin-right:auto">Quitar el modelo</button>`}<span class="res" id="erres"></span><button class="btn" data-ex="save">Guardar cambios</button><button class="btn pri" data-ex="ok">Guardar y aprobar el modelo</button></div>`}</div></div>`;}
 function erResumen(a,b){const L=[],na=new Map(a.tablas.map(t=>[t.nombre,t])),nb=new Map(b.tablas.map(t=>[t.nombre,t]));
@@ -532,6 +532,7 @@ function erGuardar(aprobar){const it=erIt();if(!it||ERRO)return;const cambios=er
 document.addEventListener("click",ev=>{
   const o=ev.target.closest&&ev.target.closest("button[data-er]");if(o){erOpen(SEL,o.dataset.er);return;}
   const b=ev.target.closest&&ev.target.closest("[data-ex]");if(!b||!ERM)return;const x=b.dataset.ex,ti=Number(b.dataset.et),ci=Number(b.dataset.ec);
+  if(x==="png"){erPng();return;}
   if(x==="zf"||x==="zi"||x==="zo"){const cur=ERZ==="fit"?($("ercv").firstElementChild.getBoundingClientRect().width/Number($("ercv").firstElementChild.getAttribute("viewBox").split(" ")[2])):ERZ;ERZ=x==="zf"?"fit":Math.max(.4,Math.min(2,cur*(x==="zi"?1.2:1/1.2)));$("ercv").innerHTML=erSvg(ERM);return;}
   if(x==="close"){if(ERDIRTY&&!confirm("Hay cambios sin guardar en el modelo. ¿Cerrar y perderlos?"))return;ERM=null;$("modal").innerHTML="";return;}
   if(ERRO)return;
@@ -548,8 +549,28 @@ document.addEventListener("input",ev=>{const e=ev.target;if(!ERM||ERRO||!e.datas
   if(e.dataset.ec!==undefined){const c=t.columnas[Number(e.dataset.ec)];if(!c)return;if(f==="fk"||f==="t")c[f]=v.trim()||undefined;else c[f]=v;}else t[f]=v;
   ERDIRTY=true;$("ercv").innerHTML=erSvg(ERM);});
 document.addEventListener("change",ev=>{const e=ev.target;if(ERM&&e.dataset&&e.dataset.ef==="tipo")erRender();});
+// Imagen PNG del diagrama: resuelve los colores del tema (var(--x)) para que el archivo se vea igual fuera de la página
+async function erPng(){const it=erIt();if(!it||!ERM)return;const r=$("erres");
+  try{const cs=getComputedStyle(document.documentElement);const L=erLayout(ERM),W=L.W,H=L.H,K=2;
+    let s=erSvg(ERM).replace(/var\((--[a-z0-9-]+)\)/gi,(_,v)=>cs.getPropertyValue(v).trim()||"#888");
+    s=s.replace(/<svg xmlns="http:\/\/www\.w3\.org\/2000\/svg" [^>]*?viewBox=/,`<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" viewBox=`);
+    const img=new Image();img.src="data:image/svg+xml;charset=utf-8,"+encodeURIComponent(s);await img.decode();
+    const cv=document.createElement("canvas");cv.width=W*K;cv.height=H*K;const g=cv.getContext("2d");
+    g.fillStyle=cs.getPropertyValue("--panel").trim()||"#F1F5F9";g.fillRect(0,0,cv.width,cv.height);g.scale(K,K);g.drawImage(img,0,0);
+    const blob=await new Promise(ok=>cv.toBlob(ok,"image/png"));const nom=("modelo-bd-"+(ERK||"")+".png").toLowerCase();
+    if(dl){await dl.save({filename:nom,data:blob});}else{const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download=nom;a.click();}
+    if(r){r.textContent="Imagen lista: adjúntala en la subtarea de Jira o pídele a Claude que la incruste.";r.className="res ok";}
+  }catch(e){if(r){r.textContent="No pude generar la imagen ("+((e&&(e.code||e.message))||"error")+").";r.className="res bad";}}}
+// El modelo en la descripción de Jira: una tabla por tabla de BD y las relaciones; la imagen del diagrama va incrustada aparte
 function modeloMD(m){if(!m||!m.tablas||!m.tablas.length)return"";
-  return `\n\n**Modelo de BD ${m.aprobado?"aprobado por el líder el "+fmt(m.aprobado.fecha):"propuesto (sin aprobar)"}:**\n`+m.tablas.map(t=>`- \`${t.nombre}\` (${t.tipo==="existente"?"existente, solo lectura":"nueva"}): `+t.columnas.map(c=>`${c.n}${c.pk?" PK":""}${c.t?" "+c.t:""}${c.nulo?" null":""}${c.fk?" → "+c.fk:""}`).join(", ")).join("\n");}
+  const nuevas=m.tablas.filter(t=>t.tipo!=="existente"),exist=m.tablas.filter(t=>t.tipo==="existente"),rel=[];
+  m.tablas.forEach(t=>t.columnas.forEach(c=>{if(c.fk)rel.push("| `"+t.nombre+"."+c.n+"` | `"+c.fk+"` |");}));
+  const tabla=t=>"**`"+t.nombre+"`**"+(t.nota?" — "+t.nota:"")+"\n\n| Columna | Tipo | PK | Referencia | Null |\n|---|---|---|---|---|\n"
+    +t.columnas.map(c=>"| "+c.n+" | "+(c.t||"")+" | "+(c.pk?"✓":"")+" | "+(c.fk||"")+" | "+(c.nulo?"sí":"")+" |").join("\n");
+  return "\n\n## Modelo de BD "+(m.aprobado?"(aprobado por el líder el "+fmt(m.aprobado.fecha)+")":"(propuesto, sin aprobar)")
+    +"\nEl diagrama de relaciones va como imagen en esta subtarea.\n\n### Tablas nuevas\n\n"+nuevas.map(tabla).join("\n\n")
+    +(exist.length?"\n\n### Tablas existentes que solo se leen\n\n"+exist.map(t=>"- `"+t.nombre+"`: "+(t.nota||"")).join("\n"):"")
+    +(rel.length?"\n\n### Relaciones\n\n| Columna | Apunta a |\n|---|---|\n"+rel.join("\n"):"");}
 // Recordar qué descripciones están abiertas entre redibujos
 const OPEN=new Set();
 document.addEventListener("toggle",ev=>{const d=ev.target;if(d&&d.matches&&d.matches("details.desc")){const id=d.querySelector("[data-id]");if(id){if(d.open)OPEN.add(id.dataset.id);else OPEN.delete(id.dataset.id);}}},true);
