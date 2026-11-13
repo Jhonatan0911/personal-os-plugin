@@ -617,14 +617,14 @@ async function redactarDesc(k,it,signal){
   const prompt=`Eres el analista técnico del requerimiento «${document.title}». Redacta la DESCRIPCIÓN de una SUBTAREA de Jira (no de una historia de usuario) que va a ejecutar ${respOf(it)?respOf(it).nombre:MAIN}, un desarrollador que usa Claude de copiloto. Debe ser corta, puntual y técnica: que sepa exactamente qué tocar y no se pierda. El contexto de negocio y los criterios funcionales ya están en la historia padre: no los repitas.
 Reglas:
 - Una subtarea aceptada y con horas ya no tiene nada pendiente: NO escribas «Por confirmar», «pendiente de definir», preguntas ni opciones. Si el borrador trae algo así, quítalo. Lo único permitido es una dependencia de orden con otra subtarea («necesita el script de PROY-142»).
-- Conserva del borrador lo técnico útil: rutas, archivo:línea, nombres de tablas, columnas, SP, endpoints y decisiones ya tomadas. Recorta lo demás.
-- Usa SOLO lo que está en el CONTEXTO y el EXPEDIENTE; nunca inventes nombres, valores ni fechas.
+- Si hay borrador, es la fuente principal: reordénalo y aclara la redacción, pero NO quites nada de fondo. Se conservan siempre: pasos, reglas y validaciones con sus cifras (rangos, tolerancias, estados, condiciones WHERE), valores de catálogos, «Qué NO tocar», referencias archivo:línea, nombres de tablas, columnas, SP y endpoints, criterios «CA-n de PROY-123», el contexto (decisiones D-n, ADR), las líneas «CONDICIONADO a…» o «pendiente de la confirmación de…», los avisos de bloqueo por un tercero (de quién y desde cuándo), la nota del mockup completa y la línea «Si dudas, pregunta a…». Si el borrador ya cumple las secciones, devuélvelo casi igual.
+- Usa SOLO lo que está en el CONTEXTO y el EXPEDIENTE; nunca inventes nombres, campos, valores, cifras ni fechas, ni conviertas en fijo lo que es configurable. No des por adjunto un archivo que el borrador no dice que esté adjunto, ni por resuelta una pregunta que el expediente tiene abierta.
 - MANDAN las notas del líder (subtarea.notas_del_lider_y_analisis_previo) y el modelo de BD (subtarea.modelo_bd): si el borrador o el expediente dicen otra cosa (más validaciones, otras columnas, otro alcance), sigue al líder y quita del borrador lo que contradiga. Las tablas y columnas salen del modelo de BD, no del borrador.
-Markdown en español, sin títulos de nivel 1, máximo unas 150 palabras, con estas secciones:
+Markdown en español, sin títulos de nivel 1, con estas secciones (unas 150 palabras si no hay borrador; con borrador, la extensión que necesite para no perder nada):
 **Objetivo** — una línea.
 **Qué hacer** — de 2 a 6 pasos técnicos numerados.
 **Dónde** — repo y archivos, tablas o endpoints.
-**Criterios técnicos** — de 1 a 3, verificables por el dev o en el PR (no criterios funcionales).
+**Criterios técnicos** — de 1 a 3, verificables por el dev o en el PR, más los «CA-n» que traiga el borrador.
 **Depende de** — solo si hay dependencia de orden.
 No pongas horas, fechas ni responsable: se agregan aparte. Devuelve SOLO el markdown.
 CONTEXTO: ${JSON.stringify(ctxSub(k,it))}
@@ -694,7 +694,7 @@ $("bExport").addEventListener("click",()=>{
   const L=ops(), nsub=L.filter(o=>o.tipo==="sub").length;
   $("modal").innerHTML=`<div class="overlay" id="ov"><div class="modal wide" role="dialog" aria-label="Cambios para Jira"><h2>Cambios para Jira (${L.length})</h2>
     ${!canWrite?`<div class="ro">Solo el líder puede exportar.</div>`:""}
-    ${L.length?`<div class="empty">Revisa cada cambio. Se escriben en Jira solo los marcados, uno por uno, con tu cuenta.${nsub?` Ninguna subtarea sale solo con su título: el paso 1 interpreta la solución y redacta su descripción; la revisas y la corriges aquí antes del paso 2.`:""}</div>`+L.map((o,i)=>`<div class="op opx"><label class="opl"><input type="checkbox" data-op="${i}" checked ${canWrite?"":"disabled"}><span>${opLabel(o)}</span><span class="res" id="res${i}"></span></label>
+    ${L.length?`<div class="empty">Revisa cada cambio. Se escriben en Jira solo los marcados, uno por uno, con tu cuenta.${nsub?` Ninguna subtarea sale solo con su título: el paso 1 interpreta la solución y redacta la descripción de las que no la tienen (las ya redactadas se conservan tal cual); la revisas y la corriges aquí antes del paso 2.`:""}</div>`+L.map((o,i)=>`<div class="op opx"><label class="opl"><input type="checkbox" data-op="${i}" checked ${canWrite?"":"disabled"}><span>${opLabel(o)}</span><span class="res" id="res${i}"></span></label>
       ${o.tipo==="sub"?`<textarea class="dsc" data-od="${i}" aria-label="Descripción de ${esc(o.it.titulo)}" ${canWrite?"":"disabled"} placeholder="Sin descripción todavía: el paso 1 la redacta.">${esc(o.it.desc||"")}</textarea><span class="res" id="rdx${i}"></span>`:""}</div>`).join(""):`<div class="empty">No hay nada pendiente: acepta subtareas, escribe un comentario o elige un cambio de estado.</div>`}
     <div class="row" style="justify-content:flex-end"><button class="btn" id="bClose">Cerrar</button>${L.length&&canWrite&&nsub?`<button class="btn pri" id="bPrep">1 · Interpretar y redactar descripciones</button>`:""}${L.length&&canWrite?`<button class="btn ${nsub?"":"pri"}" id="bRun">${nsub?"2 · ":""}Escribir en Jira</button>`:""}</div></div></div>`;
   $("bClose").onclick=()=>{$("modal").innerHTML="";};
@@ -708,6 +708,10 @@ async function prepDescs(L,btn){
     const cb=document.querySelector(`[data-op="${i}"]`), ta=document.querySelector(`[data-od="${i}"]`), out=$("rdx"+i); if(!cb||!cb.checked||!ta)continue;
     btn.textContent=`Redactando ${o.it.titulo.slice(0,40)}…`; out.textContent="Interpretando la solución…"; out.className="res";
     o.it.desc=ta.value; // lo que el líder ya escribió es el borrador
+    // Una descripción ya redactada y revisada no se vuelve a pasar por el analista: reescribirla
+    // en lote borró criterios, reglas y condicionados en un caso real (13/11/2026). Para ajustarla
+    // está el botón de cada subtarea, que se usa una por una y se revisa.
+    if(ta.value.trim().length>=DESC_MIN){out.textContent="Ya redactada: se conserva tal cual"; out.className="res ok"; continue;}
     try{const d=await redactarDesc(o.k,o.it); ta.value=d; o.it.desc=d; touched.add(o.k); out.textContent="Redactada: revísala"; out.className="res ok";}
     catch(e){out.textContent="No pude redactarla ("+(e.code||"error")+"): escríbela a mano"; out.className="res bad";}}
   touched.forEach(k=>save(k)); btn.textContent="1 · Volver a redactar"; btn.disabled=false;

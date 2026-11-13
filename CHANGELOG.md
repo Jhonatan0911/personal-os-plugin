@@ -1,5 +1,9 @@
 # Changelog
 
+## 3.5.2
+
+- **planear-sprint · el paso 1 del exportador ya no reescribe lo revisado:** «Interpretar y redactar descripciones» solo redacta las subtareas sin descripción; las ya redactadas se conservan tal cual. Con borrador, el analista ya no recorta a 150 palabras: conserva pasos, reglas con sus cifras, valores de catálogos, «Qué NO tocar», criterios CA-n, contexto, condicionados, bloqueos de terceros, la nota del mockup y «Si dudas, pregunta». No inventa campos ni cifras, no vuelve fijo lo configurable y no da por adjunto ni por resuelto lo que no lo está.
+
 ## 3.5.1
 
 - **planear-sprint:** nueva clave `planeacion.reglas_org` en `fuentes.yaml`: reglas de la organización (quién corre scripts y jobs, convenciones de BD…) que la skill lee en la Fase 0 y cumple en toda subtarea.
