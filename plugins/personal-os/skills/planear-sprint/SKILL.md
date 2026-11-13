@@ -52,7 +52,7 @@ ejemplos, referencias) están en `${CLAUDE_SKILL_DIR}`. Los scripts del plugin s
 
 ## Fase 0 · Insumos (preguntar solo lo que falte)
 
-1. Lee `fuentes.yaml` (`jira`, `equipo`, `m365`, `planeacion`). Claves, valores por defecto y perfiles:
+1. Lee `fuentes.yaml` (`jira`, `equipo`, `m365`, `planeacion`). Si existe `planeacion.reglas_org`, son reglas de la organización que se cumplen en **toda** subtarea (quién corre scripts y jobs, convenciones de BD, etc.): léelas antes de descomponer y no propongas nada que las contradiga. Claves, valores por defecto y perfiles:
    `references/configuracion.md`.
 2. **Matriz:** `planeacion.matriz_archivo` → `planeacion.matriz_tiempos` con tipos → la de ejemplo del
    plugin (`matriz-tiempos-ejemplo.yaml`), y en ese caso **dilo** en el resumen. Las referencias de

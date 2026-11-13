@@ -1,5 +1,9 @@
 # Changelog
 
+## 3.5.1
+
+- **planear-sprint:** nueva clave `planeacion.reglas_org` en `fuentes.yaml`: reglas de la organización (quién corre scripts y jobs, convenciones de BD…) que la skill lee en la Fase 0 y cumple en toda subtarea.
+
 ## 3.5.0
 
 - **planear-sprint · el modelo de BD llega completo a Jira:** la descripción de la subtarea lleva una tabla por cada tabla de BD (columna, tipo, PK, referencia, null), las tablas existentes que se leen y la lista de relaciones. El diagrama va como imagen: `modelo_png.py` la genera con el mismo dibujo de la página (Edge o Chrome headless, doble resolución) y la skill la sube e incrusta en la descripción con `uploadAttachmentToJiraIssue` + `editJiraIssue` (con OK del líder). En la página, el botón «⬇ Imagen PNG» del visor descarga la misma imagen.

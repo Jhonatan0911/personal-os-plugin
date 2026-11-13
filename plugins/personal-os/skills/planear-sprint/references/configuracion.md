@@ -18,6 +18,7 @@ de organización o de marca.
 | `planeacion.matriz_tiempos` | Matriz en línea (referencias cortas o tipos con `base`) | — |
 | `planeacion.niveles` | Nombres de nivel válidos | Los de la matriz |
 | `planeacion.perfil` | JSON de perfil de la organización para el generador (§3) | Sin perfil |
+| `planeacion.reglas_org` | Lista de reglas de la organización que aplican a toda subtarea (p. ej. «no hay DBA: los scripts y jobs los corre el dev», convenciones de nombres y auditoría de tablas) | Sin reglas |
 | `planeacion.marca` | JSON de marca del cronograma (§4) | Página neutra |
 | `planeacion.carpeta_trabajo` | Dónde dejar `plan.json`, `expediente.json` y el HTML | `<stateDir>/estimaciones/<slug>/` |
 | `planeacion.tablero_central` | `{url, coleccion}` del tablero donde se registran los cronogramas | No se registra |
