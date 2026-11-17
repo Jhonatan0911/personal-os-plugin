@@ -52,6 +52,8 @@ plan.json (campos):
   "expediente": "expediente.json",                        # opcional: semilla del expediente (relativa al plan);
                                                           #   se valida aquí y se carga con ArtifactData, nunca en el HTML
   "marca": "marca.json",                                  # opcional: perfil de marca (ruta relativa al plan u objeto)
+  "mockups": {"archivo": "mockups/mockups.html",          # opcional: página de mockups (relativa al plan) que se
+              "titulo": "Mockups · Dashboard"},           #   abre desde el botón «🖼» en un panel; se publica con files
   "historias": [
     {"key": "PROY-142", "t": "Título corto", "nota": "Qué hay hoy", "esc": [["Pieza","ok|dif|nueva"]],
      "coment": "Comentario opcional para Jira", "ficticia": false,
@@ -716,6 +718,66 @@ def resumen_multisprint(ms, ctx, avisos):
     return "\n".join(lineas)
 
 
+MOCKUPS_INI, MOCKUPS_FIN = "<!-- MOCKUPS:INI -->", "<!-- MOCKUPS:FIN -->"
+MOCKUPS_BLOQUE = """<style>
+#mk-btn{position:fixed;right:16px;bottom:16px;z-index:9998;border:0;border-radius:999px;padding:10px 16px;
+ background:var(--action,#134095);color:#fff;font:600 13px/1 system-ui,sans-serif;box-shadow:0 4px 14px rgba(0,0,0,.25);cursor:pointer}
+#mk-btn:focus-visible,#mk-barra button:focus-visible{outline:3px solid #7FA2E8;outline-offset:2px}
+#mk-capa{position:fixed;inset:0;z-index:9999;display:none;background:rgba(10,26,79,.55);padding:12px}
+#mk-capa.on{display:flex;flex-direction:column}
+#mk-capa:fullscreen{padding:0}
+#mk-barra{display:flex;flex-wrap:wrap;align-items:center;gap:8px;background:var(--brand,#0A1A4F);color:#fff;padding:8px 12px;
+ border-radius:10px 10px 0 0;font:500 13px system-ui,sans-serif}
+#mk-barra span{flex:1;min-width:160px}
+#mk-barra button{background:transparent;border:1px solid rgba(255,255,255,.6);color:#fff;border-radius:6px;padding:4px 10px;cursor:pointer;font:inherit}
+#mk-barra small{flex-basis:100%;opacity:.8}
+#mk-capa iframe{flex:1;width:100%;border:0;background:#fff;border-radius:0 0 10px 10px}
+</style>
+<button id="mk-btn" type="button" aria-haspopup="dialog">🖼 __MK_TIT__</button>
+<div id="mk-capa" role="dialog" aria-modal="true" aria-label="__MK_TIT__">
+ <div id="mk-barra"><span>__MK_TIT__</span>
+  <button type="button" id="mk-full">⛶ Pantalla completa</button>
+  <button type="button" id="mk-desc" hidden>⬇ Descargar HTML</button>
+  <button type="button" id="mk-cerrar">Cerrar ✕</button>
+  <small id="mk-msg" hidden></small></div>
+ <iframe title="__MK_TIT__" loading="lazy" data-src="__MK_SRC__"></iframe>
+</div>
+<script>
+(function(){
+ var b=document.getElementById("mk-btn"),c=document.getElementById("mk-capa"),f=c.querySelector("iframe"),
+     msg=document.getElementById("mk-msg"),dsc=document.getElementById("mk-desc"),dl=null;
+ function aviso(t){msg.textContent=t;msg.hidden=!t;}
+ function abrir(){if(!f.getAttribute("src"))f.src=f.dataset.src;c.classList.add("on");document.getElementById("mk-cerrar").focus();}
+ function cerrar(){if(document.fullscreenElement)document.exitFullscreen().catch(function(){});c.classList.remove("on");b.focus();}
+ b.addEventListener("click",abrir);document.getElementById("mk-cerrar").addEventListener("click",cerrar);
+ c.addEventListener("click",function(e){if(e.target===c)cerrar();});
+ document.addEventListener("keydown",function(e){if(e.key==="Escape"&&c.classList.contains("on")&&!document.fullscreenElement)cerrar();});
+ // Abrir el archivo en otra pestaña no sirve: claude.ai solo lo deja cargar dentro de la página (ERR_BLOCKED_BY_RESPONSE).
+ document.getElementById("mk-full").addEventListener("click",function(){
+  if(document.fullscreenElement){document.exitFullscreen().catch(function(){});return;}
+  if(!c.requestFullscreen){aviso("Este navegador no permite pantalla completa aquí: usa «Descargar HTML» y ábrelo en el navegador.");return;}
+  c.requestFullscreen().then(function(){aviso("");}).catch(function(){aviso("La pantalla completa está bloqueada en esta vista: usa «Descargar HTML» y ábrelo en el navegador.");});
+ });
+ try{if(window.claude&&window.claude.use)window.claude.use("downloads").then(function(d){dl=d;if(d)dsc.hidden=false;}).catch(function(){});}catch(e){}
+ dsc.addEventListener("click",function(){
+  if(!dl)return;
+  fetch(f.dataset.src).then(function(r){if(!r.ok)throw new Error(r.status);return r.text();})
+   .then(function(txt){return dl.save({filename:(f.dataset.src.split("/").pop()||"mockups.html"),data:txt});})
+   .then(function(){aviso("");}).catch(function(){aviso("No se pudo descargar (o se canceló).");});
+ });
+})();
+</script>"""
+
+
+def inyectar_mockups(t, src, titulo):
+    """Pone el botón y el panel de mockups antes del último </body> (idempotente por marcadores)."""
+    t = re.sub(re.escape(MOCKUPS_INI) + r".*?" + re.escape(MOCKUPS_FIN), "", t, flags=re.S)
+    bloque = (MOCKUPS_INI + "\n" + MOCKUPS_BLOQUE.replace("__MK_TIT__", html.escape(titulo))
+              .replace("__MK_SRC__", html.escape(src)) + "\n" + MOCKUPS_FIN)
+    i = t.lower().rfind("</body>")
+    return t[:i] + bloque + "\n" + t[i:] if i >= 0 else t + "\n" + bloque
+
+
 def main(argv):
     for flujo in (sys.stdout, sys.stderr):  # consolas en cp1252 (con -I no vale PYTHONIOENCODING)
         try:
@@ -914,6 +976,19 @@ def main(argv):
         if k not in t:
             falla(f"falta el marcador {k} en la plantilla")
         t = t.replace(k, v)
+    mk = plan.get("mockups")
+    linea_mockups = ""
+    if mk:
+        mk = {"archivo": mk} if isinstance(mk, str) else dict(mk)
+        rel = (mk.get("archivo") or "").replace("\\", "/").lstrip("./")
+        if not rel or rel.startswith("/") or ".." in rel.split("/") or not rel.lower().endswith(".html"):
+            falla("«mockups.archivo» debe ser una ruta .html relativa al plan, sin «..» (p. ej. mockups/mockups.html)")
+        abs_mk = os.path.join(base_plan, rel)
+        if not os.path.isfile(abs_mk):
+            avisos.append(f"mockups: no existe {abs_mk}; el botón se pinta pero el panel saldrá vacío")
+        t = inyectar_mockups(t, rel, mk.get("titulo") or "Mockups")
+        linea_mockups = (f"\nmockups: publica con files {{\"{rel}\": \"<copia de {abs_mk} bajo el cwd o el scratchpad>\"}}"
+                         " (Artifact no publica rutas fuera de ellos)")
     with open(out, "w", encoding="utf-8", newline="\n") as f:
         f.write(t)
 
@@ -941,6 +1016,7 @@ def main(argv):
              if p0 else "")
           + (f"\nexpediente: {exp_ruta} → tras publicar, cárgalo con ArtifactData set en expediente/actual"
              if exp_ruta else "")
+          + linea_mockups
           + "".join("\naviso: " + a for a in avisos))
 
 

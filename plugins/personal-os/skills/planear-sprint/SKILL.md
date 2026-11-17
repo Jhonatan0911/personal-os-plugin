@@ -243,6 +243,8 @@ Con lo que devuelvan (`references/paso0.md`):
 
    Publicar (capacidades, sin herramienta `Artifact`, cargar el expediente con `ArtifactData`, registrar
    en el tablero central y la nota de alcance): `references/cronograma.md`.
+   Si hay mockups (Stitch, Figma u otro), van dentro de la página con el campo `mockups` del plan y se
+   publican con `files`: `references/cronograma.md`, «Mockups dentro del cronograma».
    El generador avisa si el expediente v2 no tiene el chequeo del paso 0 o la refutación: **no exportes
    sin ellos**.
 2. **Resumen en el chat:** chequeo del paso 0 y qué porción entra, refutaciones con su alternativa (cada

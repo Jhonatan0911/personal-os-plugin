@@ -4,7 +4,8 @@ Léelo en la Fase 4: al generar, publicar y registrar el cronograma, o cuando el
 comporta la página (carga, reprogramar, exportar).
 
 Secciones: 1 Generar · 2 Publicar · 3 Cómo se comporta · 4 Exportar a Jira · 5 Después de publicar ·
-Panel de cada subtarea · Modelo de BD en Jira · 6 Modo requerimiento multi-sprint (campos, cálculo, página).
+Mockups dentro del cronograma · Panel de cada subtarea · Modelo de BD en Jira · 6 Modo requerimiento
+multi-sprint (campos, cálculo, página).
 
 ## 1. Generar
 
@@ -62,6 +63,29 @@ consulta ni exporta; si nombra un expediente que no existe o al que le faltan fu
   entrega, estado, nota}`. Al cerrar o mover la entrega, actualiza ese documento con `if_version`.
 - **Compromiso con fecha**: si el sprint tiene una entrega comprometida, propón crear su nota en
   `<stateDir>/alcances/` con el cronograma como fuente viva (los puntos se leen de ahí, no se copian).
+
+
+## Mockups dentro del cronograma (desde 3.7.0)
+
+Para que el líder y el dev vean las pantallas sin salir de la página:
+
+1. Arma **una sola página HTML de mockups** (las pantallas en pestañas, datos ficticios), con su propio
+   `<!doctype html>`. Si vienen de Stitch, baja el HTML de cada pantalla con `download_file` (no los PNG:
+   pesan demasiado para pasar por la conversación) y **límpialo**: quita lo que la herramienta inventó fuera
+   del alcance (entidades, campos, botones o reglas que nadie pidió) y fechas viejas. Scripts solo de CDN
+   permitidos y con versión exacta (p. ej. `https://cdn.tailwindcss.com/3.4.16`).
+2. Guárdala junto al plan (p. ej. `mockups/mockups.html`) y declárala en el plan:
+   `"mockups": {"archivo": "mockups/mockups.html", "titulo": "Mockups · <tema>"}`.
+3. El generador pinta un botón fijo **«🖼 <titulo>»** que abre la página en un panel, con **Pantalla completa**
+   y **Descargar HTML** (este usa la capacidad `downloads`, que el cronograma ya declara). Sobrevive a cada
+   regeneración porque sale del plan.
+4. **Publica con `files`**: `{"mockups/mockups.html": "<copia bajo el cwd o el scratchpad>"}`. Artifact no
+   acepta rutas fuera de ellos: copia antes el archivo al scratchpad. Si los mockups no cambiaron, al
+   republicar no hace falta volver a mandarlo (los archivos que no se pasan se conservan).
+
+Gotcha: **no pongas un enlace para abrir el archivo en otra pestaña**. claude.ai sirve los archivos
+adjuntos desde un dominio que solo se deja cargar dentro de la página (`claude.ai/code/frame/…` →
+`ERR_BLOCKED_BY_RESPONSE`). Para verlo aparte está «Descargar HTML».
 
 
 ## Panel de cada subtarea (desde 3.4.0)

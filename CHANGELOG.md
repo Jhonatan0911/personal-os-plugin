@@ -1,5 +1,10 @@
 # Changelog
 
+## 3.7.0
+
+- **planear-sprint · mockups dentro del cronograma:** campo opcional `mockups` en el plan (`{archivo, titulo}`, ruta `.html` relativa al plan). El generador pinta un botón fijo «🖼» que abre la página de mockups en un panel con **Pantalla completa** y **Descargar HTML** (capacidad `downloads`), y avisa cómo publicarla con `files`. Sobrevive a cada regeneración.
+- Documentado en `references/cronograma.md`: armar una sola página de mockups desde el HTML de Stitch (`download_file`, no PNG), limpiarla de lo inventado fuera del alcance, y el gotcha de no enlazar el archivo en otra pestaña (claude.ai lo bloquea con `ERR_BLOCKED_BY_RESPONSE`).
+
 ## 3.6.0
 
 - **planear-sprint · modo requerimiento multi-sprint:** un solo cronograma para todo un requerimiento de varios sprints. Se activa con `sprints` en el plan (sin ese campo, todo igual que antes). Campos nuevos opcionales: `sprints[]` (estado, responsable, inicio mínimo, avance, fases), `meta` (fin de desarrollo y entrega), `escenarios[]` de personas (quién toma cada sprint y desde cuándo entra la persona nueva); en la historia `sprint` y `keys`; en el ítem `id`, `responsable`, `depende`, `cierre` y `comparte`.
