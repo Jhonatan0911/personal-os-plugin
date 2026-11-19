@@ -76,7 +76,11 @@ class BuildTest(unittest.TestCase):
     def test_vista(self):
         rc, _ = self.build("--vista", str(self.tmp / "v.html"))
         self.assertEqual(rc, 0)
-        self.assertIn("Convenciones de desarrollo", (self.tmp / "v.html").read_text(encoding="utf-8"))
+        pagina = (self.tmp / "v.html").read_text(encoding="utf-8")
+        self.assertIn("Convenciones de desarrollo", pagina)
+        self.assertIn("nadie se conecta", pagina)            # texto_equipo manda en la página
+        self.assertNotIn("Nunca conectarse", pagina)         # el texto para el asistente no sale
+        self.assertIn("Política de acceso a datos", pagina)  # fuente_equipo
 
     def tearDown(self):
         shutil.rmtree(self.tmp, ignore_errors=True)

@@ -21,8 +21,10 @@ reglas:
   - id: RE-001
     titulo: Producción no se toca
     capa: nucleo
-    regla: "Nunca conectarse ni ejecutar nada contra servidores de producción."
+    regla: "Nunca conectarse ni ejecutar nada contra servidores de producción."   # le habla al asistente
     fuente: "N-001"
+    texto_equipo: "Desde desarrollo nadie se conecta ni ejecuta nada contra producción."   # opcional: lo que muestra la página de convenciones
+    fuente_equipo: "Política de acceso a datos (Arquitectura, 2026)"                       # opcional: la fuente por su nombre real
     cumplimiento: [instruccion, bloqueo]
     vigente_desde: 2026-01-01
 

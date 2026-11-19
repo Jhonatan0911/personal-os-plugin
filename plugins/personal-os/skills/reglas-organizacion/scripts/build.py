@@ -193,7 +193,9 @@ def vista_html(reg, repos):
     m = reg.get("marca") or {}
     pri, sec = m.get("primario", "#1f4e79"), m.get("secundario", "#2e86c1")
     nombre = html.escape(org(reg))
-    capas = [("nucleo", "Siempre vigentes"), ("archivo", "Según el archivo que se toca"), ("momento", "En un momento del trabajo")]
+    # La página es para personas: usa `texto_equipo` / `fuente_equipo` (la norma como la lee el equipo) cuando
+    # existen; `regla` / `fuente` le hablan al asistente y solo se muestran si la regla no tiene versión de equipo.
+    capas = [("nucleo", "Para todo desarrollo"), ("archivo", "Por tecnología"), ("momento", "En un momento del trabajo")]
     filas = []
     for clave, titulo in capas:
         rs = [r for r in reg["reglas"] if r["capa"] == clave]
@@ -201,14 +203,17 @@ def vista_html(reg, repos):
             continue
         filas.append(f"<h2>{titulo}</h2>")
         for r in rs:
+            equipo = bool(r.get("texto_equipo"))
             extra = ""
             if r.get("paths"):
                 extra += "<span class='tag'>" + " ".join(html.escape(p) for p in r["paths"]) + "</span>"
-            for c in r.get("cumplimiento") or []:
-                extra += f"<span class='tag c-{html.escape(c)}'>{html.escape(c.replace('_', ' '))}</span>"
-            texto = html.escape(r["regla"].strip()).replace("\n", "<br>")
+            if not equipo:
+                for c in r.get("cumplimiento") or []:
+                    extra += f"<span class='tag c-{html.escape(c)}'>{html.escape(c.replace('_', ' '))}</span>"
+            texto = html.escape((r.get("texto_equipo") or r["regla"]).strip()).replace("\n", "<br>")
+            fuente = r.get("fuente_equipo") or r["fuente"]
             filas.append(f"<article><h3><b>{html.escape(r['id'])}</b> {html.escape(r['titulo'])}</h3><p>{texto}</p>"
-                         f"<footer>{extra}<span class='src'>Fuente: {html.escape(r['fuente'])} · vigente desde "
+                         f"<footer>{extra}<span class='src'>Fuente: {html.escape(fuente)} · vigente desde "
                          f"{html.escape(str(r['vigente_desde']))}</span></footer></article>")
     nuevos = "".join(f"<li><code>{html.escape(x)}</code></li>" for x in repos.get("nuevos") or [])
     logo = ""
@@ -234,7 +239,7 @@ footer{{display:flex;flex-wrap:wrap;gap:6px;align-items:center;font-size:.8rem;c
 .tag{{border:1px solid var(--bd);border-radius:999px;padding:1px 8px}} .c-bloqueo{{border-color:#cf222e;color:#cf222e}}
 .src{{margin-left:auto}} code{{font-size:.85rem}} ul{{columns:2}} @media (max-width:600px){{ul{{columns:1}}.src{{margin-left:0}}}}
 </style></head><body><header><div>{logo}<h1>Convenciones de desarrollo · {nombre}</h1>
-<p>Reglas vigentes para todo desarrollo, también cuando se trabaja con asistentes de IA. Las marcadas «bloqueo» las hace cumplir el sistema, no la memoria.</p></div></header>
+<p>Reglas vigentes para todo desarrollo, se trabaje o no con asistentes de IA. Cada una cita el documento que la exige.</p></div></header>
 <main>{''.join(filas)}<h2>Proyectos nuevos</h2><p>Aplican las guías de arquitectura:</p><ul>{nuevos or '<li>ninguno declarado</li>'}</ul></main></body></html>
 """
 

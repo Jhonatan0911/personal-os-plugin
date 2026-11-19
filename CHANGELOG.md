@@ -1,5 +1,9 @@
 # Changelog
 
+## 3.10.1
+
+- **reglas-organizacion · página de convenciones para el equipo:** campos opcionales `texto_equipo` y `fuente_equipo` por regla. La página (`--vista`) muestra la norma como la lee el equipo y la fuente por su nombre real, y oculta las etiquetas de cumplimiento del asistente; `regla` y `fuente` siguen siendo lo que cumple Claude. Sin esos campos, la página usa el texto de siempre.
+
 ## 3.10.0
 
 - **Nueva skill `reglas-organizacion`:** registro único de las reglas de la organización (`<config>/reglas-empresa/registro.yaml` + `repos.yaml`, plantillas en la skill). `scripts/build.py` genera por capas: núcleo siempre presente y reglas por tipo de archivo en `~/.claude/rules/<salida>/` (con `paths:`), `reglas_empresa.por_skill` y `revision_pr` en `fuentes.yaml`, la configuración del hook y del vigía, y con `--vista` una página de convenciones con la marca de la organización. Valida antes de escribir (ids, campos, tope de 40 reglas en el núcleo, secciones escritas a mano) y no toca nada si falla.
