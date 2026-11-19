@@ -52,7 +52,7 @@ ejemplos, referencias) están en `${CLAUDE_SKILL_DIR}`. Los scripts del plugin s
 
 ## Fase 0 · Insumos (preguntar solo lo que falte)
 
-1. Lee `fuentes.yaml` (`jira`, `equipo`, `m365`, `planeacion`). Si existe `planeacion.reglas_org`, son reglas de la organización que se cumplen en **toda** subtarea (quién corre scripts y jobs, convenciones de BD, etc.): léelas antes de descomponer y no propongas nada que las contradiga. Claves, valores por defecto y perfiles:
+1. Lee `fuentes.yaml` (`jira`, `equipo`, `m365`, `planeacion`). Si existe `planeacion.reglas_org`, son reglas de la organización que se cumplen en **toda** subtarea (quién corre scripts y jobs, convenciones de BD, etc.): léelas antes de descomponer y no propongas nada que las contradiga. Si existe `reglas_empresa.por_skill.planear-sprint`, son las políticas formales de la organización para recibir, aceptar y estimar (canal de entrada, un ticket por tema, plazo de respuesta, qué debe incluir la estimación): aplícalas como **verificaciones** — en el paso 0 (lo que llegó fuera del canal o mezcla temas no se acepta: va al correo de escalada), en la descomposición (si una regla exige un componente en la estimación, como documentación o despliegue, va como subtarea con sus horas) y en el resumen (plazo de entrega de la estimación con su fecha límite). Cita el `id` de la regla en cada observación que nazca de ella. Claves, valores por defecto y perfiles:
    `references/configuracion.md`.
 2. **Matriz:** `planeacion.matriz_archivo` → `planeacion.matriz_tiempos` con tipos → la de ejemplo del
    plugin (`matriz-tiempos-ejemplo.yaml`), y en ese caso **dilo** en el resumen. Las referencias de
@@ -247,7 +247,8 @@ Con lo que devuelvan (`references/paso0.md`):
    publican con `files`: `references/cronograma.md`, «Mockups dentro del cronograma».
    El generador avisa si el expediente v2 no tiene el chequeo del paso 0 o la refutación: **no exportes
    sin ellos**.
-2. **Resumen en el chat:** chequeo del paso 0 y qué porción entra, refutaciones con su alternativa (cada
+2. **Resumen en el chat:** chequeo del paso 0 y qué porción entra, reglas de `reglas_empresa.por_skill.planear-sprint`
+   que no se cumplen (con su `id`), refutaciones con su alternativa (cada
    una en una línea), horas propuestas frente a la capacidad del sprint, fin de desarrollo según el plan
    frente al cronograma, cortes propuestos, pendientes por definir con sus horas, bloqueos de terceros
    (desde cuándo y de quién) y los tipos «sin matriz».

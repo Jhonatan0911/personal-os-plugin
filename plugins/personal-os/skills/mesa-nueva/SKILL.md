@@ -274,6 +274,12 @@ transversales; la **convención obligatoria de `publicacion_req_<id>.sql` / `rol
 `SET XACT_ABORT ON`, append-only, **y Claude no los ejecuta**); y las reglas de BD con los wrappers
 y sus flags (`-ConfirmDb`, `TOP(N)`, `--Limit`, `--Project`, `-DryRun`).
 
+**Reglas de la organización en el `CLAUDE.md`.** Si `fuentes.yaml` trae `reglas_empresa.por_skill.mesa-nueva`,
+agrega la sección «Reglas de la organización» con cada regla en una línea y su `id`, sin copiar los
+documentos fuente. Si algún repo de la mesa está en `revision_pr.proyectos_nuevos.repos_nuevos`, márcalo
+como **nuevo** en la tabla de proyectos y enlaza ahí las guías de arquitectura (`guia_backend`,
+`guia_frontend`); los demás quedan como legado y esas guías no les aplican. Sin esas claves, la sección no va.
+
 ## Paso 7 — Cierre (requiere OK explícito)
 
 Al terminar los pasos 0-6, **reporta y propón** — no lo ejecutes de corrido:

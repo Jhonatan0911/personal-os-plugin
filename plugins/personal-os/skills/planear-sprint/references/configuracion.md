@@ -19,6 +19,7 @@ de organización o de marca.
 | `planeacion.niveles` | Nombres de nivel válidos | Los de la matriz |
 | `planeacion.perfil` | JSON de perfil de la organización para el generador (§3) | Sin perfil |
 | `planeacion.reglas_org` | Lista de reglas de la organización que aplican a toda subtarea (p. ej. «no hay DBA: los scripts y jobs los corre el dev», convenciones de nombres y auditoría de tablas) | Sin reglas |
+| `reglas_empresa.por_skill.planear-sprint` | Políticas formales de la organización para recibir, aceptar y estimar: lista de `{id, titulo, regla, fuente}` (p. ej. canal de entrada, un ticket por tema, plazo de respuesta de la estimación, componentes obligatorios en la estimación). Se aplican como verificaciones en el paso 0, la descomposición y el resumen. Suele generarse desde un registro de reglas de la organización | Sin políticas |
 | `planeacion.marca` | JSON de marca del cronograma (§4) | Página neutra |
 | `planeacion.carpeta_trabajo` | Dónde dejar `plan.json`, `expediente.json` y el HTML | `<stateDir>/estimaciones/<slug>/` |
 | `planeacion.tablero_central` | `{url, coleccion}` del tablero donde se registran los cronogramas | No se registra |

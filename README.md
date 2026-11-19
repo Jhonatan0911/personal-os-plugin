@@ -143,7 +143,8 @@ Skills que se activan por lo que pides: `brief-diario`, `planear-sprint` («plan
 arma y publica el tablero de planeación compartido, que se configura desde su pestaña ⚙ Configuración sin
 editar JSON),
 `timesheet`, `consola-neuronal`, `tablero-diario`, `cerrar-tarea`, `reconciliar`, y las del flujo del
-líder: `mapa-criticidad`, `revisar-pr`, `certificar-funcional`, `worklist-lider` («la cabina del líder»),
+líder: `mapa-criticidad`, `revisar-pr`, `certificar-funcional`, `paso-a-produccion` («arma el paquete para
+desplegar»), `worklist-lider` («la cabina del líder»),
 `mesa-nueva` («monta una mesa»: workspace multi-repo de Azure DevOps), `migrar-ramas` («migrar ramas»,
 Branching V2 entre proyectos de Azure DevOps), `regresion-guiada` («arranca la regresión»),
 `informe-desarrollo` («informe del desarrollo»), `redactar` (textos en tu voz, sin enviar),

@@ -1,5 +1,11 @@
 # Changelog
 
+## 3.8.0
+
+- **Nueva skill `paso-a-produccion`:** arma y verifica el paquete que la organización exige antes de desplegar a producción. La lista de entregables y aprobaciones vive en la sección `paso_produccion` de `fuentes.yaml` (ejemplo en `config-ejemplo.yaml`); `scripts/paquete.py` la cruza contra el expediente (campos con contenido) y la carpeta del paquete (archivos por prefijo), escribe `paquete.json` y `paquete.md` y sale con 0 (completo), 1 (falta algo) o 2 (sin expediente o configuración). Guía para producir los faltantes técnicos desde el código (impacto por `git diff`, diagramas en Mermaid) y borrador del correo de aprobación. Nunca despliega ni envía.
+- **Reglas de la organización por skill:** clave nueva `reglas_empresa.por_skill.<skill>` en `fuentes.yaml`, una lista de `{id, titulo, regla, fuente}` (suele generarse desde un registro de reglas). `planear-sprint` aplica las suyas como verificaciones en el paso 0, la descomposición y el resumen; `mesa-nueva` las lleva al `CLAUDE.md` de la mesa y marca como nuevos (con sus guías de arquitectura) los repos de `revision_pr.proyectos_nuevos.repos_nuevos`; `paso-a-produccion` nombra la regla que exige el paquete.
+- **mesa-nueva · PowerShell 5.1:** `dbread.ps1`, `mesa-clonar.ps1` y `mesa-status.ps1` resuelven su ruta por defecto dentro del script, porque en PS 5.1 `` puede llegar vacío en los valores por defecto de `param()` (la corrección ya estaba en la copia instalada y no en el plugin).
+
 ## 3.7.0
 
 - **planear-sprint · mockups dentro del cronograma:** campo opcional `mockups` en el plan (`{archivo, titulo}`, ruta `.html` relativa al plan). El generador pinta un botón fijo «🖼» que abre la página de mockups en un panel con **Pantalla completa** y **Descargar HTML** (capacidad `downloads`), y avisa cómo publicarla con `files`. Sobrevive a cada regeneración.

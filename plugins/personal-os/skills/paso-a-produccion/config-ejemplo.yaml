@@ -1,0 +1,39 @@
+# Sección `paso_produccion` para <stateDir>/config/fuentes.yaml.
+# Cada entregable está listo si alguno de sus `campos` del expediente tiene contenido o si en la carpeta
+# del paquete hay un archivo que coincide con alguno de sus `archivos` (globs). Las aprobaciones se
+# prueban con un archivo de evidencia en <carpeta>/aprobaciones/.
+paso_produccion:
+  normativa: "<código o nombre de la política que lo exige>"
+  aprobador: "<rol o persona a quien se pide la aprobación final>"
+  carpeta: null                       # por defecto <carpeta del expediente>/paso-produccion/
+  entregables:
+    - id: funcional
+      nombre: "Historias de usuario o especificación funcional"
+      campos: [historias]
+      archivos: ["funcional.*"]
+      responsable: "líder técnico"
+    - id: tecnica
+      nombre: "Especificación técnica"
+      campos: [documentacion.tecnica]
+      archivos: ["tecnica.*"]
+      responsable: "líder técnico"
+    - id: impacto
+      nombre: "Análisis de impacto (componentes modificados)"
+      archivos: ["impacto.*"]
+      responsable: "líder técnico"
+    - id: pruebas-funcionales
+      nombre: "Matrices y resultados de pruebas funcionales"
+      campos: [matriz_pruebas]
+      archivos: ["pruebas-funcionales.*"]
+      responsable: "QA o analista"
+    - id: plan-despliegue
+      nombre: "Planificación del despliegue (fecha, hora y asistentes)"
+      archivos: ["plan-despliegue.*"]
+      responsable: "líder técnico"
+  aprobaciones:
+    - id: certificacion
+      nombre: "Certificación de que la necesidad quedó cubierta"
+      responsable: "analista o QA"
+    - id: cliente
+      nombre: "Aprobación del cliente"
+      responsable: "analista"

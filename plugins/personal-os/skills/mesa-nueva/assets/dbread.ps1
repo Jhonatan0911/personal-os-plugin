@@ -18,7 +18,7 @@
 param(
   [Parameter(Mandatory = $true)][string]$ConfirmDb,
   [Parameter(Mandatory = $true)][string]$Query,
-  [string]$AppSettings = "$PSScriptRoot\..\__APPSETTINGS_DEFAULT__",
+  [string]$AppSettings,
   [string]$ClaveConexion = 'ConexionSQL',
   [switch]$DryRun,
   [switch]$AllowNoTop,
@@ -26,6 +26,12 @@ param(
   [int]$LoginTimeout = 5,
   [int]$QueryTimeout = 30
 )
+
+# PS 5.1: $PSScriptRoot puede llegar vacio en los defaults de param(); se resuelve aqui.
+if (-not $AppSettings) {
+  $dirScript = if ($PSScriptRoot) { $PSScriptRoot } else { Split-Path -Parent $MyInvocation.MyCommand.Path }
+  $AppSettings = Join-Path $dirScript '..\__APPSETTINGS_DEFAULT__'
+}
 
 $ErrorActionPreference = 'Stop'
 

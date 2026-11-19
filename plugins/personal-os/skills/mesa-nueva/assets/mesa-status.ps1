@@ -19,9 +19,15 @@
 #>
 [CmdletBinding()]
 param(
-  [string]$Manifiesto = "$PSScriptRoot\..\MESA.json",
+  [string]$Manifiesto,
   [switch]$Sucios
 )
+
+# PS 5.1: $PSScriptRoot puede llegar vacio en los defaults de param(); se resuelve aqui.
+if (-not $Manifiesto) {
+  $dirScript = if ($PSScriptRoot) { $PSScriptRoot } else { Split-Path -Parent $MyInvocation.MyCommand.Path }
+  $Manifiesto = Join-Path $dirScript '..\MESA.json'
+}
 
 $ErrorActionPreference = 'Stop'
 if (-not (Test-Path $Manifiesto)) { throw "No existe el manifiesto: $Manifiesto" }

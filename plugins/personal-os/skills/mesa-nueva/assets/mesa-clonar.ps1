@@ -40,7 +40,7 @@
 param(
   [ValidateSet('clonar','ramas','rama')]
   [string]$Fase = 'clonar',
-  [string]$Manifiesto = "$PSScriptRoot\..\MESA.json",
+  [string]$Manifiesto,
   [string]$Pat,
   [int]$Top = 25,
   [string[]]$Repos,
@@ -48,6 +48,12 @@ param(
 )
 
 $ErrorActionPreference = 'Stop'
+
+# PS 5.1: $PSScriptRoot puede llegar vacio en los defaults de param(); se resuelve aqui.
+if (-not $Manifiesto) {
+  $dirScript = if ($PSScriptRoot) { $PSScriptRoot } else { Split-Path -Parent $MyInvocation.MyCommand.Path }
+  $Manifiesto = Join-Path $dirScript '..\MESA.json'
+}
 
 if (-not (Test-Path $Manifiesto)) { throw "No existe el manifiesto: $Manifiesto" }
 $mesa = Get-Content $Manifiesto -Raw -Encoding UTF8 | ConvertFrom-Json
