@@ -583,7 +583,6 @@ nav.vistas{gap:6px 8px}
 .hmb i{display:block;height:100%} .hmb .s-done{background:var(--ok)} .hmb .s-rev{background:#6B3FA0} .hmb .s-curso{background:var(--mid)} .hmb .s-new{background:transparent}
 .hmd{color:var(--muted);line-height:1.25;overflow-wrap:anywhere}
 .hmd .red{color:var(--crit)}
-.hoyd .hav{border:none;background:none;padding:0;color:var(--action);cursor:pointer;font-size:var(--fs-xs);text-decoration:underline}
 /* Cabecera en dos líneas: «Ocupación de hoy» ocupa su propia fila completa; los indicadores van en la fila de abajo */
 .kpis{display:flex;flex-direction:column;align-items:stretch;gap:6px}
 .kpis .hoy{flex:none;width:100%}
@@ -1535,7 +1534,7 @@ async function actualizarTodo(){
   chunks.padres={padres};
   let por=""; try{ const u=await window.claude.use("user"); por=u?(await u.id())||"":""; }catch(e){}
   const meta={at:new Date().toISOString(), por, n:lista.length, chunks:Object.keys(chunks), parcial:!!err};
-  FOTO={meta, chunks}; DELTA={}; VIVO_AT=new Date(); POR_NOMBRE=await nombreDe(por); const st=$("fotoAt"); if(st) st.textContent="Jira al "+new Date(meta.at).toLocaleString("es-CO",{dateStyle:"short",timeStyle:"short"})+(POR_NOMBRE?" por "+POR_NOMBRE:""); aplicarFoto(); renderVista();
+  FOTO={meta, chunks}; DELTA={}; VIVO_AT=new Date(); AVANCE={}; HOY_AUTO=false; POR_NOMBRE=await nombreDe(por); const st=$("fotoAt"); if(st) st.textContent="Jira al "+new Date(meta.at).toLocaleString("es-CO",{dateStyle:"short",timeStyle:"short"})+(POR_NOMBRE?" por "+POR_NOMBRE:""); aplicarFoto(); renderVista();
   if(db&&canWrite){ try{
       for(const [id,doc] of Object.entries(chunks)) await db.collection("jira").doc(id).set(doc);
       const viejos=Object.keys(FOTO_DB||{}).filter(id=>id.startsWith("c")&&!chunks[id]); for(const id of viejos) await db.collection("jira").doc(id).delete();
@@ -2227,14 +2226,15 @@ async function traerAvancesDe(laneId){ const all=allKeys().map(eff), t=dayIdx(TO
 function htmlAvanceHoy(l,ms){
   const filas=ms.filter(m=>!m.reu).concat(ms.filter(m=>m.reu)).map(m=>{ const ks=m.ids.map(claveGlobal).filter(Boolean), k=ks[0]||null;
     const As=ks.map(x=>AVANCE[x]), A=!k?null:(As.some(a=>a&&a.cargando)?{cargando:true}:(As.find(a=>a&&a.err)||(As.every(a=>a&&a.filas)?{at:As[0].at, filas:[].concat(...As.map(a=>a.filas))}:null)));
-    const hh=m.reu?durTxt(m.h)+" hoy":`${h(Math.round(m.h*10)/10)} h hoy${m.sin?` · ${m.sin} sin estimar`:""}`;
+    const hh=m.reu?`Hoy: ${durTxt(m.h)} en reuniones`:`Hoy le dedica ${h(Math.round(m.h*10)/10)} h${m.sin?` (+${m.sin} tarea${m.sin>1?"s":""} sin estimar)`:""}`;
     if(m.reu||!k) return `<div class="hm"><div class="hmt"><span class="hmn" title="${esc(m.nm)}">${esc(m.nm)}</span></div><div class="hmd">${hh}${!k&&!m.reu?" · sin issue en Jira":""}</div></div>`;
     const vivo=A&&A.filas, vistos=new Set(), av=avanceDe((vivo?A.filas:[].concat(...ks.map(hijasFoto))).filter(x=>!vistos.has(x.k)&&vistos.add(x.k)));
     const fuente=A&&A.cargando?"trayendo de Jira…":(A&&A.err?A.err:(vivo?"Jira en vivo "+A.at.toLocaleTimeString("es-CO",{timeStyle:"short"}):"foto del último status (solo lo abierto y lo cerrado este mes)"));
     const det=`${m.nm} (${ks.join(", ")})\nTerminado ${av.pc.done} % · revisión o por publicar ${av.pc.rev} % · en curso ${av.pc.curso} % · sin iniciar ${av.pc.new} %\n${av.n} tarea${av.n===1?"":"s"} ${av.porHoras?"por horas":"por cantidad (no todas tienen estimación)"}${av.redef?` · ${av.redef} en Redefinido (no cuentan)`:""}\nFuente: ${fuente}`;
-    return `<div class="hm" title="${esc(det)}"><div class="hmt"><span class="hmn" data-fk="${esc(k)}">${esc(m.nm)}</span><b class="mono">${av.T?av.avance+" %":"—"}</b></div>
+    return `<div class="hm" title="${esc(det)}"><div class="hmt"><span class="hmn" data-fk="${esc(k)}">${esc(m.nm)}</span><b class="mono" title="Avance del proyecto: terminado + en revisión">${av.T?av.avance+" %":"—"}</b></div>
       <div class="hmb" role="img" aria-label="${esc(det)}">${["done","rev","curso","new"].map(c=>av.pc[c]?`<i class="s-${c}" style="width:${av.pc[c]}%"></i>`:"").join("")}</div>
-      <div class="hmd">${av.T?`${av.pc.done} % hecho · ${av.pc.rev} % en revisión`:"sin tareas que medir"} · ${hh}${A&&A.cargando?" · trayendo…":(A&&A.err?` · <span class="red">${esc(A.err)}</span>`:"")}${MCP&&!(A&&A.cargando)?` · <button type="button" class="hav" data-hoyav="${esc(m.ids.join("|"))}" title="${vivo?"Volver a traer de Jira":"Traer el avance completo de Jira"}">${vivo?"actualizar":"traer de Jira"}</button>`:""}</div></div>`; }).join("");
+      <div class="hmd">${av.T?`Proyecto: ${av.pc.done} % terminado, ${av.pc.rev} % en revisión`:"Proyecto: sin tareas que medir"}${A&&A.cargando?" (trayendo de Jira…)":(A&&A.err?` · <span class="red">${esc(A.err)}</span>`:"")}</div>
+      <div class="hmd">${hh}</div></div>`; }).join("");
   return `<div class="hoyd" role="region" aria-label="${esc("Qué hace hoy "+NOMBRE[l.id])}">${filas||'<div class="hmd">Nada planeado hoy.</div>'}</div>`; }
 function diaLargo(i){ if(i>=AFTER) return "después del "+fmt(LAST); return DNOM[new Date(DAYS[i]+"T12:00:00").getDay()]+" "+fmt(DAYS[i]); }
 function ocupacionCliente(id,C,all,JREU,t0,H){
@@ -2559,7 +2559,6 @@ function renderKpis(){
   kp.querySelectorAll("[data-hoyx]").forEach(b=>b.onclick=ev=>{ ev.stopPropagation(); const id=b.dataset.hoyx, abrir=!HOY_ABIERTA[id];
     if(abrir) HOY_ABIERTA[id]=1; else delete HOY_ABIERTA[id]; try{ localStorage.setItem("planeacion-hoy-abierta",JSON.stringify(HOY_ABIERTA)); }catch(e){}
     renderKpis(); if(abrir) traerAvancesDe(id); });
-  kp.querySelectorAll("[data-hoyav]").forEach(b=>b.onclick=async ev=>{ ev.stopPropagation(); for(const id of b.dataset.hoyav.split("|")) await traerAvance(id); });
   wireFk(kp);
   // al abrir la página con paneles desplegados, se trae su avance en vivo una vez (si hay conector)
   if(MCP&&!HOY_AUTO){ HOY_AUTO=true; LANES.filter(l=>HOY_ABIERTA[l.id]).forEach(l=>traerAvancesDe(l.id)); }

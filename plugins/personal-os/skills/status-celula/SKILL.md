@@ -259,7 +259,8 @@ La flecha ▾ despliega, **debajo de esa misma tarjeta y con su mismo ancho** (n
 | Tramos: terminado · revisión o por publicar · en curso · sin iniciar. El % grande es terminado + revisión. «Listo para implementación» y certificación van con revisión, nunca como cierre | Se ve cuánto falta solo de revisión del líder |
 | `Redefinido` y los `no_cierre` no suman ni restan: se cuentan aparte («N en Redefinido») | Jira los cuenta como hechos sin estarlo |
 | Por horas estimadas si todas las hojas tienen estimación; si falta una, por cantidad de issues, y se dice | Sin estimación no hay porcentaje por horas |
-| Al desplegar, la página trae el global de Jira en vivo (hasta 3 niveles de hijas) con el conector de quien mira; sin conector, usa la foto («solo lo abierto y lo cerrado este mes») y lo dice | Nada se presenta como completo sin serlo |
+| Al desplegar, la página trae el global de Jira en vivo (hasta 3 niveles de hijas) con el conector de quien mira, **sin botón propio**: «Actualizar Jira y calendario» es el único botón y renueva también estos avances. Sin conector, usa la foto («solo lo abierto y lo cerrado este mes») y lo dice al pasar el cursor | Un solo botón de actualizar; nada se presenta como completo sin serlo |
+| Texto sin abreviaturas: «Proyecto: X % terminado, Y % en revisión» y «Hoy le dedica N h» (o «Hoy: … en reuniones») | La tarjeta se lee sin explicación |
 | Lo desplegado se recuerda por navegador (`planeacion-hoy-abierta`) y al volver se refresca solo | Es una preferencia de quien mira, no del tablero |
 
 ### C-6 · Las horas no las pone Claude, y el accountId tampoco se adivina

@@ -1,5 +1,9 @@
 # Changelog
 
+## 3.11.2
+
+- **status-celula · Ocupación de hoy, textos y un solo botón:** se quita el botón «traer de Jira / actualizar» de cada global; el avance se trae solo al desplegar y «Actualizar Jira y calendario» lo renueva. Textos sin abreviaturas: «Proyecto: X % terminado, Y % en revisión» y «Hoy le dedica N h» («Hoy: … en reuniones»).
+
 ## 3.11.1
 
 - **status-celula · Ocupación de hoy, diseño:** la línea de globales ya no ensancha las tarjetas (vuelven a caber todas a primera vista); el desplegable ▾ va debajo de su propia tarjeta y con su mismo ancho, compacto (global, %, barra, «% hecho · % en revisión · horas de hoy»; el detalle al pasar el cursor) y con alto máximo. Los globales con el mismo título (una issue y su espejo en otro proyecto) se muestran como uno, con el avance de los dos.
