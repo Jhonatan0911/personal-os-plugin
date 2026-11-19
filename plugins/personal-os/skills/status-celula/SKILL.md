@@ -249,7 +249,7 @@ le cabe sale al pasar el cursor) y `hoy X/Y h` en la cabecera. `--carga N` la im
 
 Cada tarjeta de «Ocupación de hoy» dice, además del %, **en qué está trabajando hoy**: una línea con sus
 **globales** activos, ordenados por las horas que le suman hoy (los tres primeros y «+N»; las reuniones al final).
-La flecha ▾ de la tarjeta despliega debajo de la franja una barra por global con su avance en Jira.
+La flecha ▾ despliega, **debajo de esa misma tarjeta y con su mismo ancho** (nunca a lo ancho de la página, y sin que la tarjeta crezca por su texto), una barra por global con su avance en Jira. Dos globales con el mismo título (una issue y su espejo) se muestran como uno.
 
 | Regla | Por qué |
 |---|---|

@@ -565,26 +565,25 @@ nav.vistas{gap:6px 8px}
 .hoyp .hbar i{display:block;height:100%;background:var(--mid)}
 .hoyp.full .hbar i{background:var(--ok)} .hoyp.over .hbar i{background:var(--crit)}
 .hoyp,.hoyp.full,.hoyp.over,.hoyp.sinest{box-shadow:none}
-/* Qué hace hoy cada persona: los globales (macro, o la historia, o la tarea suelta) que le suman horas hoy, y su avance en Jira */
-.hoyk{flex:1 1 0;min-width:86px;display:flex;flex-direction:column;position:relative}
-.hoyk>.hoyp{flex:1 1 auto;width:100%}
-.hoyp .hoym{display:block;max-width:100%;font-size:var(--fs-xs);color:var(--ink);font-weight:400;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-align:left;margin-top:1px}
-.hoyx{border:1px solid var(--line);border-top:none;background:var(--panel);color:var(--muted);font-size:11px;line-height:1;padding:2px 0;border-radius:0 0 6px 6px;cursor:pointer}
+/* Qué hace hoy cada persona: los globales (macro, o la historia, o la tarea suelta) que le suman horas hoy, y su avance en Jira.
+   La tarjeta no crece por su texto (contain), y el desplegable va debajo de SU tarjeta, del mismo ancho. */
+.hoyk{flex:1 1 0;min-width:76px;display:flex;flex-direction:column;contain:inline-size}
+.hoyk>.hoyp{flex:1 1 auto;width:100%;min-width:0}
+.hoy.condet{align-items:flex-start}
+.hoy.condet>.hoyt{align-self:flex-start;justify-content:flex-start;padding-top:6px}
+.hoyp .hoym{display:block;width:100%;font-size:var(--fs-xs);color:var(--ink);font-weight:400;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-align:left;margin-top:1px}
+.hoyx{border:1px solid var(--line);border-top:none;background:var(--card);color:var(--mid);font-size:11px;line-height:1;padding:2px 0;border-radius:0 0 var(--r-s) var(--r-s);cursor:pointer;width:100%}
 .hoyx:hover,.hoyx[aria-expanded="true"]{color:var(--action);background:var(--today)}
-.hoydet{display:flex;flex-direction:column;gap:8px;margin-top:2px}
-.hoyd{border:1px solid var(--line);border-radius:8px;background:var(--panel);padding:8px 10px}
-.hoyd header{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap;margin-bottom:6px}
-.hoyd header b{font-size:var(--fs-m)} .hoyd header .mini{color:var(--muted)}
-.hoyd header .hdx{margin-left:auto;border:none;background:none;color:var(--muted);cursor:pointer;font-size:16px;line-height:1}
-.hm{padding:5px 0;border-top:1px solid var(--line)} .hm:first-of-type{border-top:none}
-.hmt{display:flex;align-items:baseline;gap:8px} .hmt .hmn{font-weight:600;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.hmt .hmh{color:var(--muted);font-size:var(--fs-xs);white-space:nowrap} .hmt b{margin-left:auto;font-size:var(--fs-m)}
-.hmb{display:flex;height:8px;border-radius:4px;overflow:hidden;background:var(--line);margin:4px 0 3px}
+.hoyd{border:1px solid var(--line);border-top:none;background:var(--card);padding:4px 6px 5px;display:flex;flex-direction:column;gap:6px;font-size:var(--fs-xs);border-radius:0 0 var(--r-s) var(--r-s);max-height:300px;overflow-y:auto}
+.hm{display:flex;flex-direction:column;gap:2px;min-width:0}
+.hmt{display:flex;align-items:baseline;gap:4px;min-width:0}
+.hmt .hmn{flex:1;min-width:0;color:var(--ink);font-weight:600;line-height:1.2;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;cursor:pointer}
+.hmt b{font-size:var(--fs-xs);color:var(--ink);white-space:nowrap}
+.hmb{display:flex;height:6px;border-radius:3px;overflow:hidden;background:var(--line)}
 .hmb i{display:block;height:100%} .hmb .s-done{background:var(--ok)} .hmb .s-rev{background:#6B3FA0} .hmb .s-curso{background:var(--mid)} .hmb .s-new{background:transparent}
-.hmd{font-size:var(--fs-xs);color:var(--muted);display:flex;flex-wrap:wrap;gap:4px 10px;align-items:center}
-.hmd .dot{display:inline-block;width:8px;height:8px;border-radius:2px;margin-right:3px;vertical-align:middle}
-.hmd .btn.sm{padding:1px 6px}
-@media (max-width:640px){ .hmt{flex-wrap:wrap} .hmt b{margin-left:0} }
+.hmd{color:var(--muted);line-height:1.25;overflow-wrap:anywhere}
+.hmd .red{color:var(--crit)}
+.hoyd .hav{border:none;background:none;padding:0;color:var(--action);cursor:pointer;font-size:var(--fs-xs);text-decoration:underline}
 /* Cabecera en dos líneas: «Ocupación de hoy» ocupa su propia fila completa; los indicadores van en la fila de abajo */
 .kpis{display:flex;flex-direction:column;align-items:stretch;gap:6px}
 .kpis .hoy{flex:none;width:100%}
@@ -2191,7 +2190,10 @@ function macrosHoy(laneId,all,jr,t){ const g={};
     const x=g[m.id]=g[m.id]||{id:m.id, nm:m.nm, h:0, sin:0, n:0, reu:reuJ}; if(e.est) x.h+=e.est/n; else x.sin++; x.n++; });
   const reu=reunionesDe(laneId,jr,true).filter(m=>m.dia===DAYS[t]);
   if(reu.length){ const x=g._reu=g._reu||{id:"_reu", nm:"Reuniones", h:0, sin:0, n:0, reu:true}; reu.forEach(m=>{ x.h+=m.h||0; x.n++; }); }
-  return Object.values(g).sort((p,q)=>q.h-p.h||q.sin-p.sin); }
+  // dos globales con el mismo título (una issue y su espejo en otro proyecto) se muestran como uno solo, con el avance de los dos
+  const porNom={}; Object.values(g).forEach(x=>{ x.ids=[x.id]; const nn=x.reu?"_reu":normTit(x.nm)||x.id; const y=porNom[nn];
+    if(!y){ porNom[nn]=x; return; } y.h+=x.h; y.sin+=x.sin; y.n+=x.n; y.ids.push(x.id); });
+  return Object.values(porNom).sort((p,q)=>q.h-p.h||q.sin-p.sin); }
 function claveGlobal(id){ return String(id).startsWith("t:")?id.slice(2):(ISKEY.test(id)?id:null); }
 // Lo que la foto conoce de un global: él mismo y todo lo que cuelga de él (abierto, y lo cerrado este mes)
 function hijasFoto(root){ const M=CLI_PM, out=[];
@@ -2221,19 +2223,19 @@ async function traerAvance(id){ const root=claveGlobal(id); if(!root||!MCP) retu
   catch(e){ AVANCE[root]={err:jiraErr(e)}; }
   renderKpis(); }
 async function traerAvancesDe(laneId){ const all=allKeys().map(eff), t=dayIdx(TODAY);
-  for(const m of macrosHoy(laneId,all,reunionesJira(),t)){ const k=claveGlobal(m.id); if(k&&!AVANCE[k]) await traerAvance(m.id); } }
-function htmlAvanceHoy(l,ms,v,jHoy){ const pcHoy=Math.round(v/jHoy*100);
-  const filas=ms.filter(m=>!m.reu).concat(ms.filter(m=>m.reu)).map(m=>{ const k=claveGlobal(m.id), A=k?AVANCE[k]:null;
-    const hh=m.reu?`${durTxt(m.h)} hoy · ${m.n} reunión${m.n>1?"es":""}`:`${h(Math.round(m.h*10)/10)} h hoy${m.sin?` · ${m.sin} sin estimar`:""}`;
-    if(m.reu||!k) return `<div class="hm"><div class="hmt"><span class="hmn">${esc(m.nm)}</span><span class="hmh">${hh}</span></div>${!k&&!m.reu?'<div class="hmd">Sin issue en Jira: no tiene avance que medir.</div>':""}</div>`;
-    const vivo=A&&A.filas, av=avanceDe(vivo?A.filas:hijasFoto(k));
-    const fuente=A&&A.cargando?"Trayendo de Jira…":(A&&A.err?`<span class="red">${esc(A.err)}</span>`:(vivo?"Jira en vivo · "+A.at.toLocaleTimeString("es-CO",{timeStyle:"short"}):"Foto del último status: solo lo abierto y lo cerrado este mes"));
-    const leyenda=[["done","terminado","var(--ok)"],["rev","revisión o por publicar","#6B3FA0"],["curso","en curso","var(--mid)"],["new","sin iniciar","var(--line)"]].map(([c,t2,col])=>`<span><i class="dot" style="background:${col}"></i>${t2} ${av.pc[c]} %</span>`).join("");
-    return `<div class="hm"><div class="hmt"><span class="hmn" title="${esc(m.nm)}">${esc(m.nm)}</span><span class="mono mini" data-fk="${esc(k)}">${esc(k)}</span><span class="hmh">${hh}</span><b class="mono" title="Terminado + en revisión o por publicar">${av.T?av.avance+" %":"—"}</b></div>
-      <div class="hmb" role="img" aria-label="${esc(`${m.nm}: terminado ${av.pc.done} %, en revisión ${av.pc.rev} %, en curso ${av.pc.curso} %, sin iniciar ${av.pc.new} %`)}">${["done","rev","curso","new"].map(c=>av.pc[c]?`<i class="s-${c}" style="width:${av.pc[c]}%"></i>`:"").join("")}</div>
-      <div class="hmd">${av.T?leyenda:"<span>Sin tareas que medir todavía.</span>"}<span>· ${av.n} tarea${av.n===1?"":"s"} ${av.porHoras?"por horas":"por cantidad (no todas tienen estimación)"}${av.redef?` · ${av.redef} en Redefinido (no cuentan)`:""}</span><span>· ${fuente}</span>${MCP&&!(A&&A.cargando)?`<button type="button" class="btn sm" data-hoyav="${esc(m.id)}">${vivo?"Volver a traer":"Traer de Jira"}</button>`:""}</div></div>`; }).join("");
-  return `<section class="hoyd" aria-label="${esc("Qué hace hoy "+NOMBRE[l.id])}"><header><b>${esc(NOMBRE[l.id])}</b><span class="mini">${pcHoy} % de su jornada hoy · ${ms.filter(m=>!m.reu).length} global${ms.filter(m=>!m.reu).length===1?"":"es"} activo${ms.filter(m=>!m.reu).length===1?"":"s"}</span><button type="button" class="hdx" data-hoyx="${l.id}" aria-label="Cerrar">×</button></header>
-    ${filas||'<div class="hmd">No tiene nada planeado para hoy.</div>'}</section>`; }
+  for(const m of macrosHoy(laneId,all,reunionesJira(),t)) for(const id of m.ids){ const k=claveGlobal(id); if(k&&!AVANCE[k]) await traerAvance(id); } }
+function htmlAvanceHoy(l,ms){
+  const filas=ms.filter(m=>!m.reu).concat(ms.filter(m=>m.reu)).map(m=>{ const ks=m.ids.map(claveGlobal).filter(Boolean), k=ks[0]||null;
+    const As=ks.map(x=>AVANCE[x]), A=!k?null:(As.some(a=>a&&a.cargando)?{cargando:true}:(As.find(a=>a&&a.err)||(As.every(a=>a&&a.filas)?{at:As[0].at, filas:[].concat(...As.map(a=>a.filas))}:null)));
+    const hh=m.reu?durTxt(m.h)+" hoy":`${h(Math.round(m.h*10)/10)} h hoy${m.sin?` · ${m.sin} sin estimar`:""}`;
+    if(m.reu||!k) return `<div class="hm"><div class="hmt"><span class="hmn" title="${esc(m.nm)}">${esc(m.nm)}</span></div><div class="hmd">${hh}${!k&&!m.reu?" · sin issue en Jira":""}</div></div>`;
+    const vivo=A&&A.filas, vistos=new Set(), av=avanceDe((vivo?A.filas:[].concat(...ks.map(hijasFoto))).filter(x=>!vistos.has(x.k)&&vistos.add(x.k)));
+    const fuente=A&&A.cargando?"trayendo de Jira…":(A&&A.err?A.err:(vivo?"Jira en vivo "+A.at.toLocaleTimeString("es-CO",{timeStyle:"short"}):"foto del último status (solo lo abierto y lo cerrado este mes)"));
+    const det=`${m.nm} (${ks.join(", ")})\nTerminado ${av.pc.done} % · revisión o por publicar ${av.pc.rev} % · en curso ${av.pc.curso} % · sin iniciar ${av.pc.new} %\n${av.n} tarea${av.n===1?"":"s"} ${av.porHoras?"por horas":"por cantidad (no todas tienen estimación)"}${av.redef?` · ${av.redef} en Redefinido (no cuentan)`:""}\nFuente: ${fuente}`;
+    return `<div class="hm" title="${esc(det)}"><div class="hmt"><span class="hmn" data-fk="${esc(k)}">${esc(m.nm)}</span><b class="mono">${av.T?av.avance+" %":"—"}</b></div>
+      <div class="hmb" role="img" aria-label="${esc(det)}">${["done","rev","curso","new"].map(c=>av.pc[c]?`<i class="s-${c}" style="width:${av.pc[c]}%"></i>`:"").join("")}</div>
+      <div class="hmd">${av.T?`${av.pc.done} % hecho · ${av.pc.rev} % en revisión`:"sin tareas que medir"} · ${hh}${A&&A.cargando?" · trayendo…":(A&&A.err?` · <span class="red">${esc(A.err)}</span>`:"")}${MCP&&!(A&&A.cargando)?` · <button type="button" class="hav" data-hoyav="${esc(m.ids.join("|"))}" title="${vivo?"Volver a traer de Jira":"Traer el avance completo de Jira"}">${vivo?"actualizar":"traer de Jira"}</button>`:""}</div></div>`; }).join("");
+  return `<div class="hoyd" role="region" aria-label="${esc("Qué hace hoy "+NOMBRE[l.id])}">${filas||'<div class="hmd">Nada planeado hoy.</div>'}</div>`; }
 function diaLargo(i){ if(i>=AFTER) return "después del "+fmt(LAST); return DNOM[new Date(DAYS[i]+"T12:00:00").getDay()]+" "+fmt(DAYS[i]); }
 function ocupacionCliente(id,C,all,JREU,t0,H){
   const load=cargaDe(id,all,JREU), tareas=[];
@@ -2546,8 +2548,8 @@ function renderKpis(){
   const venc=all.filter(vencSinPlan).length; const pub=all.filter(e=>e.grupo==="publicar"&&(!e.placed||e.soloVista)&&!e.liveDone).length;
   // franja «Hoy»: una ficha por persona con su carga del día; clic lleva a su carril
   // franja «Ocupación de hoy»: cuánto de su jornada tiene planeado cada persona hoy, en % y en horas
-  const hoyF=jHoy?`<div class="hoy" role="group" aria-label="Ocupación de hoy por persona"><span class="hoyt"><b>Ocupación de hoy</b><small>horas planeadas de su jornada de ${h(jHoy)} h</small></span>${LANES.filter(l=>!l.fuera).map(l=>{ const v=loads[l.id][t], se=loads[l.id].sin[t]||0, c=v>jHoy*1.05?"over":(v>=jHoy*0.85?"full":(se?"sinest":(v?"":"vacio"))), pc=Math.round(v/jHoy*100), ms=MH[l.id], ab=!!HOY_ABIERTA[l.id], tr=ms.filter(m=>!m.reu), lin=tr.slice(0,3).map(m=>m.nm).join(" · ")+(tr.length>3?` · +${tr.length-3}`:"")+(tr.length<ms.length?(tr.length?" · ":"")+"reuniones":"");
-      return `<div class="hoyk"><button type="button" class="hoyp ${c}" data-irlane="${l.id}" title="${esc(NOMBRE[l.id]+": "+h(v)+" de "+h(jHoy)+" h planeadas hoy ("+pc+" %)"+(se?" · "+se+" tarea"+(se>1?"s":"")+" sin estimar que no suman":"")+(c==="over"?" · sobrecargado":"")+(lin?". Hoy: "+lin:"")+". Clic para ir a su carril.")}"><span>${esc(NOMBRE[l.id].split(" ")[0])}</span><b class="mono">${pc} %</b><small class="hh">${h(v)} de ${h(jHoy)} h</small><i class="hbar" aria-hidden="true"><i style="width:${Math.min(100,pc)}%"></i></i>${lin?`<small class="hoym">${esc(lin)}</small>`:""}</button><button type="button" class="hoyx" data-hoyx="${l.id}" aria-expanded="${ab}" title="${ab?"Ocultar":"Ver qué está haciendo hoy y cómo va cada proyecto en Jira"}" aria-label="${esc((ab?"Ocultar el avance de ":"Ver el avance de los proyectos de hoy de ")+NOMBRE[l.id])}">${ab?"▴":"▾"}</button></div>`; }).join("")}</div>${LANES.some(l=>!l.fuera&&HOY_ABIERTA[l.id])?`<div class="hoydet">${LANES.filter(l=>!l.fuera&&HOY_ABIERTA[l.id]).map(l=>htmlAvanceHoy(l,MH[l.id],loads[l.id][t],jHoy)).join("")}</div>`:""}<p class="hoynota">En los planning se estiman ${num(CFG.jornada.efectiva_normal)} h efectivas de lunes a jueves y ${num(CFG.jornada.efectiva_viernes)} h el viernes: el resto de la jornada queda libre para apoyar lo urgente que surja. Aquí se mide contra la jornada completa (${num(CFG.jornada.normal)} h; viernes ${num(CFG.jornada.viernes)} h) y está sobrecargado quien pasa de ella.</p>`
+  const hoyF=jHoy?`<div class="hoy${LANES.some(l=>!l.fuera&&HOY_ABIERTA[l.id])?" condet":""}" role="group" aria-label="Ocupación de hoy por persona"><span class="hoyt"><b>Ocupación de hoy</b><small>horas planeadas de su jornada de ${h(jHoy)} h</small></span>${LANES.filter(l=>!l.fuera).map(l=>{ const v=loads[l.id][t], se=loads[l.id].sin[t]||0, c=v>jHoy*1.05?"over":(v>=jHoy*0.85?"full":(se?"sinest":(v?"":"vacio"))), pc=Math.round(v/jHoy*100), ms=MH[l.id], ab=!!HOY_ABIERTA[l.id], tr=ms.filter(m=>!m.reu), lin=tr.slice(0,3).map(m=>m.nm).join(" · ")+(tr.length>3?` · +${tr.length-3}`:"")+(tr.length<ms.length?(tr.length?" · ":"")+"reuniones":"");
+      return `<div class="hoyk"><button type="button" class="hoyp ${c}" data-irlane="${l.id}" title="${esc(NOMBRE[l.id]+": "+h(v)+" de "+h(jHoy)+" h planeadas hoy ("+pc+" %)"+(se?" · "+se+" tarea"+(se>1?"s":"")+" sin estimar que no suman":"")+(c==="over"?" · sobrecargado":"")+(lin?". Hoy: "+lin:"")+". Clic para ir a su carril.")}"><span>${esc(NOMBRE[l.id].split(" ")[0])}</span><b class="mono">${pc} %</b><small class="hh">${h(v)} de ${h(jHoy)} h</small><i class="hbar" aria-hidden="true"><i style="width:${Math.min(100,pc)}%"></i></i>${lin?`<small class="hoym">${esc(lin)}</small>`:""}</button><button type="button" class="hoyx" data-hoyx="${l.id}" aria-expanded="${ab}" title="${ab?"Ocultar":"Ver qué está haciendo hoy y cómo va cada proyecto en Jira"}" aria-label="${esc((ab?"Ocultar el avance de ":"Ver el avance de los proyectos de hoy de ")+NOMBRE[l.id])}">${ab?"▴":"▾"}</button>${ab?htmlAvanceHoy(l,ms):""}</div>`; }).join("")}</div><p class="hoynota">En los planning se estiman ${num(CFG.jornada.efectiva_normal)} h efectivas de lunes a jueves y ${num(CFG.jornada.efectiva_viernes)} h el viernes: el resto de la jornada queda libre para apoyar lo urgente que surja. Aquí se mide contra la jornada completa (${num(CFG.jornada.normal)} h; viernes ${num(CFG.jornada.viernes)} h) y está sobrecargado quien pasa de ella.</p>`
     :`<div class="hoy" role="group" aria-label="Ocupación de hoy"><span class="hoyt"><b>Ocupación de hoy</b><small>Hoy no es día hábil: la ocupación se muestra el próximo día laboral. El Gantt sigue disponible.</small></span></div>`;
   $("kpis").innerHTML=hoyF+`<div class="kpirow"><span class="kpi ${sobre.length?"crit":"ok"}" title="${esc(sobre.length?"Sobrecargados hoy: "+sobre.map(l=>NOMBRE[l.id]).join(", "):"Nadie pasa de su jornada hoy")}"><b>${sobre.length}</b>${sobre.length===1?"persona sobrecargada hoy":"personas sobrecargadas hoy"}${sobre.length?": "+esc(sobre.map(l=>NOMBRE[l.id].split(" ")[0]).join(", ")):""}</span>
     <span class="kpi ${pct>100?"crit":(pct<60?"warn":"")}" title="Horas planeadas para ${esc(listaYCli([...DEV_LANES].map(id=>NOMBRE[id].split(" ")[0])))} de hoy a fin de mes (${h(devPlan)} h) frente a su jornada en esos días (${h(capDev*DEV_LANES.size)} h). A cada dev le quedan ${h(capDev)} h este mes. Es la misma cuenta que la carga diaria de cada carril."><b>${pct} %</b>jornada de los devs planeada a fin de mes</span>
@@ -2557,7 +2559,7 @@ function renderKpis(){
   kp.querySelectorAll("[data-hoyx]").forEach(b=>b.onclick=ev=>{ ev.stopPropagation(); const id=b.dataset.hoyx, abrir=!HOY_ABIERTA[id];
     if(abrir) HOY_ABIERTA[id]=1; else delete HOY_ABIERTA[id]; try{ localStorage.setItem("planeacion-hoy-abierta",JSON.stringify(HOY_ABIERTA)); }catch(e){}
     renderKpis(); if(abrir) traerAvancesDe(id); });
-  kp.querySelectorAll("[data-hoyav]").forEach(b=>b.onclick=ev=>{ ev.stopPropagation(); traerAvance(b.dataset.hoyav); });
+  kp.querySelectorAll("[data-hoyav]").forEach(b=>b.onclick=async ev=>{ ev.stopPropagation(); for(const id of b.dataset.hoyav.split("|")) await traerAvance(id); });
   wireFk(kp);
   // al abrir la página con paneles desplegados, se trae su avance en vivo una vez (si hay conector)
   if(MCP&&!HOY_AUTO){ HOY_AUTO=true; LANES.filter(l=>HOY_ABIERTA[l.id]).forEach(l=>traerAvancesDe(l.id)); }

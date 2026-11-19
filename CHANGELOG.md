@@ -1,5 +1,9 @@
 # Changelog
 
+## 3.11.1
+
+- **status-celula · Ocupación de hoy, diseño:** la línea de globales ya no ensancha las tarjetas (vuelven a caber todas a primera vista); el desplegable ▾ va debajo de su propia tarjeta y con su mismo ancho, compacto (global, %, barra, «% hecho · % en revisión · horas de hoy»; el detalle al pasar el cursor) y con alto máximo. Los globales con el mismo título (una issue y su espejo en otro proyecto) se muestran como uno, con el avance de los dos.
+
 ## 3.11.0
 
 - **status-celula · qué hace hoy cada persona:** cada tarjeta de «Ocupación de hoy» lleva una línea con los globales en que trabaja hoy (macro; si no hay, la historia; si no tiene padre, la propia tarea), ordenados por horas y con las reuniones al final. La flecha ▾ despliega una barra por global con su avance en Jira por etapas (terminado · revisión o por publicar · en curso · sin iniciar) sobre todas sus hojas, por horas si todas están estimadas o por cantidad si no; `Redefinido` se cuenta aparte. Trae el global en vivo con el conector de quien mira y, sin conector, usa la foto y lo dice. Regla en SKILL.md §C-5-bis.
