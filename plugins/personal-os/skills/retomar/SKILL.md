@@ -14,6 +14,13 @@ Si el proyecto tiene su propia skill `retomar` local, esa tiene precedencia: est
 La raíz del plugin aparece en el contexto de la sesión, en la línea **«Scripts del plugin:»** que inyecta
 el hook de arranque.
 
+## Antes de todo: el vigía de correo
+Si el contexto trae el bloque **`📭 VIGÍA DE CORREO`** (lo dejan los hooks cuando el buzón lleva horas sin
+barrer, cuando el conector leyó el buzón de otra persona o cuando hay urgentes abiertos), **eso va antes del
+frente**: haz el barrido de urgentes (brief-diario, paso «Barrido de urgentes»), y si hay un urgente abierto
+o el buzón no es el del usuario, la **primera línea** del status lo dice. Retomar un frente interno mientras
+el correo del cliente está ciego es exactamente cómo se pierde un plazo.
+
 ## 0. Modo multi-frente (va primero)
 Raíz = `git rev-parse --show-toplevel` si es repo; si no, el directorio de trabajo actual.
 Si existe `<raíz>/handoff/_indice.json`:

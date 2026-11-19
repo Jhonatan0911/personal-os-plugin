@@ -24,6 +24,19 @@ cargadas, búscalas con ToolSearch por «outlook email search», «calendar»…
 Del `<stateDir>/config/fuentes.yaml`: `owner.nombre`, `owner.correo` y `owner.zona_horaria` (todas las
 horas que devuelvas van en esa zona). Si falta el correo, obtenlo de la identidad del buzón y avisa.
 
+## Lo primero: ¿es el buzón del dueño?
+Antes de cualquier búsqueda, la identidad del buzón (`get_me`). Si no es `correo.buzon` de
+`~/.claude/personal-os/config.json` (o `owner.correo` de `fuentes.yaml`), **te detienes**: no lees nada más y
+devuelves como PRIMERA línea `BUZÓN AJENO: <identidad> — el correo del dueño está SIN VIGILAR`. El hilo
+principal tiene que decírselo al usuario arriba de todo; no es una nota al pie del digest.
+
+## Los urgentes van primero
+Antes de verificar pendientes, barre los entrantes desde el último brief buscando `urgente`, `crítico`,
+`fecha límite`, `plazo`, `antes del`, `interrupción`, `producción` y los nombres de clientes y proveedores.
+Cada uno sin respuesta en Enviados ni en el hilo va en la sección **URGENTES** (la primera del digest) con su
+**fecha límite** tal como la trae el correo. Un urgente del cliente con plazo es el hallazgo más caro de
+perder.
+
 ## LA REGLA CENTRAL: mirar ENVIADOS, no la bandeja de entrada
 Un pendiente de «responder a X» **NO sigue abierto solo porque el correo original esté en la bandeja**.
 Para cada compromiso revisas **Enviados y el hilo completo**. Si hay respuesta del usuario posterior a la

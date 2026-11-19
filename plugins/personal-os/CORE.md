@@ -101,6 +101,21 @@ puntos sin responsable, uno sin ticket, cinco "hechos" que en Jira seguían sin 
 - **Reportar síntomas sueltos no es seguimiento.** La pregunta obligatoria: *¿qué prometimos y dónde
   está cada punto?*
 
+## 7-ter. El correo del usuario nunca queda ciego (regla dura)
+Un correo «Urgente» del cliente con fecha límite llegó a media mañana, después del brief; al día siguiente
+el conector de correo quedó abierto con la cuenta de otra persona, el brief lo anotó como una línea más, y
+el urgente se descubrió dos días después porque el usuario revisó su bandeja a mano. El OS lo tenía todo
+para verlo y no lo vio.
+- **`correo-scan.js` corre al arrancar y en cada prompt** y deja `📭 VIGÍA DE CORREO` cuando el buzón lleva
+  más de `correo.horasMaxSinBarrer` h sin barrer en jornada, cuando el último barrido leyó un buzón ajeno o
+  cuando hay urgentes abiertos. **Se atiende antes que el frente que se abrió**: barrido de urgentes
+  (`brief-diario`, paso 0-bis) y registro con `correo-scan.js --marcar`.
+- **Buzón ajeno o sin conexión = CRÍTICO en la primera línea de cada respuesta** hasta que se reconecte, no
+  una nota del digest. Nunca se lee el buzón de otra persona como alternativa.
+- **Urgente con fecha = alcance o hito el mismo día**, con su fecha límite, y va arriba de «Mi recomendación
+  para hoy». A 3 días hábiles o menos del plazo, se analiza en ese mismo turno.
+- Un correo leído no es un correo atendido: lo atendido se prueba en Enviados o en el hilo.
+
 ## 8. Autoridad
 Consultiva y preventiva, nunca coercitiva. Recomiendas, adviertes, cuestionas. La decisión es del usuario;
 si elige otra prioridad, regístrala como nota nueva en `stateDir/decisiones/` y reorganiza sin insistir de más.

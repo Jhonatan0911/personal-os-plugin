@@ -36,6 +36,37 @@ El hook de arranque deja en el contexto un bloque **`⚠️ VIGÍA DE COMPROMISO
 - Corre también `node "<raíz del plugin>/scripts/alcances-scan.js" --hitos`: sus hitos con el cliente
   (vencidos, de hoy y de mañana) alimentan la tabla de «vence hoy» del paso 6.
 
+### 0-bis. Barrido de urgentes del correo (va antes que todo lo demás)
+El hook de arranque y el de cada prompt dejan el bloque **`📭 VIGÍA DE CORREO`** cuando el buzón lleva más
+de `correo.horasMaxSinBarrer` horas sin barrer en jornada (3 por defecto), cuando el último barrido leyó un
+buzón que **no es el del dueño**, o cuando hay urgentes abiertos. El brief de la mañana no basta: un urgente
+que llega a media mañana se pierde hasta el día siguiente.
+
+**Este barrido lo hace también cualquier sesión de trabajo** (retomar, status, una tarea suelta) cuando el
+vigía lo pide, y lo hace el hilo principal, no un subagente. Son dos consultas:
+1. **Identidad del buzón** (`get_me` o equivalente). Si no es `correo.buzon` de `config.json`: no se lee nada
+   más, la **primera línea de la respuesta** se lo dice al usuario («tu correo está sin vigilar desde …,
+   reconecta el conector o revisa tu bandeja de entrada») y se registra el barrido con esa identidad para
+   que el vigía siga en rojo. Leer el buzón de otra persona no es alternativa.
+2. **Entrantes desde el último barrido** (o desde hace 3 días hábiles si no hay ninguno): búsqueda por
+   asunto o cuerpo con `urgente`, `crítico`, `fecha límite`, `plazo`, `antes del`, `interrupción`,
+   `producción`, `caída` y los nombres de los clientes y proveedores de `fuentes.yaml`, más todo lo que
+   llegue de los analistas y clientes de `equipo:`/`roles:`. Por cada uno: ¿ya hay respuesta en Enviados o en
+   el hilo? Si no la hay, **es un urgente abierto**.
+
+Cada urgente abierto con fecha:
+- **Se vuelve alcance o hito el mismo día** (nota en `alcances/` con `hitos:`), con la fecha límite que trae
+  el correo. Lo que solo vive en la bandeja no existe para el seguimiento.
+- Va **arriba de todo** en la respuesta y en «Mi recomendación para hoy», por encima de cualquier frente
+  interno, aunque la sesión se haya abierto para otra cosa.
+- **Plazo de reacción:** si la fecha límite está a 3 días hábiles o menos, se le dice al usuario en ese mismo
+  turno, con el análisis que haga falta para responder.
+
+Al terminar, registra el barrido (sin ese registro el vigía sigue en rojo):
+`node "<raíz del plugin>/scripts/correo-scan.js" --marcar --identidad <buzón leído> --urgentes <archivo.json>`
+(el archivo es una lista `[{asunto, de, recibido, fecha_limite, estado}]`; `estado: atendido` cuando ya hay
+respuesta enviada).
+
 ### 1. Lee el estado actual (hilo principal: es barato y es la fuente de verdad)
 - `<stateDir>/tablero.md`, las notas **abiertas** de `riesgos/` y `compromisos/`, las decisiones recientes
   de `decisiones/`, las notas **activas** de `alcances/` (estado distinto de `cumplido`/`cancelado`) y los

@@ -1,5 +1,11 @@
 # Changelog
 
+## 3.13.0
+
+- **Vigía de correo (regla dura, CORE §7-ter):** script nuevo `correo-scan.js` en los hooks de arranque y de cada prompt. Avisa cuando el buzón lleva más de `correo.horasMaxSinBarrer` horas sin barrer en jornada (3 por defecto), cuando el último barrido leyó un buzón que no es el del dueño (`correo.buzon` en config.json) o cuando hay urgentes abiertos; `--marcar` registra cada barrido en `<stateDir>/correo/barrido.json`. Nació de un urgente del cliente con plazo que llegó después del brief y se descubrió dos días tarde con el conector abierto en otra cuenta.
+- **brief-diario · paso 0-bis «Barrido de urgentes»:** identidad del buzón primero, entrantes desde el último barrido con términos de urgencia, y cada urgente con fecha se vuelve alcance o hito el mismo día. Lo hace también cualquier sesión cuando el vigía lo pide.
+- **brief-outlook:** se detiene y lo dice en la primera línea si el buzón es ajeno; la sección URGENTES abre el digest.
+- **retomar:** el vigía de correo se atiende antes del frente.
 ## 3.12.0
 
 - **status-celula · el título dice lo que se hace hoy:** cada global de «Ocupación de hoy» se muestra con un título corto (2 a 4 palabras) de lo que la persona hace ese día («Correcciones doble RIPS», «Validador de derechos»), no con el nombre largo del macro, que queda al pasar el cursor. Regla fija de la skill: paso 7-bis de §C con el script nuevo `status-celula-hoy.js`, que lista por persona y global las tareas de hoy para escribir `datos.jira.cortos` (`"<carril>|<GLOBAL>"` y uno genérico por global); `status-celula-compartido.js` lo sube a `jira/cortos`. Sin títulos escritos, la página acorta sola (sin paréntesis, [GLPI-…], «HU-xx ·», nombre del cliente; 6 palabras máximo).
