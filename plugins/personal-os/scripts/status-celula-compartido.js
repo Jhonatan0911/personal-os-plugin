@@ -15,6 +15,8 @@
  *   estado/frentes     titulares/backups y el roster (nombre, rol, préstamo)
  *   privado/lider      la pestaña del líder (la regla de la base debe ser read/write: owner)
  *   jira/cNN + jira/meta  foto de Jira en trozos de 350 issues
+ *   jira/padres        padre y ancestros de cada issue (el «global» de la tarea en «Ocupación de hoy» y el modo cliente);
+ *                      los ancestros que no vinieron en la lectura del equipo llegan en datos.jira.padres
  *
  * Reglas que el script hace cumplir:
  *   · La foto de Jira SOLO se sube si es más reciente que la que ya tiene el tablero (`--meta-actual`, el
@@ -72,7 +74,8 @@ function main() {
       if (!k || fuera.has(k)) continue;
       if (claves.has(i.proyecto) || celula.has(C.sinTildes(i.persona || ''))) {
         iss.push({ k, t: i.titulo || '', p: i.persona || '', e: i.estado || '', c: i.categoria || '', f: i.fin || null, i: i.inicio || null,
-          s: i.estimado == null ? null : i.estimado, u: i.actualizado || null, cr: i.creado || null, pr: i.proyecto || k.split('-')[0] });
+          s: i.estimado == null ? null : i.estimado, u: i.actualizado || null, cr: i.creado || null, pr: i.proyecto || k.split('-')[0],
+          it: i.tipo || '', pa: i.padre ? { k: i.padre, t: '', it: '' } : null });
       }
     }
     const vistos = new Set(iss.map((x) => x.k));
@@ -86,12 +89,23 @@ function main() {
         vistos.add(k);
       }
     }
+    // Padres y ancestros (global de cada tarea: macro, historia o la tarea suelta). Lo que no vino en la lectura del
+    // equipo llega en d.jira.padres ({clave: {titulo, tipo, padre}} o [{clave, titulo, tipo, padre}]), leído nivel por nivel.
+    const anc = {};
+    for (const i of d.jira.issues || []) { const k = i.clave || i.key; if (k) anc[k] = { t: i.titulo || '', it: i.tipo || '', pa: i.padre || null }; }
+    const extra = d.jira.padres || {};
+    (Array.isArray(extra) ? extra : Object.entries(extra).map(([clave, v]) => Object.assign({ clave }, v))).forEach((p) => {
+      if (p && p.clave) anc[p.clave] = { t: p.titulo || '', it: p.tipo || '', pa: p.padre || null }; });
+    iss.forEach((x) => { if (x.pa && anc[x.pa.k]) { x.pa.t = anc[x.pa.k].t; x.pa.it = anc[x.pa.k].it; } });
+    const padres = {}; const pend = iss.map((x) => x.pa && x.pa.k).filter(Boolean);
+    for (let n = 0; pend.length && n < 5000; n++) { const k = pend.shift(); if (padres[k] || !anc[k]) continue; padres[k] = anc[k]; if (anc[k].pa) pend.push(anc[k].pa); }
     const trozos = [];
     for (let n = 0; n < iss.length; n += 350) trozos.push(iss.slice(n, n + 350));
     trozos.forEach((c, n) => docs.set(`jira/c${String(n).padStart(2, '0')}`, { issues: c }));
     const ids = trozos.map((_, n) => `c${String(n).padStart(2, '0')}`);
-    docs.set('jira/meta', { at: jiraAt, por: '', n: iss.length, chunks: ids, parcial: false, nota: `Foto del status de la célula (${corteTxt}); se reemplaza al pulsar «Actualizar todo».` });
-    for (const viejo of (metaActual && metaActual.chunks) || []) if (!ids.includes(viejo)) borrar.push(viejo);
+    docs.set('jira/padres', { padres });
+    docs.set('jira/meta', { at: jiraAt, por: '', n: iss.length, chunks: ids.concat('padres'), parcial: false, nota: `Foto del status de la célula (${corteTxt}); se reemplaza al pulsar «Actualizar todo».` });
+    for (const viejo of (metaActual && metaActual.chunks) || []) if (!ids.includes(viejo) && viejo !== 'padres') borrar.push(viejo);
   }
 
   const dir = path.resolve(salida);

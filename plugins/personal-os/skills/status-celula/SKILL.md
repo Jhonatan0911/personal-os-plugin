@@ -128,6 +128,11 @@ Todo se arma cruzando lo que el Personal OS ya sabe con Jira. **Nada se inventa;
 1. **El equipo y el líder:** `assignee in (<account_ids>) AND (statusCategory != Done OR statusCategoryChangedDate >= startOfMonth())`, con `comment`, `timespent` y el campo de inicio.
 2. **Las colas, sin límite de fecha:** `assignee in (<account_ids>) AND status in (<revisión e implementación>)`.
 3. **Status Jira:** `project in (<claves>) AND statusCategory != Done` (incluye las sin responsable).
+4. **Los ancestros (el «global» de cada tarea):** con los `parent` de las tres lecturas, se piden los padres que no
+   vinieron (`key in (…)`, campos `summary, issuetype, parent`, de a 50) y se sube nivel por nivel hasta que no
+   quede ninguno (tope 5 niveles). Van en el JSON de datos como `jira.padres` (`{clave: {titulo, tipo, padre}}`) y
+   `status-celula-compartido.js` los sube a `jira/padres`. **Sin esta lectura, «Ocupación de hoy» y el modo
+   cliente nombran cada subtarea suelta en vez de su macro** hasta que alguien pulse «Actualizar» en la página.
 
 Campos: `summary, status, assignee, duedate, timeoriginalestimate, timespent, updated, created, project,
 issuetype, parent, comment` y `campo_inicio`. Los volcados se guardan y se normalizan con
@@ -152,7 +157,7 @@ propia célula sin avisar. El motor lo audita.
    NO se filtra (C-1).
 4. **Timesheets del equipo** (sección G). Si el usuario los usa, un tablero sin esa pestaña no sale sin
    decirlo en la entrega.
-5. **Escribir el JSON** en `status_celula.carpeta_datos` (por defecto `<stateDir>/_datos/status-celula/`)
+5. **Escribir el JSON** (con `jira.padres`, sección B paso 4) en `status_celula.carpeta_datos` (por defecto `<stateDir>/_datos/status-celula/`)
    como `datos-<fecha>.json`. Formato en la cabecera de `status-celula.js` (motor); `ejemplo.json` es un caso
    completo ficticio. El formato del motor anterior se acepta tal cual (se convierte solo).
 6. **Auditar con el motor, con la carga de la semana:**
@@ -240,6 +245,23 @@ le cabe sale al pasar el cursor) y `hoy X/Y h` en la cabecera. `--carga N` la im
 | Sin estimación no suma, pero la celda lleva «+» | La carga real es mayor que la que se ve |
 | Ámbar < 85 % · verde 85–105 % · rojo > 105 % · punteado = nada; se recalcula al arrastrar | Se lee sin clic y sirve para decidir antes de proponer |
 
+### C-5-bis · Qué hace hoy cada persona y cómo va cada global (Ocupación de hoy)
+
+Cada tarjeta de «Ocupación de hoy» dice, además del %, **en qué está trabajando hoy**: una línea con sus
+**globales** activos, ordenados por las horas que le suman hoy (los tres primeros y «+N»; las reuniones al final).
+La flecha ▾ de la tarjeta despliega debajo de la franja una barra por global con su avance en Jira.
+
+| Regla | Por qué |
+|---|---|
+| **Global** = el ancestro más alto de la tarea: el macro; si no hay, la historia; si no tiene padre, la propia tarea (un bug suelto es su propio global). Es `macroDe`, el mismo del modo cliente | No todo cuelga de un macro: se mide lo que la persona está empujando, sea macro, historia o bug |
+| Qué entra hoy: lo mismo que suma en la carga de hoy (C-5), agrupado por global. Las reuniones (tipo Reuniones, un Daily o Teams) van juntas como «Reuniones», nunca como proyecto | El % y la línea tienen que cuadrar |
+| **Avance por etapas sobre TODO el global** (de cualquier persona y cualquier fecha), contando solo las hojas (lo que tiene hijas no se cuenta: el trabajo está en las hijas) | Es el avance del proyecto, no el de la persona |
+| Tramos: terminado · revisión o por publicar · en curso · sin iniciar. El % grande es terminado + revisión. «Listo para implementación» y certificación van con revisión, nunca como cierre | Se ve cuánto falta solo de revisión del líder |
+| `Redefinido` y los `no_cierre` no suman ni restan: se cuentan aparte («N en Redefinido») | Jira los cuenta como hechos sin estarlo |
+| Por horas estimadas si todas las hojas tienen estimación; si falta una, por cantidad de issues, y se dice | Sin estimación no hay porcentaje por horas |
+| Al desplegar, la página trae el global de Jira en vivo (hasta 3 niveles de hijas) con el conector de quien mira; sin conector, usa la foto («solo lo abierto y lo cerrado este mes») y lo dice | Nada se presenta como completo sin serlo |
+| Lo desplegado se recuerda por navegador (`planeacion-hoy-abierta`) y al volver se refresca solo | Es una preferencia de quien mira, no del tablero |
+
 ### C-6 · Las horas no las pone Claude, y el accountId tampoco se adivina
 
 **La estimación la pone el usuario o quien hace el trabajo.** Donde falte, queda vacía y marcada. Si el
@@ -260,7 +282,7 @@ reciente** (o de `equipo[].account_id`), nunca de memoria: uno equivocado deja l
 
 | Vista | Qué hace | Escribe en |
 |---|---|---|
-| Gantt | Carriles por persona, arrastrar y soltar, editor, carga del día y ocupación de hoy, reuniones de Teams | `plan`; Jira solo con confirmación |
+| Gantt | Carriles por persona, arrastrar y soltar, editor, carga del día, reuniones de Teams y «Ocupación de hoy» con lo que hace cada quien y el avance de sus globales (C-5-bis) | `plan`; Jira solo con confirmación |
 | Revisión 1 a 1 | Lo abierto de una persona en los proyectos configurados; indicadores que filtran; ficha con «Llevar hasta» | Jira, con confirmación |
 | Backlog sin dueño | Lo sin asignar, con sugerencia de la IA (responsable, prioridad, talla) | `sugerencias`, `backlog`; Jira con confirmación |
 | Bloqueos y frentes | La mesa (sección A) | — |

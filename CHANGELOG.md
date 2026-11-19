@@ -1,5 +1,10 @@
 # Changelog
 
+## 3.11.0
+
+- **status-celula · qué hace hoy cada persona:** cada tarjeta de «Ocupación de hoy» lleva una línea con los globales en que trabaja hoy (macro; si no hay, la historia; si no tiene padre, la propia tarea), ordenados por horas y con las reuniones al final. La flecha ▾ despliega una barra por global con su avance en Jira por etapas (terminado · revisión o por publicar · en curso · sin iniciar) sobre todas sus hojas, por horas si todas están estimadas o por cantidad si no; `Redefinido` se cuenta aparte. Trae el global en vivo con el conector de quien mira y, sin conector, usa la foto y lo dice. Regla en SKILL.md §C-5-bis.
+- **status-celula · foto con padres:** `status-celula-compartido.js` sube el padre y el tipo de cada issue y un documento `jira/padres` con los ancestros (lo que no vino en la lectura del equipo llega en `datos.jira.padres`), para que el global se vea desde la foto de la skill y no solo tras «Actualizar». Nuevo paso 4 en la lectura de Jira (§B).
+
 ## 3.10.1
 
 - **reglas-organizacion · página de convenciones para el equipo:** campos opcionales `texto_equipo` y `fuente_equipo` por regla. La página (`--vista`) muestra la norma como la lee el equipo y la fuente por su nombre real, y oculta las etiquetas de cumplimiento del asistente; `regla` y `fuente` siguen siendo lo que cumple Claude. Sin esos campos, la página usa el texto de siempre.
