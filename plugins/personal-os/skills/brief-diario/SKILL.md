@@ -75,7 +75,7 @@ haga falta: mejor un seguimiento correcto que uno rápido.
   no le comenta una issue (o **nunca**), vencidas y sin fecha. Quien no tenga `account_id` se reporta como
   **hueco de trazabilidad**, no se omite. Devuelve el cruce de alcances con sus contadores, el inventario
   (máx. ~15 issues propias; di cuántas quedaron fuera), la verificación de cada pendiente y la lista por rol.
-- **`brief-outlook`**, tres tareas y una opcional:
+- **`brief-outlook`**, tres tareas y dos opcionales:
   1. **Verifica los pendientes de correo** contra **Enviados y el hilo completo**, no contra la bandeja: si
      hay una respuesta del usuario posterior al compromiso, `RESPONDIDO` con `fecha + asunto` como evidencia.
   2. Correos **nuevos** que exigen acción (solo si **no** tienen ya respuesta enviada) y la agenda de hoy y
@@ -89,6 +89,12 @@ haga falta: mejor un seguimiento correcto que uno rápido.
      correo de `asuntos.completado`. Por PR: `repo + número · título (≤ 8 palabras) · autor · rama origen → destino · abierto
      desde · ABIERTO | COMPLETADO (por quién)`. Di siempre que es evidencia de correo, no verificación en
      el repositorio. Trae aparte el conteo de avisos de `asuntos.pat_vencido` (token vencido o por vencer).
+  5. *(si hay `reglas_empresa.por_skill.brief-diario`)* **Reglas de la organización sobre correo**: pásale
+     esas reglas (`id` + `regla`) y que devuelva, de los últimos 3 días hábiles, las solicitudes de
+     requerimiento o de estimación que le llegaron al usuario con `fecha de llegada · remitente · asunto ·
+     ¿respondida en el hilo? (fecha) · ¿llegó por el canal y con las copias que exige la regla?`. En el
+     paso 6, cada regla incumplida va como riesgo con su `id` («RE-007: estimación pedida el 14/11 sin
+     respuesta, vence hoy»), nunca como dato suelto.
 - **`brief-teams`**: menciones y mensajes directos que siguen esperando al usuario, verificando antes en el
   hilo si ya respondió. «Sin hallazgos» no es «silencio probado».
 - **`brief-pits`** *(si hay `tareas_externas`)*: lee cada fuente en SOLO LECTURA con el conector que

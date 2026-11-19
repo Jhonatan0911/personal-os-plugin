@@ -1,5 +1,8 @@
 # Changelog
 
+## 3.9.0
+
+- **brief-diario · reglas de la organización sobre correo:** si `fuentes.yaml` trae `reglas_empresa.por_skill.brief-diario`, `brief-outlook` recibe esas reglas y devuelve las solicitudes de requerimiento o de estimación de los últimos 3 días hábiles con su fecha de llegada, si se respondieron en el hilo y si llegaron por el canal y con las copias exigidas. Cada regla incumplida entra al brief como riesgo con su `id`.
 ## 3.8.0
 
 - **Nueva skill `paso-a-produccion`:** arma y verifica el paquete que la organización exige antes de desplegar a producción. La lista de entregables y aprobaciones vive en la sección `paso_produccion` de `fuentes.yaml` (ejemplo en `config-ejemplo.yaml`); `scripts/paquete.py` la cruza contra el expediente (campos con contenido) y la carpeta del paquete (archivos por prefijo), escribe `paquete.json` y `paquete.md` y sale con 0 (completo), 1 (falta algo) o 2 (sin expediente o configuración). Guía para producir los faltantes técnicos desde el código (impacto por `git diff`, diagramas en Mermaid) y borrador del correo de aprobación. Nunca despliega ni envía.
