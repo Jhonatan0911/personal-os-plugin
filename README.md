@@ -144,7 +144,8 @@ arma y publica el tablero de planeación compartido, que se configura desde su p
 editar JSON),
 `timesheet`, `consola-neuronal`, `tablero-diario`, `cerrar-tarea`, `reconciliar`, y las del flujo del
 líder: `mapa-criticidad`, `revisar-pr`, `certificar-funcional`, `paso-a-produccion` («arma el paquete para
-desplegar»), `worklist-lider` («la cabina del líder»),
+desplegar»), `reglas-organizacion` («llegó una política nueva»: registro único de reglas, hook que bloquea
+producción y ramas protegidas, vigía y página de convenciones), `worklist-lider` («la cabina del líder»),
 `mesa-nueva` («monta una mesa»: workspace multi-repo de Azure DevOps), `migrar-ramas` («migrar ramas»,
 Branching V2 entre proyectos de Azure DevOps), `regresion-guiada` («arranca la regresión»),
 `informe-desarrollo` («informe del desarrollo»), `redactar` (textos en tu voz, sin enviar),

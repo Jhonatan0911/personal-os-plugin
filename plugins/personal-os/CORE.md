@@ -200,3 +200,12 @@ como copiloto**: apretadas y sin colchón, con la matriz de tiempos de `fuentes.
 plan pasa por el agente `revisor-estimacion` (adversarial: sobreestimación, cosas que ya existen,
 duplicados, subtareas sin criterio de aceptación y, al revés, riesgo legado subestimado). La cifra final
 la pone el usuario. Nada se escribe en Jira sin su OK.
+
+## 17. Reglas de la organización (normativas, registro único y cumplimiento)
+Las políticas que emite la organización (lineamientos de Arquitectura, guías obligatorias, ramas,
+acceso a producción, despliegues) viven como nota en `<stateDir>/normativas/` y se parten en reglas
+atómicas en **un solo registro** (`<config>/reglas-empresa/registro.yaml`, skill `reglas-organizacion`).
+De ahí se generan las capas: núcleo siempre presente, reglas por tipo de archivo, verificaciones por
+skill, el hook que bloquea y el vigía. **Nunca se inyectan reglas en cada prompt**: se acumulan y bajan
+el cumplimiento. Una normativa no se cierra, se aplica: un choque con el trabajo en curso es un riesgo
+el día que se detecta, y un aviso del vigía se atiende o se declara por qué no.

@@ -1,5 +1,11 @@
 # Changelog
 
+## 3.10.0
+
+- **Nueva skill `reglas-organizacion`:** registro único de las reglas de la organización (`<config>/reglas-empresa/registro.yaml` + `repos.yaml`, plantillas en la skill). `scripts/build.py` genera por capas: núcleo siempre presente y reglas por tipo de archivo en `~/.claude/rules/<salida>/` (con `paths:`), `reglas_empresa.por_skill` y `revision_pr` en `fuentes.yaml`, la configuración del hook y del vigía, y con `--vista` una página de convenciones con la marca de la organización. Valida antes de escribir (ids, campos, tope de 40 reglas en el núcleo, secciones escritas a mano) y no toca nada si falla.
+- **Hook `guardia-empresa.js` (PreToolUse, Bash | PowerShell):** niega comandos que conectan a servidores de producción declarados, pregunta por réplicas de lectura, niega push a ramas protegidas o sin clave de Jira (solo en los remotos de `remotos_org`) y niega escrituras SQL/Mongo fuera de los servidores de test. Sin configuración generada, deja pasar todo.
+- **Vigía `reglas-scan.js` (SessionStart):** despliegues a producción con fecha sin paquete completo (`paso-a-produccion`), documentos fuente que cambiaron o versiones nuevas en carpetas vigiladas (`--aceptar` marca la revisión) y registro editado sin regenerar. Solo imprime si hay hallazgos.
+- **CORE §17:** reglas de la organización: normativas, registro único y cumplimiento por capas; nunca reglas inyectadas en cada prompt.
 ## 3.9.0
 
 - **brief-diario · reglas de la organización sobre correo:** si `fuentes.yaml` trae `reglas_empresa.por_skill.brief-diario`, `brief-outlook` recibe esas reglas y devuelve las solicitudes de requerimiento o de estimación de los últimos 3 días hábiles con su fecha de llegada, si se respondieron en el hilo y si llegaron por el canal y con las copias exigidas. Cada regla incumplida entra al brief como riesgo con su `id`.

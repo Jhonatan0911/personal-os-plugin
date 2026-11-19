@@ -1,0 +1,4 @@
+# Repos nuevos (aplican las guías de arquitectura) y legados. Va en <config>/reglas-empresa/repos.yaml.
+# Un repo que no aparece se trata como legado.
+nuevos: []
+legados: []

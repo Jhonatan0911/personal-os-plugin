@@ -1,0 +1,64 @@
+# Registro de reglas de la organización — FUENTE ÚNICA. Va en <config>/reglas-empresa/registro.yaml
+# (<config> = carpeta de fuentes.yaml). Se regenera con la skill reglas-organizacion (scripts/build.py).
+#
+# capa:  nucleo (siempre presente, máx. 40) · archivo (con `paths`) · momento (solo la aplican las skills de `momentos`)
+# cumplimiento: instruccion | bloqueo | revision_pr | vigia
+# momentos: skills que la aplican en su paso (planear-sprint, mesa-nueva, revisar-pr, paso-a-produccion, brief-diario…)
+# fuente: N-### (<estado>/normativas) o D-### (<estado>/decisiones)
+
+version: 1
+organizacion: "<Nombre de la organización>"
+salida:
+  rules: "~/.claude/rules/organizacion"      # carpeta de reglas de Claude Code (usuario)
+guias:                                        # guías de arquitectura de proyectos nuevos (opcionales)
+  backend: null
+  frontend: null
+marca: { primario: "#1f4e79", secundario: "#2e86c1", logo: null }   # para la página de convenciones
+revision_pr_base:                             # se mezcla con lo generado en la sección revision_pr
+  azure_devops: { organizacion: "<organizacion>", proyectos: ["<Proyecto>"] }
+
+reglas:
+  - id: RE-001
+    titulo: Producción no se toca
+    capa: nucleo
+    regla: "Nunca conectarse ni ejecutar nada contra servidores de producción."
+    fuente: "N-001"
+    cumplimiento: [instruccion, bloqueo]
+    vigente_desde: 2026-01-01
+
+  - id: RE-002
+    titulo: Estimación completa en menos de 48 horas
+    capa: nucleo
+    regla: "Toda estimación incluye documentación y despliegue, y se entrega en menos de 48 horas."
+    fuente: "N-002"
+    cumplimiento: [instruccion, vigia]
+    momentos: [planear-sprint, brief-diario]
+    vigente_desde: 2026-01-01
+
+  - id: RE-020
+    titulo: Guía de arquitectura backend
+    capa: archivo
+    paths: ["**/*.cs"]
+    solo_repos_nuevos: true
+    regla: |
+      Antes de proponer estructura o código, leer la sección que aplique de la guía de backend.
+    fuente: "N-003"
+    cumplimiento: [instruccion, revision_pr]
+    momentos: [planear-sprint, mesa-nueva]
+    vigente_desde: 2026-01-01
+
+documentos_vigilados:                          # el vigía avisa si cambian
+  - { normativa: N-003, nombre: "Guía de backend", ruta: "<ruta al documento>" }
+carpetas_vigiladas:                            # y si aparece una versión nueva
+  - { ruta: "<carpeta>", patron: "^guia.*\\.(md|pdf)$" }
+
+bloqueos:
+  servidores:
+    deny: []                                   # producción
+    ask: []                                    # réplicas de lectura: preguntan
+  servidores_test: []                          # una escritura aquí pregunta; en cualquier otro lado se niega
+  remotos_org: []                              # regex de remotos git de la organización; vacío = todos los repos
+  ramas_protegidas: [develop, qa, staging, main, master]
+  patron_rama: '^(feature|bugfix|hotfix)/[A-Z][A-Z0-9]+-\d+'
+  sql_escritura: [INSERT, UPDATE, DELETE, MERGE, TRUNCATE, DROP, ALTER, CREATE, EXEC, EXECUTE, GRANT, REVOKE]
+  clientes_sql: [sqlcmd, Invoke-Sqlcmd, osql, bcp, mongosh, mongo]
