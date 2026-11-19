@@ -1,5 +1,9 @@
 # Changelog
 
+## 3.13.1
+
+- **status-celula · títulos de hoy entendibles:** la regla pasa a «tipo de trabajo + sobre qué», 3 a 6 palabras («Dashboard del validador de derechos», «Integración de pruebas rápidas con Compensar»); una reunión se nombra como reunión; sin recortes que cambien el sentido ni siglas sin contexto. Guía nueva `references/titulos-hoy.md` (fórmula, tabla de tipos de trabajo, ejemplos buenos y malos) y `status-celula-hoy.js` con más contexto por grupo (tipo de cada issue, historias, pista de reunión o seguimiento) y `--validar`, obligatorio antes de subir.
+
 ## 3.13.0
 
 - **Vigía de correo (regla dura, CORE §7-ter):** script nuevo `correo-scan.js` en los hooks de arranque y de cada prompt. Avisa cuando el buzón lleva más de `correo.horasMaxSinBarrer` horas sin barrer en jornada (3 por defecto), cuando el último barrido leyó un buzón que no es el del dueño (`correo.buzon` en config.json) o cuando hay urgentes abiertos; `--marcar` registra cada barrido en `<stateDir>/correo/barrido.json`. Nació de un urgente del cliente con plazo que llegó después del brief y se descubrió dos días tarde con el conector abierto en otra cuenta.

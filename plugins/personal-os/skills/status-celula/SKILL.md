@@ -167,9 +167,12 @@ propia célula sin avisar. El motor lo audita.
    --config "<celula>" [--extras "<extras>"] --salida "<carpeta_datos>/inventario-<fecha>.json"`. Imprime qué
    quedó fuera y por qué; «persona sin carril» es normal (gente de fuera: sale en Indicadores de Jira).
 7-bis. **Títulos cortos de hoy:** `& "C:/nvm4w/nodejs/node.exe" "C:/Users/jpina/Documents/Personal/Proyectos/personal-os-plugin/plugins/personal-os/scripts/status-celula-hoy.js" --datos "<datos.json>" --inventario "<inventario>"`
-   lista, por persona y global, las tareas que tiene hoy. Por cada grupo escribe en `datos.jira.cortos` un título de 2 a
-   4 palabras con lo que de verdad está haciendo hoy (`"<carril>|<CLAVE-GLOBAL>": "Correcciones doble RIPS"`) y uno
-   genérico por global (`"<CLAVE-GLOBAL>": "Refactor HC"`). Sin el nombre del cliente ni jerga interna; se sube a `jira/cortos`.
+   lista, por persona y global, las tareas que tiene hoy. Por cada grupo escribe en `datos.jira.cortos` un título de 3 a
+   6 palabras: **tipo de trabajo + sobre qué**, entendible sin contexto (`"<carril>|<CLAVE-GLOBAL>": "Correcciones del doble RIPS"`;
+   si es una reunión, «Reunión de …»), y uno genérico por global (`"<CLAVE-GLOBAL>": "Refactor de la historia clínica"`). Se relee
+   cada título como lo leería alguien de fuera; guía, tabla de tipos de trabajo y ejemplos en
+   `references/titulos-hoy.md`. **Antes de subir:** `status-celula-hoy.js … --validar` (sale con 1 si un título falta, es
+   largo o corto, es el nombre del macro o lleva claves; se corrige y se vuelve a validar).
 8. **Armar la página:** `node "<raíz del plugin>/scripts/status-celula-tablero.js" --config "<celula>"
    --organizacion "<organizacion>" --inventario "<inventario>" [--extras "<extras>"] [--motor "<motor>"]
    --salida "<carpeta_datos>/tablero-<fecha>.html"` (extras y motor solo los precarga la pestaña ⚙ Configuración).
@@ -264,7 +267,7 @@ La flecha ▾ despliega, **debajo de esa misma tarjeta y con su mismo ancho** (n
 | `Redefinido` y los `no_cierre` no suman ni restan: se cuentan aparte («N en Redefinido») | Jira los cuenta como hechos sin estarlo |
 | Por horas estimadas si todas las hojas tienen estimación; si falta una, por cantidad de issues, y se dice | Sin estimación no hay porcentaje por horas |
 | Al desplegar, la página trae el global de Jira en vivo (hasta 3 niveles de hijas) con el conector de quien mira, **sin botón propio**: «Actualizar Jira y calendario» es el único botón y renueva también estos avances. Sin conector, usa la foto («solo lo abierto y lo cerrado este mes») y lo dice al pasar el cursor | Un solo botón de actualizar; nada se presenta como completo sin serlo |
-| **El título dice lo que hace HOY, no el nombre del macro**: 2 a 4 palabras («Correcciones doble RIPS», «Validador de derechos», «Pruebas rápidas Compensar»), sin el cliente ni el macro. Los escribe quien corre la skill en `datos.jira.cortos` (paso 7-bis de §C); el nombre largo del macro sale al pasar el cursor. Si falta, la página acorta el título sola | La jerarquía de Jira no siempre nombra lo de hoy (las correcciones del doble RIPS cuelgan de cinco historias del refactor) |
+| **El título dice lo que hace HOY, no el nombre del macro**, y lo entiende alguien que no conoce el proyecto: **qué tipo de trabajo es + sobre qué**, 3 a 6 palabras («Dashboard del validador de derechos», «Integración de pruebas rápidas con Compensar», «Correcciones del doble RIPS», «Revisión técnica del doble RIPS»). Una reunión se nombra como reunión («Reunión de agendamiento nacional»). Nada de recortes que cambian el sentido («Validador de derechos» cuando se construye su dashboard), siglas sin contexto ni jerga interna. Los escribe quien corre la skill en `datos.jira.cortos` (paso 7-bis de §C); el nombre largo del macro sale al pasar el cursor. Si falta, la página acorta el título sola | La jerarquía de Jira no siempre nombra lo de hoy (las correcciones del doble RIPS cuelgan de cinco historias del refactor) |
 | Texto claro, corto y puntual (el espacio es pequeño): «X % terminado, Y % en revisión» y «Hoy le dedica N h» (o «Hoy: … en reuniones»). Sin prefijos ni avisos de carga («trayendo…»); un error de Jira va solo al pasar el cursor | La tarjeta se lee sin explicación |
 | Lo desplegado se recuerda por navegador (`planeacion-hoy-abierta`) y al volver se refresca solo | Es una preferencia de quien mira, no del tablero |
 
