@@ -1,5 +1,9 @@
 # Changelog
 
+## 3.11.3
+
+- **status-celula · Ocupación de hoy, texto más corto:** «X % terminado, Y % en revisión» sin el prefijo «Proyecto:» y sin el aviso «trayendo de Jira…»; un error de Jira queda solo en el detalle al pasar el cursor.
+
 ## 3.11.2
 
 - **status-celula · Ocupación de hoy, textos y un solo botón:** se quita el botón «traer de Jira / actualizar» de cada global; el avance se trae solo al desplegar y «Actualizar Jira y calendario» lo renueva. Textos sin abreviaturas: «Proyecto: X % terminado, Y % en revisión» y «Hoy le dedica N h» («Hoy: … en reuniones»).

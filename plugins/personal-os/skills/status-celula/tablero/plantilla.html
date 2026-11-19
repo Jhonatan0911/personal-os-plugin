@@ -2233,7 +2233,7 @@ function htmlAvanceHoy(l,ms){
     const det=`${m.nm} (${ks.join(", ")})\nTerminado ${av.pc.done} % · revisión o por publicar ${av.pc.rev} % · en curso ${av.pc.curso} % · sin iniciar ${av.pc.new} %\n${av.n} tarea${av.n===1?"":"s"} ${av.porHoras?"por horas":"por cantidad (no todas tienen estimación)"}${av.redef?` · ${av.redef} en Redefinido (no cuentan)`:""}\nFuente: ${fuente}`;
     return `<div class="hm" title="${esc(det)}"><div class="hmt"><span class="hmn" data-fk="${esc(k)}">${esc(m.nm)}</span><b class="mono" title="Avance del proyecto: terminado + en revisión">${av.T?av.avance+" %":"—"}</b></div>
       <div class="hmb" role="img" aria-label="${esc(det)}">${["done","rev","curso","new"].map(c=>av.pc[c]?`<i class="s-${c}" style="width:${av.pc[c]}%"></i>`:"").join("")}</div>
-      <div class="hmd">${av.T?`Proyecto: ${av.pc.done} % terminado, ${av.pc.rev} % en revisión`:"Proyecto: sin tareas que medir"}${A&&A.cargando?" (trayendo de Jira…)":(A&&A.err?` · <span class="red">${esc(A.err)}</span>`:"")}</div>
+      <div class="hmd">${av.T?`${av.pc.done} % terminado, ${av.pc.rev} % en revisión`:"Sin tareas que medir"}</div>
       <div class="hmd">${hh}</div></div>`; }).join("");
   return `<div class="hoyd" role="region" aria-label="${esc("Qué hace hoy "+NOMBRE[l.id])}">${filas||'<div class="hmd">Nada planeado hoy.</div>'}</div>`; }
 function diaLargo(i){ if(i>=AFTER) return "después del "+fmt(LAST); return DNOM[new Date(DAYS[i]+"T12:00:00").getDay()]+" "+fmt(DAYS[i]); }
