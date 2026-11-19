@@ -17,6 +17,7 @@
  *   jira/cNN + jira/meta  foto de Jira en trozos de 350 issues
  *   jira/padres        padre y ancestros de cada issue (el «global» de la tarea en «Ocupación de hoy» y el modo cliente);
  *                      los ancestros que no vinieron en la lectura del equipo llegan en datos.jira.padres
+ *   jira/cortos        títulos cortos de lo que hace hoy cada persona (datos.jira.cortos; ver status-celula-hoy.js)
  *
  * Reglas que el script hace cumplir:
  *   · La foto de Jira SOLO se sube si es más reciente que la que ya tiene el tablero (`--meta-actual`, el
@@ -104,8 +105,10 @@ function main() {
     trozos.forEach((c, n) => docs.set(`jira/c${String(n).padStart(2, '0')}`, { issues: c }));
     const ids = trozos.map((_, n) => `c${String(n).padStart(2, '0')}`);
     docs.set('jira/padres', { padres });
-    docs.set('jira/meta', { at: jiraAt, por: '', n: iss.length, chunks: ids.concat('padres'), parcial: false, nota: `Foto del status de la célula (${corteTxt}); se reemplaza al pulsar «Actualizar todo».` });
-    for (const viejo of (metaActual && metaActual.chunks) || []) if (!ids.includes(viejo) && viejo !== 'padres') borrar.push(viejo);
+    // títulos cortos de lo que hace hoy cada persona («<carril>|<GLOBAL>») y de cada global, escritos por quien corre la skill
+    docs.set('jira/cortos', { cortos: (d.jira && d.jira.cortos) || {} });
+    docs.set('jira/meta', { at: jiraAt, por: '', n: iss.length, chunks: ids.concat('padres', 'cortos'), parcial: false, nota: `Foto del status de la célula (${corteTxt}); se reemplaza al pulsar «Actualizar todo».` });
+    for (const viejo of (metaActual && metaActual.chunks) || []) if (!ids.includes(viejo) && viejo !== 'padres' && viejo !== 'cortos') borrar.push(viejo);
   }
 
   const dir = path.resolve(salida);

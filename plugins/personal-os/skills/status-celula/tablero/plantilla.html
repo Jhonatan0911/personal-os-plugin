@@ -2186,13 +2186,20 @@ function macrosHoy(laneId,all,jr,t){ const g={};
     // las reuniones de Jira (tipo Reuniones, o un Daily) van juntas con las de Teams: no son un proyecto
     const reuJ=/^reuni/i.test(e.tipo||"")||/^\s*(daily|reuni[oó]n)\b/i.test(e.titulo||"");
     const m=reuJ?{id:"_reu", nm:"Reuniones"}:(String(e.key).startsWith("L-")?{id:"l:"+e.key, nm:String(e.titulo||"").trim()||e.key}:macroDe(e)), n=diasHab(a,b);
-    const x=g[m.id]=g[m.id]||{id:m.id, nm:m.nm, h:0, sin:0, n:0, reu:reuJ}; if(e.est) x.h+=e.est/n; else x.sin++; x.n++; });
+    const x=g[m.id]=g[m.id]||{id:m.id, nm:reuJ?m.nm:tituloHoy(laneId,m.id,m.nm), full:m.nm, h:0, sin:0, n:0, reu:reuJ}; if(e.est) x.h+=e.est/n; else x.sin++; x.n++; });
   const reu=reunionesDe(laneId,jr,true).filter(m=>m.dia===DAYS[t]);
   if(reu.length){ const x=g._reu=g._reu||{id:"_reu", nm:"Reuniones", h:0, sin:0, n:0, reu:true}; reu.forEach(m=>{ x.h+=m.h||0; x.n++; }); }
   // dos globales con el mismo título (una issue y su espejo en otro proyecto) se muestran como uno solo, con el avance de los dos
   const porNom={}; Object.values(g).forEach(x=>{ x.ids=[x.id]; const nn=x.reu?"_reu":normTit(x.nm)||x.id; const y=porNom[nn];
     if(!y){ porNom[nn]=x; return; } y.h+=x.h; y.sin+=x.sin; y.n+=x.n; y.ids.push(x.id); });
   return Object.values(porNom).sort((p,q)=>q.h-p.h||q.sin-p.sin); }
+// Título corto de un global: el que escribió la skill para esa persona («carril|CLAVE») o para el global; si no hay, se acorta el título:
+// sin paréntesis, sin [GLPI-…], sin «HU-xx ·», sin el nombre de los clientes después de «de/para/en/hacia» y con 6 palabras como máximo.
+function cortosFoto(){ return (((FOTO.chunks||{}).cortos)||{}).cortos||{}; }
+function acortar(t){ let x=String(t||"").replace(/\([^)]*\)/g," ").replace(/\[[^\]]*\]/g," ").replace(/^\s*HU-?\s*\d+\s*[·|:\-–]\s*/i,"").replace(/^\s*(proyecto\s+macro|macro)\s*[:·\-–]\s*/i,"");
+  Object.values(CFG.clientes||{}).forEach(c=>{ if(c&&c.nm) x=x.replace(new RegExp("\\s+(de|para|en|hacia)\\s+"+String(c.nm).replace(/[.*+?^${}()|[\]\\]/g,"\\$&")+"\\b","ig")," "); });
+  const w=x.replace(/\s+/g," ").trim().split(" "); x=w.slice(0,6).join(" ")+(w.length>6?"…":""); return x.charAt(0).toUpperCase()+x.slice(1); }
+function tituloHoy(laneId,id,nm){ const k=claveGlobal(id), C=cortosFoto(); return (k&&(C[laneId+"|"+k]||C[k]))||acortar(nm); }
 function claveGlobal(id){ return String(id).startsWith("t:")?id.slice(2):(ISKEY.test(id)?id:null); }
 // Lo que la foto conoce de un global: él mismo y todo lo que cuelga de él (abierto, y lo cerrado este mes)
 function hijasFoto(root){ const M=CLI_PM, out=[];
@@ -2230,7 +2237,7 @@ function htmlAvanceHoy(l,ms){
     if(m.reu||!k) return `<div class="hm"><div class="hmt"><span class="hmn" title="${esc(m.nm)}">${esc(m.nm)}</span></div><div class="hmd">${hh}${!k&&!m.reu?" · sin issue en Jira":""}</div></div>`;
     const vivo=A&&A.filas, vistos=new Set(), av=avanceDe((vivo?A.filas:[].concat(...ks.map(hijasFoto))).filter(x=>!vistos.has(x.k)&&vistos.add(x.k)));
     const fuente=A&&A.cargando?"trayendo de Jira…":(A&&A.err?A.err:(vivo?"Jira en vivo "+A.at.toLocaleTimeString("es-CO",{timeStyle:"short"}):"foto del último status (solo lo abierto y lo cerrado este mes)"));
-    const det=`${m.nm} (${ks.join(", ")})\nTerminado ${av.pc.done} % · revisión o por publicar ${av.pc.rev} % · en curso ${av.pc.curso} % · sin iniciar ${av.pc.new} %\n${av.n} tarea${av.n===1?"":"s"} ${av.porHoras?"por horas":"por cantidad (no todas tienen estimación)"}${av.redef?` · ${av.redef} en Redefinido (no cuentan)`:""}\nFuente: ${fuente}`;
+    const det=`${m.nm} · ${m.full||m.nm} (${ks.join(", ")})\nTerminado ${av.pc.done} % · revisión o por publicar ${av.pc.rev} % · en curso ${av.pc.curso} % · sin iniciar ${av.pc.new} %\n${av.n} tarea${av.n===1?"":"s"} ${av.porHoras?"por horas":"por cantidad (no todas tienen estimación)"}${av.redef?` · ${av.redef} en Redefinido (no cuentan)`:""}\nFuente: ${fuente}`;
     return `<div class="hm" title="${esc(det)}"><div class="hmt"><span class="hmn" data-fk="${esc(k)}">${esc(m.nm)}</span><b class="mono" title="Avance del proyecto: terminado + en revisión">${av.T?av.avance+" %":"—"}</b></div>
       <div class="hmb" role="img" aria-label="${esc(det)}">${["done","rev","curso","new"].map(c=>av.pc[c]?`<i class="s-${c}" style="width:${av.pc[c]}%"></i>`:"").join("")}</div>
       <div class="hmd">${av.T?`${av.pc.done} % terminado, ${av.pc.rev} % en revisión`:"Sin tareas que medir"}</div>

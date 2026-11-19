@@ -1,5 +1,9 @@
 # Changelog
 
+## 3.12.0
+
+- **status-celula · el título dice lo que se hace hoy:** cada global de «Ocupación de hoy» se muestra con un título corto (2 a 4 palabras) de lo que la persona hace ese día («Correcciones doble RIPS», «Validador de derechos»), no con el nombre largo del macro, que queda al pasar el cursor. Regla fija de la skill: paso 7-bis de §C con el script nuevo `status-celula-hoy.js`, que lista por persona y global las tareas de hoy para escribir `datos.jira.cortos` (`"<carril>|<GLOBAL>"` y uno genérico por global); `status-celula-compartido.js` lo sube a `jira/cortos`. Sin títulos escritos, la página acorta sola (sin paréntesis, [GLPI-…], «HU-xx ·», nombre del cliente; 6 palabras máximo).
+
 ## 3.11.3
 
 - **status-celula · Ocupación de hoy, texto más corto:** «X % terminado, Y % en revisión» sin el prefijo «Proyecto:» y sin el aviso «trayendo de Jira…»; un error de Jira queda solo en el detalle al pasar el cursor.
