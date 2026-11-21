@@ -15,7 +15,8 @@ La raíz del plugin aparece en el contexto de la sesión, en la línea **«Scrip
 el hook de arranque.
 
 ## Antes de todo: el vigía de correo
-Si el contexto trae el bloque **`📭 VIGÍA DE CORREO`** (lo dejan los hooks cuando el buzón lleva horas sin
+Solo cuenta en sesiones de la empresa: en una sesión personal (el contexto dice «Ámbito de esta sesión»
+personal o universidad) el hook ya no lo deja y no se menciona. Si el contexto trae el bloque **`📭 VIGÍA DE CORREO`** (lo dejan los hooks cuando el buzón lleva horas sin
 barrer, cuando el conector leyó el buzón de otra persona o cuando hay urgentes abiertos), **eso va antes del
 frente**: haz el barrido de urgentes (brief-diario, paso «Barrido de urgentes»), y si hay un urgente abierto
 o el buzón no es el del usuario, la **primera línea** del status lo dice. Retomar un frente interno mientras

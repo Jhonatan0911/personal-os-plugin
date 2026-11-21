@@ -172,6 +172,52 @@ function leerStdin() {
   try { return JSON.parse(raw || '{}') || {}; } catch (e) { return {}; }
 }
 
+/*
+ * Ámbito de la sesión, según la carpeta donde se abrió (config.json → "ambitos"):
+ *   "ambitos": {
+ *     "carpetas": { "laboral": ["C:/Empresa"], "personal": ["C:/Users/yo/Personal"], "universidad": ["…/U"] },
+ *     "clientesPersonales": ["Universidad", "Personal"],   // alcances que NO son de la empresa
+ *     "porDefecto": "central"
+ *   }
+ * Gana el prefijo más largo. "laboral" y "central" (la carpeta base, donde corre el brief y se mezcla
+ * todo) ven todo lo de la empresa; cualquier otro ámbito es personal: los vigías de la empresa
+ * (correo, reglas, compromisos con clientes, reuniones con issue) callan. Sin "ambitos" → "central",
+ * que es el comportamiento de siempre. Se fuerza con --ambito <x> o PERSONAL_OS_AMBITO.
+ */
+let _hookEv;
+/** Payload del hook leído UNA vez (varios helpers lo piden). Sin stdin (consola) → {}. */
+function eventoHook() {
+  if (_hookEv === undefined) _hookEv = process.stdin.isTTY ? {} : leerStdin();
+  return _hookEv;
+}
+const normRuta = (p) => sinTildes(String(p || '').replace(/\\/g, '/').replace(/\/+$/, ''));
+function ambitoDeCarpeta(cwd) {
+  const cfg = config().ambitos || {};
+  const c = normRuta(cwd);
+  let mejor = null; let largo = -1;
+  for (const [nombre, lista] of Object.entries(cfg.carpetas || {})) {
+    for (const pref of [].concat(lista || [])) {
+      const p = normRuta(pref);
+      if (p && (c === p || c.startsWith(p + '/')) && p.length > largo) { mejor = nombre; largo = p.length; }
+    }
+  }
+  return mejor || cfg.porDefecto || 'central';
+}
+function ambitoSesion() {
+  const forzado = arg('--ambito', null) || process.env.PERSONAL_OS_AMBITO;
+  if (forzado) return String(forzado).toLowerCase();
+  return ambitoDeCarpeta(eventoHook().cwd || process.cwd());
+}
+/** true si la sesión NO es de la empresa (personal, universidad, …). */
+function sesionPersonal(amb = ambitoSesion()) { return amb !== 'laboral' && amb !== 'central'; }
+/** true si un alcance (por su `ambito` o su `cliente`) no es de la empresa. */
+function alcancePersonal(fm) {
+  const a = sinTildes((fm && fm.ambito) || '');
+  if (a) return a !== 'laboral';
+  const cli = sinTildes(String((fm && fm.cliente) || '').replace(/^"|"$/g, ''));
+  return (config().ambitos?.clientesPersonales || []).some((x) => sinTildes(x) === cli);
+}
+
 /** Nombre corto del dueño para los mensajes ("el usuario" si no está configurado). */
 function nombreCorto() {
   const o = String(config().owner || '').trim();
@@ -181,5 +227,5 @@ function nombreCorto() {
 module.exports = {
   OS_HOME, PLUGIN_ROOT, SCRIPTS_DIR, leerTexto, leerJson, arg, config, flag, activo, stateDir, zona,
   ahora, hoyISO, diasEntre, diasHabiles, esHabil, festivos, sinTildes, comandoScript, pad,
-  leerStdin, nombreCorto,
+  leerStdin, nombreCorto, eventoHook, ambitoDeCarpeta, ambitoSesion, sesionPersonal, alcancePersonal,
 };

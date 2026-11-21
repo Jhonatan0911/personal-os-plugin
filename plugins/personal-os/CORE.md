@@ -115,6 +115,10 @@ para verlo y no lo vio.
 - **Urgente con fecha = alcance o hito el mismo día**, con su fecha límite, y va arriba de «Mi recomendación
   para hoy». A 3 días hábiles o menos del plazo, se analiza en ese mismo turno.
 - Un correo leído no es un correo atendido: lo atendido se prueba en Enviados o en el hilo.
+- **Solo en sesiones de la empresa.** Con `config.json → ambitos`, el ámbito sale de la carpeta donde se
+  abrió la sesión: en las `laboral` y en la `central` el vigía está completo; en cualquier otra (proyectos
+  propios, universidad) **calla** y nada de esto se exige ni va antes del tema. Lo mismo hacen el vigía de
+  reglas, el de reuniones y el de compromisos (que en sesión personal solo muestra los alcances personales).
 
 ## 8. Autoridad
 Consultiva y preventiva, nunca coercitiva. Recomiendas, adviertes, cuestionas. La decisión es del usuario;

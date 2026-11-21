@@ -1,5 +1,13 @@
 # Changelog
 
+## 3.14.0
+
+- **Frontera personal/laboral por carpeta (`config.json → ambitos`):** el ámbito de la sesión sale de la carpeta donde se abrió (gana el prefijo más largo; sin coincidencia = `central`). En una sesión personal (proyectos propios, universidad) **callan** el vigía de correo, el de reglas de la organización y el de reuniones con issue; el de compromisos solo muestra los alcances personales (`ambito: personal` o un cliente de `clientesPersonales`), sin expedientes, sin compromisos de la empresa y sin rastreo de la bitácora. En las `laboral` y la `central` todo sigue igual. El arranque inyecta «Ámbito de esta sesión». Sin `ambitos`, el comportamiento es el de siempre. Nació de que el vigía de correo (3.13.0) se exigía antes del tema también en sesiones personales.
+
+## 3.13.2
+
+- **status-celula · avisos fijos solo de «sin tareas»:** se quitan los avisos de «X está sobrecargado hoy»; quedan solo los de quien está sin tareas o se queda sin ellas (pedido del 20/11/2026). La carga del día sigue visible en la franja «Hoy» y en la fila de carga de cada carril.
+
 ## 3.13.1
 
 - **status-celula · títulos de hoy entendibles:** la regla pasa a «tipo de trabajo + sobre qué», 3 a 6 palabras («Dashboard del validador de derechos», «Integración de pruebas rápidas con Compensar»); una reunión se nombra como reunión; sin recortes que cambien el sentido ni siglas sin contexto. Guía nueva `references/titulos-hoy.md` (fórmula, tabla de tipos de trabajo, ejemplos buenos y malos) y `status-celula-hoy.js` con más contexto por grupo (tipo de cada issue, historias, pista de reunión o seguimiento) y `--validar`, obligatorio antes de subir.

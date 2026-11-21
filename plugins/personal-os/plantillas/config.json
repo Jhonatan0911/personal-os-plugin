@@ -4,6 +4,15 @@
   "zonaHoraria": "America/Bogota",
   "festivos": [],
   "bitacora": { "retencionDias": 30 },
+  "ambitos": {
+    "carpetas": {
+      "laboral": ["/ruta/a/los/repos/de/la/empresa"],
+      "personal": ["/ruta/a/tus/proyectos/personales"],
+      "universidad": ["/ruta/a/tus/estudios"]
+    },
+    "clientesPersonales": ["Universidad", "Personal"],
+    "porDefecto": "central"
+  },
   "busqueda": {
     "fuentes": [
       { "etiqueta": "documentos del equipo (acuerdos, actas, políticas)", "ruta": "/ruta/a/tus/docs", "recursivo": true, "ext": [".md", ".txt"] }

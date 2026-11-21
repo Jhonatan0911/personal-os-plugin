@@ -218,7 +218,13 @@ const HITOS = [];   // hitos con el cliente de hoy/mañana/vencidos, para --hito
 function analizar(base, hoy) {
   const hallazgos = [];   // {sev: 'CRITICO'|'ALERTA'|'OK', alcance, titulo, detalle, accion}
   const dirAlcances = path.join(base, 'alcances');
-  const alcances = leerNotas(dirAlcances);
+  // Frontera por ámbito (config → ambitos): una sesión personal solo ve sus alcances personales
+  // (universidad, proyectos propios); una laboral, solo los de la empresa; la central, todos.
+  const AMBITO = FLAG_JSON && !arg('--ambito', null) ? 'central' : C.ambitoSesion();
+  const PERSONAL = C.sesionPersonal(AMBITO);
+  const todas = leerNotas(dirAlcances);
+  const alcances = AMBITO === 'central' ? todas
+    : todas.filter((a) => Object.keys(a.fm).length === 0 || C.alcancePersonal(a.fm) === PERSONAL);
 
   // Una nota que el vigía no puede leer es una nota que NO vigila. Se reporta, no se ignora:
   // el silencio es justamente el modo de fallo que hay que erradicar.
@@ -385,7 +391,9 @@ function analizar(base, hoy) {
   }
 
   // (6) compromisos vencidos que siguen abiertos
-  const compromisos = leerNotas(path.join(base, 'compromisos'));
+  // Un compromiso es de la empresa salvo que declare `ambito: personal` (o un cliente personal).
+  const compromisos = leerNotas(path.join(base, 'compromisos'))
+    .filter((c) => AMBITO === 'central' || C.alcancePersonal(c.fm) === PERSONAL);
   const vencidos = [];
   for (const c of compromisos) {
     const est = txt(c.fm.estado).toLowerCase();
@@ -410,11 +418,13 @@ function analizar(base, hoy) {
 
   // (7) compromisos mencionados en la bitácora que NO tienen nota de alcance
   //     (en nivel `fácil` este rastreo se apaga: es el chequeo más caro de atender)
-  const sospechas = EXIGENCIA.detectar_sin_declarar ? rastrearBitacora(base, hoy, alcances) : [];
+  //     (en una sesión personal también: la bitácora mezcla ámbitos y el rastreo es de la empresa)
+  const sospechas = EXIGENCIA.detectar_sin_declarar && !PERSONAL ? rastrearBitacora(base, hoy, alcances) : [];
 
   // (8) fechas de los expedientes de requerimiento: cortes y compromisos con el cliente
+  //     (los expedientes son requerimientos de la empresa: no aplican en una sesión personal)
   let expedientes = { leidos: 0, conFechas: 0 };
-  try { expedientes = vigilarExpedientes(base, hoy, legibles, hallazgos); }
+  if (!PERSONAL) try { expedientes = vigilarExpedientes(base, hoy, legibles, hallazgos); }
   catch (e) {
     hallazgos.push({ sev: 'ALERTA', alcance: '⚠ requerimientos/',
       titulo: 'El vigía no pudo recorrer los expedientes', detalle: String(e && e.message || e).slice(0, 160),

@@ -30,7 +30,8 @@ try {
   const hoy = C.hoyISO();
   if (!desde || hoy < desde) process.exit(0);
 
-  const data = C.leerStdin();
+  if (C.sesionPersonal()) process.exit(0);   // reuniones con issue = regla de la empresa
+  const data = C.eventoHook();
   const prompt = (data.prompt != null ? data.prompt : (data.user_prompt != null ? data.user_prompt : '')).toString();
   const cabeza = prompt.replace(/<pasted_content[\s\S]*?<\/pasted_content[^>]*>/gi, ' ').slice(0, 1500);
   if (!RE_REUNION.test(cabeza)) process.exit(0);

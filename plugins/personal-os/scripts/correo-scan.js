@@ -29,6 +29,9 @@ const MARCAR = process.argv.includes('--marcar');
 const base = C.stateDir();
 if (!base || !fs.existsSync(base)) process.exit(0);
 if (!MARCAR && !JSON_OUT && !C.arg('--estado', null) && !C.activo()) process.exit(0);
+// El buzón vigilado es el de la empresa: en una sesión personal (proyectos propios, universidad) el
+// vigía calla del todo. La vigilancia sigue en las sesiones laborales y en la central (config → ambitos).
+if (!MARCAR && !JSON_OUT && C.sesionPersonal()) process.exit(0);
 
 const cfg = Object.assign({ horasMaxSinBarrer: 3, jornada: ['07:00', '19:00'] }, C.config().correo || {});
 const buzon = String(cfg.buzon || '').trim().toLowerCase();

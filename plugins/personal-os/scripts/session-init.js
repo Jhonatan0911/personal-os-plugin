@@ -52,6 +52,24 @@ try {
     }
   } catch (e) { /* sin dial: comportamiento por defecto */ }
 
+  // Ámbito de la sesión (config → ambitos, por la carpeta donde se abrió). En una personal, lo de la
+  // empresa (correo, reglas, compromisos con clientes, timesheet, identidad corporativa) no se exige;
+  // el conocimiento técnico propio (reglas de conocimiento) sí aplica igual en los dos lados.
+  try {
+    const amb = C.ambitoSesion();
+    if (cfg.ambitos) {
+      out += `\n\n**Ámbito de esta sesión: \`${amb}\`.** `
+           + (C.sesionPersonal(amb)
+             ? 'Sesión personal: no se exige nada de la empresa (barrido de correo, reglas de la organización, '
+               + 'compromisos con clientes, línea de timesheet, identidad corporativa) ni se pone antes del tema '
+               + 'que se abrió. Las buenas prácticas técnicas propias (reglas de conocimiento) sí aplican.'
+             : amb === 'laboral'
+               ? 'Sesión laboral: aplican las reglas de la empresa y los vigías completos.'
+               : 'Sesión central (mezcla de ámbitos): vigías completos; al hablar de un tema, aplica la frontera '
+                 + 'laboral/personal del núcleo.');
+    }
+  } catch (e) { /* sin ámbito: comportamiento de siempre */ }
+
   process.stdout.write(out);
 } catch (e) { /* nunca romper el arranque */ }
 process.exit(0);
