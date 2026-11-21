@@ -393,7 +393,7 @@
     .cmd code{overflow-wrap:normal;word-break:keep-all;white-space:normal}
     .cmd{overflow-x:auto}
     .cmd{flex-wrap:wrap}
-    .cmd code{flex:1 1 100%}
+    .cmd code{flex:1 1 calc(100% - 28px);min-width:0}
     .cmd code .arg{white-space:normal;overflow-wrap:anywhere}
     .cmd button{margin-left:0}
     .term.live .live-open{display:none}
@@ -1171,28 +1171,62 @@
         return dark ? { ink:'230,236,250', hub:'53,224,208', acc:'139,155,255', line:.24 } : { ink:'40,48,80', hub:'14,148,136', acc:'59,70,209', line:.14 };
       };
       var P = pal();
+      // Un cerebro en 3D: dos hemisferios con circunvoluciones y la cisura entre ellos, el cerebelo
+      // atrás y abajo, y el tronco. Las conexiones se calculan en 3D (no en pantalla) para que la red
+      // conserve la forma al girar.
+      var edges = [];
       var build = function(){
-        var n = innerWidth < 640 ? 46 : innerWidth < 1100 ? 80 : 120; nodes = [];
-        for (var i = 0; i < n; i++) { var th = Math.random()*6.283, ph = Math.acos(Math.random()*2-1), r = .34 + Math.pow(Math.random(), .55)*.74;
-          nodes.push({ x:r*Math.sin(ph)*Math.cos(th), y:r*Math.sin(ph)*Math.sin(th)*.74, z:r*Math.cos(ph), s:.5+Math.random()*.9, ph:Math.random()*6.283, sp:.4+Math.random()*.9, hub:Math.random()<.14 }); }
+        var n = innerWidth < 640 ? 240 : innerWidth < 1100 ? 380 : 520; nodes = []; edges = [];
+        var sd = 7, rnd = function(){ sd = (sd * 16807) % 2147483647; return (sd - 1) / 2147483646; };
+        var push = function(x, y, z, hub){ nodes.push({ x:x, y:y, z:z, s:.55 + rnd()*.8, ph:rnd()*6.283, sp:.4 + rnd()*.9, hub:hub }); };
+        var nHem = Math.round(n * .80), nCer = Math.round(n * .13), nTr = n - nHem - nCer;
+        for (var h = 0; h < nHem; h++) {
+          var lado = h % 2 ? 1 : -1, th = rnd()*6.283, u = rnd()*2 - 1, ph = Math.acos(u);
+          var dx = Math.sin(ph)*Math.cos(th), dy = Math.sin(ph)*Math.sin(th), dz = Math.cos(ph);
+          // circunvoluciones: el radio ondula con la posición sobre la superficie
+          var g = 1 + .07*Math.sin(dz*11 + dy*7) * Math.cos(dy*9 - dz*4), adentro = rnd() < .12 ? .55 + rnd()*.35 : 1;
+          var x = lado*(.035 + Math.abs(dx)*.36), y = dy*.5, z = dz*.8;
+          if (y > .24) y = .24 + (y - .24)*.35;                  // base aplanada (lóbulo temporal)
+          if (z > .45 && y < 0) y *= .9;                           // frente un poco más baja
+          push(x*g*adentro, y*g*adentro - .06, z*g*adentro, rnd() < .1);
+        }
+        for (var c = 0; c < nCer; c++) {                           // cerebelo
+          var t2 = rnd()*6.283, p2 = Math.acos(rnd()*2 - 1);
+          push(Math.sin(p2)*Math.cos(t2)*.4, .36 + Math.sin(p2)*Math.sin(t2)*.17, -.58 + Math.cos(p2)*.24, rnd() < .08);
+        }
+        for (var k = 0; k < nTr; k++) {                            // tronco
+          var f = rnd();
+          push((rnd() - .5)*.12, .3 + f*.5, -.28 - f*.08 + (rnd() - .5)*.08, false);
+        }
+        // conexiones: cada neurona con sus vecinas cercanas en 3D (máx. 4)
+        var D = n > 400 ? .15 : n > 300 ? .17 : .2;
+        for (var a = 0; a < nodes.length; a++) {
+          var cerca = [];
+          for (var b = 0; b < nodes.length; b++) { if (a === b) continue;
+            var ex = nodes[a].x - nodes[b].x, ey = nodes[a].y - nodes[b].y, ez = nodes[a].z - nodes[b].z, d = Math.sqrt(ex*ex + ey*ey + ez*ez);
+            if (d < D) cerca.push([d, b]); }
+          cerca.sort(function(m, q){ return m[0] - q[0]; });
+          for (var e = 0; e < Math.min(5, cerca.length); e++) if (a < cerca[e][1]) edges.push([a, cerca[e][1], cerca[e][0] / D]);
+        }
       };
       var size = function(){ dpr = Math.min(devicePixelRatio||1, 2); var b = cv.getBoundingClientRect(); W = b.width; H = b.height; cv.width = Math.round(W*dpr); cv.height = Math.round(H*dpr); ctx.setTransform(dpr,0,0,dpr,0,0); };
       var draw = function(){
         if (!W || !H) return; t += 1/60;
-        if (!reduce) { spin += .0016; ax += (tx-ax)*.06; ay += (ty-ay)*.06; }
-        var ry = spin + ax, rx = -.1 + ay, cX = Math.cos(rx), sX = Math.sin(rx), cY = Math.cos(ry), sY = Math.sin(ry);
-        var wide = W > 900, R = Math.min(W, H) * (wide ? .46 : .5), ox = W*(wide ? .5 + 330/W + .06 : .62), oy = H*(wide ? .46 : .36);
-        var MAX = Math.min(W, H) * .16, MAX2 = MAX*MAX, Q = [];
-        for (var i = 0; i < nodes.length; i++) { var n = nodes[i], y0 = n.y + (reduce ? 0 : Math.sin(t*n.sp+n.ph)*.035);
+        if (!reduce) { spin += .004; ax += (tx-ax)*.06; ay += (ty-ay)*.06; }
+        // vista de tres cuartos que oscila despacio: el perfil del cerebro siempre se reconoce
+        var ry = 1.05 + Math.sin(spin)*.75 + ax, rx = -.18 + ay, cX = Math.cos(rx), sX = Math.sin(rx), cY = Math.cos(ry), sY = Math.sin(ry);
+        var wide = W > 900, R = Math.min(W, H) * (wide ? .41 : .5), ox = wide ? W*.5 + Math.min(380, W*.3) : W*.6, oy = H*(wide ? .44 : .34), Q = [];
+        for (var i = 0; i < nodes.length; i++) { var n = nodes[i], y0 = n.y + (reduce ? 0 : Math.sin(t*n.sp + n.ph)*.008);
           var x1 = n.x*cY + n.z*sY, z1 = n.z*cY - n.x*sY, y1 = y0*cX - z1*sX, z2 = y0*sX + z1*cX, k = 2/(2.95 - z2);
           Q.push({ x:ox + x1*k*R, y:oy + y1*k*R, k:k, n:n }); }
         ctx.clearRect(0, 0, W, H); ctx.lineWidth = 1;
-        for (var a = 0; a < Q.length; a++) for (var b = a+1; b < Q.length; b++) {
-          var dx = Q[a].x-Q[b].x, dy = Q[a].y-Q[b].y, d2 = dx*dx+dy*dy; if (d2 > MAX2) continue;
-          var depth = Math.min(1, ((Q[a].k+Q[b].k)/2 - .5)/.55), al = (1 - Math.sqrt(d2)/MAX) * P.line * (.3 + depth*.7); if (al < .012) continue;
-          ctx.strokeStyle = 'rgba(' + (Q[a].n.hub && Q[b].n.hub ? P.hub : P.ink) + ',' + al.toFixed(3) + ')'; ctx.beginPath(); ctx.moveTo(Q[a].x, Q[a].y); ctx.lineTo(Q[b].x, Q[b].y); ctx.stroke(); }
-        for (var c = 0; c < Q.length; c++) { var q = Q[c], rr = q.n.s * q.k * (q.n.hub ? 2.2 : 1.3), pulse = q.n.hub && !reduce ? .55 + .45*Math.sin(t*2 + q.n.ph) : 1;
-          ctx.fillStyle = 'rgba(' + (q.n.hub ? P.hub : P.acc) + ',' + ((q.n.hub ? .9 : .5) * pulse * Math.min(1, q.k)).toFixed(3) + ')';
+        for (var e = 0; e < edges.length; e++) { var A = Q[edges[e][0]], B = Q[edges[e][1]];
+          var depth = Math.min(1, ((A.k + B.k)/2 - .5)/.55), al = (1 - edges[e][2]*.6) * P.line * 1.6 * (.25 + depth*.75);
+          var sinapsis = A.n.hub || B.n.hub;
+          ctx.strokeStyle = 'rgba(' + (sinapsis ? P.hub : P.ink) + ',' + Math.min(.6, al).toFixed(3) + ')';
+          ctx.beginPath(); ctx.moveTo(A.x, A.y); ctx.lineTo(B.x, B.y); ctx.stroke(); }
+        for (var c = 0; c < Q.length; c++) { var q = Q[c], rr = q.n.s * q.k * (q.n.hub ? 2.1 : 1.15), pulse = q.n.hub && !reduce ? .5 + .5*Math.sin(t*2.2 + q.n.ph) : 1;
+          ctx.fillStyle = 'rgba(' + (q.n.hub ? P.hub : P.acc) + ',' + ((q.n.hub ? 1 : .8) * pulse * Math.min(1, q.k*.9)).toFixed(3) + ')';
           ctx.beginPath(); ctx.arc(q.x, q.y, rr, 0, 6.283); ctx.fill(); }
       };
       var loop = function(){ if (visible) draw(); if (!reduce) requestAnimationFrame(loop); };
