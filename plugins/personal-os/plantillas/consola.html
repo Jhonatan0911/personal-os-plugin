@@ -177,6 +177,7 @@
   .cx-det .links{display:flex;flex-wrap:wrap;gap:5px;margin-top:6px}
   .cx-det .links button{appearance:none;font-family:var(--mono);font-size:10.5px;background:transparent;color:var(--synapse);border:1px solid var(--line-strong);border-radius:20px;padding:1px 8px;cursor:pointer}
   .cx-empty{position:absolute;inset:0;display:none;align-items:center;justify-content:center;padding:30px;text-align:center;color:var(--muted);font-size:14px}
+  .cx-side.quieto{overflow:hidden}
   #view-corteza .legend{left:14px;bottom:14px;flex-direction:column;gap:6px}
   @media (max-width:900px){
     .cx-side{top:auto;left:14px;right:14px;width:auto;max-height:42%}
@@ -528,6 +529,9 @@
   // hasta que se aprueban. Cada línea entre neuronas es un «Ver también» real entre dos notas.
   const cx=(()=>{
     const CZ=E.CORTEZA, CTL=Array.isArray(E.CONTROL)?E.CONTROL:[];
+    // Dentro de un iframe (la landing), el panel no se desplaza con la rueda hasta que lo tocan.
+    try{ if(window.self!==window.top){ const side=document.getElementById('cx-side'); side.classList.add('quieto');
+      const activa=()=>side.classList.remove('quieto'); side.addEventListener('pointerdown',activa); side.addEventListener('focusin',activa); } }catch(_){}
     const cvs=document.getElementById('cortex'),c2=cvs.getContext('2d'),tip2=document.getElementById('tip2');
     const empty=document.getElementById('cx-empty');
     const TEMAS={

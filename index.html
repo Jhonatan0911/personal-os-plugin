@@ -394,7 +394,9 @@
     .cmd{overflow-x:auto}
     .cmd{flex-wrap:wrap}
     .cmd code{flex:1 1 calc(100% - 28px);min-width:0}
-    .cmd code .arg{white-space:normal;overflow-wrap:anywhere}
+    .cmd code .arg{white-space:nowrap}
+    .cmd .pr{display:none}
+    .cmd code{flex-basis:100%}
     .cmd button{margin-left:0}
     .term.live .live-open{display:none}
   }
@@ -475,7 +477,7 @@
     <div class="brandmark" aria-hidden="true">🧭</div>
     <div class="eyebrow h-seq" style="animation-delay:0.05s">Plugin para Claude Code <span class="ver">v3.17.0</span> <a class="new-pill" href="#sec-suena">Nuevo: ahora sueña →</a></div>
     <h1 class="h-seq" style="animation-delay:0.17s">Personal&nbsp;OS</h1>
-    <p class="lede h-seq" style="animation-delay:0.29s"><b>24 skills para Claude Code</b> de productividad, trabajo y rendimiento: brief diario sobre Jira, Outlook y Teams, vigía de lo que prometiste, timesheet desde tu bitácora y revisión de PR. Con una <b>memoria persistente</b> que aprende contigo.</p>
+    <p class="lede h-seq" style="animation-delay:0.29s">Cada mañana te dice <b>qué vence, qué prometiste y qué se está cayendo</b> en Jira, Outlook y Teams; arma tu timesheet y revisa tus PR. Y <b>aprende de tus errores</b> para acompañarte en todos tus proyectos. <b>24 skills para Claude Code.</b></p>
 
     <div class="cta h-seq" style="animation-delay:0.41s">
       <a class="btn pri" href="#inst">Instalar →</a>
@@ -483,8 +485,8 @@
     </div>
     <p class="for h-seq" style="animation-delay:0.53s">Para <b>líderes técnicos y desarrolladores</b> que trabajan con Claude Code. Necesita Node.js; con los conectores de Atlassian y Microsoft 365 cruza Jira, Outlook y Teams, y sin ellos funciona la parte local.</p>
     <div class="quick h-seq" style="animation-delay:0.65s" aria-label="Instalación en dos comandos">
-      <div class="cmd"><span class="pr" aria-hidden="true">&gt;</span><code><span class="cm">/plugin marketplace add</span> <span class="arg">Jhonatan0911/personal-os-plugin</span></code><button type="button" data-copy="/plugin marketplace add Jhonatan0911/personal-os-plugin" aria-label="Copiar el comando que registra el marketplace">Copiar</button></div>
-      <div class="cmd"><span class="pr" aria-hidden="true">&gt;</span><code><span class="cm">/plugin install</span> <span class="arg">personal-os@everest-personal-os</span></code><button type="button" data-copy="/plugin install personal-os@everest-personal-os" aria-label="Copiar el comando que instala el plugin">Copiar</button></div>
+      <div class="cmd"><span class="pr" aria-hidden="true">&gt;</span><code><span class="cm">/plugin marketplace add</span> <span class="arg">Jhonatan0911/<wbr>personal-os-plugin</span></code><button type="button" data-copy="/plugin marketplace add Jhonatan0911/personal-os-plugin" aria-label="Copiar el comando que registra el marketplace">Copiar</button></div>
+      <div class="cmd"><span class="pr" aria-hidden="true">&gt;</span><code><span class="cm">/plugin install</span> <span class="arg">personal-os@<wbr>everest-personal-os</span></code><button type="button" data-copy="/plugin install personal-os@everest-personal-os" aria-label="Copiar el comando que instala el plugin">Copiar</button></div>
       <ol class="quick-steps"><li>Escribe los dos comandos <b>dentro de Claude Code</b> (no en la terminal).</li><li><b>Reinicia Claude Code</b>: <code>/plugin</code> debe listar <b>personal-os 3.17.0</b>.</li><li>Corre <code>/os-setup</code> una vez. Después, cada mañana: <code>/brief</code>.</li></ol>
     </div>
   </header>
@@ -632,7 +634,7 @@
     <details class="deep" id="ej">
       <summary><span class="t">Un brief de verdad</span><span class="d">Esto es lo que ves al correr <code>/brief</code> por la mañana. Ejemplo con datos ficticios.</span></summary>
       <div class="deep-body">
-    <div class="term" role="img" aria-label="Ejemplo de salida del brief">
+    <div class="term" role="figure" aria-label="Ejemplo de salida del brief">
       <div class="chrome"><i></i><i></i><i></i><span>claude-code — brief del día</span></div>
       <div class="body brief-out">
 <div class="ln"><span class="pr">&gt; </span><span class="cm">/brief</span></div>
@@ -679,7 +681,7 @@
       <li><b>Un bloqueo de un tercero que nadie persigue es un incumplimiento propio</b>: se dice desde cuándo se pidió el insumo y a quién.</li>
       <li><b>Promesas sin nota</b>: el vigía lee la bitácora y te muestra los «te lo confirmo el viernes» que nunca se volvieron alcance.</li>
     </ul>
-    <div class="term" role="img" aria-label="Ejemplo de salida del vigía de compromisos">
+    <div class="term" role="figure" aria-label="Ejemplo de salida del vigía de compromisos">
       <div class="chrome"><i></i><i></i><i></i><span>sessionstart — vigía de compromisos</span></div>
       <div class="body brief-out">
 <div class="ln"><span class="h1p">⚠️ VIGÍA DE COMPROMISOS — 2026-12-03</span></div>
@@ -709,7 +711,7 @@
     <details class="deep" id="hitos">
       <summary><span class="t">Hitos con fecha en cada prompt</span><span class="d">Una publicación al cliente que vive en la prosa de una nota también se olvida. Por eso cada prompt trae los hitos de hoy, mañana y los vencidos.</span></summary>
       <div class="deep-body">
-    <div class="term" role="img" aria-label="Ejemplo del bloque de hitos y las tres recomendaciones">
+    <div class="term" role="figure" aria-label="Ejemplo del bloque de hitos y las tres recomendaciones">
       <div class="chrome"><i></i><i></i><i></i><span>userpromptsubmit — hitos con fecha</span></div>
       <div class="body brief-out">
 <div class="ln"><span class="med">⏰ HITOS CON FECHA (vigía, cada prompt)</span></div>
@@ -744,7 +746,7 @@
     <details class="deep" id="notas">
       <summary><span class="t">Estado en notas-objeto</span><span class="d">Una nota por riesgo, compromiso, decisión, alcance y persona, con sus campos al inicio del archivo. Los scripts la leen; tú la lees en cualquier editor.</span></summary>
       <div class="deep-body">
-    <div class="term" role="img" aria-label="Ejemplo de nota de alcance con frontmatter">
+    <div class="term" role="figure" aria-label="Ejemplo de nota de alcance con frontmatter">
       <div class="chrome"><i></i><i></i><i></i><span>estado/alcances/A-001-reportes.md</span></div>
       <div class="body brief-out">
 <div class="ln"><span class="cmt">---</span></div>
@@ -772,7 +774,7 @@
     <details class="deep" id="horas">
       <summary><span class="t">Bitácora y horas trazables</span><span class="d">Cuando tu jefe pregunta «¿qué avanzaste?», no improvisas: lo lees de la bitácora. Y el timesheet sale de ahí mismo.</span></summary>
       <div class="deep-body">
-    <div class="term" role="img" aria-label="Ejemplo de la bitácora respondiendo qué se hizo">
+    <div class="term" role="figure" aria-label="Ejemplo de la bitácora respondiendo qué se hizo">
       <div class="chrome"><i></i><i></i><i></i><span>claude-code — bitácora</span></div>
       <div class="body brief-out">
 <div class="ln"><span class="pr">&gt; </span>¿qué hice en las últimas 2 horas?</div>
@@ -793,7 +795,7 @@
     <div class="note accent"><span class="ic" aria-hidden="true">🧠</span><div>Un hook registra <b>cada prompt con su hora</b> automáticamente; el OS anexa el resumen de lo que hizo al cerrar cada turno. Al preguntar, primero separa <b>laboral</b> de <b>personal</b> — así a tu jefe le muestras exactamente lo que le corresponde.</div></div>
 
     <h3 class="sub">Una línea de timesheet (TS) por tramo, colgada de una issue</h3>
-    <div class="term" role="img" aria-label="Ejemplo de línea TS en la bitácora">
+    <div class="term" role="figure" aria-label="Ejemplo de línea TS en la bitácora">
       <div class="chrome"><i></i><i></i><i></i><span>estado/bitacora/2026-12-03.md</span></div>
       <div class="body brief-out">
 <div class="ln"><span class="h1p">## 09:30</span></div>
@@ -875,14 +877,14 @@
         <div class="num">1</div>
         <h3>Registra el marketplace</h3>
         <p class="desc">Le dice a Claude Code <em>dónde</em> viven los plugins. No instala nada todavía.</p>
-        <div class="cmd"><span class="pr">&gt;</span><code><span class="cm">/plugin marketplace add</span> <span class="arg">Jhonatan0911/personal-os-plugin</span></code><button aria-label="Copiar: /plugin marketplace add Jhonatan0911/personal-os-plugin" type="button" data-copy="/plugin marketplace add Jhonatan0911/personal-os-plugin">Copiar</button></div>
+        <div class="cmd"><span class="pr">&gt;</span><code><span class="cm">/plugin marketplace add</span> <span class="arg">Jhonatan0911/<wbr>personal-os-plugin</span></code><button aria-label="Copiar: /plugin marketplace add Jhonatan0911/personal-os-plugin" type="button" data-copy="/plugin marketplace add Jhonatan0911/personal-os-plugin">Copiar</button></div>
       </li>
 
       <li class="step">
         <div class="num">2</div>
         <h3>Instala el plugin</h3>
         <p class="desc">Formato <code>plugin@marketplace</code> — baja y activa el Personal OS.</p>
-        <div class="cmd"><span class="pr">&gt;</span><code><span class="cm">/plugin install</span> <span class="arg">personal-os@everest-personal-os</span></code><button aria-label="Copiar: /plugin install personal-os@everest-personal-os" type="button" data-copy="/plugin install personal-os@everest-personal-os">Copiar</button></div>
+        <div class="cmd"><span class="pr">&gt;</span><code><span class="cm">/plugin install</span> <span class="arg">personal-os@<wbr>everest-personal-os</span></code><button aria-label="Copiar: /plugin install personal-os@everest-personal-os" type="button" data-copy="/plugin install personal-os@everest-personal-os">Copiar</button></div>
       </li>
 
       <li class="step">
@@ -1155,6 +1157,8 @@
     pinta();
   })();
 
+  // En celular el texto del video es chico: su transcripción va abierta.
+  (function(){ if (!matchMedia('(max-width:680px)').matches) return; var d = document.querySelector('.tx details'); if (d) d.open = true; })();
   // Pausa de la cinta (WCAG 2.2.2).
   (function(){ var m=document.querySelector('.marquee'), b=document.getElementById('mq-pause'); if(!m||!b) return;
     if(matchMedia('(prefers-reduced-motion:reduce)').matches){ b.hidden=true; return; }
@@ -1257,7 +1261,7 @@
     });
     // El video se endereza al entrar en pantalla (efecto de las tarjetas de Anana).
     var reel = document.querySelector('.reel');
-    if (reel) { var ajusta = function(){ var b = reel.getBoundingClientRect(), vh = innerHeight; var p = Math.max(0, Math.min(1, (vh - b.top) / (vh*.75)));
+    if (reel) { var ajusta = function(){ var b = reel.getBoundingClientRect(), vh = innerHeight; var p = innerWidth <= 680 ? 1 : Math.max(0, Math.min(1, (vh - (b.top + b.height/2)) / (vh*.5)));
         reel.style.setProperty('--rx', ((1-p)*14).toFixed(2)+'deg'); reel.style.setProperty('--sc', (.92 + p*.08).toFixed(3)); };
       addEventListener('scroll', ajusta, { passive:true }); ajusta(); }
   })();
