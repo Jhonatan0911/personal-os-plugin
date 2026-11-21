@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Personal OS — Plugin para Claude Code</title>
-<meta name="description" content="Tu jefe de gabinete dentro de la terminal. Vigía de compromisos punto por punto, brief diario, bitácora con horas trazables, consola neuronal y status del equipo sobre Jira, Outlook y Teams. Versión 3.0.0.">
+<meta name="description" content="Tu jefe de gabinete dentro de la terminal. Vigía de compromisos punto por punto, brief diario, bitácora con horas trazables, consola neuronal y status del equipo sobre Jira, Outlook y Teams. Con un cerebro de dos capas: saber común en todos tus proyectos y control por ámbito. Versión 3.17.0.">
 <style>
   :root{
     --bg:#f3f5fb; --panel:#ffffff; --panel-2:#f7f9fe; --ink:#141b2b;
@@ -223,6 +223,15 @@
   .nlegend span{display:inline-flex;align-items:center;gap:7px}
   .nlegend i{width:9px;height:9px;border-radius:50%;display:inline-block}
 
+  .scopebar button{appearance:none;border:0;background:transparent;font-family:var(--mono);font-size:.68rem;letter-spacing:.08em;text-transform:uppercase;padding:6px 12px;border-radius:7px;color:var(--term-dim);font-weight:600;cursor:pointer}
+  .scopebar button.on{background:var(--term-accent);color:#06101f}
+  .scopebar button:focus-visible{outline:2px solid var(--term-ink);outline-offset:2px}
+  .cx-say{margin:8px 0 0;font-size:.84rem;color:var(--term-ink);line-height:1.5;min-height:2.6em}
+  .cx-say b{color:#35e0d0}
+  .neural.cx text{font-size:12px;font-weight:600}
+  .neural.cx .prop{animation:npulse 2.2s ease-in-out infinite}
+  @media (prefers-reduced-motion:reduce){.neural.cx .prop{animation:none}}
+
   /* novedades / changelog */
   .chlog{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:20px 22px;box-shadow:var(--shadow)}
   .chlog h3{margin:0 0 10px;font-size:1.02rem;letter-spacing:-.02em;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
@@ -258,11 +267,11 @@
 
   <header class="hero">
     <div class="brandmark">🧭</div>
-    <div class="eyebrow">Plugin para Claude Code <span class="ver">v3.0.0</span></div>
+    <div class="eyebrow">Plugin para Claude Code <span class="ver">v3.17.0</span></div>
     <h1>Personal&nbsp;OS</h1>
     <p class="lede">Tu <b>jefe de gabinete</b> dentro de la terminal. Vigila cada <b>compromiso con fecha punto por punto</b>,
       te pone enfrente lo #1 cada mañana y te devuelve la memoria de lo que hiciste — con horas trazables —,
-      cruzando <b>Jira, Outlook y Teams</b>.</p>
+      cruzando <b>Jira, Outlook y Teams</b>. Y aprende contigo: lo que descubres en un proyecto te acompaña en todos.</p>
 
     <div class="term" aria-label="Instalación">
       <div class="chrome"><i></i><i></i><i></i><span>claude-code — personal-os</span></div>
@@ -280,7 +289,8 @@
 
   <nav aria-label="Secciones">
     <ul class="toc">
-      <li><a href="#novedades">Novedades 2.0</a></li>
+      <li><a href="#novedades">Novedades</a></li>
+      <li><a href="#cerebro">El cerebro</a></li>
       <li><a href="#que">Qué hace</a></li>
       <li><a href="#vigia">Vigía</a></li>
       <li><a href="#hitos">Hitos</a></li>
@@ -297,10 +307,19 @@
   </nav>
 
   <section aria-labelledby="novedades">
-    <h2 id="novedades">Novedades de la 3.2</h2>
-    <p class="sec-sub">El tablero de planeación de la célula sale de la skill, y seis herramientas del líder entran al plugin, todas configurables.</p>
+    <h2 id="novedades">Novedades</h2>
+    <p class="sec-sub">El salto grande: el Personal OS ahora tiene un cerebro de dos capas. Lo que sabes es común a todos tus proyectos; las alarmas de la empresa se quedan en la empresa.</p>
     <div class="chlog">
-      <h3>3.2.0 <span class="ver">nuevas skills</span></h3>
+      <h3>3.14 – 3.17 <span class="ver">el cerebro</span></h3>
+      <ul>
+        <li><b>Corteza de saber común</b> (<code>conocimiento-build.js</code>): tus lecciones como notas atómicas con su porqué, cargadas por tipo de archivo en cualquier proyecto. <a href="#cerebro">Ver cómo funciona</a>.</li>
+        <li><b>Frontera por carpeta</b> (<code>config.json → ambitos</code>): en tus sesiones personales callan el correo, las reglas y el núcleo de la empresa. El guardia de producción sigue siempre.</li>
+        <li><b>El sueño semanal</b>: consolida la bitácora de la semana, propone lecciones sin tope y sin repetir, y archiva sin borrar.</li>
+        <li><b>Consola · pestaña Corteza</b>: lóbulos por tema, sinapsis reales entre notas, el sueño con sus propuestas y el control que se apaga al cambiar de ámbito.</li>
+      </ul>
+    </div>
+    <div class="chlog">
+      <h3>3.2 – 3.13 <span class="ver">herramientas del líder</span></h3>
       <ul>
         <li><b>status-celula</b> arma y publica el tablero de planeación compartido (Gantt por persona, colas, macros, modo cliente). La célula y la empresa van en la configuración, y los módulos que no uses se apagan.</li>
         <li><b>mesa-nueva</b> y <b>migrar-ramas</b>: mesas de trabajo multi-repo y migración de ramas en Azure DevOps.</li>
@@ -348,7 +367,7 @@
       <div class="cap new"><div class="k">Búsqueda <span class="badge">2.0</span></div><p>Antes de decir «no existe», barre todas las fuentes. Un hook lo exige.</p></div>
       <div class="cap new"><div class="k">Notas-objeto <span class="badge">2.0</span></div><p>Riesgos, compromisos, decisiones, alcances y personas: una nota cada uno, con IDs estables.</p></div>
       <div class="cap new"><div class="k">Bitácora y horas <span class="badge">2.0</span></div><p>Cada prompt queda con su hora y cada tramo de trabajo cuelga de una issue: el timesheet se arma solo.</p></div>
-      <div class="cap"><div class="k">Consola</div><p>Mapa neuronal de tus proyectos, riesgos y pendientes — un cerebro navegable.</p></div>
+      <div class="cap new"><div class="k">Cerebro <span class="badge">3.17</span></div><p>Saber común en todos tus proyectos, control por ámbito y un sueño semanal que consolida lo aprendido. La consola lo pinta como una corteza navegable.</p></div>
       <div class="cap new"><div class="k">Equipo <span class="badge">2.0</span></div><p>Quién sabe de qué, quién está libre, status con Gantt y planeación de sprint con revisor adversarial.</p></div>
       <div class="cap new"><div class="k">Retomar <span class="badge">2.0</span></div><p>Checkpoint y retomar por proyecto o por frente, sin que dos pestañas se pisen.</p></div>
       <div class="cap new"><div class="k">Exigencia <span class="badge">2.0</span></div><p>Un dial de fácil a cuartel que cambia números verificables del vigía.</p></div>
@@ -532,64 +551,42 @@
 
   <section aria-labelledby="cerebro">
     <h2 id="cerebro">El cerebro</h2>
-    <p class="sec-sub">Tu día completo como una red neuronal navegable: escribe <code>/consola</code> y se abre sola.</p>
-    <div class="term" aria-label="Consola neuronal — mapa de proyectos y riesgos">
-      <div class="chrome"><i></i><i></i><i></i><span>personal os — consola neuronal</span></div>
+    <p class="sec-sub">Un cerebro real no separa lo que <b>sabe</b> según dónde está: separa cómo se <b>controla</b>. El Personal OS hace lo mismo. Lo que aprendes en el trabajo te sirve en tus proyectos y al revés, pero las alarmas de la empresa no te persiguen a casa.</p>
+
+    <div class="term" aria-label="Demostración interactiva del cerebro: corteza de saber común y capa de control por ámbito">
+      <div class="chrome"><i></i><i></i><i></i><span>personal os — consola neuronal · corteza</span></div>
       <div class="body" style="padding-bottom:6px">
-        <div class="scopebar" role="img" aria-label="Filtro de ámbito: ambas, laboral, personal">
-          <b class="on">Ambas</b><b>Laboral</b><b>Personal</b>
+        <div class="scopebar" role="group" aria-label="Ámbito de la sesión">
+          <button type="button" class="on" data-amb="central">Central</button><button type="button" data-amb="laboral">Empresa</button><button type="button" data-amb="personal">Personal</button>
         </div>
-        <svg class="neural" viewBox="0 0 680 300" role="img" aria-label="Grafo neuronal: núcleo al centro, proyectos laborales a la derecha, personales a la izquierda, con riesgos que pulsan por nivel">
-          <!-- edges -->
-          <g stroke-width="1.4" fill="none" opacity=".5">
-            <line x1="340" y1="150" x2="470" y2="80"  stroke="#4c9bff"/>
-            <line x1="340" y1="150" x2="545" y2="150" stroke="#4c9bff"/>
-            <line x1="340" y1="150" x2="470" y2="222" stroke="#4c9bff"/>
-            <line x1="340" y1="150" x2="205" y2="92"  stroke="#a97bff"/>
-            <line x1="340" y1="150" x2="205" y2="210" stroke="#a97bff"/>
-          </g>
-          <g stroke-width="1.2" fill="none" opacity=".55">
-            <line x1="545" y1="150" x2="620" y2="118" stroke="#ff5f7e"/>
-            <line x1="470" y1="80"  x2="560" y2="46"  stroke="#ff9a52"/>
-            <line x1="205" y1="92"  x2="96"  y2="66"  stroke="#f6c760"/>
-            <line x1="205" y1="210" x2="96"  y2="238" stroke="#ff9a52"/>
-          </g>
-          <!-- halos + nodes -->
-          <circle cx="340" cy="150" r="30" fill="#35e0d0" opacity=".14"/>
-          <circle cx="340" cy="150" r="15" fill="#35e0d0"/>
-          <circle cx="340" cy="150" r="6" fill="#0c1120"/>
-          <g fill="#4c9bff">
-            <circle cx="470" cy="80"  r="11"/><circle cx="545" cy="150" r="11"/><circle cx="470" cy="222" r="11"/>
-          </g>
-          <g fill="#a97bff">
-            <circle cx="205" cy="92"  r="11"/><circle cx="205" cy="210" r="11"/>
-          </g>
-          <!-- risk / pendiente satellites (pulse) -->
-          <circle class="risk"    cx="620" cy="118" r="7" fill="#ff5f7e"/>
-          <circle class="risk r2" cx="560" cy="46"  r="6" fill="#ff9a52"/>
-          <circle class="risk r1" cx="96"  cy="66"  r="6" fill="#f6c760"/>
-          <circle class="risk r2" cx="96"  cy="238" r="6" fill="#ff9a52"/>
-          <!-- labels -->
-          <text x="340" y="186" text-anchor="middle" fill="#8ad0d0">CEREBRO</text>
-          <text x="470" y="66"  text-anchor="middle" fill="#8fb6ff">Cliente A</text>
-          <text x="573" y="153" text-anchor="start"  fill="#8fb6ff">Cliente B</text>
-          <text x="470" y="246" text-anchor="middle" fill="#8fb6ff">Cliente C</text>
-          <text x="205" y="78"  text-anchor="middle" fill="#c4a7ff">Proyecto propio</text>
-          <text x="205" y="234" text-anchor="middle" fill="#c4a7ff">Proyecto propio</text>
-        </svg>
+        <p class="cx-say" id="cx-say" aria-live="polite"></p>
+        <svg class="neural cx" id="cx-demo" viewBox="0 0 720 430" role="img" aria-label="Corteza: lóbulos por tema con lecciones conectadas; arriba, los controles; abajo, el sueño con lecciones por consolidar"></svg>
       </div>
       <div class="nlegend">
-        <span><i style="background:#4c9bff"></i>Laboral</span>
-        <span><i style="background:#a97bff"></i>Personal</span>
-        <span><i style="background:#35e0d0"></i>Núcleo</span>
-        <span><i style="background:#ff5f7e"></i>Riesgo n3</span>
-        <span><i style="background:#ff9a52"></i>n2</span>
-        <span><i style="background:#f6c760"></i>n1</span>
+        <span><i style="background:#35e0d0"></i>Regla dura</span>
+        <span><i style="background:transparent;border:1.5px solid #35e0d0"></i>Criterio</span>
+        <span><i style="background:#f6c760"></i>Propuesta (sueño)</span>
+        <span><i style="background:#4c9bff;border-radius:2px"></i>Control de la empresa</span>
+        <span><i style="background:#3a4660;border-radius:2px"></i>Silenciado</span>
       </div>
     </div>
-    <p class="sec-sub" style="margin-top:18px">Los proyectos orbitan el núcleo; los riesgos y pendientes cuelgan de cada uno y <b>pulsan según su nivel</b>. El toggle <b>Personal / Laboral / Ambas</b> filtra todo el cerebro de golpe — para separar lo del trabajo de lo tuyo. Pasa el mouse por un nodo y ves su detalle.</p>
+
+    <div class="caps" style="margin-top:18px">
+      <div class="cap new"><div class="k">Corteza · saber común <span class="badge">3.15</span></div><p>Tus lecciones técnicas, una nota atómica cada una: el <b>título es la regla</b>, con su porqué, el caso donde nació y cuándo no aplica. Entran a Claude Code <b>por tipo de archivo</b>, en cualquier proyecto, de la empresa o tuyo.</p></div>
+      <div class="cap new"><div class="k">Control por ámbito <span class="badge">3.14</span></div><p>El ámbito sale de la <b>carpeta</b> donde abres la sesión. En lo personal callan el vigía de correo, el de reglas y el núcleo de la empresa. El guardia de producción no se apaga nunca.</p></div>
+      <div class="cap new"><div class="k">El sueño semanal <span class="badge">3.16</span></div><p>Cada viernes un proceso de solo lectura repasa la semana de bitácora, la resume y <b>propone</b> lecciones nuevas o ajustes. Nada entra sin tu aprobación, y una lección pasa a regla dura cuando ya tiene 3 casos.</p></div>
+      <div class="cap new"><div class="k">Olvidar archivando <span class="badge">3.16</span></div><p>Nada se borra. Un diario se archiva solo cuando su semana ya está consolidada, y cada ajuste de una lección deja su versión anterior en el historial.</p></div>
+      <div class="cap new"><div class="k">Integridad contextual <span class="badge">3.15</span></div><p>Lo que cruza de contexto es la lección <b>abstraída</b>. Una lista de términos confidenciales (clientes, servidores, personas) bloquea cualquier nota que los nombre.</p></div>
+      <div class="cap new"><div class="k">Tu criterio primero <span class="badge">3.15</span></div><p>Antes de proponer una arquitectura, Claude te pregunta qué harías tú y después contrasta. En lo operativo propone directo.</p></div>
+    </div>
+
+    <ul class="rules">
+      <li><b>De dónde sale.</b> Corteza prefrontal y neocórtex: el control depende del contexto, el saber no. La consolidación durante el sueño (sistemas de aprendizaje complementarios) y las memorias de razonamiento de los agentes de 2025 (ReasoningBank, ACE) inspiran el sueño semanal. La integridad contextual de Nissenbaum define qué puede cruzar de un contexto a otro.</li>
+      <li><b>La consola lo pinta.</b> En la pestaña <b>Corteza</b> de <code>/consola</code>, cada neurona es una lección y cada línea es un «ver también» real entre dos notas. Al tocar una neurona lees la regla, el porqué y cuándo no aplica. Al cambiar de ámbito se apaga el control, no el saber.</li>
+    </ul>
+
     <div class="cmd"><span class="pr">&gt;</span><code><span class="cm">/consola</span></code><button type="button" data-copy="/consola">Copiar</button></div>
-    <div class="note"><span class="ic">🔒</span><div>La consola es una <b>vista local</b>, igual que el tablero: se genera desde tu estado y <b>nunca se publica</b>.</div></div>
+    <div class="note"><span class="ic">🔒</span><div>La consola es una <b>vista local</b>, igual que el tablero: se genera desde tu estado y <b>nunca se publica</b>. La demostración de arriba usa temas ficticios.</div></div>
   </section>
 
   <section aria-labelledby="horas">
@@ -829,7 +826,7 @@
   </section>
 
   <footer class="foot">
-    <div class="repo">📦 <a href="https://github.com/Jhonatan0911/personal-os-plugin">github.com/Jhonatan0911/personal-os-plugin</a> · v3.0.0 · MIT</div>
+    <div class="repo">📦 <a href="https://github.com/Jhonatan0911/personal-os-plugin">github.com/Jhonatan0911/personal-os-plugin</a> · v3.17.0 · MIT</div>
     <div class="priv"><span>🔒</span><div><b>Tu estado es tuyo.</b> El plugin solo reparte comportamiento (núcleo, hooks, skills, comandos y agentes) y <b>no trae datos de nadie</b>: las plantillas usan ejemplos ficticios. Tu carpeta de estado —notas, bitácora, timesheet y las vistas que genera, tablero y consola— es privada y local: nunca se comparte ni se sube.</div></div>
     <button type="button" id="dl" class="dlbtn">⬇ Descargar esta página (.html)</button>
   </footer>
@@ -857,6 +854,58 @@
     document.body.appendChild(a); a.click(); document.body.removeChild(a);
     setTimeout(function(){ URL.revokeObjectURL(url); }, 1500);
   }); }
+
+  // ===== demostración del cerebro (datos ficticios) =====
+  (function(){
+    var svg=document.getElementById('cx-demo'); if(!svg) return;
+    var NS='http://www.w3.org/2000/svg', reduce=matchMedia('(prefers-reduced-motion:reduce)').matches;
+    var el=function(t,a,p){var e=document.createElementNS(NS,t);for(var k in a)e.setAttribute(k,a[k]);(p||svg).appendChild(e);return e;};
+    var X=360,Y=238,RX=250,RY=128;
+    // semilla fija: la demo se ve igual en cada visita
+    var sd=7;var rnd=function(){sd=(sd*16807)%2147483647;return (sd-1)/2147483646;};
+    var LOB=[['Método',0,-.04,'#35e0d0',14],['Arquitectura',-.58,-.36,'#7cc4ff',7],['Backend',.02,-.62,'#4c9bff',6],['Frontend',.58,-.34,'#a97bff',5],
+      ['Seguridad',-.66,.26,'#ff7a9a',8],['Datos',.66,.24,'#f6c760',9],['Pruebas',-.34,.62,'#7ee0a1',3],['Entorno',.02,.66,'#ff9a52',5],['Git',.38,.6,'#c4a7ff',3]];
+    var total=LOB.reduce(function(a,l){return a+l[4];},0);
+    var CTL=[['Núcleo de la empresa',1],['Vigía de correo',1],['Vigía de reglas',1],['Vigía de compromisos',0],['Guardia de producción',0],['Buscar antes de negar',0]];
+    var defs=el('defs',{});var rg=el('radialGradient',{id:'cxh'},defs);el('stop',{offset:'0','stop-color':'#35e0d0','stop-opacity':'.12'},rg);el('stop',{offset:'1','stop-color':'#35e0d0','stop-opacity':'0'},rg);
+    el('ellipse',{cx:X,cy:Y,rx:RX*1.22,ry:RY*1.28,fill:'url(#cxh)'});
+    el('ellipse',{cx:X,cy:Y,rx:RX,ry:RY,fill:'none',stroke:'#78aadc',opacity:'.22'});
+    for(var k=1;k<=4;k++){var d='';for(var a=0;a<=6.3;a+=.06){var w=1+Math.sin(a*9+k*1.7)*.035;d+=(a?'L':'M')+(X+Math.cos(a)*RX*k/5*w).toFixed(1)+' '+(Y+Math.sin(a)*RY*k/5*w).toFixed(1);}el('path',{d:d,fill:'none',stroke:'#78aadc',opacity:'.08'});}
+    el('path',{d:'M'+X+' '+(Y-RY)+'C'+(X-8)+' '+(Y-RY*.3)+' '+(X+8)+' '+(Y+RY*.3)+' '+X+' '+(Y+RY),fill:'none',stroke:'#78aadc',opacity:'.14'});
+    var gE=el('g',{}),gC=el('g',{}),gN=el('g',{}),gL=el('g',{});
+    var N=[];LOB.forEach(function(L,li){var lx=X+L[1]*RX,ly=Y+L[2]*RY;for(var i=0;i<L[4];i++){var a=i*2.39996,r=8.5*Math.sqrt(i+.6);
+      N.push({x:lx+Math.cos(a)*r,y:ly+Math.sin(a)*r*.86,c:L[3],crit:rnd()<.2,r:2.4+rnd()*2.2});}
+      var t=el('text',{x:lx,y:ly-8.5*Math.sqrt(L[4]+.6)-8,'text-anchor':'middle',style:'fill:'+L[3]},gL);t.textContent=L[0]+' · '+L[4];});
+    var E=[];for(var i=0;i<70;i++){var a=N[Math.floor(rnd()*N.length)],b=N[Math.floor(rnd()*N.length)];if(a===b)continue;
+      var mx=(a.x+b.x)/2+(Y-(a.y+b.y)/2)*.12,my=(a.y+b.y)/2+((a.x+b.x)/2-X)*.12;E.push({p:el('path',{d:'M'+a.x+' '+a.y+'Q'+mx+' '+my+' '+b.x+' '+b.y,fill:'none',stroke:'#6fb3ff',opacity:'.13'},gE)});}
+    N.forEach(function(n){n.g=el('circle',{cx:n.x,cy:n.y,r:n.r*2.6,fill:n.c,opacity:'.16'},gN);
+      if(n.crit)el('circle',{cx:n.x,cy:n.y,r:n.r,fill:'none',stroke:n.c,'stroke-width':1.5},gN);else el('circle',{cx:n.x,cy:n.y,r:n.r,fill:n.c},gN);});
+    CTL.forEach(function(c,i){var a=Math.PI*(1.2+.6*i/(CTL.length-1));var cx=X+Math.cos(a)*(RX+20),cy=Y+Math.sin(a)*(RY+58);
+      var ex=X+Math.cos(a)*RX*.92,ey=Y+Math.sin(a)*RY*.92;
+      c.l=el('line',{x1:cx,y1:cy,x2:ex,y2:ey,opacity:'.4'},gC);
+      c.d=el('rect',{x:cx-5,y:cy-5,width:10,height:10,transform:'rotate(45 '+cx+' '+cy+')'},gC);
+      c.t=el('text',{x:cx,y:cy-12-(i%2)*15,'text-anchor':'middle'},gC);c.t.textContent=c[0];});
+    var sy=Y+RY+36;[-40,0,40].forEach(function(dx,i){var px=X+dx,py=sy-(i===1?6:0);var tg=N[[3,20,44][i]%N.length];
+      el('line',{x1:px,y1:py,x2:tg.x,y2:tg.y,stroke:'#f6c760',opacity:'.18','stroke-dasharray':'2 5'},gE);
+      el('circle',{cx:px,cy:py,r:3.6,fill:'#f6c76055',stroke:'#f6c760','stroke-width':1.4,'class':'prop',style:'animation-delay:'+(i*.6)+'s'},gN);});
+    var st=el('text',{x:X,y:sy+22,'text-anchor':'middle',style:'fill:#f6c760'},gL);st.textContent='SUEÑO · 3 por consolidar';
+    var dots=[];for(var j=0;j<14;j++)dots.push({e:E[j*3%E.length],t:rnd(),c:el('circle',{r:1.9,fill:'#bff8f2'},gE)});
+    function tick(){dots.forEach(function(d){if(!reduce){d.t+=.006;if(d.t>1){d.t=0;d.e=E[Math.floor(rnd()*E.length)];}}
+        var L=d.e.p.getTotalLength(),pt=d.e.p.getPointAtLength(L*d.t);d.c.setAttribute('cx',pt.x);d.c.setAttribute('cy',pt.y);});
+      if(!reduce&&rnd()<.04){var n=N[Math.floor(rnd()*N.length)];n.g.setAttribute('opacity','.55');setTimeout(function(){n.g.setAttribute('opacity','.16');},500);}
+      if(!reduce)requestAnimationFrame(tick);}
+    requestAnimationFrame(tick);
+    var say=document.getElementById('cx-say');
+    var MSG={central:'Sesión <b>central</b>: las <b>'+total+' lecciones</b> y los <b>6 controles</b> encendidos.',
+      laboral:'Sesión de la <b>empresa</b>: las <b>'+total+' lecciones</b> y todo el control de la organización.',
+      personal:'Sesión <b>personal</b>: las <b>'+total+' lecciones siguen enteras</b>; el núcleo, el correo y las reglas de la empresa se apagan. El guardia de producción sigue.'};
+    function amb(v){say.innerHTML=MSG[v];CTL.forEach(function(c){var off=v==='personal'&&c[1];var col=off?'#3a4660':(c[1]?'#4c9bff':'#35e0d0');
+      c.l.setAttribute('stroke',col);if(off)c.l.setAttribute('stroke-dasharray','3 5');else c.l.removeAttribute('stroke-dasharray');
+      c.d.setAttribute('fill',col);c.t.style.fill=off?'#4d5c76':(c[1]?'#8fb6ff':'#8ff0e6');});
+      document.querySelectorAll('.scopebar button[data-amb]').forEach(function(b){var on=b.getAttribute('data-amb')===v;b.classList.toggle('on',on);b.setAttribute('aria-pressed',on);});}
+    document.querySelectorAll('.scopebar button[data-amb]').forEach(function(b){b.addEventListener('click',function(){amb(b.getAttribute('data-amb'));});});
+    amb('central');
+  })();
 </script>
 
 </body>

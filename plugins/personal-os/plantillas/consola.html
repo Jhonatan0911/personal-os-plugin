@@ -138,6 +138,52 @@
   .tag.laboral{color:var(--laboral)} .tag.personal{color:var(--personal)}
   .empty{padding:26px 16px;color:var(--muted);font-family:var(--mono);font-size:12px;text-align:center}
 
+  /* ===== vista CORTEZA (saber común + control por ámbito) ===== */
+  #view-corteza{overflow:hidden}
+  .cx-head{left:14px;top:14px;padding:10px 14px;max-width:min(430px,calc(100% - 28px))}
+  .cx-head .k{font-family:var(--mono);font-size:10px;letter-spacing:.2em;text-transform:uppercase;color:var(--synapse)}
+  .cx-head .v{font-size:13px;margin-top:4px;color:var(--ink);line-height:1.45}
+  .cx-head .v b{color:var(--synapse);font-weight:600}
+  .cx-side{right:14px;top:14px;bottom:14px;width:330px;display:flex;flex-direction:column;gap:12px;padding:14px;overflow-y:auto}
+  .cx-side::-webkit-scrollbar{width:6px}
+  .cx-side::-webkit-scrollbar-thumb{background:var(--line-strong);border-radius:6px}
+  .cx-vit{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+  .cx-vit div{background:var(--panel-2);border:1px solid var(--line);border-radius:10px;padding:8px 9px}
+  .cx-vit .k{font-family:var(--mono);font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
+  .cx-vit .v{font-family:var(--mono);font-size:21px;font-weight:600;margin-top:2px;font-variant-numeric:tabular-nums}
+  .cx-sec .t{font-family:var(--mono);font-size:10px;letter-spacing:.18em;text-transform:uppercase;color:var(--muted);margin-bottom:6px}
+  .cx-sleep{font-size:12.5px;color:var(--ink);line-height:1.5}
+  .cx-sleep .bad{color:var(--r2)}
+  .cx-ctl{list-style:none;margin:0;padding:0;display:grid;gap:4px}
+  .cx-ctl li{display:flex;align-items:center;gap:8px;font-size:12.5px;padding:3px 0}
+  .cx-ctl li i{width:8px;height:8px;border-radius:2px;transform:rotate(45deg);flex:none}
+  .cx-ctl li.off{color:var(--muted-2);text-decoration:line-through}
+  .cx-ctl li .s{margin-left:auto;font-family:var(--mono);font-size:9.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+  .cx-lobes{display:grid;gap:3px}
+  .cx-lobes button{appearance:none;border:1px solid transparent;background:transparent;color:var(--ink);font:inherit;font-size:12.5px;
+    display:grid;grid-template-columns:96px 1fr 26px;align-items:center;gap:8px;padding:4px 6px;border-radius:8px;cursor:pointer;text-align:left}
+  .cx-lobes button:hover,.cx-lobes button[aria-pressed="true"]{border-color:var(--line-strong);background:rgba(120,150,200,.06)}
+  .cx-lobes .bar{height:6px;border-radius:6px;background:var(--line)}
+  .cx-lobes .bar b{display:block;height:100%;border-radius:6px}
+  .cx-lobes .n{font-family:var(--mono);font-size:11px;color:var(--muted);text-align:right}
+  .cx-find{width:100%;background:var(--panel-2);border:1px solid var(--line-strong);border-radius:9px;color:var(--ink);font:inherit;font-size:12.5px;padding:8px 10px}
+  .cx-find:focus{outline:2px solid var(--synapse);outline-offset:1px}
+  .cx-det{background:var(--panel-2);border:1px solid var(--line);border-radius:12px;padding:12px;font-size:12.5px;line-height:1.5}
+  .cx-det .id{font-family:var(--mono);font-size:10.5px;letter-spacing:.1em;color:var(--synapse)}
+  .cx-det h3{margin:4px 0 8px;font-size:14px;line-height:1.35}
+  .cx-det p{margin:0 0 8px;color:var(--ink)}
+  .cx-det p b{color:var(--muted);font-family:var(--mono);font-size:10px;letter-spacing:.12em;text-transform:uppercase;display:block;margin-bottom:2px}
+  .cx-det .meta{font-family:var(--mono);font-size:10.5px;color:var(--muted)}
+  .cx-det .links{display:flex;flex-wrap:wrap;gap:5px;margin-top:6px}
+  .cx-det .links button{appearance:none;font-family:var(--mono);font-size:10.5px;background:transparent;color:var(--synapse);border:1px solid var(--line-strong);border-radius:20px;padding:1px 8px;cursor:pointer}
+  .cx-empty{position:absolute;inset:0;display:none;align-items:center;justify-content:center;padding:30px;text-align:center;color:var(--muted);font-size:14px}
+  #view-corteza .legend{left:14px;bottom:14px;flex-direction:column;gap:6px}
+  @media (max-width:900px){
+    .cx-side{top:auto;left:14px;right:14px;width:auto;max-height:42%}
+    #view-corteza .legend{display:none}
+    .cx-head{max-width:calc(100% - 28px)}
+  }
+
   footer{display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px;font-family:var(--mono);font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted-2);
     padding:9px clamp(14px,3vw,26px);border-top:1px solid var(--line);flex:none}
   .live{display:inline-flex;align-items:center;gap:7px}
@@ -167,6 +213,7 @@
   </div>
   <div class="seg tabs" role="group" aria-label="Vista">
     <button data-view="mapa" aria-pressed="true">Mapa</button>
+    <button data-view="corteza" aria-pressed="false">Corteza<span class="n" id="tab-co"></span></button>
     <button data-view="tarjetas" aria-pressed="false">Tarjetas<span class="n" id="tab-items"></span></button>
     <button data-view="log" aria-pressed="false">Bitácora<span class="n" id="tab-syn"></span></button>
   </div>
@@ -194,6 +241,35 @@
         <span><i class="dot" style="color:var(--r1)"></i>n1</span>
       </div>
       <div class="float map-prio"><div class="k">Prioridad #1</div><div class="v" id="map-prio-v">—</div><div class="note" id="map-prio-note"></div></div>
+    </div>
+  </section>
+
+  <!-- ===== CORTEZA: el saber común (lóbulos por tema) y la capa de control por ámbito ===== -->
+  <section class="view" id="view-corteza" aria-label="Corteza: saber común y control por ámbito">
+    <div class="canvas-shell">
+      <canvas id="cortex" aria-label="Corteza: cada neurona es una lección; los lóbulos son temas; las líneas, notas relacionadas"></canvas>
+      <div class="tip" id="tip2"><div class="lb"></div><div class="mt"></div><div class="xd"></div></div>
+      <div class="float cx-head"><div class="k">El saber es común · el control va por ámbito</div><div class="v" id="cx-msg"></div></div>
+      <div class="float legend">
+        <span><i class="dot" style="color:var(--synapse)"></i>Regla dura</span>
+        <span><i class="dot" style="color:transparent;border:1.5px solid var(--synapse);box-shadow:none"></i>Criterio</span>
+        <span><i class="dot" style="color:var(--r1)"></i>Propuesta (sueño)</span>
+        <span><i class="dot" style="color:var(--laboral);border-radius:2px"></i>Control de la empresa</span>
+        <span><i class="dot" style="color:var(--muted-2);border-radius:2px"></i>Silenciado</span>
+      </div>
+      <aside class="float cx-side" id="cx-side" aria-label="Detalle de la corteza">
+        <div class="cx-vit">
+          <div><div class="k">Vigentes</div><div class="v" id="cx-n">—</div></div>
+          <div><div class="k">Duras</div><div class="v" id="cx-d">—</div></div>
+          <div><div class="k">Criterio</div><div class="v" id="cx-c">—</div></div>
+        </div>
+        <input class="cx-find" id="cx-find" type="search" placeholder="Buscar una lección…" aria-label="Buscar una lección">
+        <div class="cx-det" id="cx-det"></div>
+        <div class="cx-sec"><div class="t">Sueño semanal</div><div class="cx-sleep" id="cx-sleep"></div></div>
+        <div class="cx-sec"><div class="t" id="cx-ctl-t">Control en este ámbito</div><ul class="cx-ctl" id="cx-ctl"></ul></div>
+        <div class="cx-sec"><div class="t">Lóbulos</div><div class="cx-lobes" id="cx-lobes"></div></div>
+      </aside>
+      <div class="cx-empty" id="cx-empty"></div>
     </div>
   </section>
 
@@ -335,11 +411,13 @@
     document.querySelectorAll('.seg.tabs button').forEach(x=>x.setAttribute('aria-pressed',x===b));
     document.querySelectorAll('.view').forEach(v=>v.classList.toggle('active',v.id==='view-'+b.dataset.view));
     if(b.dataset.view==='mapa')resize();
+    if(b.dataset.view==='corteza')cx.resize();
   }));
   document.querySelectorAll('.seg.scope button').forEach(b=>b.addEventListener('click',()=>{
     scope=b.dataset.scope;
     document.querySelectorAll('.seg.scope button').forEach(x=>x.setAttribute('aria-pressed',x===b));
     refresh();
+    cx.scope();
   }));
 
   // ===== canvas (pantalla completa) =====
@@ -441,8 +519,241 @@
   });
   cv.addEventListener('mouseleave',()=>{tip.style.opacity=0;});
 
+  // ===================================================================== CORTEZA
+  // Dos capas, como en el cerebro (D-062): el SABER (neocórtex: lecciones CO-### agrupadas en lóbulos
+  // por tema) no cambia de ámbito; el CONTROL (prefrontal: vigías y núcleo de la empresa, en el arco
+  // de arriba) se apaga en las sesiones personales. Las propuestas esperan en el «sueño» (hipocampo)
+  // hasta que se aprueban. Cada línea entre neuronas es un «Ver también» real entre dos notas.
+  const cx=(()=>{
+    const CZ=E.CORTEZA, CTL=Array.isArray(E.CONTROL)?E.CONTROL:[];
+    const cvs=document.getElementById('cortex'),c2=cvs.getContext('2d'),tip2=document.getElementById('tip2');
+    const empty=document.getElementById('cx-empty');
+    const TEMAS={
+      metodo:{n:'Método',x:0,y:-.04,col:'#35e0d0'},
+      arquitectura:{n:'Arquitectura',x:-.56,y:-.34,col:'#7cc4ff'},
+      backend:{n:'Backend',x:.02,y:-.6,col:'#4c9bff'},
+      frontend:{n:'Frontend',x:.56,y:-.32,col:'#a97bff'},
+      seguridad:{n:'Seguridad',x:-.64,y:.24,col:'#ff7a9a'},
+      bd:{n:'Bases de datos',x:.64,y:.22,col:'#f6c760'},
+      pruebas:{n:'Pruebas',x:-.34,y:.6,col:'#7ee0a1'},
+      entorno:{n:'Entorno',x:.02,y:.64,col:'#ff9a52'},
+      git:{n:'Git',x:.38,y:.58,col:'#c4a7ff'},
+    };
+    const temaDe=n=>TEMAS[n.tema]?n.tema:'metodo';
+    if(!CZ||!Array.isArray(CZ.notas)){
+      empty.style.display='flex';
+      empty.innerHTML='<div><b style="color:#e6ecf7">La corteza no está configurada.</b><br>Declara <code>conocimiento.dir</code> en config.json (la carpeta de tus notas CO-###), corre <code>conocimiento-build.js</code> y vuelve a generar la consola.</div>';
+      document.getElementById('cx-side').style.display='none';
+      return {resize(){},scope(){}};
+    }
+    const NOTAS=CZ.notas.filter(n=>n.estado!=='archivada'), PROP=CZ.propuestas||[];
+    const vig=NOTAS.filter(n=>n.estado==='vigente');
+    const porId=Object.fromEntries(NOTAS.concat(PROP).map(n=>[n.id,n]));
+    // sinapsis reales: «Ver también» entre notas que existen (sin duplicar A-B / B-A)
+    const EDGES=[];const vistos=new Set();
+    for(const n of NOTAS.concat(PROP))for(const e of (n.enlaces||[])){
+      if(!porId[e])continue;const k=[n.id,e].sort().join('|');if(vistos.has(k))continue;vistos.add(k);
+      EDGES.push({a:n,b:porId[e],p:Math.random(),hot:0});
+    }
+    const grado={};EDGES.forEach(e=>{grado[e.a.id]=(grado[e.a.id]||0)+1;grado[e.b.id]=(grado[e.b.id]||0)+1;});
+    set('tab-co',vig.length);set('cx-n',vig.length);
+    set('cx-d',vig.filter(n=>n.nivel==='duro').length);set('cx-c',vig.filter(n=>n.nivel==='criterio').length);
+
+    // ---- panel: sueño, lóbulos, búsqueda
+    const sl=document.getElementById('cx-sleep');
+    sl.innerHTML=`<b>${esc(CZ.semanas||0)}</b> semana(s) de bitácora consolidadas`+(CZ.ultimaSemana?` · la última, <b>${esc(CZ.ultimaSemana)}</b>`:'')+
+      `.<br><b>${PROP.length}</b> propuesta(s) esperando tu aprobación o un segundo caso.`+
+      (CZ.validacion&&/^FALLA/i.test(CZ.validacion)?`<br><span class="bad">⚠ ${esc(CZ.validacion)}</span>`:'');
+    let lobeSel=null,sel=null,find='';
+    const lobesBox=document.getElementById('cx-lobes');
+    const conteo={};vig.forEach(n=>{conteo[temaDe(n)]=(conteo[temaDe(n)]||0)+1;});
+    const maxC=Math.max(1,...Object.values(conteo));
+    Object.entries(TEMAS).sort((a,b)=>(conteo[b[0]]||0)-(conteo[a[0]]||0)).forEach(([k,t])=>{
+      const b=document.createElement('button');b.type='button';b.setAttribute('aria-pressed','false');
+      b.innerHTML=`<span>${esc(t.n)}</span><span class="bar"><b style="width:${(100*(conteo[k]||0)/maxC).toFixed(0)}%;background:${t.col}"></b></span><span class="n">${conteo[k]||0}</span>`;
+      b.addEventListener('click',()=>{lobeSel=lobeSel===k?null:k;lobesBox.querySelectorAll('button').forEach(x=>x.setAttribute('aria-pressed',x===b&&lobeSel===k));});
+      lobesBox.appendChild(b);
+    });
+    document.getElementById('cx-find').addEventListener('input',ev=>{find=ev.target.value.trim().toLowerCase();});
+    const coincide=n=>!find||(n.id+' '+n.titulo+' '+n.regla).toLowerCase().includes(find);
+
+    const det=document.getElementById('cx-det');
+    function detalle(n){
+      sel=n;
+      if(!n){det.innerHTML='<div class="meta">Toca una neurona para leer la lección: su regla, el porqué y cuándo no aplica.</div>';return;}
+      const t=TEMAS[temaDe(n)];
+      const links=(n.enlaces||[]).filter(e=>porId[e]).map(e=>`<button type="button" data-id="${esc(e)}">${esc(e)}</button>`).join('');
+      det.innerHTML=`<div class="id">${esc(n.id)} · ${esc(t.n)} · ${n.estado==='propuesta'?'PROPUESTA':esc(n.nivel)}</div>`+
+        `<h3>${esc(n.titulo)}</h3>`+
+        (n.regla?`<p><b>Regla</b>${esc(n.regla)}</p>`:'')+
+        (n.porque?`<p><b>Por qué</b>${esc(n.porque)}</p>`:'')+
+        (n.noAplica?`<p><b>Cuándo no aplica</b>${esc(n.noAplica)}</p>`:'')+
+        `<div class="meta">${n.casos?esc(n.casos)+' caso(s) · ':''}${n.procedencia?esc(n.procedencia)+' · ':''}`+
+        `${n.aplica&&n.aplica.length?'se carga con '+esc(n.aplica.join(' ')):'siempre presente (método)'}`+
+        `${n.versiones?' · '+esc(n.versiones)+' ajuste(s)':''}</div>`+
+        (links?`<div class="links">${links}</div>`:'');
+      det.querySelectorAll('.links button').forEach(b=>b.addEventListener('click',()=>detalle(porId[b.dataset.id])));
+      if(!reduce)fire(n,1);
+    }
+    detalle(null);
+
+    // ---- ámbito: el saber queda entero; el control de la empresa se apaga en personal
+    let wave=-1;
+    const ctlOn=c=>!(c.soloEmpresa&&scope==='personal');
+    function scopeCx(){
+      const ul=document.getElementById('cx-ctl');
+      const on=CTL.filter(ctlOn).length;
+      document.getElementById('cx-ctl-t').textContent=`Control en este ámbito · ${on}/${CTL.length}`;
+      ul.innerHTML=CTL.map(c=>{const o=ctlOn(c);const col=o?(c.soloEmpresa?COL.laboral:COL.core):'#4d5c76';
+        return `<li class="${o?'':'off'}" title="${esc(c.detalle||'')}"><i style="background:${col}"></i>${esc(c.label)}<span class="s">${o?(c.soloEmpresa?'empresa':'siempre'):'silenciado'}</span></li>`;}).join('');
+      const amb=(E.AMBITOS||[]).length?` Ámbitos declarados: ${(E.AMBITOS||[]).map(esc).join(', ')}.`:'';
+      const msg={
+        ambas:`Sesión central: <b>${vig.length} lecciones</b> y los <b>${CTL.length} controles</b> encendidos.`,
+        laboral:`Sesión de la empresa: <b>${vig.length} lecciones</b> + todo el control de la organización.`,
+        personal:`Sesión personal: las <b>${vig.length} lecciones siguen enteras</b>; el control de la empresa se apaga (${CTL.length-on} silenciado${CTL.length-on===1?'':'s'}).`,
+      }[scope];
+      document.getElementById('cx-msg').innerHTML=msg+amb;
+      wave=performance.now();
+    }
+    scopeCx();
+
+    // ---- geometría
+    let W=0,H=0,dpr=1,G=null;
+    function resizeCx(){
+      const r=cvs.getBoundingClientRect();if(!r.width||!r.height)return;
+      if(Math.abs(r.width-W)<1&&Math.abs(r.height-H)<1&&G)return;
+      dpr=Math.min(window.devicePixelRatio||1,2);W=r.width;H=r.height;cvs.width=W*dpr;cvs.height=H*dpr;c2.setTransform(dpr,0,0,dpr,0,0);
+      const ancho=W>900?W-360:W, alto=W>900?H:H*0.58;
+      // Franja libre: debajo del encabezado (control y sus etiquetas) y encima del pie (sueño).
+      const top=W>900?150:120, bot=alto-(W>900?54:30);
+      const cxC=ancho/2, cyC=(top+bot)/2+4;
+      let ry=(bot-top)/2-62, rx=Math.min(ancho*0.4,ry/0.62);
+      ry=Math.min(ry,rx*0.72);
+      ry=Math.max(ry,70);rx=Math.max(rx,110);
+      const esc2=Math.max(.7,Math.min(1.5,rx/300));
+      G={cx:cxC,cy:cyC,rx,ry,s:esc2};
+      // neuronas: espiral dorada alrededor del centro de su lóbulo
+      for(const t of Object.values(TEMAS)){t.px=cxC+t.x*rx;t.py=cyC+t.y*ry;t.rad=14;}
+      const grupos={};vig.concat(NOTAS.filter(n=>n.estado!=='vigente')).forEach(n=>{(grupos[temaDe(n)]=grupos[temaDe(n)]||[]).push(n);});
+      for(const [k,ns] of Object.entries(grupos)){
+        const t=TEMAS[k],lx=cxC+t.x*rx,ly=cyC+t.y*ry;t.px=lx;t.py=ly;
+        ns.sort((a,b)=>(grado[b.id]||0)-(grado[a.id]||0));
+        ns.forEach((n,i)=>{const a=i*2.39996,d=10.5*esc2*Math.sqrt(i+.6);n.bx=lx+Math.cos(a)*d;n.by=ly+Math.sin(a)*d*.86;n.r=(2.6+Math.min(n.casos||1,8)*.42+(grado[n.id]||0)*.25)*esc2;});
+        t.rad=10.5*esc2*Math.sqrt(ns.length+.6)+8;
+      }
+      // sueño (hipocampo): arco bajo el cerebro
+      const hy=cyC+ry+34;G.hy=hy;
+      PROP.forEach((n,i)=>{const m=PROP.length;const f=m===1?.5:i/(m-1);n.bx=cxC+(f-.5)*Math.min(rx*1.3,26*m);n.by=hy+Math.sin(f*Math.PI)*-10;n.r=3.2*esc2;});
+      // control (prefrontal): arco sobre el cerebro
+      const m=CTL.length;CTL.forEach((c,i)=>{const a=Math.PI*(1.12+0.76*(m===1?.5:i/(m-1)));c.bx=cxC+Math.cos(a)*(rx+34);c.by=cyC+Math.sin(a)*(ry+40);c.ex=cxC+Math.cos(a)*rx*.92;c.ey=cyC+Math.sin(a)*ry*.92;});
+    }
+
+    // disparo: una neurona se enciende y manda pulsos por sus sinapsis
+    function fire(n,f){n.glow=Math.max(n.glow||0,f);EDGES.forEach(e=>{if(e.a===n||e.b===n){e.hot=1;e.dir=e.a===n?1:-1;e.p=0;}});}
+    const visible=n=>coincide(n)&&(!lobeSel||temaDe(n)===lobeSel);
+
+    function chip(x,y,text,col,size,alpha){
+      c2.font=`600 ${size}px ui-monospace,Consolas,monospace`;c2.textAlign='center';c2.textBaseline='middle';
+      const w=c2.measureText(text).width+14,h=size+9;c2.globalAlpha=alpha==null?.92:alpha;
+      c2.fillStyle='rgba(6,10,18,.86)';c2.strokeStyle=col+'66';c2.lineWidth=1;c2.beginPath();
+      if(c2.roundRect)c2.roundRect(x-w/2,y-h/2,w,h,h/2);else c2.rect(x-w/2,y-h/2,w,h);c2.fill();c2.stroke();
+      c2.fillStyle=col;c2.fillText(text,x,y+.5);c2.textBaseline='alphabetic';c2.globalAlpha=1;
+    }
+    let hov=null,last=0;
+    function drawCx(ts){
+      requestAnimationFrame(drawCx);
+      if(!document.getElementById('view-corteza').classList.contains('active'))return;
+      if(!G||!W){resizeCx();if(!G)return;}
+      const t=ts*.001,dt=Math.min(.05,(ts-last)/1000||0);last=ts;
+      c2.clearRect(0,0,W,H);
+      const {cx:X,cy:Y,rx,ry}=G;
+      // silueta: halo + dos hemisferios + circunvoluciones
+      const halo=c2.createRadialGradient(X,Y,rx*.2,X,Y,rx*1.25);halo.addColorStop(0,'rgba(53,224,208,.07)');halo.addColorStop(1,'rgba(53,224,208,0)');
+      c2.fillStyle=halo;c2.beginPath();c2.ellipse(X,Y,rx*1.25,ry*1.3,0,0,7);c2.fill();
+      c2.strokeStyle='rgba(120,170,220,.16)';c2.lineWidth=1.2;c2.beginPath();c2.ellipse(X,Y,rx,ry,0,0,7);c2.stroke();
+      c2.strokeStyle='rgba(120,170,220,.06)';c2.lineWidth=1;
+      for(let k=1;k<=4;k++){c2.beginPath();for(let a=0;a<=Math.PI*2+.01;a+=.05){const w=1+Math.sin(a*9+k*1.7)*.035;const px=X+Math.cos(a)*rx*(k/5)*w,py=Y+Math.sin(a)*ry*(k/5)*w;a===0?c2.moveTo(px,py):c2.lineTo(px,py);}c2.stroke();}
+      c2.strokeStyle='rgba(120,170,220,.1)';c2.beginPath();c2.moveTo(X,Y-ry);c2.bezierCurveTo(X-8,Y-ry*.3,X+8,Y+ry*.3,X,Y+ry);c2.stroke();
+      // onda al cambiar de ámbito
+      if(wave>0&&!reduce){const p=(performance.now()-wave)/1400;if(p<1){c2.strokeStyle=scope==='personal'?COL.personal:scope==='laboral'?COL.laboral:COL.core;c2.globalAlpha=(1-p)*.6;c2.lineWidth=2;c2.beginPath();c2.ellipse(X,Y,rx*(.2+p*1.1),ry*(.2+p*1.1),0,0,7);c2.stroke();c2.globalAlpha=1;}}
+      // control (arco superior)
+      CTL.forEach((c,i)=>{const on=ctlOn(c);const col=on?(c.soloEmpresa?COL.laboral:COL.core):'#3a4660';
+        c2.globalAlpha=on?.35:.12;c2.strokeStyle=col;c2.lineWidth=1;c2.setLineDash(on?[]:[3,5]);c2.beginPath();c2.moveTo(c.bx,c.by);c2.lineTo(c.ex,c.ey);c2.stroke();c2.setLineDash([]);
+        if(on&&!reduce){const p=(t*.35+i*.17)%1;c2.globalAlpha=.9;c2.fillStyle=col;c2.beginPath();c2.arc(c.bx+(c.ex-c.bx)*p,c.by+(c.ey-c.by)*p,1.6,0,7);c2.fill();}
+        c2.globalAlpha=1;c2.save();c2.translate(c.bx,c.by);c2.rotate(Math.PI/4);c2.fillStyle=col;c2.shadowBlur=on?12:0;c2.shadowColor=col;c2.fillRect(-5,-5,10,10);c2.restore();c2.shadowBlur=0;
+        c._sx=c.bx;c._sy=c.by;
+        chip(c.bx,c.by-17-(i%2)*15,c.label,on?(c.soloEmpresa?'#8fb6ff':'#8ff0e6'):'#4d5c76',10,on?.95:.6);
+      });
+      // sinapsis
+      const foco=hov&&hov.t==='n'?hov.o:sel;
+      EDGES.forEach(e=>{
+        const va=visible(e.a),vb=visible(e.b);const conFoco=foco&&(e.a===foco||e.b===foco);
+        const mx=(e.a.bx+e.b.bx)/2+(Y-(e.a.by+e.b.by)/2)*.12,my=(e.a.by+e.b.by)/2+((e.a.bx+e.b.bx)/2-X)*.12;
+        const prop=e.a.estado==='propuesta'||e.b.estado==='propuesta';
+        c2.globalAlpha=conFoco?.75:(va&&vb?(prop?.07:.14):.03);
+        c2.strokeStyle=conFoco?'#8ff0e6':(prop?COL.r1:'#6fb3ff');c2.lineWidth=conFoco?1.4:1;
+        if(prop)c2.setLineDash([2,4]);c2.beginPath();c2.moveTo(e.a.bx,e.a.by);c2.quadraticCurveTo(mx,my,e.b.bx,e.b.by);c2.stroke();c2.setLineDash([]);
+        if(e.hot>0&&!reduce){e.p+=dt*.9;if(e.p>1){e.hot-=.5;e.p=0;const dest=e.dir>0?e.b:e.a;dest.glow=Math.max(dest.glow||0,.7);}
+          const p=e.dir>0?e.p:1-e.p,q=1-p;const px=q*q*e.a.bx+2*q*p*mx+p*p*e.b.bx,py=q*q*e.a.by+2*q*p*my+p*p*e.b.by;
+          c2.globalAlpha=.95;c2.fillStyle='#bff8f2';c2.shadowBlur=10;c2.shadowColor='#35e0d0';c2.beginPath();c2.arc(px,py,2,0,7);c2.fill();c2.shadowBlur=0;}
+      });
+      // actividad espontánea: de vez en cuando una lección se enciende sola
+      if(!reduce&&vig.length&&Math.random()<dt*1.4)fire(vig[Math.floor(Math.random()*vig.length)],.8);
+      // neuronas vigentes
+      for(const n of vig){
+        const t2=TEMAS[temaDe(n)];const vis=visible(n);const g=n.glow||0;n.glow=Math.max(0,g-dt*.8);
+        const x=n.bx+Math.cos(t*.6+n.by*.05)*1.2,y=n.by+Math.sin(t*.7+n.bx*.05)*1.2;n._sx=x;n._sy=y;
+        const a=vis?1:.1,r=n.r*(1+g*.5);
+        const gr=c2.createRadialGradient(x,y,0,x,y,r*3.2);gr.addColorStop(0,t2.col+(g>.2?'aa':'55'));gr.addColorStop(1,t2.col+'00');
+        c2.globalAlpha=a;c2.fillStyle=gr;c2.beginPath();c2.arc(x,y,r*3.2,0,7);c2.fill();
+        if(n.nivel==='criterio'){c2.strokeStyle=t2.col;c2.lineWidth=1.6;c2.beginPath();c2.arc(x,y,r,0,7);c2.stroke();}
+        else{c2.fillStyle=t2.col;c2.shadowBlur=8+g*14;c2.shadowColor=t2.col;c2.beginPath();c2.arc(x,y,r,0,7);c2.fill();c2.shadowBlur=0;}
+        if(n.versiones){c2.globalAlpha=a*.5;c2.strokeStyle=t2.col;c2.lineWidth=.8;c2.beginPath();c2.arc(x,y,r+3.2,t*.8,t*.8+Math.PI*1.2);c2.stroke();}
+        if(n===sel){c2.globalAlpha=1;c2.strokeStyle='#ffffff';c2.lineWidth=1.4;c2.beginPath();c2.arc(x,y,r+6,0,7);c2.stroke();}
+      }
+      c2.globalAlpha=1;
+      // etiquetas de lóbulo
+      for(const [k,tm] of Object.entries(TEMAS)){const n=conteo[k]||0;if(!n&&!PROP.some(p=>temaDe(p)===k))continue;
+        chip(tm.px,tm.py-tm.rad-4,`${tm.n} · ${n}`,tm.col,10.5,lobeSel&&lobeSel!==k?.35:.92);}
+      // sueño: propuestas parpadeando, con una línea punteada hacia el lóbulo donde caerían
+      if(PROP.length){
+        chip(X,G.hy+24,`SUEÑO · ${PROP.length} por consolidar`,'#f6c760',10,.9);
+        PROP.forEach((n,i)=>{const tm=TEMAS[temaDe(n)];const vis=visible(n);const fl=.45+.4*Math.sin(t*2.2+i*1.3);
+          c2.globalAlpha=vis?.18:.04;c2.strokeStyle=COL.r1;c2.setLineDash([2,5]);c2.beginPath();c2.moveTo(n.bx,n.by);c2.lineTo(tm.px,tm.py);c2.stroke();c2.setLineDash([]);
+          c2.globalAlpha=vis?(reduce?.7:fl):.1;c2.strokeStyle=COL.r1;c2.lineWidth=1.4;c2.beginPath();c2.arc(n.bx,n.by,n.r,0,7);c2.stroke();
+          c2.fillStyle=COL.r1+'55';c2.fill();n._sx=n.bx;n._sy=n.by;if(n===sel){c2.globalAlpha=1;c2.strokeStyle='#fff';c2.beginPath();c2.arc(n.bx,n.by,n.r+6,0,7);c2.stroke();}});
+        c2.globalAlpha=1;
+      }
+    }
+
+    function pick(mx,my){
+      for(const n of vig.concat(PROP))if(visible(n)&&Math.hypot(mx-(n._sx||-99),my-(n._sy||-99))<Math.max(7,n.r+4))return {t:'n',o:n};
+      for(const c of CTL)if(Math.hypot(mx-c._sx,my-c._sy)<10)return {t:'c',o:c};
+      return null;
+    }
+    cvs.addEventListener('mousemove',ev=>{
+      const r=cvs.getBoundingClientRect();hov=pick(ev.clientX-r.left,ev.clientY-r.top);
+      if(!hov){tip2.style.opacity=0;cvs.style.cursor='default';return;}
+      const o=hov.o;tip2.style.left=o._sx+'px';tip2.style.top=o._sy+'px';tip2.style.opacity=1;cvs.style.cursor='pointer';
+      if(hov.t==='n'){tip2.querySelector('.lb').textContent=o.id+' · '+o.titulo;
+        tip2.querySelector('.mt').textContent=TEMAS[temaDe(o)].n+' · '+(o.estado==='propuesta'?'propuesta en el sueño':o.nivel)+(o.casos?' · '+o.casos+' caso(s)':'')+((grado[o.id]||0)?' · '+grado[o.id]+' sinapsis':'');
+        tip2.querySelector('.xd').textContent=o.estado==='propuesta'?'Espera tu aprobación o un segundo caso que la confirme.':(o.aplica&&o.aplica.length?'Se carga al tocar '+o.aplica.join(' '):'Siempre presente: es método.');}
+      else{const on=ctlOn(o);tip2.querySelector('.lb').textContent=o.label;tip2.querySelector('.mt').textContent=on?(o.soloEmpresa?'solo en sesiones de la empresa':'en todas las sesiones'):'silenciado en este ámbito';tip2.querySelector('.xd').textContent=o.detalle||'';}
+    });
+    cvs.addEventListener('mouseleave',()=>{tip2.style.opacity=0;hov=null;});
+    cvs.addEventListener('click',ev=>{const r=cvs.getBoundingClientRect();const h=pick(ev.clientX-r.left,ev.clientY-r.top);if(h&&h.t==='n')detalle(h.o);});
+    new ResizeObserver(()=>{W=0;resizeCx();}).observe(cvs.parentElement);
+    requestAnimationFrame(drawCx);
+    return {resize(){W=0;resizeCx();},scope:scopeCx};
+  })();
+
   new ResizeObserver(resize).observe(cv.parentElement);
   resize();refresh();requestAnimationFrame(draw);
+  // Enlace directo a una vista o ámbito: consola.html#corteza o #corteza&personal
+  for(const k of location.hash.slice(1).split('&').filter(Boolean)){
+    const b=document.querySelector(`.seg.tabs button[data-view="${CSS.escape(k)}"],.seg.scope button[data-scope="${CSS.escape(k)}"]`);
+    if(b)b.click();
+  }
 
   // El pie declara SIEMPRE de qué día son los datos, y avisa si no son de hoy: un dato viejo
   // mostrado como actual es justo el defecto que esta consola existe para evitar.

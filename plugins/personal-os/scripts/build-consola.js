@@ -392,7 +392,81 @@ if (LAYOUT.hito && /^\d{4}-\d{2}-\d{2}$/.test(txt(LAYOUT.hito.fecha))) {
   HITO = { etiqueta: txt(LAYOUT.hito.etiqueta) || 'Hito', fecha: txt(LAYOUT.hito.fecha) };
 }
 
-// ---------------------------------------------------------------- 6. escritura
+// ---------------------------------------------------------------- 6. CORTEZA (saber común) y CONTROL
+//
+// El cerebro separa dos capas (D-062): el SABER (notas CO-### de la corteza) es común a todos los
+// ámbitos, y el CONTROL (vigías, núcleo de la empresa) se enciende o apaga por ámbito. La vista
+// Corteza pinta las dos para que se vea la diferencia: cambiar de ámbito apaga control, no saber.
+// Todo es opcional: sin config.json → conocimiento.dir la vista dice cómo activarla.
+
+const CFG = comun.config() || {};
+function leerCO(ruta) {
+  const texto = comun.leerTexto(ruta, null);
+  if (texto === null) { aviso(`corteza: ${path.basename(ruta)} no se pudo leer, se omite`); return null; }
+  const p = parsearFrontmatter(texto);
+  if (!p) { aviso(`corteza: ${path.basename(ruta)} no tiene frontmatter, se omite`); return null; }
+  const f = p.fm;
+  const seccion = (nombre) => {
+    const m = p.cuerpo.match(new RegExp(`\\*\\*${nombre}\\.\\*\\*\\s*([\\s\\S]*?)(?=\\n\\s*\\*\\*[A-ZÁÉÍÓÚ][^*]{2,40}\\.\\*\\*|$)`));
+    return m ? recortar(m[1].replace(/\s+/g, ' ').trim(), 900) : '';
+  };
+  const enlaces = [...new Set((p.cuerpo.match(/\[\[(CO-\d+)\]\]/g) || []).map((s) => s.slice(2, -2)))];
+  const lista = (v) => txt(v).split(',').map((s) => s.trim()).filter(Boolean);
+  return {
+    id: txt(f.id), titulo: txt(f.titulo), tema: txt(f.tema) || 'metodo', nivel: txt(f.nivel) || 'duro',
+    estado: txt(f.estado) || 'vigente', procedencia: txt(f.procedencia), casos: Number(f.casos) || lista(f.casos).length || 0,
+    aplica: lista(f.aplica_a), fuentes: lista(f.fuentes).length, creado: txt(f.creado), aprobada: txt(f.aprobada),
+    regla: seccion('Regla'), porque: seccion('Por qu[eé]'), noAplica: seccion('Cu[aá]ndo no aplica'),
+    enlaces: enlaces.filter((e) => e !== txt(f.id)),
+  };
+}
+let CORTEZA = null;
+const dirCO = CFG.conocimiento && txt(CFG.conocimiento.dir)
+  ? path.resolve(txt(CFG.conocimiento.dir).replace(/^~(?=$|[\\/])/, require('os').homedir())) : null;
+if (dirCO && fs.existsSync(dirCO)) {
+  const deCarpeta = (d) => { try { return fs.readdirSync(d).filter((n) => /^CO-\d+.*\.md$/i.test(n)).map((n) => path.join(d, n)); } catch (_) { return []; } };
+  const notas = deCarpeta(dirCO).map(leerCO).filter((n) => n && n.id);
+  const propuestas = deCarpeta(path.join(dirCO, '_propuestas')).map(leerCO).filter((n) => n && n.id)
+    .map((n) => ({ ...n, estado: 'propuesta' }));
+  // Plasticidad: cuántas versiones anteriores guardó cada nota al ajustarse.
+  const versiones = {};
+  for (const h of (() => { try { return fs.readdirSync(path.join(dirCO, '_historial')); } catch (_) { return []; } })()) {
+    const m = h.match(/^(CO-\d+)/); if (m) versiones[m[1]] = (versiones[m[1]] || 0) + 1;
+  }
+  for (const n of notas) n.versiones = versiones[n.id] || 0;
+  // Sueño: semanas de bitácora ya consolidadas (resumen-AAAA-Www.md) y estado de la última validación.
+  let semanas = [];
+  const dirBit = path.join(STATE, 'bitacora');
+  for (const d of [dirBit, path.join(dirBit, '_archivo')]) {
+    try { semanas = semanas.concat(fs.readdirSync(d).filter((n) => /^resumen-\d{4}-W\d{2}\.md$/.test(n)).map((n) => n.slice(8, -3))); } catch (_) { /* opcional */ }
+  }
+  semanas = [...new Set(semanas)].sort();
+  const validacion = comun.leerTexto(path.join(dirCO, '_propuestas', '_validacion.txt'), '').split(/\r?\n/)[0] || '';
+  CORTEZA = {
+    notas: notas.filter((n) => n.estado !== 'propuesta'),
+    propuestas: propuestas.concat(notas.filter((n) => n.estado === 'propuesta')),
+    semanas: semanas.length, ultimaSemana: semanas[semanas.length - 1] || null,
+    validacion: recortar(validacion, 160),
+  };
+} else if (dirCO) {
+  aviso(`corteza: no existe la carpeta de conocimiento ${dirCO}`);
+}
+
+// Control: qué vigila cada sesión. `soloEmpresa` = se apaga en sesiones personales.
+const hay = (nombre) => fs.existsSync(path.join(__dirname, nombre)) || fs.existsSync(path.join(comun.OS_HOME, nombre));
+const CONTROL = [
+  { id: 'nucleo', label: 'Núcleo de la empresa', detalle: 'Reglas obligatorias de la organización, inyectadas al arrancar.', soloEmpresa: true, activo: fs.existsSync(path.join(comun.OS_HOME, 'nucleo-empresa.md')) },
+  { id: 'correo', label: 'Vigía de correo', detalle: 'Buzón sin barrer, buzón ajeno y urgentes abiertos.', soloEmpresa: true, activo: hay('correo-scan.js') },
+  { id: 'reglas', label: 'Vigía de reglas', detalle: 'Políticas nuevas de la organización sin registrar.', soloEmpresa: true, activo: hay('reglas-scan.js') },
+  { id: 'reunion', label: 'Detector de reuniones', detalle: 'Reuniones del día sin preparar.', soloEmpresa: true, activo: hay('reunion-detector.js') },
+  { id: 'compromisos', label: 'Vigía de compromisos', detalle: 'Cada sesión ve solo los alcances de su ámbito.', soloEmpresa: false, activo: hay('alcances-scan.js') },
+  { id: 'guardia', label: 'Guardia de producción', detalle: 'Bloquea producción, ramas protegidas y escrituras en BD en TODAS las sesiones.', soloEmpresa: false, activo: hay('guardia-empresa.js') },
+  { id: 'buscar', label: 'Buscar antes de negar', detalle: 'Nunca «no existe» sin barrer todas las fuentes.', soloEmpresa: false, activo: hay('verificar-ausencia.js') },
+].filter((c) => c.activo);
+const AMBITOS = CFG.ambitos && CFG.ambitos.carpetas
+  ? Object.keys(CFG.ambitos.carpetas).filter((k) => !k.startsWith("_")).sort() : [];
+
+// ---------------------------------------------------------------- 7. escritura
 
 const datos = {
   generado: new Date().toISOString(),
@@ -400,6 +474,7 @@ const datos = {
   hito: HITO,
   avisos,
   NODES: NODOS, ITEMS, SINAPSIS, PRIO,
+  CORTEZA, CONTROL, AMBITOS,
 };
 
 const salidaDatos =
@@ -424,6 +499,9 @@ const nLab = ITEMS.filter((i) => byId[i.cli].scope === 'laboral').length;
 const nPer = ITEMS.filter((i) => byId[i.cli].scope === 'personal').length;
 console.log(`Consola neuronal · datos de ${HOY}`);
 console.log(`Nodos: ${NODOS.length} · Ítems: ${ITEMS.length} (laboral ${nLab} · personal ${nPer}) · Sinapsis: ${SINAPSIS.length}`);
+console.log(CORTEZA
+  ? `Corteza: ${CORTEZA.notas.filter((n) => n.estado === 'vigente').length} lecciones vigentes · ${CORTEZA.propuestas.length} propuesta(s) · ${CORTEZA.semanas} semana(s) consolidadas · control: ${CONTROL.length} vigías`
+  : 'Corteza: sin configurar (config.json → conocimiento.dir)');
 // Los avisos se imprimen y además viajan en datos.js: uno que no se ve no sirve de nada.
 if (avisos.length) {
   console.log(`Avisos (${avisos.length}):`);
