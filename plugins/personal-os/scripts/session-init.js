@@ -70,6 +70,19 @@ try {
     }
   } catch (e) { /* sin ámbito: comportamiento de siempre */ }
 
+  // Lecciones que el sueño semanal propuso para la corteza y esperan la aprobación del usuario.
+  try {
+    const dirCo = (cfg.conocimiento || {}).dir;
+    const prop = dirCo ? path.join(dirCo, '_propuestas') : null;
+    const n = prop && fs.existsSync(prop) ? fs.readdirSync(prop).filter((f) => /^CO-\d+.*\.md$/i.test(f)).length : 0;
+    if (n) {
+      const val = C.leerTexto(path.join(prop, '_validacion.txt'), '') || '';
+      out += `\n\n🧠 **Corteza: ${n} lección(es) propuesta(s) por el sueño semanal** esperan aprobación en \`${prop.replace(/\\/g, '/')}\``
+           + (val.startsWith('FALLA') ? ' (⚠️ alguna no pasó la validación: corregirla antes de presentarla)' : '')
+           + '. Mencionarlo en una línea al final de la primera respuesta; se revisan cuando el usuario diga «revisemos las propuestas» (CORE §7-quater).';
+    }
+  } catch (e) { /* sin propuestas: nada */ }
+
   // Núcleo de reglas de la organización (reglas-organizacion/build.py con salida.nucleo apuntando a
   // <os-home>/nucleo-empresa.md): solo en sesiones de la empresa. El hook guardia sigue en todas.
   try {

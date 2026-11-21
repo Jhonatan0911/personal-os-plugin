@@ -77,7 +77,7 @@ for (const n of notas) {
   if (!['duro', 'criterio'].includes(f.nivel)) errores.push(`${nom}: nivel debe ser duro|criterio`);
   if (!['propuesta', 'vigente', 'archivada'].includes(f.estado)) errores.push(`${nom}: estado debe ser propuesta|vigente|archivada`);
   if (!/\*\*Regla\.\*\*/.test(n.cuerpo)) errores.push(`${nom}: falta el párrafo **Regla.**`);
-  if (!/\*\*Por qué\.\*\*/.test(n.cuerpo)) errores.push(`${nom}: falta el párrafo **Por qué.** (casos con su porqué, no reglas desnudas)`);
+  if (!/\*\*Por qu[eé]\.\*\*/.test(n.cuerpo)) errores.push(`${nom}: falta el párrafo **Por qué.** (casos con su porqué, no reglas desnudas)`);
   const plano = C.sinTildes(n.texto);
   for (const t of PROHIBIDOS) if (plano.includes(t)) errores.push(`${nom}: contiene un término confidencial («${t}»): abstraerlo antes de que cruce de contexto`);
 }

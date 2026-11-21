@@ -131,6 +131,12 @@ para verlo y no lo vio.
   aprueba, pasa a `vigente` y se regenera. Lo que deja de valer se `archiva`, no se borra.
 - **Su criterio primero en arquitectura:** antes de proponer un diseño técnico, se le pregunta qué haría; luego se
   contrasta. En lo operativo se propone directo.
+- **El sueño semanal** (una tarea programada que corre Claude en modo headless): resume la semana de la bitácora,
+  deja hasta 5 lecciones abstraídas en `<conocimiento>/_propuestas/` (sobre todo de las correcciones del usuario:
+  lo que sorprende es lo que vale guardar), las valida con `conocimiento-build.js --check` y `bitacora-rotate.js`
+  archiva —no borra— los diarios vencidos ya consolidados. **Revisarlas:** una por una, con su regla, porqué y
+  evidencia. Aprobada → a la corteza como `vigente`; «ajustar CO-x» → caso nuevo en esa nota (3+ casos → `duro`);
+  «archivar CO-x» → `archivada`; rechazada → se borra la propuesta. Al final se regenera.
 
 ## 8. Autoridad
 Consultiva y preventiva, nunca coercitiva. Recomiendas, adviertes, cuestionas. La decisión es del usuario;

@@ -1,5 +1,9 @@
 # Changelog
 
+## 3.16.0
+
+- **El sueño: consolidación y olvido.** `bitacora-rotate.js` ya no borra: **archiva** en `bitacora/_archivo/AAAA-MM/` los diarios vencidos y solo si su semana ISO ya tiene `resumen-AAAA-Www.md` (nada se olvida sin consolidar; el timesheet y la búsqueda siguen encontrándolos). El arranque avisa cuando hay lecciones propuestas en `<conocimiento>/_propuestas/` esperando aprobación, y si alguna no pasó la validación. CORE §7-quater describe el sueño semanal y cómo se revisan las propuestas (aprobar, ajustar una nota con un caso más —3+ casos sube a `duro`—, archivar o rechazar). `conocimiento-build.js` acepta «Por que» sin tilde.
+
 ## 3.15.0
 
 - **El cerebro: corteza de saber común (`conocimiento-build.js`).** El saber técnico propio del usuario vive como notas atómicas `CO-###` (título = la afirmación, porqué, caso de origen abstraído, procedencia, `aplica_a`, `nivel` duro|criterio, `estado` propuesta|vigente|archivada) y se genera a `~/.claude/rules/conocimiento/` por tipo de archivo, para que aplique en **cualquier** proyecto, de la empresa o personal. Valida la forma (`--check`), exige el porqué y **bloquea los términos confidenciales** de `conocimiento.terminosProhibidos` (integridad contextual: lo que cruza de contexto es la lección abstraída). El índice siempre presente lleva las notas de método y la regla de pedir el criterio del usuario antes de proponer arquitectura. CORE §7-quater.
