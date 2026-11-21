@@ -385,13 +385,17 @@
   .dlbtn{display:none}
   @media (min-width:681px){
     .toc-bar .toc{-webkit-mask-image:none;mask-image:none;padding-right:0;flex-wrap:nowrap;overflow:visible;gap:6px}
-    .toc a{padding:7px 10px}
+    .toc a{padding:7px 8px;font-size:.76rem}
+    .toc-bar .toc{gap:4px}
   }
   @media (max-width:680px){
     .new-pill,.live-open,details.grp>summary,details.older summary,.chlog a,.note a{min-height:44px;display:inline-flex;align-items:center}
     .cmd code{overflow-wrap:normal;word-break:keep-all;white-space:normal}
     .cmd{overflow-x:auto}
-    .cmd code .arg{white-space:nowrap}
+    .cmd{flex-wrap:wrap}
+    .cmd code{flex:1 1 100%}
+    .cmd code .arg{white-space:normal;overflow-wrap:anywhere}
+    .cmd button{margin-left:0}
     .term.live .live-open{display:none}
   }
   /* selector de tema: sistema → claro → oscuro */
@@ -427,14 +431,20 @@
   .marquee{position:relative;margin:6px calc(50% - 50vw) 0;padding:16px 0;overflow:hidden;border-block:1px solid var(--line);perspective:500px;
     -webkit-mask-image:linear-gradient(90deg,transparent,#000 8%,#000 92%,transparent);mask-image:linear-gradient(90deg,transparent,#000 8%,#000 92%,transparent)}
   .mq-track{display:flex;gap:40px;width:max-content;animation:mq 60s linear infinite}
-  .marquee:hover .mq-track{animation-play-state:paused}
+  .marquee:hover .mq-track,.marquee.paused .mq-track{animation-play-state:paused}
+  .mq-pause{position:absolute;right:max(16px,calc(50% - 430px));top:50%;translate:0 -50%;z-index:2;width:36px;height:36px;border-radius:50%;
+    border:1px solid var(--line-strong);background:var(--panel);color:var(--muted);font-size:.7rem;cursor:pointer}
+  .mq-pause:hover{color:var(--accent-ink);border-color:var(--accent)}
+  .mq-pause:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+  .marquee{-webkit-mask-image:none;mask-image:none}
+  .mq-track{-webkit-mask-image:linear-gradient(90deg,transparent,#000 8%,#000 92%,transparent)}
   .mq-track span{font-family:var(--mono);font-size:.8rem;letter-spacing:.1em;color:var(--muted);white-space:nowrap;display:inline-flex;align-items:center;gap:40px;transition:transform .3s,color .3s}
   .mq-track span::after{content:"◆";font-size:.5rem;color:var(--accent)}
   .mq-track span:hover{color:var(--accent-ink);transform:translateZ(30px) rotateX(-12deg)}
   @keyframes mq{to{transform:translateX(-50%)}}
   /* revelado al hacer scroll (solo con JS y sin «reducir movimiento») */
-  .rv-on .rv{opacity:0;transform:translateY(26px);transition:opacity .7s cubic-bezier(.2,.7,.2,1) var(--d,0s),transform .7s cubic-bezier(.2,.7,.2,1) var(--d,0s)}
-  .rv-on .rv.in{opacity:1;transform:none}
+  .rv-on .rv{opacity:0;translate:0 26px;transition:opacity .7s cubic-bezier(.2,.7,.2,1) var(--d,0s),translate .7s cubic-bezier(.2,.7,.2,1) var(--d,0s),transform .55s cubic-bezier(.2,.7,.2,1),box-shadow .3s,border-color .3s}
+  .rv-on .rv.in{opacity:1;translate:none}
   /* tarjetas con inclinación 3D y brillo que sigue el puntero */
   .t3{transform:perspective(900px) rotateX(var(--rx,0deg)) rotateY(var(--ry,0deg)) translateY(var(--lift,0px));transition:transform .55s cubic-bezier(.2,.7,.2,1),box-shadow .3s,border-color .3s;
     background-image:radial-gradient(420px circle at var(--mx,50%) var(--my,50%),var(--glare,transparent),transparent 60%)}
@@ -442,7 +452,7 @@
   .reel{transform:perspective(1400px) rotateX(var(--rx,6deg)) scale(var(--sc,.96));transition:transform .2s linear}
   @media (prefers-reduced-motion:reduce){
     .floor,.mq-track{animation:none}.h-seq{animation:none;opacity:1;transform:none}
-    .rv-on .rv{opacity:1;transform:none;transition:none}.t3,.reel{transform:none}
+    .rv-on .rv{opacity:1;translate:none;transition:none}.t3,.reel{transform:none}
   }
   .quick-steps{margin:10px 0 0;padding-left:20px;font-size:.86rem;color:var(--muted);display:grid;gap:3px}
   .quick-steps b{color:var(--ink)}
@@ -478,7 +488,8 @@
       <ol class="quick-steps"><li>Escribe los dos comandos <b>dentro de Claude Code</b> (no en la terminal).</li><li><b>Reinicia Claude Code</b>: <code>/plugin</code> debe listar <b>personal-os 3.17.0</b>.</li><li>Corre <code>/os-setup</code> una vez. Después, cada mañana: <code>/brief</code>.</li></ol>
     </div>
   </header>
-  <div class="marquee" aria-label="Las 24 skills">
+  <div class="marquee" role="region" aria-label="Las 24 skills">
+    <button type="button" class="mq-pause" id="mq-pause" aria-label="Pausar la cinta de skills">❚❚</button>
     <div class="mq-track"><span>brief-diario</span><span>retomar</span><span>checkpoint</span><span>reconciliar</span><span>cerrar-tarea</span><span>tablero-diario</span><span>consola-neuronal</span><span>planear-sprint</span><span>revisar-pr</span><span>certificar-funcional</span><span>paso-a-produccion</span><span>mapa-criticidad</span><span>regresion-guiada</span><span>mesa-nueva</span><span>migrar-ramas</span><span>reglas-organizacion</span><span>informe-desarrollo</span><span>redactar</span><span>timesheet</span><span>status-celula</span><span>worklist-lider</span><span>personas</span><span>auditar-ux-ui</span><span>maestro-skills</span><span aria-hidden="true">brief-diario</span><span aria-hidden="true">retomar</span><span aria-hidden="true">checkpoint</span><span aria-hidden="true">reconciliar</span><span aria-hidden="true">cerrar-tarea</span><span aria-hidden="true">tablero-diario</span><span aria-hidden="true">consola-neuronal</span><span aria-hidden="true">planear-sprint</span><span aria-hidden="true">revisar-pr</span><span aria-hidden="true">certificar-funcional</span><span aria-hidden="true">paso-a-produccion</span><span aria-hidden="true">mapa-criticidad</span><span aria-hidden="true">regresion-guiada</span><span aria-hidden="true">mesa-nueva</span><span aria-hidden="true">migrar-ramas</span><span aria-hidden="true">reglas-organizacion</span><span aria-hidden="true">informe-desarrollo</span><span aria-hidden="true">redactar</span><span aria-hidden="true">timesheet</span><span aria-hidden="true">status-celula</span><span aria-hidden="true">worklist-lider</span><span aria-hidden="true">personas</span><span aria-hidden="true">auditar-ux-ui</span><span aria-hidden="true">maestro-skills</span></div>
   </div>
 
@@ -491,6 +502,7 @@
       <li><a href="#fondo">A fondo</a></li>
       <li><a href="#inst">Instalar</a></li>
       <li><a href="#cmds">Qué se instala</a></li>
+      <li><a href="#novedades">Novedades</a></li>
       <li><a href="#upd">Actualizar</a></li>
     </ul>
     <button type="button" class="tema" id="tema" aria-label="Tema: el del sistema. Cambiar a claro" title="Tema: sistema"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><rect x="3" y="4" width="18" height="12" rx="2"/><path d="M8 20h8M12 16v4"/></svg></button>
@@ -1143,6 +1155,10 @@
     pinta();
   })();
 
+  // Pausa de la cinta (WCAG 2.2.2).
+  (function(){ var m=document.querySelector('.marquee'), b=document.getElementById('mq-pause'); if(!m||!b) return;
+    if(matchMedia('(prefers-reduced-motion:reduce)').matches){ b.hidden=true; return; }
+    b.addEventListener('click',function(){ var p=m.classList.toggle('paused'); b.textContent=p?'▶':'❚❚'; b.setAttribute('aria-label',p?'Reanudar la cinta de skills':'Pausar la cinta de skills'); }); })();
   // ===== capa de movimiento =====
   (function(){
     var reduce = matchMedia('(prefers-reduced-motion:reduce)').matches;
