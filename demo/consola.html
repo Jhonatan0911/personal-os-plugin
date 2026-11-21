@@ -194,7 +194,7 @@
     .vitals{grid-template-columns:repeat(2,1fr)}
     .cards{grid-template-columns:1fr}
     header{gap:10px}
-    .seg button{padding:6px 10px;font-size:11px}
+    .seg button{padding:6px 10px;font-size:11px;min-height:44px}
     .map-prio{display:none}
   }
   @media (prefers-reduced-motion:reduce){.live b{animation:none}}
@@ -597,6 +597,14 @@
       if(!reduce)fire(n,1);
     }
     detalle(null);
+    // Búsqueda sin resultados: decirlo, con un botón para limpiar.
+    document.getElementById('cx-find').addEventListener('input',()=>{
+      const n=vig.concat(PROP).filter(coincide).length;
+      if(find&&!n){
+        det.innerHTML='<div class="meta">Ninguna lección coincide con «'+esc(find)+'».</div><div class="links"><button type="button" id="cx-clear">Limpiar la búsqueda</button></div>';
+        document.getElementById('cx-clear').addEventListener('click',()=>{const f=document.getElementById('cx-find');f.value='';find='';detalle(null);f.focus();});
+      }else if(!sel){detalle(null);}
+    });
 
     // ---- ámbito: el saber queda entero; el control de la empresa se apaga en personal
     let wave=-1;

@@ -397,10 +397,15 @@
   /* selector de tema: sistema → claro → oscuro */
   .toc-bar{display:flex;align-items:center;gap:10px}
   .toc-bar .toc{flex:1 1 auto;min-width:0}
-  .tema{order:2;flex:none;display:inline-grid;place-items:center;width:44px;height:44px;padding:0;color:var(--ink);background:var(--panel);
+  .tema{flex:none;display:inline-grid;place-items:center;width:44px;height:44px;padding:0;color:var(--ink);background:var(--panel);
     border:1px solid var(--line-strong);border-radius:999px;cursor:pointer}
   .tema:hover{border-color:var(--accent);color:var(--accent-ink)}
   .tema:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+  /* ronda 11 */
+  .tx{margin-top:6px}
+  .reel figcaption.tx{position:static}
+  footer.foot .repo a{display:inline-block;padding:10px 0}
+  @media (max-width:680px){ .cta .btn{flex:1 1 auto;justify-content:center} }
 </style>
 </head>
 <body>
@@ -419,7 +424,6 @@
     <div class="cta">
       <a class="btn pri" href="#inst">Instalar →</a>
       <a class="btn" href="#cerebro">Probar la consola</a>
-      <a class="btn" href="#sec-suena">Ver el video</a>
     </div>
     <p class="for">Para <b>líderes técnicos y desarrolladores</b> que trabajan con Claude Code. Necesita Node.js; con los conectores de Atlassian y Microsoft 365 cruza Jira, Outlook y Teams, y sin ellos funciona la parte local.</p>
     <div class="quick" aria-label="Instalación en dos comandos">
@@ -430,7 +434,6 @@
   </header>
 
   <nav aria-label="Secciones" class="toc-bar">
-    <button type="button" class="tema" id="tema" aria-label="Tema: el del sistema. Cambiar a claro" title="Tema: sistema"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><rect x="3" y="4" width="18" height="12" rx="2"/><path d="M8 20h8M12 16v4"/></svg></button>
     <ul class="toc">
       <li><a href="#sec-suena">Ahora sueña</a></li>
       <li><a href="#que">Qué hace</a></li>
@@ -441,6 +444,7 @@
       <li><a href="#novedades">Novedades</a></li>
       <li><a href="#upd">Actualizar</a></li>
     </ul>
+    <button type="button" class="tema" id="tema" aria-label="Tema: el del sistema. Cambiar a claro" title="Tema: sistema"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><rect x="3" y="4" width="18" height="12" rx="2"/><path d="M8 20h8M12 16v4"/></svg></button>
   </nav>
 
 
@@ -452,8 +456,8 @@
       <video id="reel" src="assets/ahora-suena.mp4" poster="assets/ahora-suena.jpg" autoplay muted loop playsinline preload="metadata"
         aria-label="Video: la bitácora de la semana se vuelve una lección mientras el Personal OS duerme"></video>
       <button type="button" class="reel-btn" id="reel-btn" aria-label="Pausar el video">❚❚</button>
-      <figcaption class="sr-only">Transcripción: el viernes a las 17:30 la bitácora de la semana muestra cinco veces el mismo error en proyectos de la empresa y personales. El Personal OS se va a dormir, junta esos casos y propone una lección: «Lo que el código puede calcular no se le pregunta al modelo». Tú la apruebas, entra a la corteza y queda disponible en todos tus proyectos. Al cambiar a una sesión personal se apaga el control de la empresa; el saber no. Cierra con «Ahora sueña» y el comando /consola.</figcaption>
     </figure>
+    <div class="tx"><details class="older"><summary>Leer lo que cuenta el video</summary><p class="prose">el viernes a las 17:30 la bitácora de la semana muestra cinco veces el mismo error en proyectos de la empresa y personales. El Personal OS se va a dormir, junta esos casos y propone una lección: «Lo que el código puede calcular no se le pregunta al modelo». Tú la apruebas, entra a la corteza y queda disponible en todos tus proyectos. Al cambiar a una sesión personal se apaga el control de la empresa; el saber no. Cierra con «Ahora sueña» y el comando /consola.</p></details></div>
   </section>
 
 
@@ -462,12 +466,6 @@
   <section aria-labelledby="que">
     <h2 id="que">Qué hace</h2>
     <p class="sec-sub">No es un chat: es una red de seguridad operativa que corre sola al abrir sesión y en cada prompt.</p>
-    <ul class="pillars" aria-label="Para qué sirve">
-      <li><b>Productividad</b> brief del día, prioridades, retomar donde quedaste</li>
-      <li><b>Trabajo</b> compromisos, sprints, PRs, paso a producción</li>
-      <li><b>Rendimiento</b> horas trazables, status del equipo, exigencia</li>
-      <li><b>Memoria</b> bitácora, corteza de lecciones y el sueño semanal</li>
-    </ul>
     <div class="caps">
       <div class="cap"><div class="k">Vigía</div><p>Cruza cada alcance prometido punto por punto contra Jira y avisa lo que va a fallar antes del día de la entrega.</p></div>
       <div class="cap"><div class="k">Brief</div><p>Resumen ejecutivo del día, reconciliado en vivo con Jira, Outlook y Teams.</p></div>
@@ -506,8 +504,8 @@
     </div>
 
     <div class="caps" style="margin-top:18px">
-      <div class="cap"><div class="k">Corteza · saber común </div><p>La <b>corteza</b> es tu banco de lecciones técnicas, una nota atómica cada una: el <b>título es la regla</b>, con su porqué, el caso donde nació y cuándo no aplica. Entran a Claude Code <b>por tipo de archivo</b>, en cualquier proyecto, de la empresa o tuyo.</p></div>
-      <div class="cap"><div class="k">Control por ámbito </div><p>El <b>ámbito</b> (empresa, personal, universidad…) sale de la <b>carpeta</b> donde abres la sesión. En lo personal callan el vigía de correo, el de reglas y el <b>núcleo de la empresa</b> (sus reglas obligatorias). El guardia de producción no se apaga nunca.</p></div>
+      <div class="cap"><div class="k">Corteza · saber común</div><p>La <b>corteza</b> es tu banco de lecciones técnicas, una nota atómica cada una: el <b>título es la regla</b>, con su porqué, el caso donde nació y cuándo no aplica. Entran a Claude Code <b>por tipo de archivo</b>, en cualquier proyecto, de la empresa o tuyo.</p></div>
+      <div class="cap"><div class="k">Control por ámbito</div><p>El <b>ámbito</b> (empresa, personal, universidad…) sale de la <b>carpeta</b> donde abres la sesión. En lo personal callan el vigía de correo, el de reglas y el <b>núcleo de la empresa</b> (sus reglas obligatorias). El guardia de producción no se apaga nunca.</p></div>
       <div class="cap"><div class="k">El sueño semanal</div><p>Cada viernes un proceso de solo lectura repasa la semana de bitácora, la resume y <b>propone</b> lecciones nuevas o ajustes. Nada entra sin tu aprobación, y una lección pasa a regla dura cuando ya tiene 3 casos.</p></div>
     </div>
     <details class="grp"><summary>Cómo cuida lo que sabe <span>3</span></summary>
@@ -835,7 +833,8 @@
       <li class="step">
         <div class="num">4</div>
         <h3>Siembra tu estado</h3>
-        <p class="desc">Crea tu carpeta de estado <b>privada</b> con <code>riesgos/</code>, <code>compromisos/</code>, <code>decisiones/</code>, <code>alcances/</code>, <code>personas/</code>, <code>bitacora/</code>, <code>proyectos/</code>, <code>_datos/</code>, <code>handoff/</code>, <code>timesheet/</code> y <code>config/fuentes.yaml</code> con marcadores para llenar (cloudId, accountId, proyectos, equipo). Además deja <code>~/.claude/personal-os/config.json</code> con tu zona horaria, los festivos de tu país, las categorías y la jornada del timesheet. <b>Idempotente</b>: puedes correrlo de nuevo, nunca pisa nada.</p>
+        <p class="desc">Crea tu carpeta de estado <b>privada</b> y tu configuración. Puedes correrlo otra vez: nunca pisa nada.</p>
+        <details class="older"><summary>Qué crea</summary><p class="desc">Las carpetas <code>riesgos/</code>, <code>compromisos/</code>, <code>decisiones/</code>, <code>alcances/</code>, <code>personas/</code>, <code>bitacora/</code>, <code>proyectos/</code>, <code>_datos/</code>, <code>handoff/</code> y <code>timesheet/</code>; <code>config/fuentes.yaml</code> con espacios para llenar (el ID de tu sitio de Jira y el de tu cuenta, tus proyectos y tu equipo), y <code>~/.claude/personal-os/config.json</code> con tu zona horaria, los festivos de tu país y la jornada del timesheet.</p></details>
         <div class="cmd"><span class="pr">&gt;</span><code><span class="cm">/os-setup</span></code><button aria-label="Copiar: /os-setup" type="button" data-copy="/os-setup">Copiar</button></div>
       </li>
 
@@ -953,8 +952,8 @@
     <div class="chlog">
       <h3>3.14 – 3.17 <span class="ver">el cerebro</span></h3>
       <ul>
-        <li><b>Corteza de saber común</b> : tus lecciones como notas cortas con su porqué, que se cargan solas según el tipo de archivo, en cualquier proyecto. <a href="#cerebro">Ver cómo funciona</a>.</li>
-        <li><b>Frontera por carpeta</b> : tú decides qué carpetas son personales; en esas sesiones callan el correo, las reglas y el núcleo de la empresa. El guardia de producción sigue siempre.</li>
+        <li><b>Corteza de saber común</b>: tus lecciones como notas cortas con su porqué, que se cargan solas según el tipo de archivo, en cualquier proyecto. <a href="#cerebro">Ver cómo funciona</a>.</li>
+        <li><b>Frontera por carpeta</b>: tú decides qué carpetas son personales; en esas sesiones callan el correo, las reglas y el núcleo de la empresa. El guardia de producción sigue siempre.</li>
         <li><b>El sueño semanal</b>: consolida la bitácora de la semana, propone lecciones sin tope y sin repetir, y archiva sin borrar.</li>
         <li><b>Consola · pestaña Corteza</b>: lóbulos por tema, vínculos reales entre lecciones, el sueño con sus propuestas y el control que se apaga al cambiar de ámbito.</li>
       </ul>

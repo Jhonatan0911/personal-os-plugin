@@ -3,7 +3,7 @@
 // Si algo está mal aquí, se corrige en la nota o en el layout y se vuelve a correr el build.
 // DEMOSTRACIÓN con datos ficticios: se publica en la landing.
 window.ESTADO = {
- "generado": "2026-11-21T22:55:09.089Z",
+ "generado": "2026-11-21T23:02:18.875Z",
  "fecha": "2026-11-21",
  "hito": {
   "etiqueta": "Entrega Cliente A",
