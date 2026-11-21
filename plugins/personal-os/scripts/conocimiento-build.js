@@ -112,8 +112,11 @@ const cabecera = '# Conocimiento común (corteza)\n\nSaber técnico propio del u
   + '**Su criterio primero en arquitectura:** antes de proponer un diseño técnico (capas, estructura, integración, '
   + 'modelo de datos), preguntarle al usuario qué haría él y luego contrastar; en lo operativo, proponer directo.\n';
 salidas.set('00-indice.md', `${AVISO}\n\n${cabecera}\n`
-  + (generales.length ? '## Método (siempre)\n\n' + generales.map(linea).join('\n') + '\n\n' : '')
-  + `Notas por tipo de archivo: ${vigentes.length - generales.length} (se cargan al tocar esos archivos). Fuente: \`${DIR.replace(/\\/g, '/')}\`.\n`);
+  // El índice entra en TODAS las sesiones: solo títulos (el título es la afirmación, como una API) y la
+  // ruta; la regla completa, el porqué y los casos se leen de la nota cuando la situación la toca.
+  + (generales.length ? '## Método (siempre; el título es la regla, el detalle en la nota)\n\n'
+    + generales.map((n) => `- **${n.fm.id}** ${n.fm.titulo}${n.fm.nivel === 'criterio' ? ' _(criterio)_' : ''} → \`${path.basename(n.ruta)}\``).join('\n') + '\n\n' : '')
+  + `Notas por tipo de archivo: ${vigentes.length - generales.length} (se cargan al tocar esos archivos). Carpeta de las notas: \`${DIR.replace(/\\/g, '/')}\`.\n`);
 const contador = {};
 for (const g of grupos.values()) {
   contador[g.tema] = (contador[g.tema] || 0) + 1;

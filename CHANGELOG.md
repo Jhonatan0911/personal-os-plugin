@@ -1,5 +1,9 @@
 # Changelog
 
+## 3.16.1
+
+- **conocimiento-build.js · índice liviano:** las notas de método del índice (que entra en todas las sesiones) van solo con su título —que ya es la afirmación— y el nombre de su archivo; la regla completa se lee de la nota. Con 61 notas el índice bajó de 22,7 KB a 3,8 KB.
+
 ## 3.16.0
 
 - **El sueño: consolidación y olvido.** `bitacora-rotate.js` ya no borra: **archiva** en `bitacora/_archivo/AAAA-MM/` los diarios vencidos y solo si su semana ISO ya tiene `resumen-AAAA-Www.md` (nada se olvida sin consolidar; el timesheet y la búsqueda siguen encontrándolos). El arranque avisa cuando hay lecciones propuestas en `<conocimiento>/_propuestas/` esperando aprobación, y si alguna no pasó la validación. CORE §7-quater describe el sueño semanal y cómo se revisan las propuestas (aprobar, ajustar una nota con un caso más —3+ casos sube a `duro`—, archivar o rechazar). `conocimiento-build.js` acepta «Por que» sin tilde.
