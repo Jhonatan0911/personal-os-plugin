@@ -119,7 +119,7 @@ function main() {
   const cfg = leer(CONF);
   if (!cfg) return; // sin configuración generada no hay vigía (build.py no ha corrido)
   // Las reglas de la organización vigilan el trabajo de la empresa: en una sesión personal callan
-  // (config → ambitos). El conocimiento técnico propio no vive aquí, sino en las reglas de conocimiento.
+  // (config → ambitos).
   if (!ACEPTAR && !JSON_OUT && C.sesionPersonal()) return;
   const estado = leer(ESTADO, {});
 

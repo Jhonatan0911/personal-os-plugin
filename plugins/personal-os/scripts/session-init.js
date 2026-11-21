@@ -62,7 +62,7 @@ try {
            + (C.sesionPersonal(amb)
              ? 'Sesión personal: no se exige nada de la empresa (barrido de correo, reglas de la organización, '
                + 'compromisos con clientes, línea de timesheet, identidad corporativa) ni se pone antes del tema '
-               + 'que se abrió. Las buenas prácticas técnicas propias (reglas de conocimiento) sí aplican.'
+               + 'que se abrió.'
              : amb === 'laboral'
                ? 'Sesión laboral: aplican las reglas de la empresa y los vigías completos.'
                : 'Sesión central (mezcla de ámbitos): vigías completos; al hablar de un tema, aplica la frontera '
