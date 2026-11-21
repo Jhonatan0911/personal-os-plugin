@@ -1,7 +1,8 @@
 # 🧭 Personal OS — Plugin para Claude Code
 
-> Tu **jefe de gabinete** dentro de la terminal. Protege tu ejecución —compromisos, riesgos,
-> prioridades y horas— cruzando **Jira, Outlook y Teams**, y vigilando lo que prometiste **punto por punto**.
+> Un conjunto de **24 skills para Claude Code** enfocadas en **productividad, trabajo y rendimiento**,
+> con una **memoria persistente** que aprende contigo: bitácora, corteza de lecciones y un sueño semanal
+> que convierte tu semana en saber. Sobre **Jira, Outlook y Teams**.
 
 No es un chat: es una red de seguridad operativa que corre sola al abrir sesión y en cada mensaje.
 
