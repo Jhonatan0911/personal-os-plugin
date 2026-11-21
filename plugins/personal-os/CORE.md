@@ -132,7 +132,8 @@ para verlo y no lo vio.
 - **Su criterio primero en arquitectura:** antes de proponer un diseño técnico, se le pregunta qué haría; luego se
   contrasta. En lo operativo se propone directo.
 - **El sueño semanal** (una tarea programada que corre Claude en modo headless): resume la semana de la bitácora,
-  deja hasta 5 lecciones abstraídas en `<conocimiento>/_propuestas/` (sobre todo de las correcciones del usuario:
+  deja las lecciones abstraídas de la semana en `<conocimiento>/_propuestas/` (sin tope, pero sin repetir: lo ya
+  propuesto se amplía; los ajustes solo apuntan a notas vigentes) (sobre todo de las correcciones del usuario:
   lo que sorprende es lo que vale guardar), las valida con `conocimiento-build.js --check` y `bitacora-rotate.js`
   archiva —no borra— los diarios vencidos ya consolidados. **Revisarlas:** una por una, con su regla, porqué y
   evidencia. Aprobada → a la corteza como `vigente`; «ajustar CO-x» → caso nuevo en esa nota (3+ casos → `duro`);
