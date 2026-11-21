@@ -223,14 +223,27 @@
   .nlegend span{display:inline-flex;align-items:center;gap:7px}
   .nlegend i{width:9px;height:9px;border-radius:50%;display:inline-block}
 
-  .scopebar button{appearance:none;border:0;background:transparent;font-family:var(--mono);font-size:.68rem;letter-spacing:.08em;text-transform:uppercase;padding:6px 12px;border-radius:7px;color:var(--term-dim);font-weight:600;cursor:pointer}
-  .scopebar button.on{background:var(--term-accent);color:#06101f}
-  .scopebar button:focus-visible{outline:2px solid var(--term-ink);outline-offset:2px}
-  .cx-say{margin:8px 0 0;font-size:.84rem;color:var(--term-ink);line-height:1.5;min-height:2.6em}
-  .cx-say b{color:#35e0d0}
-  .neural.cx text{font-size:12px;font-weight:600}
-  .neural.cx .prop{animation:npulse 2.2s ease-in-out infinite}
-  @media (prefers-reduced-motion:reduce){.neural.cx .prop{animation:none}}
+
+  /* ahora sueña · video y consola en vivo */
+  nav[aria-label="Secciones"]{margin-top:36px}
+  .suena{margin-top:8px}
+  .suena-h{font-size:clamp(2.4rem,7vw,3.6rem);letter-spacing:-.045em;line-height:1;margin:10px 0 10px}
+  .suena-h span{color:#35e0d0}
+  :root[data-theme="light"] .suena-h span{color:#0e9488}
+  @media (prefers-color-scheme:light){:root:not([data-theme="dark"]) .suena-h span{color:#0e9488}}
+  .reel{position:relative;margin:0;border-radius:var(--radius);overflow:hidden;background:#070b12;border:1px solid var(--term-line);box-shadow:var(--shadow);aspect-ratio:16/9}
+  .reel video{display:block;width:100%;height:100%;object-fit:cover}
+  .reel-btn{position:absolute;right:12px;bottom:12px;background:rgba(7,11,18,.7);color:#e6ecf7;border:1px solid rgba(120,150,200,.3);
+    border-radius:9px;font-family:var(--mono);font-size:.72rem;padding:6px 10px;cursor:pointer}
+  .reel-btn:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+  .reel-cap{margin:10px 2px 0;font-size:.84rem;color:var(--muted)}
+  .reel-cap code{font-family:var(--mono);font-size:.85em;background:var(--accent-soft);color:var(--accent-ink);padding:1px 6px;border-radius:5px}
+  .live-wrap{width:min(1180px,calc(100vw - 32px));position:relative;left:50%;transform:translateX(-50%)}
+  .term.live{margin-top:6px}
+  .term.live iframe{display:block;width:100%;height:min(720px,82vh);border:0;background:#070b12}
+  .live-open{margin-left:auto;flex:none;font-family:var(--mono);font-size:.7rem;color:var(--term-dim);border:1px solid var(--term-line);border-radius:7px;padding:4px 9px}
+  .live-open:hover{color:var(--term-ink);text-decoration:none;border-color:var(--accent)}
+  @media (max-width:680px){.term.live iframe{height:640px}}
 
   /* novedades / changelog */
   .chlog{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:20px 22px;box-shadow:var(--shadow)}
@@ -287,8 +300,22 @@
     </div>
   </header>
 
+
+  <section aria-labelledby="suena" class="suena">
+    <div class="eyebrow">Nuevo en la 3.17</div>
+    <h2 id="suena" class="suena-h">Ahora <span>sueña.</span></h2>
+    <p class="sec-sub">Cada viernes el Personal OS repasa tu semana, junta los errores que se repiten y te propone la lección. Tú la apruebas, y desde ahí te acompaña en <b>todos</b> tus proyectos: los de la empresa y los tuyos.</p>
+    <figure class="reel">
+      <video id="reel" src="assets/ahora-suena.mp4" poster="assets/ahora-suena.jpg" autoplay muted loop playsinline preload="metadata"
+        aria-label="Video: la bitácora de la semana se vuelve una lección mientras el Personal OS duerme"></video>
+      <button type="button" class="reel-btn" id="reel-btn" aria-label="Pausar el video">❚❚</button>
+    </figure>
+    <p class="reel-cap">Hecho con <b>HyperFrames</b>: HTML animado y renderizado cuadro a cuadro. Temas y datos ficticios.</p>
+  </section>
+
   <nav aria-label="Secciones">
     <ul class="toc">
+      <li><a href="#suena">Ahora sueña</a></li>
       <li><a href="#novedades">Novedades</a></li>
       <li><a href="#cerebro">El cerebro</a></li>
       <li><a href="#que">Qué hace</a></li>
@@ -553,22 +580,13 @@
     <h2 id="cerebro">El cerebro</h2>
     <p class="sec-sub">Un cerebro real no separa lo que <b>sabe</b> según dónde está: separa cómo se <b>controla</b>. El Personal OS hace lo mismo. Lo que aprendes en el trabajo te sirve en tus proyectos y al revés, pero las alarmas de la empresa no te persiguen a casa.</p>
 
-    <div class="term" aria-label="Demostración interactiva del cerebro: corteza de saber común y capa de control por ámbito">
-      <div class="chrome"><i></i><i></i><i></i><span>personal os — consola neuronal · corteza</span></div>
-      <div class="body" style="padding-bottom:6px">
-        <div class="scopebar" role="group" aria-label="Ámbito de la sesión">
-          <button type="button" class="on" data-amb="central">Central</button><button type="button" data-amb="laboral">Empresa</button><button type="button" data-amb="personal">Personal</button>
-        </div>
-        <p class="cx-say" id="cx-say" aria-live="polite"></p>
-        <svg class="neural cx" id="cx-demo" viewBox="0 0 720 430" role="img" aria-label="Corteza: lóbulos por tema con lecciones conectadas; arriba, los controles; abajo, el sueño con lecciones por consolidar"></svg>
+    <div class="live-wrap">
+      <div class="term live" aria-label="Consola neuronal real con datos de ejemplo">
+        <div class="chrome"><i></i><i></i><i></i><span>/consola · demostración en vivo · tócala</span>
+          <a class="live-open" href="demo/consola.html#corteza" target="_blank" rel="noopener">Pantalla completa ↗</a></div>
+        <iframe src="demo/consola.html#corteza" title="Consola neuronal del Personal OS con datos de ejemplo" loading="lazy"></iframe>
       </div>
-      <div class="nlegend">
-        <span><i style="background:#35e0d0"></i>Regla dura</span>
-        <span><i style="background:transparent;border:1.5px solid #35e0d0"></i>Criterio</span>
-        <span><i style="background:#f6c760"></i>Propuesta (sueño)</span>
-        <span><i style="background:#4c9bff;border-radius:2px"></i>Control de la empresa</span>
-        <span><i style="background:#3a4660;border-radius:2px"></i>Silenciado</span>
-      </div>
+      <p class="reel-cap">Es la consola de verdad, la que abre <code>/consola</code>, generada por el mismo build con un estado de ejemplo. Prueba la pestaña <b>Corteza</b>: toca una neurona, busca una lección y cambia el ámbito a <b>Personal</b>.</p>
     </div>
 
     <div class="caps" style="margin-top:18px">
@@ -855,56 +873,12 @@
     setTimeout(function(){ URL.revokeObjectURL(url); }, 1500);
   }); }
 
-  // ===== demostración del cerebro (datos ficticios) =====
+
   (function(){
-    var svg=document.getElementById('cx-demo'); if(!svg) return;
-    var NS='http://www.w3.org/2000/svg', reduce=matchMedia('(prefers-reduced-motion:reduce)').matches;
-    var el=function(t,a,p){var e=document.createElementNS(NS,t);for(var k in a)e.setAttribute(k,a[k]);(p||svg).appendChild(e);return e;};
-    var X=360,Y=238,RX=250,RY=128;
-    // semilla fija: la demo se ve igual en cada visita
-    var sd=7;var rnd=function(){sd=(sd*16807)%2147483647;return (sd-1)/2147483646;};
-    var LOB=[['Método',0,-.04,'#35e0d0',14],['Arquitectura',-.58,-.36,'#7cc4ff',7],['Backend',.02,-.62,'#4c9bff',6],['Frontend',.58,-.34,'#a97bff',5],
-      ['Seguridad',-.66,.26,'#ff7a9a',8],['Datos',.66,.24,'#f6c760',9],['Pruebas',-.34,.62,'#7ee0a1',3],['Entorno',.02,.66,'#ff9a52',5],['Git',.38,.6,'#c4a7ff',3]];
-    var total=LOB.reduce(function(a,l){return a+l[4];},0);
-    var CTL=[['Núcleo de la empresa',1],['Vigía de correo',1],['Vigía de reglas',1],['Vigía de compromisos',0],['Guardia de producción',0],['Buscar antes de negar',0]];
-    var defs=el('defs',{});var rg=el('radialGradient',{id:'cxh'},defs);el('stop',{offset:'0','stop-color':'#35e0d0','stop-opacity':'.12'},rg);el('stop',{offset:'1','stop-color':'#35e0d0','stop-opacity':'0'},rg);
-    el('ellipse',{cx:X,cy:Y,rx:RX*1.22,ry:RY*1.28,fill:'url(#cxh)'});
-    el('ellipse',{cx:X,cy:Y,rx:RX,ry:RY,fill:'none',stroke:'#78aadc',opacity:'.22'});
-    for(var k=1;k<=4;k++){var d='';for(var a=0;a<=6.3;a+=.06){var w=1+Math.sin(a*9+k*1.7)*.035;d+=(a?'L':'M')+(X+Math.cos(a)*RX*k/5*w).toFixed(1)+' '+(Y+Math.sin(a)*RY*k/5*w).toFixed(1);}el('path',{d:d,fill:'none',stroke:'#78aadc',opacity:'.08'});}
-    el('path',{d:'M'+X+' '+(Y-RY)+'C'+(X-8)+' '+(Y-RY*.3)+' '+(X+8)+' '+(Y+RY*.3)+' '+X+' '+(Y+RY),fill:'none',stroke:'#78aadc',opacity:'.14'});
-    var gE=el('g',{}),gC=el('g',{}),gN=el('g',{}),gL=el('g',{});
-    var N=[];LOB.forEach(function(L,li){var lx=X+L[1]*RX,ly=Y+L[2]*RY;for(var i=0;i<L[4];i++){var a=i*2.39996,r=8.5*Math.sqrt(i+.6);
-      N.push({x:lx+Math.cos(a)*r,y:ly+Math.sin(a)*r*.86,c:L[3],crit:rnd()<.2,r:2.4+rnd()*2.2});}
-      var t=el('text',{x:lx,y:ly-8.5*Math.sqrt(L[4]+.6)-8,'text-anchor':'middle',style:'fill:'+L[3]},gL);t.textContent=L[0]+' · '+L[4];});
-    var E=[];for(var i=0;i<70;i++){var a=N[Math.floor(rnd()*N.length)],b=N[Math.floor(rnd()*N.length)];if(a===b)continue;
-      var mx=(a.x+b.x)/2+(Y-(a.y+b.y)/2)*.12,my=(a.y+b.y)/2+((a.x+b.x)/2-X)*.12;E.push({p:el('path',{d:'M'+a.x+' '+a.y+'Q'+mx+' '+my+' '+b.x+' '+b.y,fill:'none',stroke:'#6fb3ff',opacity:'.13'},gE)});}
-    N.forEach(function(n){n.g=el('circle',{cx:n.x,cy:n.y,r:n.r*2.6,fill:n.c,opacity:'.16'},gN);
-      if(n.crit)el('circle',{cx:n.x,cy:n.y,r:n.r,fill:'none',stroke:n.c,'stroke-width':1.5},gN);else el('circle',{cx:n.x,cy:n.y,r:n.r,fill:n.c},gN);});
-    CTL.forEach(function(c,i){var a=Math.PI*(1.2+.6*i/(CTL.length-1));var cx=X+Math.cos(a)*(RX+20),cy=Y+Math.sin(a)*(RY+58);
-      var ex=X+Math.cos(a)*RX*.92,ey=Y+Math.sin(a)*RY*.92;
-      c.l=el('line',{x1:cx,y1:cy,x2:ex,y2:ey,opacity:'.4'},gC);
-      c.d=el('rect',{x:cx-5,y:cy-5,width:10,height:10,transform:'rotate(45 '+cx+' '+cy+')'},gC);
-      c.t=el('text',{x:cx,y:cy-12-(i%2)*15,'text-anchor':'middle'},gC);c.t.textContent=c[0];});
-    var sy=Y+RY+36;[-40,0,40].forEach(function(dx,i){var px=X+dx,py=sy-(i===1?6:0);var tg=N[[3,20,44][i]%N.length];
-      el('line',{x1:px,y1:py,x2:tg.x,y2:tg.y,stroke:'#f6c760',opacity:'.18','stroke-dasharray':'2 5'},gE);
-      el('circle',{cx:px,cy:py,r:3.6,fill:'#f6c76055',stroke:'#f6c760','stroke-width':1.4,'class':'prop',style:'animation-delay:'+(i*.6)+'s'},gN);});
-    var st=el('text',{x:X,y:sy+22,'text-anchor':'middle',style:'fill:#f6c760'},gL);st.textContent='SUEÑO · 3 por consolidar';
-    var dots=[];for(var j=0;j<14;j++)dots.push({e:E[j*3%E.length],t:rnd(),c:el('circle',{r:1.9,fill:'#bff8f2'},gE)});
-    function tick(){dots.forEach(function(d){if(!reduce){d.t+=.006;if(d.t>1){d.t=0;d.e=E[Math.floor(rnd()*E.length)];}}
-        var L=d.e.p.getTotalLength(),pt=d.e.p.getPointAtLength(L*d.t);d.c.setAttribute('cx',pt.x);d.c.setAttribute('cy',pt.y);});
-      if(!reduce&&rnd()<.04){var n=N[Math.floor(rnd()*N.length)];n.g.setAttribute('opacity','.55');setTimeout(function(){n.g.setAttribute('opacity','.16');},500);}
-      if(!reduce)requestAnimationFrame(tick);}
-    requestAnimationFrame(tick);
-    var say=document.getElementById('cx-say');
-    var MSG={central:'Sesión <b>central</b>: las <b>'+total+' lecciones</b> y los <b>6 controles</b> encendidos.',
-      laboral:'Sesión de la <b>empresa</b>: las <b>'+total+' lecciones</b> y todo el control de la organización.',
-      personal:'Sesión <b>personal</b>: las <b>'+total+' lecciones siguen enteras</b>; el núcleo, el correo y las reglas de la empresa se apagan. El guardia de producción sigue.'};
-    function amb(v){say.innerHTML=MSG[v];CTL.forEach(function(c){var off=v==='personal'&&c[1];var col=off?'#3a4660':(c[1]?'#4c9bff':'#35e0d0');
-      c.l.setAttribute('stroke',col);if(off)c.l.setAttribute('stroke-dasharray','3 5');else c.l.removeAttribute('stroke-dasharray');
-      c.d.setAttribute('fill',col);c.t.style.fill=off?'#4d5c76':(c[1]?'#8fb6ff':'#8ff0e6');});
-      document.querySelectorAll('.scopebar button[data-amb]').forEach(function(b){var on=b.getAttribute('data-amb')===v;b.classList.toggle('on',on);b.setAttribute('aria-pressed',on);});}
-    document.querySelectorAll('.scopebar button[data-amb]').forEach(function(b){b.addEventListener('click',function(){amb(b.getAttribute('data-amb'));});});
-    amb('central');
+    var v=document.getElementById('reel'),b=document.getElementById('reel-btn'); if(!v||!b) return;
+    if(matchMedia('(prefers-reduced-motion:reduce)').matches){ v.removeAttribute('autoplay'); v.pause(); b.textContent='▶'; b.setAttribute('aria-label','Reproducir el video'); }
+    b.addEventListener('click',function(){ if(v.paused){v.play();b.textContent='❚❚';b.setAttribute('aria-label','Pausar el video');}
+      else{v.pause();b.textContent='▶';b.setAttribute('aria-label','Reproducir el video');} });
   })();
 </script>
 

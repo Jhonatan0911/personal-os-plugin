@@ -1,0 +1,79 @@
+<template>
+  <style>
+    #root { position: absolute; inset: 0; font-family: "Inter", sans-serif; color: #e6ecf7; }
+    .b-term { position: absolute; left: 150px; top: 70px; width: 1620px; height: 720px; border-radius: 18px;
+      background: linear-gradient(180deg, #111a29, #0f1622); border: 1px solid rgba(120,150,200,.22);
+      box-shadow: 0 30px 80px rgba(0,0,0,.55); overflow: hidden; }
+    .b-chrome { height: 64px; display: flex; align-items: center; gap: 12px; padding: 0 26px; border-bottom: 1px solid rgba(120,150,200,.14);
+      font-family: "JetBrains Mono", monospace; font-size: 26px; color: #7688a4; }
+    .b-chrome i { width: 15px; height: 15px; border-radius: 50%; display: block; }
+    .b-path { margin-left: 14px; }
+    .b-clock { margin-left: auto; font-family: "JetBrains Mono", monospace; font-weight: 700; font-size: 26px; color: #e6ecf7;
+      border: 1px solid rgba(120,150,200,.3); border-radius: 30px; padding: 4px 18px; }
+    .b-rows { padding: 14px 26px 0; }
+    .b-row { position: relative; display: grid; grid-template-columns: 150px 1fr 150px; align-items: center; gap: 18px; height: 79px;
+      border-bottom: 1px solid rgba(120,150,200,.07); padding-left: 18px; }
+    .b-bar { position: absolute; left: 0; top: 18px; bottom: 18px; width: 5px; border-radius: 4px; background: #f6c760; }
+    .b-when { font-family: "JetBrains Mono", monospace; font-size: 26px; color: #7688a4; }
+    .b-txt { font-family: "JetBrains Mono", monospace; font-size: 27px; color: #e6ecf7; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .b-txt em { font-style: normal; }
+    .b-tag { justify-self: end; font-family: "JetBrains Mono", monospace; font-size: 22px; letter-spacing: .1em; text-transform: uppercase;
+      border: 1.5px solid currentColor; border-radius: 30px; padding: 3px 14px; }
+    .b-tag.emp { color: #4c9bff; } .b-tag.per { color: #a97bff; }
+    .b-title { position: absolute; left: 150px; right: 150px; top: 840px; height: 170px; display: flex; align-items: center;
+      font-weight: 900; font-size: 92px; letter-spacing: -.03em; line-height: 1; }
+    .b-title span { display: inline-block; margin-right: .26em; opacity: 0; }
+    .b-title .acc { color: #f6c760; }
+  </style>
+  <div id="root" data-composition-id="bitacora" data-width="1920" data-height="1080">
+    <div class="b-term" id="b-term">
+      <div class="b-chrome">
+        <i style="background:#ff5f57"></i><i style="background:#febc2e"></i><i style="background:#28c840"></i>
+        <span class="b-path">estado/bitacora · semana 47</span>
+        <span class="b-clock" id="b-clock">vie 17:30</span>
+      </div>
+      <div class="b-rows">
+        <div class="b-row" id="b-r0"><b class="b-bar" id="b-bar0"></b><span class="b-when">lun 09:40</span><span class="b-txt">Reporte de pagos: <em id="b-h0">el total lo calculaba el modelo</em></span><span class="b-tag emp">empresa</span></div>
+        <div class="b-row" id="b-r1"><span class="b-when">lun 16:05</span><span class="b-txt">Migración de tabla con script de reversa</span><span class="b-tag emp">empresa</span></div>
+        <div class="b-row" id="b-r2"><b class="b-bar" id="b-bar2"></b><span class="b-when">mar 11:20</span><span class="b-txt">Bot de agenda: <em id="b-h2">el resumen inventó una cifra</em></span><span class="b-tag per">personal</span></div>
+        <div class="b-row" id="b-r3"><span class="b-when">mar 18:02</span><span class="b-txt">Tesis: citas verificadas en su fuente</span><span class="b-tag per">personal</span></div>
+        <div class="b-row" id="b-r4"><b class="b-bar" id="b-bar4"></b><span class="b-when">mié 10:15</span><span class="b-txt">Panel de ventas: <em id="b-h4">porcentajes pedidos al chat, mal</em></span><span class="b-tag per">personal</span></div>
+        <div class="b-row" id="b-r5"><span class="b-when">jue 08:50</span><span class="b-txt">Revisión de PR contra sus criterios</span><span class="b-tag emp">empresa</span></div>
+        <div class="b-row" id="b-r6"><b class="b-bar" id="b-bar6"></b><span class="b-when">jue 15:30</span><span class="b-txt">Estimación del sprint: <em id="b-h6">sumas hechas a ojo</em></span><span class="b-tag emp">empresa</span></div>
+        <div class="b-row" id="b-r7"><b class="b-bar" id="b-bar7"></b><span class="b-when">vie 12:10</span><span class="b-txt">Hoja de horas: <em id="b-h7">el total no cuadraba</em></span><span class="b-tag emp">empresa</span></div>
+      </div>
+    </div>
+    <div class="b-title" id="b-t1"><span>Viernes,</span><span class="acc">17:30.</span></div>
+    <div class="b-title" id="b-t2"><span>El</span><span>Personal</span><span>OS</span><span>se</span><span>va</span><span>a</span><span class="acc">dormir.</span></div>
+  </div>
+  <script>
+    (function () {
+      const tl = gsap.timeline({ paused: true });
+      // La terminal llega en una sola toma.
+      tl.fromTo("#b-term", { y: 30, scale: 0.98 }, { y: 0, scale: 1, duration: 0.9, ease: "expo.out" }, 0);
+      // La semana se escribe, una entrada tras otra.
+      for (let i = 1; i < 8; i++) {
+        tl.fromTo("#b-r" + i, { opacity: 0, x: -26, filter: "blur(6px)" },
+          { opacity: 1, x: 0, filter: "blur(0px)", duration: 0.45, ease: "expo.out" }, 0.2 + i * 0.42);
+      }
+      ["#b-bar0", "#b-bar2", "#b-bar4", "#b-bar6", "#b-bar7"].forEach((s) => tl.set(s, { scaleY: 0, opacity: 0 }, 0));
+      tl.fromTo("#b-clock", { opacity: 0, scale: 1.4 }, { opacity: 1, scale: 1, duration: 0.5, ease: "expo.out" }, 4.1);
+      // Título 1, palabra por palabra.
+            tl.fromTo("#b-t1 span", { opacity: 0, filter: "blur(6px)" }, { opacity: 1, filter: "blur(0px)", duration: 0.14, stagger: 0.08, ease: "power2.out" }, 4.4);
+      tl.to("#b-t1 span", { opacity: 0, filter: "blur(8px)", duration: 0.2, stagger: 0.05, ease: "power3.in" }, 6.0);
+      // Baja la luz: todo lo que no repite el patrón se apaga.
+      tl.to("#b-r1, #b-r3, #b-r5", { opacity: 0.22, duration: 0.9, ease: "power2.inOut" }, 6.3);
+      tl.to("#b-term", { borderColor: "rgba(120,150,200,.10)", duration: 0.9, ease: "power2.inOut" }, 6.3);
+      tl.to("#b-clock", { opacity: 0.45, duration: 0.9 }, 6.3);
+      tl.fromTo("#b-t2 span", { opacity: 0, filter: "blur(6px)" }, { opacity: 1, filter: "blur(0px)", duration: 0.14, stagger: 0.075, ease: "power2.out" }, 6.4);
+      // Cinco entradas, cuatro días, dos ámbitos: el mismo error. Se encienden en ámbar.
+      [0, 2, 4, 6, 7].forEach((n, k) => {
+        tl.to("#b-bar" + n, { scaleY: 1, opacity: 1, duration: 0.35, ease: "expo.out" }, 7.6 + k * 0.22);
+        tl.to("#b-h" + n, { color: "#f6c760", duration: 0.3, ease: "power2.out" }, 7.6 + k * 0.22);
+      });
+      tl.to("#b-t2 span", { opacity: 0, filter: "blur(8px)", duration: 0.2, stagger: 0.04, ease: "power3.in" }, 9.45);
+      tl.to("#b-term", { opacity: 0, filter: "blur(8px)", duration: 0.3, ease: "power3.in" }, 9.6);
+      window.__timelines["bitacora"] = tl;
+    })();
+  </script>
+</template>

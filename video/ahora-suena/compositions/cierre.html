@@ -1,0 +1,38 @@
+<template>
+  <style>
+    #root { position: absolute; inset: 0; font-family: "Inter", sans-serif; color: #e6ecf7; }
+    .z-big { position: absolute; left: 0; right: 0; top: 330px; text-align: center; font-weight: 900; font-size: 170px; letter-spacing: -.045em; line-height: 1; }
+    .z-big span { display: inline-block; margin: 0 .12em; opacity: 0; }
+    .z-big .acc { color: #35e0d0; }
+    .z-lock { position: absolute; left: 0; right: 0; top: 600px; display: flex; align-items: center; justify-content: center; gap: 22px; }
+    .z-sig { width: 76px; height: 76px; }
+    .z-name { font-family: "JetBrains Mono", monospace; font-weight: 700; font-size: 46px; letter-spacing: .14em; text-transform: uppercase; }
+    .z-ver { font-family: "JetBrains Mono", monospace; font-weight: 700; font-size: 30px; color: #35e0d0; border: 2px solid rgba(53,224,208,.5); border-radius: 30px; padding: 4px 16px; }
+    .z-cmd { position: absolute; left: 50%; top: 730px; margin-left: -230px; width: 460px; height: 84px; display: flex; align-items: center; gap: 18px; padding: 0 28px;
+      background: #0f1526; border: 1px solid #232c47; border-radius: 16px; font-family: "JetBrains Mono", monospace; font-size: 36px; }
+    .z-cmd .pr { color: #8b9bff; } .z-cmd .cm { color: #8ad0a6; }
+  </style>
+  <div id="root" data-composition-id="cierre" data-width="1920" data-height="1080">
+    <div class="z-big" id="z-big"><span>Ahora</span><span class="acc">sueña.</span></div>
+    <div class="z-lock" id="z-lock">
+      <svg class="z-sig" viewBox="0 0 48 48" fill="none">
+        <circle cx="24" cy="24" r="6" fill="#35e0d0"/>
+        <g stroke="#4c9bff" stroke-width="1.5"><line x1="24" y1="24" x2="40" y2="12"/><line x1="24" y1="24" x2="42" y2="30"/><line x1="24" y1="24" x2="34" y2="42"/></g>
+        <g stroke="#a97bff" stroke-width="1.5"><line x1="24" y1="24" x2="8" y2="14"/><line x1="24" y1="24" x2="6" y2="30"/><line x1="24" y1="24" x2="16" y2="42"/></g>
+        <g fill="#e6ecf7"><circle cx="40" cy="12" r="2.6"/><circle cx="42" cy="30" r="2.6"/><circle cx="34" cy="42" r="2.6"/><circle cx="8" cy="14" r="2.6"/><circle cx="6" cy="30" r="2.6"/><circle cx="16" cy="42" r="2.6"/></g>
+      </svg>
+      <span class="z-name">Personal OS</span><span class="z-ver">3.17</span>
+    </div>
+    <div class="z-cmd" id="z-cmd"><span class="pr">&gt;</span><span class="cm">/consola</span></div>
+  </div>
+  <script>
+    (function () {
+      const tl = gsap.timeline({ paused: true });
+            tl.fromTo("#z-big span", { opacity: 0, filter: "blur(10px)" }, { opacity: 1, filter: "blur(0px)", duration: 0.2, stagger: 0.18, ease: "power2.out" }, 0.15);
+      tl.fromTo(".z-sig", { scale: 0, rotate: -90 }, { scale: 1, rotate: 0, duration: 0.6, ease: "back.out(1.5)" }, 0.9);
+      tl.fromTo(".z-name, .z-ver", { opacity: 0, clipPath: "inset(0 100% 0 0)" }, { opacity: 1, clipPath: "inset(0 0% 0 0)", duration: 0.5, stagger: 0.12, ease: "expo.out" }, 1.1);
+      tl.fromTo("#z-cmd", { opacity: 0, y: 24 }, { opacity: 1, y: 0, duration: 0.5, ease: "expo.out" }, 1.5);
+      window.__timelines["cierre"] = tl;
+    })();
+  </script>
+</template>

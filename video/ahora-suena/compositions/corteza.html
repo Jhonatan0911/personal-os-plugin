@@ -1,0 +1,144 @@
+<template>
+  <style>
+    #root { position: absolute; inset: 0; font-family: "Inter", sans-serif; color: #e6ecf7; }
+    #c-stage { position: absolute; inset: 0; }
+    #c-svg { position: absolute; inset: 0; width: 1920px; height: 1080px; overflow: visible; }
+    #c-svg text { font-family: "JetBrains Mono", monospace; font-weight: 700; }
+    .c-card { position: absolute; left: 360px; top: 210px; width: 1200px; height: 470px; border-radius: 22px;
+      background: linear-gradient(180deg, #121c2c, #0f1622); border: 1.5px solid rgba(53,224,208,.45); padding: 44px 56px;
+      box-shadow: 0 0 0 1px rgba(53,224,208,.08), 0 30px 90px rgba(0,0,0,.6), 0 0 60px rgba(53,224,208,.12); }
+    .c-card .m { font-family: "JetBrains Mono", monospace; font-size: 28px; letter-spacing: .08em; color: #35e0d0; }
+    .c-card .h { font-weight: 800; font-size: 52px; line-height: 1.1; letter-spacing: -.025em; margin-top: 18px; max-width: 1060px; }
+    .c-card .p { font-size: 29px; line-height: 1.4; color: #c9d3e6; margin-top: 22px; max-width: 1060px; }
+    .c-card .p b { font-family: "JetBrains Mono", monospace; font-size: 28px; letter-spacing: .14em; text-transform: uppercase; color: #7688a4; display: block; margin-bottom: 4px; font-weight: 400; }
+    .c-card .st { position: absolute; right: 40px; top: 36px; font-family: "JetBrains Mono", monospace; font-weight: 700; font-size: 28px; letter-spacing: .08em;
+      color: #35e0d0; border: 2.5px solid #35e0d0; border-radius: 12px; padding: 8px 16px; background: rgba(53,224,208,.08); transform: rotate(-4deg); }
+    .c-seg { position: absolute; left: 50%; top: 40px; margin-left: -330px; width: 660px; height: 76px; display: flex; gap: 4px; padding: 6px;
+      background: #0f1622; border: 1px solid rgba(120,150,200,.25); border-radius: 18px; font-family: "JetBrains Mono", monospace; }
+    .c-seg div { flex: 1; display: flex; align-items: center; justify-content: center; border-radius: 13px; font-size: 24px; letter-spacing: .14em; color: #7688a4; font-weight: 700; }
+    #c-pa { background: #35e0d0; color: #04121a; }
+    #c-pp { color: #7688a4; }
+    #c-cursor { position: absolute; left: 0; top: 0; width: 64px; height: 64px; }
+    .c-cap { position: absolute; left: 150px; right: 150px; top: 905px; text-align: center; font-weight: 900; letter-spacing: -.025em; line-height: 1.05; }
+    .c-cap span { display: inline-block; margin-right: .24em; opacity: 0; }
+    #c-brain, #c-ctl, #c-seg, #c-cursor { opacity: 0; }
+    #c-cap1 { font-size: 66px; }
+    #c-cap2 { font-size: 50px; top: 890px; }
+    #c-cap3 { font-size: 66px; top: 962px; color: #35e0d0; }
+  </style>
+  <div id="root" data-composition-id="corteza" data-width="1920" data-height="1080">
+    <div id="c-stage">
+      <svg id="c-svg" viewBox="0 0 1920 1080">
+        <defs>
+          <radialGradient id="c-halo"><stop offset="0" stop-color="#35e0d0" stop-opacity=".10"/><stop offset="1" stop-color="#35e0d0" stop-opacity="0"/></radialGradient>
+        </defs>
+        <g id="c-brain"></g>
+        <g id="c-ctl"></g>
+        <g id="c-new"><circle id="c-newhalo" cx="960" cy="548" r="40" fill="#35e0d0" opacity="0"/><circle id="c-newdot" cx="960" cy="548" r="11" fill="#35e0d0" opacity="0"/></g>
+      </svg>
+    </div>
+    <div class="c-card" id="c-card"><div class="m">CO-077 · método · regla dura · 5 casos</div><div class="h">Lo que el código puede calcular no se le pregunta al modelo.</div><div class="p"><b>Regla</b>Totales, conteos, fechas y porcentajes los hace una función; el modelo solo redacta.</div><div class="st">✓ APROBADA POR TI</div></div>
+    <div class="c-seg" id="c-seg"><div id="c-pa">AMBAS</div><div id="c-pl">LABORAL</div><div id="c-pp">PERSONAL</div></div>
+    <svg id="c-cursor" viewBox="0 0 24 24"><path d="M4 2 L4 20 L9 15.5 L12.5 22.5 L15.5 21 L12 14 L19 14 Z" fill="#e6ecf7" stroke="#070b12" stroke-width="1.3" stroke-linejoin="round"/></svg>
+    <div class="c-cap" id="c-cap1"><span>Tus</span><span>lecciones,</span><span>en</span><span>todos</span><span>tus</span><span>proyectos.</span></div>
+    <div class="c-cap" id="c-cap2"><span>En</span><span>lo</span><span>personal</span><span>se</span><span>apaga</span><span>el</span><span>control</span><span>de</span><span>la</span><span>empresa.</span></div>
+    <div class="c-cap" id="c-cap3"><span>El</span><span>saber,</span><span>no.</span></div>
+  </div>
+  <script>
+    (function () {
+      const NS = "http://www.w3.org/2000/svg";
+      const mk = (t, a, p) => { const e = document.createElementNS(NS, t); for (const k in a) e.setAttribute(k, a[k]); p.appendChild(e); return e; };
+      let sd = 11; const rnd = () => { sd = (sd * 16807) % 2147483647; return (sd - 1) / 2147483646; };
+      const X = 960, Y = 560, RX = 610, RY = 300;
+      const brain = document.getElementById("c-brain"), ctl = document.getElementById("c-ctl");
+      mk("ellipse", { cx: X, cy: Y, rx: RX * 1.2, ry: RY * 1.28, fill: "url(#c-halo)" }, brain);
+      mk("ellipse", { cx: X, cy: Y, rx: RX, ry: RY, fill: "none", stroke: "#78aadc", "stroke-opacity": ".22", "stroke-width": 2 }, brain);
+      for (let k = 1; k <= 4; k++) { let d = ""; for (let a = 0; a <= 6.3; a += 0.04) { const w = 1 + Math.sin(a * 9 + k * 1.7) * 0.035;
+        d += (a ? "L" : "M") + (X + Math.cos(a) * RX * k / 5 * w).toFixed(1) + " " + (Y + Math.sin(a) * RY * k / 5 * w).toFixed(1); }
+        mk("path", { d, fill: "none", stroke: "#78aadc", "stroke-opacity": ".07", "stroke-width": 1.5 }, brain); }
+      const LOB = [["Método", 0, -0.04, "#35e0d0", 15], ["Arquitectura", -0.56, -0.36, "#7cc4ff", 7], ["Backend", 0.02, -0.6, "#4c9bff", 6],
+        ["Frontend", 0.56, -0.34, "#a97bff", 5], ["Seguridad", -0.64, 0.24, "#ff7a9a", 8], ["Datos", 0.64, 0.22, "#f6c760", 10],
+        ["Pruebas", -0.34, 0.6, "#7ee0a1", 2], ["Entorno", 0.02, 0.64, "#ff9a52", 5], ["Git", 0.38, 0.58, "#c4a7ff", 3]];
+      const gEdges = mk("g", {}, brain), N = [];
+      LOB.forEach((L, li) => {
+        const g = mk("g", { id: "c-lob" + li }, brain);
+        const lx = X + L[1] * RX, ly = Y + L[2] * RY;
+        for (let i = 0; i < L[4]; i++) {
+          if (li === 0 && i === 0) continue; // el hueco lo ocupa la lección nueva
+          const a = i * 2.39996, r = 21 * Math.sqrt(i + 0.6), x = lx + Math.cos(a) * r, y = ly + Math.sin(a) * r * 0.86, rr = 5 + rnd() * 4.5;
+          mk("circle", { cx: x, cy: y, r: rr * 2.7, fill: L[3], opacity: ".14" }, g);
+          if (rnd() < 0.2) mk("circle", { cx: x, cy: y, r: rr, fill: "none", stroke: L[3], "stroke-width": 2.6 }, g);
+          else mk("circle", { cx: x, cy: y, r: rr, fill: L[3] }, g);
+          N.push({ x, y });
+        }
+        const t = mk("text", { x: lx, y: ly - 21 * Math.sqrt(L[4] + 0.6) - 16, "text-anchor": "middle", fill: L[3], "font-size": 24 }, g);
+        t.textContent = L[0] + " · " + L[4];
+      });
+      // Sinapsis «ver también»: curvas hacia el centro, dibujables con dashoffset.
+      const E = [];
+      for (let i = 0; i < 46; i++) {
+        const a = N[Math.floor(rnd() * N.length)], b = N[Math.floor(rnd() * N.length)]; if (a === b) continue;
+        const mx = (a.x + b.x) / 2 + (Y - (a.y + b.y) / 2) * 0.12, my = (a.y + b.y) / 2 + ((a.x + b.x) / 2 - X) * 0.12;
+        const p = mk("path", { id: "c-e" + E.length, d: `M${a.x} ${a.y}Q${mx} ${my} ${b.x} ${b.y}`, fill: "none", stroke: "#6fb3ff", "stroke-opacity": ".22", "stroke-width": 1.6 }, gEdges);
+        const len = p.getTotalLength(); p.setAttribute("stroke-dasharray", len); p.setAttribute("stroke-dashoffset", len);
+        E.push({ p, len });
+      }
+      // Control: arco superior. Los tres primeros son de la empresa.
+      const CTL = [["Núcleo de la empresa", 1], ["Vigía de correo", 1], ["Vigía de reglas", 1], ["Vigía de compromisos", 0], ["Guardia de producción", 0], ["Buscar antes de negar", 0]];
+      CTL.forEach((c, i) => {
+        const a = Math.PI * (1.17 + 0.66 * i / (CTL.length - 1)), cx = X + Math.cos(a) * (RX + 10), cy = Y + Math.sin(a) * (RY + 70);
+        const ex = X + Math.cos(a) * RX * 0.93, ey = Y + Math.sin(a) * RY * 0.93, col = c[1] ? "#4c9bff" : "#35e0d0";
+        const g = mk("g", { id: "c-k" + i }, ctl);
+        mk("line", { id: "c-kl" + i, x1: cx, y1: cy, x2: ex, y2: ey, stroke: col, "stroke-width": 2, "stroke-opacity": ".55" }, g);
+        mk("rect", { id: "c-kd" + i, x: cx - 10, y: cy - 10, width: 20, height: 20, transform: `rotate(45 ${cx} ${cy})`, fill: col }, g);
+        const t = mk("text", { id: "c-kt" + i, x: cx, y: cy - 24 - (i % 2) * 28, "text-anchor": "middle", fill: c[1] ? "#8fb6ff" : "#8ff0e6", "font-size": 21 }, g);
+        t.textContent = c[0];
+      });
+      // Pulsos: puntos que recorren las sinapsis (finitos, en función del tiempo).
+      const dots = [];
+      for (let j = 0; j < 12; j++) dots.push({ c: mk("circle", { id: "c-p" + j, r: 4, fill: "#bff8f2", opacity: 0 }, gEdges), e: E[(j * 5) % E.length], o: { p: 0 } });
+
+      const tl = gsap.timeline({ paused: true });
+            LOB.forEach((_, li) => tl.set("#c-lob" + li, { opacity: 0.12 }, 0));
+            tl.set("#c-cursor", { x: 1700, y: 760 }, 0);
+      // La lección viaja a su lóbulo.
+      tl.fromTo("#c-card", { x: 0, y: 0, scale: 1, opacity: 1 }, { x: 0, y: 103, scale: 0.02, duration: 0.9, ease: "power3.in" }, 0.25);
+      tl.to("#c-card", { opacity: 0, duration: 0.12 }, 1.05);
+      tl.fromTo("#c-brain", { opacity: 0 }, { opacity: 1, duration: 0.8, ease: "power2.inOut" }, 0.4);
+      tl.fromTo("#c-newdot", { opacity: 0, attr: { r: 2 } }, { opacity: 1, attr: { r: 13 }, duration: 0.4, ease: "expo.out" }, 1.1);
+      tl.fromTo("#c-newhalo", { opacity: 0.9, attr: { r: 14 } }, { opacity: 0, attr: { r: 160 }, duration: 1.1, ease: "power2.out" }, 1.1);
+      // El cerebro se enciende lóbulo a lóbulo, empezando por el método.
+      LOB.forEach((_, li) => tl.to("#c-lob" + li, { opacity: 1, duration: 0.5, ease: "power2.out" }, 1.3 + li * 0.16));
+      E.forEach((e, i) => tl.to(e.p, { attr: { "stroke-dashoffset": 0 }, duration: 0.7, ease: "power2.out" }, 1.6 + (i % 12) * 0.08));
+      dots.forEach((d, j) => {
+        const t0 = 2.3 + (j % 6) * 0.25;
+        tl.to(d.c, { opacity: 1, duration: 0.2 }, t0);
+        tl.fromTo(d.o, { p: 0 }, { p: 1, duration: 1.3, ease: "none", repeat: 5,
+          onUpdate: () => { const pt = d.e.p.getPointAtLength(d.e.len * d.o.p); d.c.setAttribute("cx", pt.x); d.c.setAttribute("cy", pt.y); } }, t0);
+      });
+      tl.fromTo("#c-ctl", { opacity: 0 }, { opacity: 1, duration: 0.6, ease: "power2.out" }, 2.6);
+      tl.fromTo("#c-seg", { opacity: 0, y: -20 }, { opacity: 1, y: 0, duration: 0.5, ease: "expo.out" }, 2.9);
+      tl.fromTo("#c-cap1 span", { opacity: 0, filter: "blur(6px)" }, { opacity: 1, filter: "blur(0px)", duration: 0.14, stagger: 0.075, ease: "power2.out" }, 3.3);
+      tl.to("#c-cap1 span", { opacity: 0, filter: "blur(8px)", duration: 0.2, stagger: 0.03, ease: "power3.in" }, 5.4);
+      // El cursor toca PERSONAL.
+      tl.fromTo("#c-cursor", { opacity: 0 }, { opacity: 1, duration: 0.2 }, 5.2);
+      tl.to("#c-cursor", { x: 1225, y: 70, duration: 0.8, ease: "power2.inOut" }, 5.25);
+      tl.to("#c-cursor", { scale: 0.85, duration: 0.08, yoyo: true, repeat: 1, transformOrigin: "10% 10%" }, 6.08);
+      tl.to("#c-pa", { backgroundColor: "rgba(0,0,0,0)", color: "#7688a4", duration: 0.15 }, 6.12);
+      tl.to("#c-pp", { backgroundColor: "#a97bff", color: "#120726", duration: 0.15 }, 6.12);
+      [0, 1, 2].forEach((i) => {
+        tl.to("#c-kd" + i, { attr: { fill: "#2c3650" }, duration: 0.35, ease: "power2.out" }, 6.2 + i * 0.08);
+        tl.to("#c-kl" + i, { attr: { stroke: "#2c3650", "stroke-dasharray": "6 10" }, duration: 0.35 }, 6.2 + i * 0.08);
+        tl.to("#c-kt" + i, { attr: { fill: "#46526c" }, duration: 0.35 }, 6.2 + i * 0.08);
+      });
+      tl.to("#c-cursor", { opacity: 0, duration: 0.3 }, 6.6);
+      tl.fromTo("#c-cap2 span", { opacity: 0, filter: "blur(6px)" }, { opacity: 1, filter: "blur(0px)", duration: 0.13, stagger: 0.06, ease: "power2.out" }, 6.5);
+      tl.fromTo("#c-cap3 span", { opacity: 0, filter: "blur(6px)" }, { opacity: 1, filter: "blur(0px)", duration: 0.14, stagger: 0.1, ease: "power2.out" }, 7.6);
+      // El saber responde: una ráfaga por el lóbulo del método justo después del cambio.
+      tl.to("#c-newhalo", { keyframes: [{ opacity: 0.8, attr: { r: 14 }, duration: 0.01 }, { opacity: 0, attr: { r: 220 }, duration: 1.2, ease: "power2.out" }] }, 7.6);
+      tl.to("#c-cap2 span, #c-cap3 span", { opacity: 0, filter: "blur(8px)", duration: 0.2, stagger: 0.02, ease: "power3.in" }, 10.35);
+      tl.to("#c-stage, #c-seg", { opacity: 0, scale: 1.05, filter: "blur(8px)", duration: 0.35, ease: "power3.in" }, 10.55);
+      window.__timelines["corteza"] = tl;
+    })();
+  </script>
+</template>

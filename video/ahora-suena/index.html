@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=1920, height=1080" />
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.15.0/dist/gsap.min.js"></script>
+    <style>
+      :root {
+        --ground: #070b12;
+        --ink: #e6ecf7;
+        --font-display: "Inter", sans-serif;
+      }
+      * { margin: 0; padding: 0; box-sizing: border-box; }
+      html, body { margin: 0; width: 1920px; height: 1080px; overflow: hidden; background: var(--ground); }
+      #root { width: 100%; height: 100%; position: relative; font-family: var(--font-display); }
+      /* El suelo de la consola neuronal: los mismos tintes radiales que su plantilla real. */
+      #ground {
+        position: absolute; inset: 0;
+        background:
+          radial-gradient(1200px 700px at 78% -10%, rgba(76,155,255,.10), transparent 60%),
+          radial-gradient(1000px 620px at 12% 8%, rgba(169,123,255,.09), transparent 60%),
+          radial-gradient(900px 900px at 50% 120%, rgba(53,224,208,.06), transparent 55%),
+          #070b12;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="root" data-composition-id="main" data-start="0" data-duration="34" data-width="1920" data-height="1080">
+      <div id="ground"></div>
+      <div id="bitacora" data-composition-id="bitacora" data-composition-src="compositions/bitacora.html"
+        data-start="0" data-duration="10" data-track-index="1" data-track-kind="graphics" data-width="1920" data-height="1080"></div>
+      <div id="sueno" data-composition-id="sueno" data-composition-src="compositions/sueno.html"
+        data-start="10" data-duration="9" data-track-index="1" data-track-kind="graphics" data-width="1920" data-height="1080"></div>
+      <div id="corteza" data-composition-id="corteza" data-composition-src="compositions/corteza.html"
+        data-start="19" data-duration="11" data-track-index="1" data-track-kind="graphics" data-width="1920" data-height="1080"></div>
+      <div id="cierre" data-composition-id="cierre" data-composition-src="compositions/cierre.html"
+        data-start="30" data-duration="4" data-track-index="1" data-track-kind="graphics" data-width="1920" data-height="1080"></div>
+    </div>
+    <script>
+      window.__timelines = window.__timelines || {};
+      window.__timelines["main"] = gsap.timeline({ paused: true });
+    </script>
+  </body>
+</html>

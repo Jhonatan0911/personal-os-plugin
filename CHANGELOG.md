@@ -3,7 +3,8 @@
 ## 3.17.0
 
 - **Consola · pestaña Corteza:** el cerebro se ve. `build-consola.js` lee las notas `CO-###` de `conocimiento.dir` (regla, porqué, cuándo no aplica, casos, versiones del historial y sus «Ver también»), las propuestas del sueño y las semanas ya consolidadas, y las pinta como lóbulos por tema con sinapsis reales entre notas. Arriba, la capa de control (núcleo de la empresa, vigías, guardia); al cambiar el ámbito a Personal se apaga el control de la empresa y el saber queda entero. Búsqueda, detalle de cada lección al tocarla, filtro por lóbulo y enlace directo `consola.html#corteza&personal`. Sin corteza configurada, la pestaña explica cómo activarla.
-- **Landing:** sección «El cerebro» nueva con una demostración interactiva de las dos capas, y novedades de la 3.14 a la 3.17.
+- **Landing · «Ahora sueña»:** video de 34 s hecho con HyperFrames (fuente editable en `video/ahora-suena/`): la bitácora de la semana se vuelve una lección mientras el OS duerme y, al cambiar a Personal, se apaga el control y queda el saber. Sin datos reales.
+- **Landing · consola en vivo:** «El cerebro» incrusta la consola **real** generada por el mismo build con un estado y una corteza de ejemplo (`demo/generar.js` → `demo/consola.html`), con la pestaña Corteza abierta. Novedades de la 3.14 a la 3.17.
 
 ## 3.16.1
 

@@ -1,0 +1,93 @@
+<template>
+  <style>
+    #root { position: absolute; inset: 0; font-family: "Inter", sans-serif; color: #e6ecf7; }
+    .s-case { position: absolute; left: 312px; height: 40px; display: flex; align-items: center; gap: 22px; }
+    .s-dot { width: 26px; height: 26px; border-radius: 50%; background: #f6c760; box-shadow: 0 0 18px rgba(246,199,96,.7); flex: none; }
+    .s-txt { font-family: "JetBrains Mono", monospace; font-size: 27px; color: #f6c760; white-space: nowrap; }
+    #s-syn { position: absolute; inset: 0; width: 1920px; height: 1080px; }
+    .s-card { position: absolute; left: 360px; top: 210px; width: 1200px; height: 470px; border-radius: 22px;
+      background: linear-gradient(180deg, #121c2c, #0f1622); border: 1.5px solid rgba(53,224,208,.45);
+      box-shadow: 0 0 0 1px rgba(53,224,208,.08), 0 30px 90px rgba(0,0,0,.6), 0 0 60px rgba(53,224,208,.12); padding: 44px 56px; }
+    .s-meta { font-family: "JetBrains Mono", monospace; font-size: 28px; letter-spacing: .08em; color: #35e0d0; }
+    .s-meta b { color: #f6c760; font-weight: 700; }
+    .s-h { font-weight: 800; font-size: 52px; line-height: 1.1; letter-spacing: -.025em; margin-top: 18px; max-width: 1060px; }
+    .s-p { font-size: 29px; line-height: 1.4; color: #c9d3e6; margin-top: 22px; max-width: 1060px; }
+    .s-p b { font-family: "JetBrains Mono", monospace; font-size: 28px; letter-spacing: .14em; text-transform: uppercase; color: #7688a4; display: block; margin-bottom: 4px; font-weight: 400; }
+    .s-stamp { position: absolute; right: 40px; top: 36px; font-family: "JetBrains Mono", monospace; font-weight: 700; font-size: 28px; letter-spacing: .08em;
+      color: #35e0d0; border: 2.5px solid #35e0d0; border-radius: 12px; padding: 8px 16px; background: rgba(53,224,208,.08); }
+    .s-title { position: absolute; left: 150px; right: 150px; top: 840px; height: 170px; display: flex; align-items: center;
+      font-weight: 900; font-size: 92px; letter-spacing: -.03em; line-height: 1; }
+    .s-title span { display: inline-block; margin-right: .26em; opacity: 0; }
+    #s-meta, #s-h, #s-p1, #s-stamp { opacity: 0; }
+    .s-title .acc { color: #f6c760; } .s-title .cy { color: #35e0d0; }
+  </style>
+  <div id="root" data-composition-id="sueno" data-width="1920" data-height="1080">
+    <svg id="s-syn" viewBox="0 0 1920 1080"></svg>
+    <div class="s-case" id="s-c0" style="top:167px"><i class="s-dot" id="s-d0"></i><span class="s-txt" id="s-t0">el total lo calculaba el modelo</span></div>
+    <div class="s-case" id="s-c1" style="top:325px"><i class="s-dot" id="s-d1"></i><span class="s-txt" id="s-t1">el resumen inventó una cifra</span></div>
+    <div class="s-case" id="s-c2" style="top:483px"><i class="s-dot" id="s-d2"></i><span class="s-txt" id="s-t2">porcentajes pedidos al chat, mal</span></div>
+    <div class="s-case" id="s-c3" style="top:641px"><i class="s-dot" id="s-d3"></i><span class="s-txt" id="s-t3">sumas hechas a ojo</span></div>
+    <div class="s-case" id="s-c4" style="top:720px"><i class="s-dot" id="s-d4"></i><span class="s-txt" id="s-t4">el total no cuadraba</span></div>
+    <div class="s-card" id="s-card">
+      <div class="s-meta" id="s-meta">CO-077 · método · regla dura · <b>5 casos</b></div>
+      <div class="s-h" id="s-h">Lo que el código puede calcular no se le pregunta al modelo.</div>
+      <div class="s-p" id="s-p1"><b>Regla</b>Totales, conteos, fechas y porcentajes los hace una función; el modelo solo redacta.</div>
+      <div class="s-stamp" id="s-stamp">✓ APROBADA POR TI</div>
+    </div>
+    <div class="s-title" id="s-t-a"><span>El</span><span class="acc">sueño</span><span>junta</span><span>los</span><span>casos.</span></div>
+    <div class="s-title" id="s-t-b"><span>Y</span><span>nace</span><span>una</span><span class="cy">lección.</span></div>
+  </div>
+  <script>
+    (function () {
+      const tl = gsap.timeline({ paused: true });
+      // Las cinco entradas siguen donde estaban en la bitácora.
+      const tops = [167, 325, 483, 641, 720];
+      const C = { x: 960, y: 430 }, R = 250;
+      const meta = tops.map((t, i) => {
+        const a = -Math.PI / 2 + i * (2 * Math.PI / 5);
+        return { x0: 312 + 13, y0: t + 20, x1: C.x + Math.cos(a) * R, y1: C.y + Math.sin(a) * R * 0.85 };
+      });
+      // Sinapsis entre los casos (todas con todas): se dibujan cuando los puntos ya llegaron.
+      const NS = "http://www.w3.org/2000/svg", svg = document.getElementById("s-syn");
+      let k = 0;
+      for (let i = 0; i < 5; i++) for (let j = i + 1; j < 5; j++) {
+        const l = document.createElementNS(NS, "line");
+        l.setAttribute("id", "s-l" + k); l.setAttribute("x1", meta[i].x1); l.setAttribute("y1", meta[i].y1);
+        l.setAttribute("x2", meta[j].x1); l.setAttribute("y2", meta[j].y1);
+        l.setAttribute("stroke", "#f6c760"); l.setAttribute("stroke-width", "2"); l.setAttribute("opacity", "0");
+        const len = Math.hypot(meta[j].x1 - meta[i].x1, meta[j].y1 - meta[i].y1);
+        l.setAttribute("stroke-dasharray", len); l.setAttribute("stroke-dashoffset", len);
+        svg.appendChild(l); k++;
+      }
+      tl.set("#s-card", { clipPath: "circle(0px at 50% 47%)", opacity: 1 }, 0);
+                        meta.forEach((m, i) => {
+        tl.fromTo("#s-c" + i, { opacity: 0, filter: "blur(8px)" }, { opacity: 1, filter: "blur(0px)", duration: 0.15, ease: "power2.out" }, 0);
+        // El texto se suelta y el caso queda como neurona.
+        tl.to("#s-t" + i, { opacity: 0, filter: "blur(10px)", x: 30, duration: 0.35, ease: "power3.in" }, 0.55 + i * 0.06);
+        tl.fromTo("#s-c" + i, { x: 0, y: 0 }, { x: m.x1 - m.x0, y: m.y1 - m.y0, duration: 0.95, ease: "power2.inOut" }, 0.7 + i * 0.06);
+        tl.fromTo("#s-d" + i, { scale: 1 }, { scale: 1.6, duration: 0.95, ease: "power2.inOut" }, 0.7 + i * 0.06);
+      });
+      for (let q = 0; q < 10; q++) {
+        tl.to("#s-l" + q, { attr: { "stroke-dashoffset": 0 }, opacity: 0.75, duration: 0.5, ease: "power2.out" }, 1.55 + q * 0.07);
+      }
+      tl.fromTo("#s-t-a span", { opacity: 0, filter: "blur(6px)" }, { opacity: 1, filter: "blur(0px)", duration: 0.14, stagger: 0.075, ease: "power2.out" }, 1.7);
+      tl.to("#s-t-a span", { opacity: 0, filter: "blur(8px)", duration: 0.2, stagger: 0.04, ease: "power3.in" }, 3.8);
+      // Se funden en el centro…
+      meta.forEach((m, i) => {
+        tl.to("#s-c" + i, { x: C.x - m.x0, y: C.y + 40 - m.y0, duration: 0.55, ease: "power3.in" }, 3.95);
+        tl.to("#s-d" + i, { scale: 0.2, opacity: 0, duration: 0.55, ease: "power3.in" }, 3.95);
+      });
+      tl.to("#s-syn line", { opacity: 0, duration: 0.3, ease: "power3.in" }, 3.95);
+      // …y de ese punto se abre la lección.
+      tl.to("#s-card", { clipPath: "circle(900px at 50% 47%)", duration: 0.75, ease: "power3.inOut" }, 4.2);
+      tl.fromTo("#s-meta", { opacity: 0, filter: "blur(6px)" }, { opacity: 1, filter: "blur(0px)", duration: 0.2, ease: "power2.out" }, 4.95);
+      tl.fromTo("#s-h", { opacity: 0, filter: "blur(8px)" }, { opacity: 1, filter: "blur(0px)", duration: 0.25, ease: "power2.out" }, 5.1);
+      tl.fromTo("#s-p1", { opacity: 0, filter: "blur(6px)" }, { opacity: 1, filter: "blur(0px)", duration: 0.25, ease: "power2.out" }, 5.5);
+      tl.fromTo("#s-t-b span", { opacity: 0, filter: "blur(6px)" }, { opacity: 1, filter: "blur(0px)", duration: 0.14, stagger: 0.08, ease: "power2.out" }, 5.2);
+      // Nada entra sin aprobación: el sello cae.
+      tl.fromTo("#s-stamp", { opacity: 0, scale: 1.6, rotate: -8 }, { opacity: 1, scale: 1, rotate: -4, duration: 0.35, ease: "back.out(1.6)" }, 6.9);
+      tl.to("#s-t-b span", { opacity: 0, filter: "blur(8px)", duration: 0.2, stagger: 0.04, ease: "power3.in" }, 8.55);
+      window.__timelines["sueno"] = tl;
+    })();
+  </script>
+</template>
