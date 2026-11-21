@@ -183,6 +183,7 @@
     #view-corteza .legend{display:none}
     .cx-head{max-width:calc(100% - 28px)}
   }
+  @media (max-width:560px){ .cx-head{display:none} }
 
   footer{display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px;font-family:var(--mono);font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted-2);
     padding:9px clamp(14px,3vw,26px);border-top:1px solid var(--line);flex:none}
@@ -682,7 +683,7 @@
         if(on&&!reduce){const p=(t*.35+i*.17)%1;c2.globalAlpha=.9;c2.fillStyle=col;c2.beginPath();c2.arc(c.bx+(c.ex-c.bx)*p,c.by+(c.ey-c.by)*p,1.6,0,7);c2.fill();}
         c2.globalAlpha=1;c2.save();c2.translate(c.bx,c.by);c2.rotate(Math.PI/4);c2.fillStyle=col;c2.shadowBlur=on?12:0;c2.shadowColor=col;c2.fillRect(-5,-5,10,10);c2.restore();c2.shadowBlur=0;
         c._sx=c.bx;c._sy=c.by;
-        chip(c.bx,c.by-17-(i%2)*15,c.label,on?(c.soloEmpresa?'#8fb6ff':'#8ff0e6'):'#4d5c76',10,on?.95:.6);
+        if(W>=560)chip(c.bx,c.by-17-(i%2)*15,c.label,on?(c.soloEmpresa?'#8fb6ff':'#8ff0e6'):'#4d5c76',10,on?.95:.6);
       });
       // sinapsis
       const foco=hov&&hov.t==='n'?hov.o:sel;
@@ -714,7 +715,7 @@
       c2.globalAlpha=1;
       // etiquetas de lóbulo
       for(const [k,tm] of Object.entries(TEMAS)){const n=conteo[k]||0;if(!n&&!PROP.some(p=>temaDe(p)===k))continue;
-        chip(tm.px,tm.py-tm.rad-4,`${tm.n} · ${n}`,tm.col,10.5,lobeSel&&lobeSel!==k?.35:.92);}
+        chip(tm.px,tm.py-tm.rad-4,W<560?tm.n.split(" ")[0]:`${tm.n} · ${n}`,tm.col,W<560?9:10.5,lobeSel&&lobeSel!==k?.35:.92);}
       // sueño: propuestas parpadeando, con una línea punteada hacia el lóbulo donde caerían
       if(PROP.length){
         chip(X,G.hy+24,`SUEÑO · ${PROP.length} por consolidar`,'#f6c760',10,.9);
