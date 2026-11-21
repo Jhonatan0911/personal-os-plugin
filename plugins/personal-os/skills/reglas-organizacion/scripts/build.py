@@ -3,6 +3,9 @@
 Entrada:  <config>/reglas-empresa/registro.yaml y repos.yaml   (<config> = carpeta de fuentes.yaml)
 Salidas:
   <salida.rules>/00-nucleo.md          reglas de capa `nucleo` (sin paths: siempre presentes)
+                                        — o <salida.nucleo> si está definida: fuera de las reglas que Claude
+                                        Code carga siempre; la inyecta session-init.js solo en sesiones de la
+                                        empresa (config.json → ambitos), así no aparece en lo personal
   <salida.rules>/2x-<slug>.md          reglas de capa `archivo` (con paths: se cargan al tocar esos archivos)
   <os-home>/guardia-empresa.json        configuración del hook PreToolUse guardia-empresa.js
   <os-home>/reglas-vigia.json           configuración del vigía reglas-scan.js (SessionStart)
@@ -129,12 +132,18 @@ def regla_despliegue(reg):
     return None
 
 
+def ruta_nucleo(reg, rules_dir):
+    """El núcleo va a salida.nucleo si existe (inyectado por ámbito); si no, a <rules>/00-nucleo.md (siempre)."""
+    destino = (reg.get("salida") or {}).get("nucleo")
+    return expandir(destino) if destino else rules_dir / "00-nucleo.md"
+
+
 def vigia_json(reg, conf, estado, rules_dir, guardia):
     return {
         "_aviso": "GENERADO por reglas-organizacion/build.py desde registro.yaml. No editar a mano.",
         "registro": [str(conf / "registro.yaml"), str(conf / "repos.yaml")],
         "huella": hashlib.sha256((conf / "registro.yaml").read_bytes() + (conf / "repos.yaml").read_bytes()).hexdigest(),
-        "generados": [str(rules_dir / "00-nucleo.md"), str(guardia)],
+        "generados": [str(ruta_nucleo(reg, rules_dir)), str(guardia)],
         "build": str(Path(__file__).resolve()),
         "config_dir": str(conf.parent),
         "regla_despliegue": regla_despliegue(reg),
@@ -185,7 +194,7 @@ def reglas_empresa(reg, conf, rules_dir):
             por_skill.setdefault(s, []).append({"id": r["id"], "titulo": r["titulo"], "regla": r["regla"].strip(),
                                                 "fuente": r["fuente"]})
     return {"registro": str(conf / "registro.yaml").replace("\\", "/"),
-            "nucleo": str(rules_dir / "00-nucleo.md").replace("\\", "/"),
+            "nucleo": str(ruta_nucleo(reg, rules_dir)).replace("\\", "/"),
             "por_skill": dict(sorted(por_skill.items()))}
 
 
@@ -302,8 +311,9 @@ def main():
         texto_fuentes = con_bloque(texto_fuentes, "reglas_empresa", bloque("reglas_empresa", reglas_empresa(reg, conf, rules_dir)))
     guardia, vigia = os_home / "guardia-empresa.json", os_home / "reglas-vigia.json"
     print("Reglas de la organización" + (" (en seco)" if a.seco else "") + ":")
-    esperados = {"00-nucleo.md"}
-    escribir(rules_dir / "00-nucleo.md", nucleo_md(reg), a.seco)
+    nucleo_destino = ruta_nucleo(reg, rules_dir)
+    esperados = {nucleo_destino.name} if nucleo_destino.parent == rules_dir else set()
+    escribir(nucleo_destino, nucleo_md(reg), a.seco)
     n = 20
     for r in reg["reglas"]:
         if r["capa"] == "archivo":

@@ -120,6 +120,18 @@ para verlo y no lo vio.
   propios, universidad) **calla** y nada de esto se exige ni va antes del tema. Lo mismo hacen el vigía de
   reglas, el de reuniones y el de compromisos (que en sesión personal solo muestra los alcances personales).
 
+## 7-quater. El cerebro: el saber es común, el control va por ámbito
+- **Corteza** = notas `CO-###` en `config.json → conocimiento.dir`: saber técnico propio del usuario. Aplica en
+  cualquier proyecto (de la empresa o personal); se carga por tipo de archivo desde las reglas que genera
+  `conocimiento-build.js` (nunca a mano). Las reglas de la organización solo agregan lo propio encima. Cuando una
+  nota guíe una decisión, se cita su id.
+- **Cruzar de contexto = promover una lección abstraída, con aprobación del usuario.** Nada de clientes,
+  personas, servidores ni claves (`conocimiento.terminosProhibidos` lo bloquea). Lo de terceros nunca cruza.
+- **Nota nueva o cambio:** se propone (`estado: propuesta`) con su porqué y su caso abstraído, el usuario
+  aprueba, pasa a `vigente` y se regenera. Lo que deja de valer se `archiva`, no se borra.
+- **Su criterio primero en arquitectura:** antes de proponer un diseño técnico, se le pregunta qué haría; luego se
+  contrasta. En lo operativo se propone directo.
+
 ## 8. Autoridad
 Consultiva y preventiva, nunca coercitiva. Recomiendas, adviertes, cuestionas. La decisión es del usuario;
 si elige otra prioridad, regístrala como nota nueva en `stateDir/decisiones/` y reorganiza sin insistir de más.

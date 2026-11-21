@@ -70,6 +70,13 @@ try {
     }
   } catch (e) { /* sin ámbito: comportamiento de siempre */ }
 
+  // Núcleo de reglas de la organización (reglas-organizacion/build.py con salida.nucleo apuntando a
+  // <os-home>/nucleo-empresa.md): solo en sesiones de la empresa. El hook guardia sigue en todas.
+  try {
+    const nucleo = C.leerTexto(path.join(C.OS_HOME, 'nucleo-empresa.md'), null);
+    if (nucleo && !C.sesionPersonal()) out += `\n\n${nucleo.replace(/^<!--[\s\S]*?-->\s*/, '').trim()}\n`;
+  } catch (e) { /* sin núcleo: nada */ }
+
   process.stdout.write(out);
 } catch (e) { /* nunca romper el arranque */ }
 process.exit(0);

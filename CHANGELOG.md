@@ -1,5 +1,11 @@
 # Changelog
 
+## 3.15.0
+
+- **El cerebro: corteza de saber común (`conocimiento-build.js`).** El saber técnico propio del usuario vive como notas atómicas `CO-###` (título = la afirmación, porqué, caso de origen abstraído, procedencia, `aplica_a`, `nivel` duro|criterio, `estado` propuesta|vigente|archivada) y se genera a `~/.claude/rules/conocimiento/` por tipo de archivo, para que aplique en **cualquier** proyecto, de la empresa o personal. Valida la forma (`--check`), exige el porqué y **bloquea los términos confidenciales** de `conocimiento.terminosProhibidos` (integridad contextual: lo que cruza de contexto es la lección abstraída). El índice siempre presente lleva las notas de método y la regla de pedir el criterio del usuario antes de proponer arquitectura. CORE §7-quater.
+- **reglas-organizacion · núcleo por ámbito:** `salida.nucleo` en el registro escribe el núcleo fuera de las reglas que Claude Code carga siempre; `session-init.js` lo inyecta desde `<os-home>/nucleo-empresa.md` solo en sesiones de la empresa. El hook guardia sigue en todas.
+- Fundamento (investigación del 21/11/2026): el cerebro separa por contexto el control, no el saber (corteza prefrontal vs neocórtex); lo que se transfiere entre dominios es la lección abstraída (ReasoningBank, ACE); integridad contextual (Nissenbaum).
+
 ## 3.14.0
 
 - **Frontera personal/laboral por carpeta (`config.json → ambitos`):** el ámbito de la sesión sale de la carpeta donde se abrió (gana el prefijo más largo; sin coincidencia = `central`). En una sesión personal (proyectos propios, universidad) **callan** el vigía de correo, el de reglas de la organización y el de reuniones con issue; el de compromisos solo muestra los alcances personales (`ambito: personal` o un cliente de `clientesPersonales`), sin expedientes, sin compromisos de la empresa y sin rastreo de la bitácora. En las `laboral` y la `central` todo sigue igual. El arranque inyecta «Ámbito de esta sesión». Sin `ambitos`, el comportamiento es el de siempre. Nació de que el vigía de correo (3.13.0) se exigía antes del tema también en sesiones personales.

@@ -13,6 +13,11 @@
     "clientesPersonales": ["Universidad", "Personal"],
     "porDefecto": "central"
   },
+  "conocimiento": {
+    "dir": "/ruta/a/tu/estado/../conocimiento",
+    "salida": "~/.claude/rules/conocimiento",
+    "terminosProhibidos": ["Nombre de un cliente", "nombre-de-un-servidor", "10.0.0."]
+  },
   "busqueda": {
     "fuentes": [
       { "etiqueta": "documentos del equipo (acuerdos, actas, políticas)", "ruta": "/ruta/a/tus/docs", "recursivo": true, "ext": [".md", ".txt"] }
