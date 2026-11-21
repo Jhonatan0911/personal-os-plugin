@@ -61,11 +61,12 @@
     padding:2px 9px;border-radius:999px}
 
   header.hero{margin-bottom:40px}
-  .brandmark{width:52px;height:52px;border-radius:14px;background:linear-gradient(150deg,var(--accent),color-mix(in srgb,var(--accent) 55%,#000 0%));
-    display:grid;place-items:center;font-size:1.6rem;box-shadow:var(--shadow);margin-bottom:22px}
+  .hero h1{margin-top:10px}
+  .brandmark{width:44px;height:44px;border-radius:14px;background:linear-gradient(150deg,var(--accent),color-mix(in srgb,var(--accent) 55%,#000 0%));
+    display:grid;place-items:center;font-size:1.4rem;box-shadow:var(--shadow);margin-bottom:14px}
   .hero h1{font-size:clamp(2.6rem,8vw,4.1rem);line-height:.98;margin:16px 0 0;font-weight:800;
     letter-spacing:-.04em;text-wrap:balance}
-  .hero .lede{font-size:clamp(1.05rem,2.4vw,1.28rem);color:var(--muted);max-width:40ch;margin:20px 0 0;
+  .hero .lede{font-size:clamp(1.05rem,2.4vw,1.28rem);color:var(--muted);max-width:58ch;margin:20px 0 0;
     text-wrap:balance;line-height:1.5}
   .hero .lede b{color:var(--ink);font-weight:600}
 
@@ -80,7 +81,7 @@
   .term .chrome{display:flex;align-items:center;gap:8px;padding:12px 16px;border-bottom:1px solid var(--term-line)}
   .term .chrome i{width:11px;height:11px;border-radius:50%;background:#39415f;display:block;flex:none}
   .term .chrome i:nth-child(1){background:#ff5f57}.term .chrome i:nth-child(2){background:#febc2e}.term .chrome i:nth-child(3){background:#28c840}
-  .term .chrome span{margin-left:8px;font-family:var(--mono);font-size:.74rem;color:var(--term-dim);letter-spacing:.04em;
+  .term .chrome span{margin-left:8px;font-family:var(--mono);font-size:.78rem;color:var(--term-dim);letter-spacing:.04em;
     min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
   .term .body{padding:18px 18px 20px;font-family:var(--mono);font-size:.88rem;line-height:1.9}
   .term .ln{white-space:pre-wrap;word-break:break-word;overflow-wrap:anywhere;color:var(--term-ink)}
@@ -158,7 +159,7 @@
   .tblwrap{overflow-x:auto;max-width:100%;background:var(--panel);border:1px solid var(--line);border-radius:12px;box-shadow:var(--shadow)}
   .tbl{width:100%;border-collapse:collapse;font-size:.88rem;min-width:520px}
   .tbl th,.tbl td{text-align:left;padding:11px 14px;border-top:1px solid var(--line);vertical-align:top}
-  .tbl thead th{border-top:none;font-family:var(--mono);font-size:.68rem;letter-spacing:.12em;text-transform:uppercase;
+  .tbl thead th{border-top:none;font-family:var(--mono);font-size:.76rem;letter-spacing:.12em;text-transform:uppercase;
     color:var(--muted);font-weight:600;background:var(--panel-2)}
   .tbl td code{font-family:var(--mono);font-size:.85em;color:var(--accent-ink);white-space:nowrap}
   .tbl td.num{font-family:var(--mono);font-weight:700;text-align:center}
@@ -293,6 +294,8 @@
   .cmd button{font-size:.76rem}
   .cap .k,.live-open,.ver,.toc a,.eyebrow,.pillars li b,.nlegend{font-size:.8rem}
   .toc a[aria-current]{color:var(--accent-ink);border-color:var(--accent);background:var(--accent-soft)}
+  .hint{color:var(--muted);font-weight:400}
+  .reel-btn:hover{border-color:#8b9bff;background:rgba(7,11,18,.85)}
   /* ahora sueña · video y consola en vivo */
   nav[aria-label="Secciones"]{margin-top:36px}
   .suena{margin-top:8px}
@@ -354,21 +357,15 @@
 <a class="skip" href="#inst">Ir a instalar</a>
 <div class="wrap">
 <p class="sr-only" id="copy-status" aria-live="polite"></p>
+<main id="contenido">
 
   <header class="hero">
     <div class="brandmark" aria-hidden="true">🧭</div>
     <div class="eyebrow">Plugin para Claude Code <span class="ver">v3.17.0</span></div>
     <h1>Personal&nbsp;OS</h1>
     <p class="lede">Un conjunto de <b>24 skills para Claude Code</b> enfocadas en <b>productividad, trabajo y rendimiento</b>,
-      con una <b>memoria persistente</b> que aprende contigo: lo que descubres en un proyecto te acompaña en todos. Corre solo al abrir cada sesión: una red de seguridad que no tienes que recordar.</p>
-    <ul class="pillars" aria-label="Para qué sirve">
-      <li><b>Productividad</b> brief del día, prioridades, retomar donde quedaste</li>
-      <li><b>Trabajo</b> compromisos, sprints, PRs, paso a producción</li>
-      <li><b>Rendimiento</b> horas trazables, status del equipo, exigencia</li>
-      <li><b>Memoria</b> bitácora, corteza de lecciones y el sueño semanal</li>
-    </ul>
+      con una <b>memoria persistente</b> que aprende contigo: lo que descubres en un proyecto te acompaña en todos.</p>
 
-    <p class="for">Para <b>líderes técnicos y desarrolladores</b> que trabajan con Claude Code. Necesita Node.js; con los conectores de Atlassian y Microsoft 365 cruza Jira, Outlook y Teams, y sin ellos funciona la parte local.</p>
     <div class="cta">
       <a class="btn pri" href="#inst">Instalar →</a>
       <a class="btn" href="#cerebro">Probar la consola en vivo</a>
@@ -377,19 +374,26 @@
     <div class="quick" aria-label="Instalación en dos comandos">
       <div class="cmd"><span class="pr" aria-hidden="true">&gt;</span><code><span class="cm">/plugin marketplace add</span> <span class="arg">Jhonatan0911/personal-os-plugin</span></code><button type="button" data-copy="/plugin marketplace add Jhonatan0911/personal-os-plugin" aria-label="Copiar el comando que registra el marketplace">Copiar</button></div>
       <div class="cmd"><span class="pr" aria-hidden="true">&gt;</span><code><span class="cm">/plugin install</span> <span class="arg">personal-os@everest-personal-os</span></code><button type="button" data-copy="/plugin install personal-os@everest-personal-os" aria-label="Copiar el comando que instala el plugin">Copiar</button></div>
-      <p class="quick-note">Reinicia Claude Code y corre <code>/os-setup</code> una vez. Después, cada mañana: <code>/brief</code>.</p>
+      <p class="quick-note">Reinicia Claude Code; <code>/plugin</code> debe listar <b>personal-os 3.17.0</b>. Luego corre <code>/os-setup</code> una vez. Después, cada mañana: <code>/brief</code>.</p>
     </div>
+    <p class="for">Para <b>líderes técnicos y desarrolladores</b> que trabajan con Claude Code. Necesita Node.js; con los conectores de Atlassian y Microsoft 365 cruza Jira, Outlook y Teams, y sin ellos funciona la parte local.</p>
+    <ul class="pillars" aria-label="Para qué sirve">
+      <li><b>Productividad</b> brief del día, prioridades, retomar donde quedaste</li>
+      <li><b>Trabajo</b> compromisos, sprints, PRs, paso a producción</li>
+      <li><b>Rendimiento</b> horas trazables, status del equipo, exigencia</li>
+      <li><b>Memoria</b> bitácora, corteza de lecciones y el sueño semanal</li>
+    </ul>
   </header>
 
   <nav aria-label="Secciones" class="toc-bar">
     <ul class="toc">
-      <li><a href="#suena">Ahora sueña</a></li>
+      <li><a href="#suena">Sueña</a></li>
       <li><a href="#que">Qué hace</a></li>
-      <li><a href="#cerebro">El cerebro en vivo</a></li>
+      <li><a href="#cerebro">Cerebro</a></li>
       <li><a href="#why">Por qué</a></li>
       <li><a href="#fondo">A fondo</a></li>
       <li><a href="#inst">Instalar</a></li>
-      <li><a href="#cmds">Qué se instala</a></li>
+      <li><a href="#cmds">Incluye</a></li>
       <li><a href="#novedades">Novedades</a></li>
       <li><a href="#upd">Actualizar</a></li>
     </ul>
@@ -465,9 +469,6 @@
     </div>
     </details>
 
-    <ul class="rules">
-      <li><b>La consola lo pinta.</b> En la pestaña <b>Corteza</b> de <code>/consola</code>, cada neurona es una lección y cada línea es un «ver también» real entre dos notas. Al tocar una neurona lees la regla, el porqué y cuándo no aplica. Al cambiar de ámbito se apaga el control, no el saber.</li>
-    </ul>
 
     <details class="older"><summary>De dónde sale la idea</summary><p class="prose">Corteza prefrontal y neocórtex: el control depende del contexto, el saber no. La consolidación durante el sueño (sistemas de aprendizaje complementarios) y las memorias de razonamiento de los agentes de 2025 (ReasoningBank, ACE) inspiran el sueño semanal. La integridad contextual de Nissenbaum define qué puede cruzar de un contexto a otro.</p></details>
     <div class="cmd"><span class="pr">&gt;</span><code><span class="cm">/consola</span></code><button aria-label="Copiar: /consola" type="button" data-copy="/consola">Copiar</button></div>
@@ -748,7 +749,7 @@
           <tr><td>fácil</td><td class="num">3</td><td class="num">2 días</td><td class="num">3</td><td>No rastrea promesas sin declarar; una sola recomendación al cierre.</td></tr>
           <tr><td>normal</td><td class="num">2</td><td class="num">3 días</td><td class="num">5</td><td>No repite lo ya dicho hoy salvo que haya cambiado.</td></tr>
           <tr class="def"><td>estricto <span class="ver">por defecto</span></td><td class="num">1</td><td class="num">5 días</td><td class="num">8</td><td>Cruza todos los días hábiles; exige issue, responsable y fecha antes de aceptar trabajo.</td></tr>
-          <tr><td>cuartel</td><td class="num">0</td><td class="num">10 días</td><td class="num">todos</td><td>Los CRÍTICOS se atienden antes que cualquier petición; avisa también en fin de semana.</td></tr>
+          <tr><td>cuartel <span class="hint">(el máximo)</span></td><td class="num">0</td><td class="num">10 días</td><td class="num">todos</td><td>Los CRÍTICOS se atienden antes que cualquier petición; avisa también en fin de semana.</td></tr>
         </tbody>
       </table>
     </div>
@@ -799,7 +800,7 @@
       <li class="step">
         <div class="num">6</div>
         <h3>Arranca el día</h3>
-        <p class="desc">Pide el brief. El OS lee tu estado, cruza tus fuentes y te pone enfrente lo #1, lo vencido y los riesgos.</p>
+        <p class="desc">Pide el brief. El OS lee tu estado, cruza tus fuentes y te pone enfrente tu prioridad número uno (la #1), lo vencido y los riesgos.</p>
         <div class="cmd"><span class="pr">&gt;</span><code><span class="cm">/brief</span></code><button aria-label="Copiar: /brief" type="button" data-copy="/brief">Copiar</button></div>
       </li>
 
@@ -820,7 +821,7 @@
       <div class="row"><code>/timesheet</code><span>Arma el día desde la bitácora; nunca envía</span></div>
       <div class="row"><code>/quien</code><span>Quién sabe de qué y quién está libre</span></div>
       <div class="row"><code>/status-celula</code><span>Tablero del equipo con Gantt</span></div>
-      <div class="row"><code>/exigencia</code><span>Dial: fácil · normal · estricto · cuartel</span></div>
+      <div class="row"><code>/exigencia</code><span>Dial: fácil · normal · estricto · cuartel (el máximo)</span></div>
       <div class="row"><code>/os-setup</code><span>Siembra el estado y la configuración</span></div>
       <div class="row"><code>/os-on</code><span>Reactiva el OS en todas tus sesiones</span></div>
       <div class="row"><code>/os-off</code><span>Pausa el OS (con doble confirmación)</span></div>
@@ -878,7 +879,7 @@
     </div>
     </details>
 
-    <details class="grp"><summary>Hooks <span>10</span></summary>
+    <details class="grp"><summary>Hooks <span>10 (8 scripts)</span></summary>
     <div class="tblwrap">
       <table class="tbl">
         <thead><tr><th scope="col">Evento</th><th scope="col">Script</th><th scope="col">Qué hace</th></tr></thead>
@@ -899,7 +900,7 @@
 
   <section aria-labelledby="novedades">
     <h2 id="novedades">Novedades</h2>
-    <p class="sec-sub">El salto grande: el Personal OS ahora tiene un cerebro de dos capas. Lo que sabes es común a todos tus proyectos; las alarmas de la empresa se quedan en la empresa.</p>
+    <p class="sec-sub">Lo último de cada versión.</p>
     <div class="chlog">
       <h3>3.14 – 3.17 <span class="ver">el cerebro</span></h3>
       <ul>
@@ -982,6 +983,8 @@
     </div>
     <div class="note accent"><span class="ic" aria-hidden="true">↗️</span><div><b>Si vienes de la 1.x:</b> tus <code>riesgos.md</code> y <code>compromisos.md</code> no se tocan. Pásalos a notas-objeto cuando quieras; el brief puede ayudarte.</div></div>
   </section>
+
+</main>
 
   <footer class="foot">
     <div class="repo">📦 <a href="https://github.com/Jhonatan0911/personal-os-plugin">github.com/Jhonatan0911/personal-os-plugin</a> · v3.17.0 · MIT</div>
