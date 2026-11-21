@@ -406,6 +406,47 @@
   .reel figcaption.tx{position:static}
   footer.foot .repo a{display:inline-block;padding:10px 0}
   @media (max-width:680px){ .cta .btn{flex:1 1 auto;justify-content:center} }
+  /* ===== capa de movimiento (tomada del portafolio y de Anana) ===== */
+  header.hero{position:relative;isolation:isolate}
+  .hero > :not(.hero-fx){position:relative;z-index:2}
+  .hero-fx{position:absolute;z-index:0;pointer-events:none;top:-80px;bottom:-40px;left:calc(50% - 50vw);right:calc(50% - 50vw);overflow:hidden}
+  #field{position:absolute;inset:0;width:100%;height:100%}
+  @media (max-width:900px){#field{opacity:.45;-webkit-mask-image:linear-gradient(90deg,transparent 0%,#000 60%);mask-image:linear-gradient(90deg,transparent 0%,#000 60%)}}
+  .orb{position:absolute;border-radius:50%;filter:blur(70px);opacity:.55}
+  .orb.o1{width:520px;height:520px;left:calc(50% - 760px);top:-120px;background:radial-gradient(circle,color-mix(in srgb,var(--accent) 45%,transparent),transparent 70%)}
+  .orb.o2{width:560px;height:560px;right:calc(50% - 820px);top:120px;background:radial-gradient(circle,rgba(53,224,208,.32),transparent 70%)}
+  .floor{position:absolute;left:-30%;right:-30%;bottom:-8%;height:46%;transform:perspective(420px) rotateX(70deg);transform-origin:50% 100%;opacity:.18;
+    background-image:linear-gradient(var(--accent) 1px,transparent 1px),linear-gradient(90deg,var(--accent) 1px,transparent 1px);
+    background-size:64px 64px;animation:floor 5s linear infinite;
+    -webkit-mask-image:linear-gradient(transparent 4%,#000 70%);mask-image:linear-gradient(transparent 4%,#000 70%)}
+  @keyframes floor{to{background-position:0 64px,0 0}}
+  .spot{position:absolute;inset:0;opacity:0;transition:opacity .5s;background:radial-gradient(360px 360px at var(--mx,70%) var(--my,40%),color-mix(in srgb,var(--accent) 14%,transparent),transparent 70%)}
+  .hero.live .spot{opacity:1}
+  .h-seq{opacity:0;transform:translateY(22px);animation:rise .8s cubic-bezier(.2,.7,.2,1) forwards}
+  @keyframes rise{to{opacity:1;transform:none}}
+  .marquee{position:relative;margin:6px calc(50% - 50vw) 0;padding:16px 0;overflow:hidden;border-block:1px solid var(--line);perspective:500px;
+    -webkit-mask-image:linear-gradient(90deg,transparent,#000 8%,#000 92%,transparent);mask-image:linear-gradient(90deg,transparent,#000 8%,#000 92%,transparent)}
+  .mq-track{display:flex;gap:40px;width:max-content;animation:mq 60s linear infinite}
+  .marquee:hover .mq-track{animation-play-state:paused}
+  .mq-track span{font-family:var(--mono);font-size:.8rem;letter-spacing:.1em;color:var(--muted);white-space:nowrap;display:inline-flex;align-items:center;gap:40px;transition:transform .3s,color .3s}
+  .mq-track span::after{content:"◆";font-size:.5rem;color:var(--accent)}
+  .mq-track span:hover{color:var(--accent-ink);transform:translateZ(30px) rotateX(-12deg)}
+  @keyframes mq{to{transform:translateX(-50%)}}
+  /* revelado al hacer scroll (solo con JS y sin «reducir movimiento») */
+  .rv-on .rv{opacity:0;transform:translateY(26px);transition:opacity .7s cubic-bezier(.2,.7,.2,1) var(--d,0s),transform .7s cubic-bezier(.2,.7,.2,1) var(--d,0s)}
+  .rv-on .rv.in{opacity:1;transform:none}
+  /* tarjetas con inclinación 3D y brillo que sigue el puntero */
+  .t3{transform:perspective(900px) rotateX(var(--rx,0deg)) rotateY(var(--ry,0deg)) translateY(var(--lift,0px));transition:transform .55s cubic-bezier(.2,.7,.2,1),box-shadow .3s,border-color .3s;
+    background-image:radial-gradient(420px circle at var(--mx,50%) var(--my,50%),var(--glare,transparent),transparent 60%)}
+  .t3:hover{--glare:color-mix(in srgb,var(--accent) 10%,transparent);--lift:-3px;border-color:color-mix(in srgb,var(--accent) 35%,var(--line))}
+  .reel{transform:perspective(1400px) rotateX(var(--rx,6deg)) scale(var(--sc,.96));transition:transform .2s linear}
+  @media (prefers-reduced-motion:reduce){
+    .floor,.mq-track{animation:none}.h-seq{animation:none;opacity:1;transform:none}
+    .rv-on .rv{opacity:1;transform:none;transition:none}.t3,.reel{transform:none}
+  }
+  .quick-steps{margin:10px 0 0;padding-left:20px;font-size:.86rem;color:var(--muted);display:grid;gap:3px}
+  .quick-steps b{color:var(--ink)}
+  .quick-steps code{font-family:var(--mono);font-size:.8rem;background:var(--accent-soft);color:var(--accent-ink);padding:1px 6px;border-radius:5px}
 </style>
 </head>
 <body>
@@ -414,34 +455,42 @@
 <p class="sr-only" id="copy-status" aria-live="polite"></p>
 <main id="contenido">
 
-  <header class="hero">
+  <header class="hero" id="hero">
+    <div class="hero-fx" aria-hidden="true">
+      <div class="orb o1"></div><div class="orb o2"></div>
+      <div class="floor"></div>
+      <canvas id="field"></canvas>
+      <div class="spot"></div>
+    </div>
     <div class="brandmark" aria-hidden="true">🧭</div>
-    <div class="eyebrow">Plugin para Claude Code <span class="ver">v3.17.0</span> <a class="new-pill" href="#sec-suena">Nuevo: ahora sueña →</a></div>
-    <h1>Personal&nbsp;OS</h1>
-    <p class="lede">Un conjunto de <b>24 skills para Claude Code</b> enfocadas en <b>productividad, trabajo y rendimiento</b>,
-      con una <b>memoria persistente</b> que aprende contigo: lo que descubres en un proyecto te acompaña en todos.</p>
+    <div class="eyebrow h-seq" style="animation-delay:0.05s">Plugin para Claude Code <span class="ver">v3.17.0</span> <a class="new-pill" href="#sec-suena">Nuevo: ahora sueña →</a></div>
+    <h1 class="h-seq" style="animation-delay:0.17s">Personal&nbsp;OS</h1>
+    <p class="lede h-seq" style="animation-delay:0.29s"><b>24 skills para Claude Code</b> de productividad, trabajo y rendimiento: brief diario sobre Jira, Outlook y Teams, vigía de lo que prometiste, timesheet desde tu bitácora y revisión de PR. Con una <b>memoria persistente</b> que aprende contigo.</p>
 
-    <div class="cta">
+    <div class="cta h-seq" style="animation-delay:0.41s">
       <a class="btn pri" href="#inst">Instalar →</a>
       <a class="btn" href="#cerebro">Probar la consola</a>
     </div>
-    <p class="for">Para <b>líderes técnicos y desarrolladores</b> que trabajan con Claude Code. Necesita Node.js; con los conectores de Atlassian y Microsoft 365 cruza Jira, Outlook y Teams, y sin ellos funciona la parte local.</p>
-    <div class="quick" aria-label="Instalación en dos comandos">
+    <p class="for h-seq" style="animation-delay:0.53s">Para <b>líderes técnicos y desarrolladores</b> que trabajan con Claude Code. Necesita Node.js; con los conectores de Atlassian y Microsoft 365 cruza Jira, Outlook y Teams, y sin ellos funciona la parte local.</p>
+    <div class="quick h-seq" style="animation-delay:0.65s" aria-label="Instalación en dos comandos">
       <div class="cmd"><span class="pr" aria-hidden="true">&gt;</span><code><span class="cm">/plugin marketplace add</span> <span class="arg">Jhonatan0911/personal-os-plugin</span></code><button type="button" data-copy="/plugin marketplace add Jhonatan0911/personal-os-plugin" aria-label="Copiar el comando que registra el marketplace">Copiar</button></div>
       <div class="cmd"><span class="pr" aria-hidden="true">&gt;</span><code><span class="cm">/plugin install</span> <span class="arg">personal-os@everest-personal-os</span></code><button type="button" data-copy="/plugin install personal-os@everest-personal-os" aria-label="Copiar el comando que instala el plugin">Copiar</button></div>
-      <p class="quick-note">Se escriben dentro de Claude Code, no en la terminal. Reinicia Claude Code; <code>/plugin</code> debe listar <b>personal-os 3.17.0</b>. Luego corre <code>/os-setup</code> una vez. Después, cada mañana: <code>/brief</code> (lee Jira, Outlook y Teams si tienes sus conectores).</p>
+      <ol class="quick-steps"><li>Escribe los dos comandos <b>dentro de Claude Code</b> (no en la terminal).</li><li><b>Reinicia Claude Code</b>: <code>/plugin</code> debe listar <b>personal-os 3.17.0</b>.</li><li>Corre <code>/os-setup</code> una vez. Después, cada mañana: <code>/brief</code>.</li></ol>
     </div>
   </header>
+  <div class="marquee" aria-label="Las 24 skills">
+    <div class="mq-track"><span>brief-diario</span><span>retomar</span><span>checkpoint</span><span>reconciliar</span><span>cerrar-tarea</span><span>tablero-diario</span><span>consola-neuronal</span><span>planear-sprint</span><span>revisar-pr</span><span>certificar-funcional</span><span>paso-a-produccion</span><span>mapa-criticidad</span><span>regresion-guiada</span><span>mesa-nueva</span><span>migrar-ramas</span><span>reglas-organizacion</span><span>informe-desarrollo</span><span>redactar</span><span>timesheet</span><span>status-celula</span><span>worklist-lider</span><span>personas</span><span>auditar-ux-ui</span><span>maestro-skills</span><span aria-hidden="true">brief-diario</span><span aria-hidden="true">retomar</span><span aria-hidden="true">checkpoint</span><span aria-hidden="true">reconciliar</span><span aria-hidden="true">cerrar-tarea</span><span aria-hidden="true">tablero-diario</span><span aria-hidden="true">consola-neuronal</span><span aria-hidden="true">planear-sprint</span><span aria-hidden="true">revisar-pr</span><span aria-hidden="true">certificar-funcional</span><span aria-hidden="true">paso-a-produccion</span><span aria-hidden="true">mapa-criticidad</span><span aria-hidden="true">regresion-guiada</span><span aria-hidden="true">mesa-nueva</span><span aria-hidden="true">migrar-ramas</span><span aria-hidden="true">reglas-organizacion</span><span aria-hidden="true">informe-desarrollo</span><span aria-hidden="true">redactar</span><span aria-hidden="true">timesheet</span><span aria-hidden="true">status-celula</span><span aria-hidden="true">worklist-lider</span><span aria-hidden="true">personas</span><span aria-hidden="true">auditar-ux-ui</span><span aria-hidden="true">maestro-skills</span></div>
+  </div>
 
   <nav aria-label="Secciones" class="toc-bar">
     <ul class="toc">
       <li><a href="#sec-suena">Ahora sueña</a></li>
       <li><a href="#que">Qué hace</a></li>
       <li><a href="#cerebro">Cerebro</a></li>
+      <li><a href="#why">Por qué</a></li>
       <li><a href="#fondo">A fondo</a></li>
       <li><a href="#inst">Instalar</a></li>
       <li><a href="#cmds">Qué se instala</a></li>
-      <li><a href="#novedades">Novedades</a></li>
       <li><a href="#upd">Actualizar</a></li>
     </ul>
     <button type="button" class="tema" id="tema" aria-label="Tema: el del sistema. Cambiar a claro" title="Tema: sistema"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><rect x="3" y="4" width="18" height="12" rx="2"/><path d="M8 20h8M12 16v4"/></svg></button>
@@ -457,7 +506,7 @@
         aria-label="Video: la bitácora de la semana se vuelve una lección mientras el Personal OS duerme"></video>
       <button type="button" class="reel-btn" id="reel-btn" aria-label="Pausar el video">❚❚</button>
     </figure>
-    <div class="tx"><details class="older"><summary>Leer lo que cuenta el video</summary><p class="prose">el viernes a las 17:30 la bitácora de la semana muestra cinco veces el mismo error en proyectos de la empresa y personales. El Personal OS se va a dormir, junta esos casos y propone una lección: «Lo que el código puede calcular no se le pregunta al modelo». Tú la apruebas, entra a la corteza y queda disponible en todos tus proyectos. Al cambiar a una sesión personal se apaga el control de la empresa; el saber no. Cierra con «Ahora sueña» y el comando /consola.</p></details></div>
+    <div class="tx"><details class="older"><summary>Leer lo que cuenta el video</summary><p class="prose">El viernes a las 17:30 la bitácora de la semana muestra cinco veces el mismo error en proyectos de la empresa y personales. El Personal OS se va a dormir, junta esos casos y propone una lección: «Lo que el código puede calcular no se le pregunta al modelo». Tú la apruebas, entra a la corteza y queda disponible en todos tus proyectos. Al cambiar a una sesión personal se apaga el control de la empresa; el saber no. Cierra con «Ahora sueña» y el comando /consola.</p></details></div>
   </section>
 
 
@@ -1092,6 +1141,75 @@
       pinta();
     });
     pinta();
+  })();
+
+  // ===== capa de movimiento =====
+  (function(){
+    var reduce = matchMedia('(prefers-reduced-motion:reduce)').matches;
+    var hero = document.getElementById('hero'), cv = document.getElementById('field');
+    // Constelación 3D: una red neuronal que gira y sigue al puntero (técnica del portafolio).
+    if (hero && cv && cv.getContext) {
+      var ctx = cv.getContext('2d'), W = 0, H = 0, dpr = 1, nodes = [], t = 0, spin = 0, ax = 0, ay = 0, tx = 0, ty = 0, visible = true;
+      var pal = function(){
+        var r = document.documentElement, dark = r.dataset.theme ? r.dataset.theme === 'dark' : matchMedia('(prefers-color-scheme:dark)').matches;
+        return dark ? { ink:'230,236,250', hub:'53,224,208', acc:'139,155,255', line:.24 } : { ink:'40,48,80', hub:'14,148,136', acc:'59,70,209', line:.14 };
+      };
+      var P = pal();
+      var build = function(){
+        var n = innerWidth < 640 ? 46 : innerWidth < 1100 ? 80 : 120; nodes = [];
+        for (var i = 0; i < n; i++) { var th = Math.random()*6.283, ph = Math.acos(Math.random()*2-1), r = .34 + Math.pow(Math.random(), .55)*.74;
+          nodes.push({ x:r*Math.sin(ph)*Math.cos(th), y:r*Math.sin(ph)*Math.sin(th)*.74, z:r*Math.cos(ph), s:.5+Math.random()*.9, ph:Math.random()*6.283, sp:.4+Math.random()*.9, hub:Math.random()<.14 }); }
+      };
+      var size = function(){ dpr = Math.min(devicePixelRatio||1, 2); var b = cv.getBoundingClientRect(); W = b.width; H = b.height; cv.width = Math.round(W*dpr); cv.height = Math.round(H*dpr); ctx.setTransform(dpr,0,0,dpr,0,0); };
+      var draw = function(){
+        if (!W || !H) return; t += 1/60;
+        if (!reduce) { spin += .0016; ax += (tx-ax)*.06; ay += (ty-ay)*.06; }
+        var ry = spin + ax, rx = -.1 + ay, cX = Math.cos(rx), sX = Math.sin(rx), cY = Math.cos(ry), sY = Math.sin(ry);
+        var wide = W > 900, R = Math.min(W, H) * (wide ? .46 : .5), ox = W*(wide ? .5 + 330/W + .06 : .62), oy = H*(wide ? .46 : .36);
+        var MAX = Math.min(W, H) * .16, MAX2 = MAX*MAX, Q = [];
+        for (var i = 0; i < nodes.length; i++) { var n = nodes[i], y0 = n.y + (reduce ? 0 : Math.sin(t*n.sp+n.ph)*.035);
+          var x1 = n.x*cY + n.z*sY, z1 = n.z*cY - n.x*sY, y1 = y0*cX - z1*sX, z2 = y0*sX + z1*cX, k = 2/(2.95 - z2);
+          Q.push({ x:ox + x1*k*R, y:oy + y1*k*R, k:k, n:n }); }
+        ctx.clearRect(0, 0, W, H); ctx.lineWidth = 1;
+        for (var a = 0; a < Q.length; a++) for (var b = a+1; b < Q.length; b++) {
+          var dx = Q[a].x-Q[b].x, dy = Q[a].y-Q[b].y, d2 = dx*dx+dy*dy; if (d2 > MAX2) continue;
+          var depth = Math.min(1, ((Q[a].k+Q[b].k)/2 - .5)/.55), al = (1 - Math.sqrt(d2)/MAX) * P.line * (.3 + depth*.7); if (al < .012) continue;
+          ctx.strokeStyle = 'rgba(' + (Q[a].n.hub && Q[b].n.hub ? P.hub : P.ink) + ',' + al.toFixed(3) + ')'; ctx.beginPath(); ctx.moveTo(Q[a].x, Q[a].y); ctx.lineTo(Q[b].x, Q[b].y); ctx.stroke(); }
+        for (var c = 0; c < Q.length; c++) { var q = Q[c], rr = q.n.s * q.k * (q.n.hub ? 2.2 : 1.3), pulse = q.n.hub && !reduce ? .55 + .45*Math.sin(t*2 + q.n.ph) : 1;
+          ctx.fillStyle = 'rgba(' + (q.n.hub ? P.hub : P.acc) + ',' + ((q.n.hub ? .9 : .5) * pulse * Math.min(1, q.k)).toFixed(3) + ')';
+          ctx.beginPath(); ctx.arc(q.x, q.y, rr, 0, 6.283); ctx.fill(); }
+      };
+      var loop = function(){ if (visible) draw(); if (!reduce) requestAnimationFrame(loop); };
+      build(); size(); draw(); if (!reduce) requestAnimationFrame(loop);
+      addEventListener('resize', function(){ size(); build(); draw(); });
+      new IntersectionObserver(function(es){ visible = es[0].isIntersecting; }).observe(hero);
+      hero.addEventListener('pointermove', function(e){ var b = hero.getBoundingClientRect(); var px = (e.clientX-b.left)/b.width, py = (e.clientY-b.top)/b.height;
+        tx = (px-.5)*.9; ty = (py-.5)*.5; hero.classList.add('live'); hero.style.setProperty('--mx', (px*100)+'%'); hero.style.setProperty('--my', (py*100)+'%'); });
+      hero.addEventListener('pointerleave', function(){ tx = 0; ty = 0; hero.classList.remove('live'); });
+      // Al cambiar de tema, la constelación cambia de tinta.
+      new MutationObserver(function(){ P = pal(); draw(); }).observe(document.documentElement, { attributes:true, attributeFilter:['data-theme'] });
+      matchMedia('(prefers-color-scheme:dark)').addEventListener('change', function(){ P = pal(); draw(); });
+    }
+    if (reduce) return;
+    // Revelado al hacer scroll, con escalonado por hermanos.
+    document.documentElement.classList.add('rv-on');
+    var objetivos = document.querySelectorAll('main section > h2, main section > .sec-sub, .cap, .chlog, details.deep, .reel, .term, .step, .scn, .lane, .live-wrap');
+    var io = new IntersectionObserver(function(es){ es.forEach(function(e){ if (e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target); } }); }, { rootMargin:'0px 0px -8% 0px' });
+    objetivos.forEach(function(el){ if (el.closest('.hero')) return; el.classList.add('rv');
+      var i = [].indexOf.call(el.parentNode.children, el); el.style.setProperty('--d', Math.min(i, 6) * .06 + 's'); io.observe(el); });
+    // Inclinación 3D con brillo en las tarjetas (solo con puntero fino).
+    if (matchMedia('(pointer:fine)').matches) document.querySelectorAll('.cap, .chlog, details.deep').forEach(function(card){
+      card.classList.add('t3');
+      card.addEventListener('pointermove', function(e){ var b = card.getBoundingClientRect(), px = (e.clientX-b.left)/b.width, py = (e.clientY-b.top)/b.height;
+        card.style.setProperty('--mx', (px*100).toFixed(1)+'%'); card.style.setProperty('--my', (py*100).toFixed(1)+'%');
+        if (card.tagName !== 'DETAILS' || !card.open) { card.style.setProperty('--ry', ((px-.5)*6).toFixed(2)+'deg'); card.style.setProperty('--rx', ((.5-py)*6).toFixed(2)+'deg'); } });
+      card.addEventListener('pointerleave', function(){ card.style.setProperty('--rx','0deg'); card.style.setProperty('--ry','0deg'); });
+    });
+    // El video se endereza al entrar en pantalla (efecto de las tarjetas de Anana).
+    var reel = document.querySelector('.reel');
+    if (reel) { var ajusta = function(){ var b = reel.getBoundingClientRect(), vh = innerHeight; var p = Math.max(0, Math.min(1, (vh - b.top) / (vh*.75)));
+        reel.style.setProperty('--rx', ((1-p)*14).toFixed(2)+'deg'); reel.style.setProperty('--sc', (.92 + p*.08).toFixed(3)); };
+      addEventListener('scroll', ajusta, { passive:true }); ajusta(); }
   })();
 </script>
 
