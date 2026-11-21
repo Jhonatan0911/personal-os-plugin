@@ -626,7 +626,7 @@
       dpr=Math.min(window.devicePixelRatio||1,2);W=r.width;H=r.height;cvs.width=W*dpr;cvs.height=H*dpr;c2.setTransform(dpr,0,0,dpr,0,0);
       const ancho=W>900?W-360:W, alto=W>900?H:H*0.58;
       // Franja libre: debajo del encabezado (control y sus etiquetas) y encima del pie (sueño).
-      const top=W>900?150:120, bot=alto-(W>900?54:30);
+      const top=W>900?150:(W<560?40:120), bot=alto-(W>900?54:30);
       const cxC=ancho/2, cyC=(top+bot)/2+4;
       let ry=(bot-top)/2-62, rx=Math.min(ancho*0.4,ry/0.62);
       ry=Math.min(ry,rx*0.72);
