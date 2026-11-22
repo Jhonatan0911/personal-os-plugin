@@ -101,7 +101,7 @@
   .vital .note{font-size:12px;color:var(--muted);margin-top:6px;min-height:16px}
   .vital.prio .v{font-size:14.5px;line-height:1.35;font-weight:600;color:var(--ink)}
   .vital.prio .note{color:var(--r2)}
-  .cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(330px,1fr));gap:14px}
+  .cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(330px,1fr));gap:14px;align-items:start}
   .pcard{background:linear-gradient(180deg,rgba(17,26,41,.75),rgba(15,22,34,.75));border:1px solid var(--line);border-radius:16px;overflow:hidden;display:flex;flex-direction:column}
   .pcard-h{display:flex;align-items:center;gap:10px;padding:12px 15px;border-bottom:1px solid var(--line)}
   .pcard-h .dot{flex:none}
@@ -254,12 +254,14 @@
     header{padding:8px 12px;gap:8px}
     .brand .sub{display:none}
     .sigil{width:28px;height:28px}
-    .seg.tabs{order:3;width:100%;overflow-x:auto;scrollbar-width:none;flex-wrap:nowrap}
+    .seg.tabs{flex:1 1 auto;min-width:0;overflow-x:auto;scrollbar-width:none;flex-wrap:nowrap}
+    .brand>div{display:none}
+    header{flex-wrap:nowrap}
     .seg.tabs button{flex:1 0 auto}
     footer{flex-wrap:nowrap;white-space:nowrap;overflow:hidden;font-size:11px;padding:6px 12px}
     footer .live{display:none}
     footer #stamp{overflow:hidden;text-overflow:ellipsis}
-    .map-hint{top:auto;bottom:46px;right:8px;font-size:11px}
+    .map-hint{top:8px;bottom:auto;right:8px;font-size:11px}
     .map-scope{display:none}
     .vitals{display:none}
   }
@@ -288,7 +290,7 @@
   .abrir{display:inline-flex;align-items:center;min-height:32px;margin:2px 0 0 0;font-family:var(--mono);font-size:12px;color:var(--muted)}
   .abrir:hover{color:var(--synapse)}
   .pcard li:has(details[open]) .lb:not(.todo){display:none}
-  .lb.todo{white-space:pre-line;display:-webkit-box;-webkit-line-clamp:40;-webkit-box-orient:vertical;overflow:hidden}
+  .lb.todo{white-space:pre-line;max-height:60vh;overflow:auto;padding-right:6px}
   .acc{display:flex;flex-wrap:wrap;align-items:flex-start;column-gap:16px}
   .acc .mas{flex:1 1 100%;order:2}
   .acc .mas:not([open]){flex:0 0 auto;order:0}
@@ -301,6 +303,14 @@
     .avisos summary,.hoy-list .meta{font-size:12px}
   }
   @media (max-width:680px){ .abrir,.mas summary{min-height:44px} }
+  .abrir{color:var(--synapse);font-weight:600;text-decoration:none}
+  .abrir:hover{text-decoration:underline}
+  .acc{column-gap:18px}
+  .mas-items{margin:4px 10px 12px}
+  @media (max-width:600px){
+    #stamp .larga{display:none}
+    footer{flex-wrap:nowrap;white-space:nowrap}
+  }
 </style>
 </head>
 <body>
@@ -360,7 +370,7 @@
         <span><i class="dot" style="color:var(--laboral)"></i>Laboral</span>
         <span><i class="dot" style="color:var(--personal)"></i>Personal</span>
         <span><i class="dot" style="color:var(--synapse)"></i>Núcleo</span>
-        <span><i class="dot" style="color:var(--r3)"></i>Nivel 3 · urgente</span>
+        <span><i class="dot" style="color:var(--r3)"></i>Nivel 3 · alto, vencido o sin dueño</span>
         <span><i class="dot" style="color:var(--r2)"></i>Nivel 2</span>
         <span><i class="dot" style="color:var(--r1)"></i>Nivel 1</span>
       </div>
@@ -481,6 +491,7 @@
   const asumido=it=>/acept|verificad|informativo|en espera/i.test(it.estado||'');
   const peso=it=>(venceHoy(it)?1000:0)+it.nivel*100-Math.min(99,it.atraso||0)-(asumido(it)?150:0);
   let filtroHoy='todo', filtroCards='todo', buscaCards='';
+  const abiertas=new Set();   // tarjetas en las que se pidió ver todos los ítems
   const pasa=(it,f)=>f==='hoy'?venceHoy(it):f==='vencido'?vencido(it):f==='n3'?it.nivel>=3:true;
   function renderHoy(its){
     set('n-hoy',its.filter(venceHoy).length);
@@ -495,7 +506,7 @@
     const hc=document.getElementById('hoy-c');
     hc.innerHTML=lista.length>tope?`${tope} de ${lista.length} · <button type="button" class="chip" id="ver-resto">Ver los ${lista.length} en Tarjetas</button>`:`${lista.length}`;
     const vr=document.getElementById('ver-resto'); if(vr) vr.addEventListener('click',()=>{filtroCards=filtroHoy;
-      document.querySelectorAll('.chip[data-cf]').forEach(x=>x.setAttribute('aria-pressed',x.dataset.cf===filtroCards));refresh();irVista('tarjetas');});
+      document.querySelectorAll('.chip[data-cf]').forEach(x=>x.setAttribute('aria-pressed',x.dataset.cf===filtroCards));refresh();irVista('tarjetas');const ch=document.querySelector('.chip[data-cf][aria-pressed="true"]');if(ch)ch.focus();});
     const ul=document.getElementById('hoy-list');
     const nV=its.filter(vencido).length;
     ul.innerHTML=lista.length?'':'<li class="empty">'+(filtroHoy==='hoy'?'Nada vence hoy.':'Nada en este filtro.')+(nV&&filtroHoy!=='vencido'?' Hay '+nV+' vencidos: <button type="button" class="chip" id="ver-venc">Ver vencidos</button>':'')+'</li>';
@@ -546,16 +557,18 @@
       const q=buscaCards;
       const rows=its.filter(i=>i.cli===p.id&&pasa(i,filtroCards)&&(!q||(i.id+' '+i.label+' '+i.estado+' '+p.label+' '+p.full).toLowerCase().includes(q))).sort((a,b)=>peso(b)-peso(a));
       if((filtroCards!=='todo'||q)&&!rows.length)continue;
-      const lis=rows.map(it=>
+      const vis8=(rows.length>8&&!abiertas.has(p.id)&&!q&&filtroCards==='todo')?rows.slice(0,8):rows;
+      const lis=vis8.map(it=>
         `<li id="it-${esc(it.id)}"><span class="lvl n${esc(it.nivel)}">nivel ${esc(it.nivel)}</span>`+
-        `<div><div class="lb">${esc(it.label)}</div><div class="meta"><b>${esc(it.id)}</b> · ${esc(it.tag)} · ${esc(it.estado)}</div>`+`<div class="acc">`+(it.completo?`<details class="mas"><summary><span class="ver">Ver todo el texto</span><span class="ocultar">Ocultar el texto</span></summary><div class="lb todo">${esc(it.completo)}</div></details>`:'')+(it.archivo?`<a class="abrir" target="_blank" rel="noopener" href="${esc('file:///'+String(it.archivo).replace(/\\/g,'/'))}">Abrir la nota ↗</a>`:'')+`</div>`+
+        `<div><div class="lb">${esc(it.label)}</div><div class="meta"><b>${esc(it.id)}</b> · ${esc(it.tag)} · ${esc(it.estado)}</div>`+`<div class="acc">`+(it.completo?`<details class="mas"><summary><span class="ver">Ver todo</span><span class="ocultar">Ocultar</span></summary><div class="lb todo">${esc(it.completo)}</div></details>`:'')+(it.archivo?`<a class="abrir" target="_blank" rel="noopener" href="${esc('file:///'+String(it.archivo).replace(/\\/g,'/'))}">Abrir ↗</a>`:'')+`</div>`+
         `</div></li>`).join('');
       const el=document.createElement('div');el.className='pcard';el.id='card-'+p.id;
       el.innerHTML=`<div class="pcard-h"><i class="dot" style="color:${col}"></i>`+
         `<span class="t" style="color:${col}">${esc(p.label)}</span><span class="full">${esc(p.full)}</span>`+
         `<span class="count">${rows.length} ítem${rows.length===1?'':'s'}</span></div>`+
-        (rows.length?`<ul>${lis}</ul>`:'<div class="empty">sin ítems activos</div>');
+        (rows.length?`<ul>${lis}</ul>`+(rows.length>8&&!abiertas.has(p.id)?`<button type="button" class="chip mas-items" data-p="${esc(p.id)}">Ver los ${rows.length-8} restantes</button>`:''):'<div class="empty">sin ítems activos</div>');
       box.appendChild(el);
+      const mb=el.querySelector('.mas-items'); if(mb) mb.addEventListener('click',()=>{abiertas.add(p.id);refresh();const c=document.getElementById('card-'+p.id);if(c){const li=c.querySelectorAll('li')[8];if(li){li.tabIndex=-1;li.focus();}}});
     }
     vacioCards(box);
     const vistos=box.querySelectorAll('.pcard li[id]').length;
@@ -605,9 +618,10 @@
     const card=document.getElementById('card-'+cli); if(!card) return;
     document.querySelectorAll('.pcard.foco,.pcard li.foco').forEach(x=>x.classList.remove('foco'));
     card.classList.add('foco');
+    if(itemId&&!document.getElementById('it-'+itemId)){abiertas.add(cli);refresh();}
     const li=itemId&&document.getElementById('it-'+itemId); if(li) li.classList.add('foco');
     const destino=li||card; destino.tabIndex=-1; destino.focus({preventScroll:true});
-    destino.scrollIntoView({block:'center',behavior:reduce?'auto':'smooth'});
+    destino.scrollIntoView({block:li?'center':'start',behavior:reduce?'auto':'smooth'});
   }
   document.querySelectorAll('.hoy-nums button').forEach(b=>b.addEventListener('click',()=>{
     filtroHoy=b.dataset.f; document.querySelectorAll('.hoy-nums button').forEach(x=>x.setAttribute('aria-pressed',x===b)); refresh(); }));
@@ -678,7 +692,7 @@
   }
 
   function draw(ts){
-    if(W===0||H===0){requestAnimationFrame(draw);return;}
+    if(W===0||H===0||!document.getElementById('view-mapa').classList.contains('active')){requestAnimationFrame(draw);return;}
     const t=ts*0.001;ctx.clearRect(0,0,W,H);chipsDibujados=[];const rotulos=[];
     const brain=CORE,pb=drift(brain,t,0,0);
     const projs=NODES.filter(n=>n.kind!=='core');
@@ -835,12 +849,13 @@
         (n.regla?`<p><b>Regla</b>${esc(n.regla)}</p>`:'')+
         (n.porque?`<p><b>Por qué</b>${esc(n.porque)}</p>`:'')+
         (n.noAplica?`<p><b>Cuándo no aplica</b>${esc(n.noAplica)}</p>`:'')+
+        (n.archivo?`<a class="abrir" target="_blank" rel="noopener" href="${esc('file:///'+String(n.archivo).replace(/\\/g,'/'))}">Abrir la lección ↗</a>`:'')+
         `<div class="meta">${n.casos?esc(n.casos)+' caso(s) · ':''}${n.procedencia?esc(n.procedencia)+' · ':''}`+
         `${n.aplica&&n.aplica.length?'se carga con '+esc(n.aplica.join(' ')):'siempre presente (método)'}`+
         `${n.versiones?' · '+esc(n.versiones)+' ajuste(s)':''}</div>`+
         (links?`<div class="links">${links}</div>`:'');
       det.querySelectorAll('.links button').forEach(b=>b.addEventListener('click',()=>detalle(porId[b.dataset.id])));
-      const vb=document.getElementById('cx-volver'); if(vb) vb.addEventListener('click',()=>{side.classList.remove('leyendo');detalle(null);});
+      const vb=document.getElementById('cx-volver'); if(vb) vb.addEventListener('click',()=>{side.classList.remove('leyendo');sel=null;if(find||lobeSel)listar();else detalle(null);});
       if(!reduce)fire(n,1);
     }
     detalle(null);
@@ -1032,7 +1047,7 @@
   document.getElementById('stamp').innerHTML=
     (E.fecha!==hoy
       ? '<b style="color:#ff9a52">⚠ DATOS DEL '+esc(E.fecha)+', NO DE HOY ('+hoy+') — corre '+esc(CMD)+'</b>'
-      : 'datos de ejemplo'+(E.generado?' · '+new Date(E.generado).toLocaleTimeString('es',{hour:'2-digit',minute:'2-digit'}):''))
+      : '<span class="larga">datos de ejemplo · </span>'+(E.generado?'build '+new Date(E.generado).toLocaleTimeString('es',{hour:'2-digit',minute:'2-digit'}):''))
     + hito
     + (avisos.length ? ' · <button type="button" class="stamp-btn" id="stamp-av">'+avisos.length+' aviso(s)</button>' : '');
   const sb=document.getElementById('stamp-av');

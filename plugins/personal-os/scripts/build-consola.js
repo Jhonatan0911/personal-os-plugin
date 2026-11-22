@@ -439,12 +439,12 @@ function leerCO(ruta) {
   const f = p.fm;
   const seccion = (nombre) => {
     const m = p.cuerpo.match(new RegExp(`\\*\\*${nombre}\\.\\*\\*\\s*([\\s\\S]*?)(?=\\n\\s*\\*\\*[A-ZÁÉÍÓÚ][^*]{2,40}\\.\\*\\*|$)`));
-    return m ? recortar(m[1].replace(/\s+/g, ' ').trim(), 900) : '';
+    return m ? recortar(m[1].replace(/\s+/g, ' ').trim(), 4000) : '';
   };
   const enlaces = [...new Set((p.cuerpo.match(/\[\[(CO-\d+)\]\]/g) || []).map((s) => s.slice(2, -2)))];
   const lista = (v) => txt(v).split(',').map((s) => s.trim()).filter(Boolean);
   return {
-    id: txt(f.id), titulo: txt(f.titulo), tema: txt(f.tema) || 'metodo', nivel: txt(f.nivel) || 'duro',
+    archivo: ruta, id: txt(f.id), titulo: txt(f.titulo), tema: txt(f.tema) || 'metodo', nivel: txt(f.nivel) || 'duro',
     estado: txt(f.estado) || 'vigente', procedencia: txt(f.procedencia), casos: Number(f.casos) || lista(f.casos).length || 0,
     aplica: lista(f.aplica_a), fuentes: lista(f.fuentes).length, creado: txt(f.creado), aprobada: txt(f.aprobada),
     regla: seccion('Regla'), porque: seccion('Por qu[eé]'), noAplica: seccion('Cu[aá]ndo no aplica'),

@@ -106,7 +106,7 @@ const html = fs.readFileSync(path.join(EST, 'consola.html'), 'utf8')
   .replace('<title>Personal OS — Consola Neuronal</title>', '<title>Personal OS — Consola Neuronal (demostración)</title>')
   .replace(/<meta name="comando-build" content="[^"]*">/, '<meta name="comando-build" content="/consola">')
   .replace('Vista local · derivada del estado · nunca publicada', 'Demostración · estado de ejemplo, sin datos reales')
-  .replace("'build de hoy · '+esc(E.fecha)", "'datos de ejemplo'");
+  .replace(`'<span class="larga">build de hoy · '+esc(E.fecha)+' · </span>'`, `'<span class="larga">datos de ejemplo · </span>'`);
 fs.writeFileSync(path.join(OUT, 'consola.html'), html, 'utf8');
 const datos = fs.readFileSync(path.join(EST, '_datos', 'datos.js'), 'utf8')
   .split(TMP.replace(/\\/g, '\\\\')).join('<demo>').split(TMP).join('<demo>')
