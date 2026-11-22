@@ -52,7 +52,7 @@
   .sigil{width:38px;height:38px;flex:none;filter:drop-shadow(0 0 10px rgba(53,224,208,.5))}
   .brand h1{font-family:var(--mono);font-size:clamp(15px,2vw,20px);font-weight:600;margin:0;letter-spacing:.14em;text-transform:uppercase;
     background:linear-gradient(92deg,var(--ink),#a9c7ff 60%,var(--synapse));-webkit-background-clip:text;background-clip:text;color:transparent}
-  .brand .sub{font-family:var(--mono);font-size:10px;letter-spacing:.3em;text-transform:uppercase;color:var(--muted);margin-top:2px}
+  .brand .sub{font-family:var(--mono);font-size:11px;letter-spacing:.3em;text-transform:uppercase;color:var(--muted);margin-top:2px}
 
   .seg{display:inline-flex;background:var(--panel);border:1px solid var(--line-strong);border-radius:12px;padding:4px;gap:2px;font-family:var(--mono)}
   .seg button{appearance:none;border:0;background:transparent;color:var(--muted);font:inherit;font-size:12px;letter-spacing:.1em;text-transform:uppercase;padding:7px 14px;border-radius:9px;cursor:pointer;transition:.22s}
@@ -173,7 +173,7 @@
   .cx-det .id{font-family:var(--mono);font-size:10.5px;letter-spacing:.1em;color:var(--synapse)}
   .cx-det h3{margin:4px 0 8px;font-size:14px;line-height:1.35}
   .cx-det p{margin:0 0 8px;color:var(--ink)}
-  .cx-det p b{color:var(--muted);font-family:var(--mono);font-size:10px;letter-spacing:.12em;text-transform:uppercase;display:block;margin-bottom:2px}
+  .cx-det p b{color:var(--muted);font-family:var(--mono);font-size:11px;letter-spacing:.12em;text-transform:uppercase;display:block;margin-bottom:2px}
   .cx-det .meta{font-family:var(--mono);font-size:10.5px;color:var(--muted)}
   .cx-det .links{display:flex;flex-wrap:wrap;gap:5px;margin-top:6px}
   .cx-det .links button{appearance:none;font-family:var(--mono);font-size:10.5px;background:transparent;color:var(--synapse);border:1px solid var(--line-strong);border-radius:20px;padding:1px 8px;cursor:pointer}
@@ -296,9 +296,8 @@
   .pcard li:has(details[open]) .lb:not(.todo){display:none}
   .lb.todo{white-space:pre-line;max-height:60vh;overflow:auto;padding-right:6px}
   .acc{display:flex;flex-wrap:wrap;align-items:flex-start;column-gap:16px}
-  .pcard li:has(details[open]) .acc{flex-direction:column}
-  .acc .mas{flex:1 1 100%;order:2}
-  .acc .mas:not([open]){flex:0 0 auto;order:0}
+  .acc .mas{flex:0 1 auto}
+  .acc .mas[open]{flex:1 1 100%}
   .mas[open] .ver,.mas:not([open]) .ocultar{display:none}
   .res{display:grid;gap:4px;margin-top:8px}
   .res button{appearance:none;text-align:left;font:inherit;font-size:12.5px;color:var(--ink);background:transparent;border:1px solid var(--line);border-radius:8px;padding:7px 9px;cursor:pointer;min-height:36px}
@@ -515,7 +514,8 @@
     const viejo=venc.reduce((a,i)=>Math.max(a,i.atraso||0),0);
     document.getElementById('n-venc-note').textContent=venc.length?`el más viejo, hace ${viejo} d`:'nada vencido';
     set('n-n3',its.filter(i=>i.nivel>=3).length); set('n-todo',its.length);
-    document.getElementById('n-todo-note').textContent=`en ${new Set(its.map(i=>i.cli)).size} proyectos`;
+    const sinP=its.filter(i=>byId[i.cli]&&byId[i.cli].scope==='both').length;
+    document.getElementById('n-todo-note').textContent=`en ${new Set(its.map(i=>i.cli)).size} proyectos`+(sinP?` · ${sinP} sin proyecto (se ven en ambos ámbitos)`:'');
     const lista=its.filter(i=>pasa(i,filtroHoy)).sort((a,b)=>peso(b)-peso(a));
     const tope=filtroHoy==='todo'?12:lista.length;
     document.getElementById('hoy-h').textContent={todo:'Lo que pide atención',hoy:'Vence hoy',vencido:'Vencidos · por nivel, y dentro de cada nivel los más recientes',n3:'Nivel 3'}[filtroHoy];
@@ -526,7 +526,7 @@
     const ul=document.getElementById('hoy-list');
     const nV=its.filter(vencido).length;
     ul.innerHTML=lista.length?'':'<li class="empty">'+(filtroHoy==='hoy'?'Nada vence hoy.':'Nada en este filtro.')+(nV&&filtroHoy!=='vencido'?' Hay '+nV+' vencidos: <button type="button" class="chip" id="ver-venc">Ver vencidos</button>':'')+'</li>';
-    const vv=document.getElementById('ver-venc'); if(vv) vv.addEventListener('click',()=>document.querySelector('.hoy-nums button[data-f="vencido"]').click());
+    const vv=document.getElementById('ver-venc'); if(vv) vv.addEventListener('click',()=>{const bt=document.querySelector('.hoy-nums button[data-f="vencido"]');bt.click();bt.focus();});
     for(const it of lista.slice(0,tope)){
       const li=document.createElement('li'),b=document.createElement('button');b.type='button';
       b.innerHTML=`<span class="lvl n${esc(it.nivel)}">nivel ${esc(it.nivel)}</span><div><div class="lb">${esc(it.label)}</div><div class="meta"><b>${esc(it.id)}</b> · ${esc(it.estado)}</div></div><span class="pj">${esc(byId[it.cli].label)}</span>`;

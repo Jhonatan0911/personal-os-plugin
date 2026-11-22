@@ -346,9 +346,10 @@ if (PREF && fs.existsSync(dirPersonal)) {
 if (sinNodo.length) {
   const porProyecto = {};
   for (const x of sinNodo) (porProyecto[x.proyecto] = porProyecto[x.proyecto] || []).push(x.id);
-  for (const [proy, ids] of Object.entries(porProyecto)) aviso(proy === '(sin campo proyecto)'
-    ? `notas sin campo «proyecto» (complétalo en la nota): ${ids.join(', ')}`
-    : `proyecto «${recortar(proy, 60)}» no está en el mapa (añádelo a mapa_proyecto_a_nodo): ${ids.join(', ')}`);
+  const sinCampo = porProyecto['(sin campo proyecto)']; delete porProyecto['(sin campo proyecto)'];
+  const nombres = Object.keys(porProyecto);
+  if (nombres.length) aviso(`${nombres.length} proyecto(s) no están en el mapa (añádelos a mapa_proyecto_a_nodo): ${nombres.map((n) => `«${recortar(n, 50)}» (${porProyecto[n].join(', ')})`).join('; ')}`);
+  if (sinCampo) aviso(`notas sin campo «proyecto» (complétalo en la nota): ${sinCampo.join(', ')}`);
 }
 
 // Red de seguridad: la consola hace byId[it.cli] sin comprobar; un cli inexistente la dejaría en blanco.
