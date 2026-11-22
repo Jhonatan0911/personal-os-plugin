@@ -197,6 +197,12 @@ const etiqueta = (fm, cuerpo) => {
   return [titulo, parrafo].filter(Boolean).join('. ') || '(sin descripción)';
 };
 
+// Texto completo de la nota cuando la etiqueta quedó recortada: la tarjeta lo ofrece en «Ver la nota completa».
+const completoDe = (fm, cuerpo) => {
+  const corto = etiqueta(fm, cuerpo);
+  const largo = [txt(fm.titulo) || txt(fm.nombre), primerParrafo(cuerpo, 4000)].filter(Boolean).join('. ');
+  return largo.length > corto.length ? largo : undefined;
+};
 /** `abierto_en_espera_de_tercero` -> `en espera de tercero`. */
 const estadoCorto = (e) => (txt(e) || 'abierto').replace(/^abierto_?/, '').replace(/_/g, ' ').trim() || 'abierto';
 const CERRADO = /^(cerrado|cumplido|hecho|resuelto|cancelado|descartado)/i;
@@ -237,7 +243,7 @@ for (const nota of leerNotas('riesgos')) {
     nivel: Math.min(3, Math.max(1, Number(fm.nivel) || 1)),
     estado: estadoCorto(fm.estado),
     tag: primeraClave(fm.issues) || 'riesgo',
-    label: etiqueta(fm, nota.cuerpo),
+    label: etiqueta(fm, nota.cuerpo), completo: completoDe(fm, nota.cuerpo),
   });
 }
 
@@ -255,7 +261,7 @@ for (const nota of leerNotas('compromisos')) {
     nivel: vencido ? 3 : (fecha ? 2 : 1), fecha, atraso: vencido ? diasEntre(fecha, HOY) : 0,
     estado: vencido ? `vencido hace ${diasEntre(fecha, HOY)} d (${fecha})` : (fecha === HOY ? 'vence HOY' : estadoCorto(fm.estado)),
     tag: primeraClave(fm.issues) || (/tercero/.test(txt(fm.direccion)) ? 'espera a tercero' : 'compromiso'),
-    label: etiqueta(fm, nota.cuerpo),
+    label: etiqueta(fm, nota.cuerpo), completo: completoDe(fm, nota.cuerpo),
   });
 }
 
@@ -283,7 +289,7 @@ for (const nota of leerNotas('alcances')) {
   ITEMS.push({
     id, cli, clase: 'alcance', nivel, estado, fecha: entrega, atraso: entrega && entrega < HOY ? diasEntre(entrega, HOY) : 0,
     tag: 'alcance',
-    label: etiqueta(fm, nota.cuerpo),
+    label: etiqueta(fm, nota.cuerpo), completo: completoDe(fm, nota.cuerpo),
   });
 }
 
@@ -369,7 +375,7 @@ if (textoBitacora === null) {
     const os = linea.match(/^- \*\*OS:\*\*\s*(.*)$/);
     if (os && hora) {
       const texto = os[1].replace(/\s+/g, ' ').trim();
-      if (texto) SINAPSIS.push({ t: hora, scope: esPersonal(texto) ? 'personal' : 'laboral', label: recortar(texto, 400) });
+      if (texto) SINAPSIS.push({ t: hora, scope: esPersonal(texto) ? 'personal' : 'laboral', label: recortar(texto, 1500) });
     }
   }
   if (!SINAPSIS.length) aviso(`la bitácora de ${HOY} no tiene líneas **OS:** (solo prompts): no hay sinapsis que pintar`);

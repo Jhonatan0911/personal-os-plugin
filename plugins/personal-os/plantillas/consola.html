@@ -111,7 +111,7 @@
   .pcard .issues{font-family:var(--mono);font-size:11px;color:var(--muted-2);padding:8px 15px 0;line-height:1.5}
   .pcard ul{list-style:none;margin:0;padding:8px 6px 10px}
   .pcard li{display:grid;grid-template-columns:auto 1fr;gap:10px;padding:8px 9px;border-radius:10px}
-  .pcard li:hover{background:rgba(120,150,200,.06)}
+
   .lvl{font-family:var(--mono);font-size:10px;font-weight:600;letter-spacing:.08em;border:1px solid currentColor;border-radius:6px;padding:1px 6px;height:fit-content;margin-top:2px}
   .lvl.n3{color:var(--r3)} .lvl.n2{color:var(--r2)} .lvl.n1{color:var(--r1)}
   .pcard li .lb{font-size:13px;color:var(--ink);line-height:1.45}
@@ -134,14 +134,14 @@
   .syn::after{content:"";position:absolute;left:calc(6px + 2.5ch);top:34px;bottom:-10px;width:1px;background:var(--line);opacity:.7}
   .syn:last-child::after{display:none}
   .syn .body .lb{font-size:14px;color:var(--ink)}
-  .syn .tag{display:inline-block;font-family:var(--mono);font-size:9.5px;letter-spacing:.12em;text-transform:uppercase;padding:1px 7px;border-radius:20px;margin-top:5px;border:1px solid currentColor}
+  .syn .tag{display:inline-block;font-family:var(--mono);font-size:11px;letter-spacing:.12em;text-transform:uppercase;padding:2px 8px;border-radius:20px;margin-top:5px;border:1px solid currentColor}
   .tag.laboral{color:var(--laboral)} .tag.personal{color:var(--personal)}
   .empty{padding:26px 16px;color:var(--muted);font-family:var(--mono);font-size:12px;text-align:center}
 
   /* ===== vista CORTEZA (saber común + control por ámbito) ===== */
   #view-corteza{overflow:hidden}
   .cx-head{left:14px;top:14px;padding:10px 14px;max-width:min(430px,calc(100% - 28px))}
-  .cx-head .k{font-family:var(--mono);font-size:10px;letter-spacing:.2em;text-transform:uppercase;color:var(--synapse)}
+  .cx-head .k{font-family:var(--mono);font-size:11px;letter-spacing:.2em;text-transform:uppercase;color:var(--synapse)}
   .cx-head .v{font-size:13px;margin-top:4px;color:var(--ink);line-height:1.45}
   .cx-head .v b{color:var(--synapse);font-weight:600}
   .cx-side{right:14px;top:14px;bottom:14px;width:330px;display:flex;flex-direction:column;gap:12px;padding:14px;overflow-y:auto}
@@ -151,7 +151,7 @@
   .cx-vit>div{background:var(--panel-2);border:1px solid var(--line);border-radius:10px;padding:8px 9px}
   .cx-vit .k{font-family:var(--mono);font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
   .cx-vit .v{font-family:var(--mono);font-size:21px;font-weight:600;margin-top:2px;font-variant-numeric:tabular-nums}
-  .cx-sec .t{font-family:var(--mono);font-size:10px;letter-spacing:.18em;text-transform:uppercase;color:var(--muted);margin-bottom:6px}
+  .cx-sec .t{font-family:var(--mono);font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:var(--muted);margin-bottom:6px}
   .cx-sleep{font-size:12.5px;color:var(--ink);line-height:1.5}
   .cx-sleep .bad{color:var(--r2)}
   .cx-ctl{list-style:none;margin:0;padding:0;display:grid;gap:4px}
@@ -259,6 +259,21 @@
     footer #stamp{overflow:hidden;text-overflow:ellipsis}
     .map-hint{display:none}
   }
+  .fresh{background:rgba(255,154,82,.1);border:1px solid rgba(255,154,82,.4);border-radius:12px;padding:10px 14px;color:var(--r2);font-size:13.5px;line-height:1.5;display:grid;gap:4px}
+  .mas summary{cursor:pointer;font-family:var(--mono);font-size:12px;color:var(--synapse);margin-top:4px}
+  .mas summary:focus-visible{outline:2px solid var(--synapse);outline-offset:2px}
+  .mas .lb{margin-top:6px;color:var(--muted)}
+  .chip{min-height:36px}
+  .stamp-btn{min-height:28px;padding:2px 6px}
+  .empty .chip{margin-left:8px}
+  .scope-sel{display:none;background:var(--panel);color:var(--ink);border:1px solid var(--line-strong);border-radius:10px;font-family:var(--mono);font-size:12px;padding:0 10px;min-height:44px}
+  @media (max-width:600px){
+    .seg.scope{display:none}
+    .scope-sel{display:block;margin-left:auto}
+    .seg.tabs{-webkit-mask-image:linear-gradient(90deg,#000 85%,transparent);mask-image:linear-gradient(90deg,#000 85%,transparent);padding-right:24px}
+    footer{flex-wrap:wrap;white-space:normal}
+    #view-mapa .legend{display:none}
+  }
 </style>
 </head>
 <body>
@@ -280,6 +295,7 @@
     <button data-view="tarjetas" aria-pressed="false">Tarjetas<span class="n" id="tab-items"></span></button>
     <button data-view="log" aria-pressed="false">Bitácora<span class="n" id="tab-syn"></span></button>
   </div>
+  <select class="scope-sel" id="scope-sel" aria-label="Ámbito"><option value="ambas">Ambas</option><option value="laboral">Laboral</option><option value="personal">Personal</option></select>
   <div class="seg scope" role="group" aria-label="Filtro de ámbito">
     <button data-scope="ambas" aria-pressed="true">Ambas</button>
     <button data-scope="laboral" aria-pressed="false">Laboral</button>
@@ -292,6 +308,7 @@
   <!-- ===== HOY: qué pide atención, en orden ===== -->
   <section class="view active" id="view-hoy" aria-label="Qué pide atención hoy">
     <div class="hoy-col">
+      <div class="fresh" id="fresh" hidden></div>
       <div class="hoy-prio" id="hoy-prio"><div class="k">Prioridad #1</div><div class="v" id="hoy-prio-v">—</div><div class="note" id="hoy-prio-note"></div></div>
       <div class="hoy-nums" role="group" aria-label="Filtros de lo que pide atención">
         <button type="button" data-f="hoy" aria-pressed="false"><div class="k">Vence hoy</div><div class="v" id="n-hoy">—</div><div class="note">compromisos y entregas</div></button>
@@ -356,10 +373,10 @@
   <!-- ===== TARJETAS: signos vitales + una tarjeta por proyecto ===== -->
   <section class="view" id="view-tarjetas" aria-label="Tarjetas por proyecto">
     <div class="card-tools" role="group" aria-label="Filtrar ítems">
-      <button type="button" class="chip" data-cf="todo" aria-pressed="true">Todos</button>
+      <button type="button" class="chip" data-cf="hoy" aria-pressed="false">Vence hoy</button>
       <button type="button" class="chip" data-cf="vencido" aria-pressed="false">Vencidos</button>
       <button type="button" class="chip" data-cf="n3" aria-pressed="false">Nivel 3</button>
-      <button type="button" class="chip" data-cf="hoy" aria-pressed="false">Vence hoy</button>
+      <button type="button" class="chip" data-cf="todo" aria-pressed="true">Todos</button>
       <input class="card-find" id="card-find" type="search" placeholder="Buscar por id, proyecto o texto…" aria-label="Buscar un ítem">
     </div>
     <div class="vitals" aria-label="Signos vitales">
@@ -444,7 +461,6 @@
     document.getElementById('n-venc-note').textContent=venc.length?`el más viejo, hace ${viejo} d`:'nada vencido';
     set('n-n3',its.filter(i=>i.nivel>=3).length); set('n-todo',its.length);
     document.getElementById('n-todo-note').textContent=`en ${new Set(its.map(i=>i.cli)).size} proyectos`;
-    set('tab-hoy',its.filter(i=>venceHoy(i)||i.nivel>=3).length);
     const lista=its.filter(i=>pasa(i,filtroHoy)).sort((a,b)=>peso(b)-peso(a));
     const tope=filtroHoy==='todo'?12:lista.length;
     document.getElementById('hoy-h').textContent={todo:'Lo que pide atención',hoy:'Vence hoy',vencido:'Vencidos (lo más reciente primero)',n3:'Nivel 3'}[filtroHoy];
@@ -499,22 +515,29 @@
       if((filtroCards!=='todo'||q)&&!rows.length)continue;
       const lis=rows.map(it=>
         `<li id="it-${esc(it.id)}"><span class="lvl n${esc(it.nivel)}">nivel ${esc(it.nivel)}</span>`+
-        `<div><div class="lb">${esc(it.label)}</div>`+
+        `<div><div class="lb">${esc(it.label)}</div>`+(it.completo?`<details class="mas"><summary>Ver la nota completa</summary><div class="lb">${esc(it.completo)}</div></details>`:'')+
         `<div class="meta"><b>${esc(it.id)}</b> · ${esc(it.tag)} · ${esc(it.estado)}</div></div></li>`).join('');
       const el=document.createElement('div');el.className='pcard';el.id='card-'+p.id;
       el.innerHTML=`<div class="pcard-h"><i class="dot" style="color:${col}"></i>`+
         `<span class="t" style="color:${col}">${esc(p.label)}</span><span class="full">${esc(p.full)}</span>`+
         `<span class="count">${rows.length} ítem${rows.length===1?'':'s'}</span></div>`+
-        (p.issues?`<div class="issues">${esc(p.issues)}</div>`:'')+
         (rows.length?`<ul>${lis}</ul>`:'<div class="empty">sin ítems activos</div>');
       box.appendChild(el);
     }
+    vacioCards(box);
   }
 
+  function vacioCards(box){
+    if(box.children.length) return;
+    const q=buscaCards, f={todo:'',vencido:'vencidos',n3:'de nivel 3',hoy:'que venzan hoy'}[filtroCards];
+    box.innerHTML='<div class="empty">Ningún ítem '+(f?esc(f)+' ':'')+(q?'coincide con «'+esc(q)+'» ':'')+'en este ámbito. <button type="button" class="chip" id="cards-clear">Limpiar filtros</button></div>';
+    document.getElementById('cards-clear').addEventListener('click',()=>{filtroCards='todo';buscaCards='';document.getElementById('card-find').value='';
+      document.querySelectorAll('.chip[data-cf]').forEach(x=>x.setAttribute('aria-pressed',x.dataset.cf==='todo'));refresh();document.getElementById('card-find').focus();});
+  }
   // Bitácora: SINAPSIS invertido → lo MÁS RECIENTE ARRIBA.
   function renderLog(st){
     const box=document.getElementById('stream');
-    box.innerHTML=st.length?'':'<div class="empty">sin sinapsis en este ámbito</div>';
+    box.innerHTML=st.length?'':'<div class="empty">Sin entradas de la bitácora en este ámbito.</div>';
     for(const s of [...st].reverse()){
       const sc=s.scope==='personal'?'personal':'laboral';
       const col=sc==='laboral'?COL.laboral:COL.personal;
@@ -535,27 +558,31 @@
     if(escribir!==false){ try{ history.replaceState(null,'','#'+v+(scope!=='ambas'?'&'+scope:'')); }catch(_){} }
   };
   document.querySelectorAll('.seg.tabs button').forEach(b=>b.addEventListener('click',()=>irVista(b.dataset.view)));
+  document.getElementById('scope-sel').addEventListener('change',ev=>{fijarAmbito(ev.target.value);const v=(document.querySelector('.seg.tabs button[aria-pressed="true"]')||{}).dataset;if(v)irVista(v.view);});
   // Desde Hoy o el mapa: abre la tarjeta del proyecto y resalta el ítem.
   function abrirCard(cli,itemId){
     filtroCards='todo';buscaCards='';document.getElementById('card-find').value='';
-    document.querySelectorAll('.chip').forEach(x=>x.setAttribute('aria-pressed',x.dataset.cf==='todo'));
+    document.querySelectorAll('.chip[data-cf]').forEach(x=>x.setAttribute('aria-pressed',x.dataset.cf==='todo'));
     refresh();irVista('tarjetas');
     const card=document.getElementById('card-'+cli); if(!card) return;
     document.querySelectorAll('.pcard.foco,.pcard li.foco').forEach(x=>x.classList.remove('foco'));
     card.classList.add('foco');
     const li=itemId&&document.getElementById('it-'+itemId); if(li) li.classList.add('foco');
-    (li||card).scrollIntoView({block:'center',behavior:reduce?'auto':'smooth'});
+    const destino=li||card; destino.tabIndex=-1; destino.focus({preventScroll:true});
+    destino.scrollIntoView({block:'center',behavior:reduce?'auto':'smooth'});
   }
   document.querySelectorAll('.hoy-nums button').forEach(b=>b.addEventListener('click',()=>{
     filtroHoy=b.dataset.f; document.querySelectorAll('.hoy-nums button').forEach(x=>x.setAttribute('aria-pressed',x===b)); refresh(); }));
-  document.querySelectorAll('.chip').forEach(b=>b.addEventListener('click',()=>{
-    filtroCards=b.dataset.cf; document.querySelectorAll('.chip').forEach(x=>x.setAttribute('aria-pressed',x===b)); refresh(); }));
+  document.querySelectorAll('.chip[data-cf]').forEach(b=>b.addEventListener('click',()=>{
+    filtroCards=b.dataset.cf; document.querySelectorAll('.chip[data-cf]').forEach(x=>x.setAttribute('aria-pressed',x===b)); refresh(); }));
   document.getElementById('card-find').addEventListener('input',ev=>{buscaCards=ev.target.value.trim().toLowerCase();refresh();});
+  function fijarAmbito(sc){
+    scope=sc; document.querySelectorAll('.seg.scope button').forEach(x=>x.setAttribute('aria-pressed',x.dataset.scope===sc));
+    const sel=document.getElementById('scope-sel'); if(sel) sel.value=sc;
+    refresh(); cx.scope();
+  }
   document.querySelectorAll('.seg.scope button').forEach(b=>b.addEventListener('click',()=>{
-    scope=b.dataset.scope;
-    document.querySelectorAll('.seg.scope button').forEach(x=>x.setAttribute('aria-pressed',x===b));
-    refresh();
-    cx.scope();
+    fijarAmbito(b.dataset.scope);
     const v=(document.querySelector('.seg.tabs button[aria-pressed="true"]')||{}).dataset; if(v) irVista(v.view);
   }));
 
@@ -588,7 +615,7 @@
       if(c===a0)ang=-Math.PI/2;
       const spread=Math.min(1.5,0.5+rs.length*0.18);const gap=Math.min(Math.max(W,H)*0.11,72)+(rs.length>3?18:0);
       rs.forEach((r,i)=>{const off=rs.length===1?0:(i/(rs.length-1)-0.5)*spread;const a=ang+off;
-        r.bx=c.bx+Math.cos(a)*gap;r.by=c.by+Math.sin(a)*gap;r.ref=c;});
+        r.bx=Math.max(16,Math.min(W-16,c.bx+Math.cos(a)*gap));r.by=Math.max(16,Math.min(H-16,c.by+Math.sin(a)*gap));r.ref=c;});
     });
   }
   function drift(o,t,amp,i){if(reduce)return {x:o.bx,y:o.by};return {x:o.bx+Math.cos(t*0.5+(i||0)+o.bx*0.01)*amp,y:o.by+Math.sin(t*0.6+(i||0)+o.by*0.01)*amp};}
@@ -625,7 +652,7 @@
       const pr=reduce?{x:it.bx,y:it.by}:{x:it.bx+Math.cos(t*0.5+i)*3,y:it.by+Math.sin(t*0.6+i)*3};const col=riskColor(it.nivel);
       ctx.globalAlpha=vis?0.30:0.04;ctx.strokeStyle=col;ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(pc.x,pc.y);ctx.lineTo(pr.x,pr.y);ctx.stroke();
       if(vis){if(!reduce){ip[i]+=0.006+it.nivel*0.002;if(ip[i]>1)ip[i]-=1;}const p=ip[i];ctx.globalAlpha=.95;ctx.fillStyle=col;ctx.shadowBlur=8;ctx.shadowColor=col;ctx.beginPath();ctx.arc(pc.x+(pr.x-pc.x)*p,pc.y+(pr.y-pc.y)*p,1.7,0,7);ctx.fill();ctx.shadowBlur=0;}
-      let rr=5+(it.estado==='abierto'?1:0);rr+=((Math.sin(t*(1.6+it.nivel*0.5)+i)+1)/2)*(1.5+it.nivel);
+      let rr=5+(it.estado==='abierto'?1:0);if(!reduce)rr+=((Math.sin(t*(1.6+it.nivel*0.5)+i)+1)/2)*(1.5+it.nivel);
       drawNode(pr.x,pr.y,rr,col,vis?1:.06,false);it._sx=pr.x;it._sy=pr.y;it._sr=rr;
       // los n3 llevan su ID visible (los demás, al pasar el mouse)
       if(vis&&it.nivel>=3){ctx.globalAlpha=.95;ctx.fillStyle=col;ctx.font='600 10.5px ui-monospace,Consolas,monospace';ctx.textAlign='center';ctx.fillText(it.id,pr.x,pr.y+rr+13);}
@@ -737,6 +764,7 @@
       if(!n){det.innerHTML='<div class="meta">Toca una neurona para leer la lección: su regla, el porqué y cuándo no aplica.</div>';return;}
       const t=TEMAS[temaDe(n)];
       const links=(n.enlaces||[]).filter(e=>porId[e]).map(e=>`<button type="button" data-id="${esc(e)}">${esc(e)}</button>`).join('');
+      if(innerWidth<=900) requestAnimationFrame(()=>det.scrollIntoView({block:'nearest'}));
       det.innerHTML=`<div class="id">${esc(n.id)} · ${esc(t.n)} · ${n.estado==='propuesta'?'PROPUESTA':esc(n.nivel)}</div>`+
         `<h3>${esc(n.titulo)}</h3>`+
         (n.regla?`<p><b>Regla</b>${esc(n.regla)}</p>`:'')+
@@ -864,7 +892,7 @@
       // neuronas vigentes
       for(const n of vig){
         const t2=TEMAS[temaDe(n)];const vis=visible(n);const g=n.glow||0;n.glow=Math.max(0,g-dt*.8);
-        const x=n.bx+Math.cos(t*.6+n.by*.05)*1.2,y=n.by+Math.sin(t*.7+n.bx*.05)*1.2;n._sx=x;n._sy=y;
+        const x=reduce?n.bx:n.bx+Math.cos(t*.6+n.by*.05)*1.2,y=reduce?n.by:n.by+Math.sin(t*.7+n.bx*.05)*1.2;n._sx=x;n._sy=y;
         const a=vis?1:.1,r=n.r*(1+g*.5);
         const gr=c2.createRadialGradient(x,y,0,x,y,r*3.2);gr.addColorStop(0,t2.col+(g>.2?'aa':'55'));gr.addColorStop(1,t2.col+'00');
         c2.globalAlpha=a;c2.fillStyle=gr;c2.beginPath();c2.arc(x,y,r*3.2,0,7);c2.fill();
@@ -912,9 +940,12 @@
   new ResizeObserver(resize).observe(cv.parentElement);
   resize();refresh();requestAnimationFrame(draw);
   // Enlace directo a una vista o ámbito: consola.html#corteza o #corteza&personal (también al cambiar el hash).
-  const leerHash=()=>{ for(const k of location.hash.slice(1).split('&').filter(Boolean)){
-    const b=document.querySelector(`.seg.scope button[data-scope="${CSS.escape(k)}"]`); if(b&&b.getAttribute('aria-pressed')!=='true')b.click(); }
-    const v=location.hash.slice(1).split('&').find(k=>document.querySelector(`.seg.tabs button[data-view="${CSS.escape(k)}"]`)); if(v)irVista(v,false); };
+  const leerHash=()=>{
+    const partes=location.hash.slice(1).split('&').filter(Boolean);
+    const v=partes.find(k=>document.querySelector(`.seg.tabs button[data-view="${CSS.escape(k)}"]`));
+    const sc=partes.find(k=>['ambas','laboral','personal'].includes(k));
+    if(sc&&sc!==scope) fijarAmbito(sc);
+    if(v) irVista(v,false); };
   leerHash(); addEventListener('hashchange',leerHash);
 
   // El pie dice de cuándo es el build, si la #1 no es de hoy y cuántos avisos dejó (que se leen en Hoy).
@@ -925,6 +956,10 @@
     hito=dd<0?' · <b style="color:#ff9a52">'+esc(E.hito.etiqueta||'Hito')+' ya pasó (hace '+(-dd)+' d): actualízalo en el layout</b>'
       :' · '+esc(E.hito.etiqueta||'Hito')+' '+(dd===0?'HOY':'en '+dd+' d');
   }
+  const frescura=[];
+  if(E.fecha!==hoy) frescura.push('Los datos son del '+esc(E.fecha)+', no de hoy: corre /consola para regenerarlos.');
+  if(E.hito&&E.hito.fecha&&daysTo(E.hito.fecha)<0) frescura.push('El hito «'+esc(E.hito.etiqueta||'Hito')+'» ya pasó: actualízalo o bórralo en config/consola-layout.json.');
+  if(frescura.length){ const fr=document.getElementById('fresh'); fr.hidden=false; fr.innerHTML=frescura.map(x=>'<div>⚠ '+x+'</div>').join(''); }
   const avisos=Array.isArray(E.avisos)?E.avisos:[];
   const av=document.getElementById('avisos');
   if(avisos.length){
