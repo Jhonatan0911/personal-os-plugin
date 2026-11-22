@@ -227,7 +227,13 @@ function resolver(id, valor, clase) {
   if (cli) return cli;
   const destino = NODO_DEFECTO || ID_SIN_NODO;
   if (destino === ID_SIN_NODO && !byId[ID_SIN_NODO]) {
-    const n = { id: ID_SIN_NODO, label: 'Sin proyecto', full: 'Notas cuyo proyecto no está en el mapa (config/consola-layout.json)', scope: 'laboral', fx: 0.62, fy: 0.86, r: 8 };
+    // Hueco libre: de una rejilla de candidatos, el punto más lejos de los nodos del layout.
+    let mejor = { fx: 0.62, fy: 0.86, d: -1 };
+    for (let gx = 0.1; gx <= 0.9; gx += 0.08) for (let gy = 0.15; gy <= 0.85; gy += 0.07) {
+      const d = Math.min(...NODOS.map((m) => Math.hypot(m.fx - gx, (m.fy - gy) * 0.6)));
+      if (d > mejor.d) mejor = { fx: +gx.toFixed(2), fy: +gy.toFixed(2), d };
+    }
+    const n = { id: ID_SIN_NODO, label: 'Sin proyecto', full: 'Notas cuyo proyecto no está en el mapa (config/consola-layout.json)', scope: 'both', fx: mejor.fx, fy: mejor.fy, r: 8 };
     NODOS.push(n);
     byId[ID_SIN_NODO] = n;
   }

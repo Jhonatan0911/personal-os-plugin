@@ -258,9 +258,12 @@
     footer{flex-wrap:nowrap;white-space:nowrap;overflow:hidden;font-size:11px;padding:6px 12px}
     footer .live{display:none}
     footer #stamp{overflow:hidden;text-overflow:ellipsis}
-    .map-hint{display:none}
+    .map-hint{top:auto;bottom:46px;right:8px;font-size:11px}
+    .map-scope{display:none}
+    .vitals{display:none}
   }
   .fresh{background:rgba(255,154,82,.1);border:1px solid rgba(255,154,82,.4);border-radius:12px;padding:10px 14px;color:var(--r2);font-size:13.5px;line-height:1.5;display:grid;gap:4px}
+  .mas{display:block}
   .mas summary{display:inline-flex;align-items:center;min-height:32px;cursor:pointer;font-family:var(--mono);font-size:12px;color:var(--synapse);margin-top:4px}
   .mas summary:focus-visible{outline:2px solid var(--synapse);outline-offset:2px}
   .mas .lb{margin-top:6px;color:var(--muted)}
@@ -273,9 +276,10 @@
     .scope-sel{display:block;margin-left:auto}
     .seg.tabs{-webkit-mask-image:linear-gradient(90deg,#000 85%,transparent);mask-image:linear-gradient(90deg,#000 85%,transparent);padding-right:24px}
     footer{flex-wrap:wrap;white-space:normal}
-    #view-mapa .legend{display:none}
+    #view-mapa .legend{left:8px;right:8px;bottom:8px;gap:8px;padding:6px 10px;font-size:10.5px}
+    #view-mapa .legend span:nth-child(3),#view-mapa .legend span:nth-child(5),#view-mapa .legend span:nth-child(6){display:none}
   }
-  .abrir{display:inline-flex;align-items:center;min-height:32px;margin:6px 0 0 12px;font-family:var(--mono);font-size:12px;color:var(--muted)}
+  .abrir{display:inline-flex;align-items:center;min-height:32px;margin:2px 0 0 0;font-family:var(--mono);font-size:12px;color:var(--muted)}
   .abrir:hover{color:var(--synapse)}
   .pcard li:has(details[open]) .lb:not(.todo){display:none}
   .lb.todo{white-space:pre-line;max-height:50vh;overflow:auto;padding-right:6px}
@@ -337,7 +341,7 @@
 
   <section class="view" id="view-mapa" aria-label="Mapa de proyectos">
     <div class="canvas-shell">
-      <canvas id="brain"></canvas>
+      <canvas id="brain" aria-label="Mapa de proyectos y sus ítems; la lista accesible está en Hoy y en Tarjetas"></canvas>
       <div class="tip" id="tip"><div class="lb"></div><div class="mt"></div><div class="xd"></div></div>
       <div class="float map-scope" id="graph-scope">ámbito · ambas</div>
       <div class="float map-hint">Toca un proyecto para ver sus ítems</div>
@@ -477,7 +481,7 @@
     document.getElementById('n-todo-note').textContent=`en ${new Set(its.map(i=>i.cli)).size} proyectos`;
     const lista=its.filter(i=>pasa(i,filtroHoy)).sort((a,b)=>peso(b)-peso(a));
     const tope=filtroHoy==='todo'?12:lista.length;
-    document.getElementById('hoy-h').textContent={todo:'Lo que pide atención',hoy:'Vence hoy',vencido:'Vencidos (los más urgentes primero)',n3:'Nivel 3'}[filtroHoy];
+    document.getElementById('hoy-h').textContent={todo:'Lo que pide atención',hoy:'Vence hoy',vencido:'Vencidos (los más recientes primero)',n3:'Nivel 3'}[filtroHoy];
     document.getElementById('hoy-c').textContent=lista.length>tope?`${tope} de ${lista.length} · el resto en Tarjetas`:`${lista.length}`;
     const ul=document.getElementById('hoy-list');
     const nV=its.filter(vencido).length;
@@ -509,7 +513,7 @@
     set('map-prio-v',p.v||'sin fijar'); document.getElementById('map-prio-note').textContent=p.note||'';
     document.getElementById('graph-scope').textContent='ámbito · '+scope;
     document.getElementById('map-empty').style.display=its.length?'none':'block';
-    document.getElementById('stream-count').textContent=st.length+' hoy';
+    document.getElementById('stream-count').textContent=st.length+' hoy'+(E.generado?' · hasta las '+new Date(E.generado).toLocaleTimeString('es',{hour:'2-digit',minute:'2-digit'}):'');
     set('tab-syn',st.length);
     renderCards(projs,its);
     renderLog(st);
@@ -531,8 +535,8 @@
       if((filtroCards!=='todo'||q)&&!rows.length)continue;
       const lis=rows.map(it=>
         `<li id="it-${esc(it.id)}"><span class="lvl n${esc(it.nivel)}">nivel ${esc(it.nivel)}</span>`+
-        `<div><div class="lb">${esc(it.label)}</div>`+(it.completo?`<details class="mas"><summary>Ver todo el texto</summary><div class="lb todo">${esc(it.completo)}</div></details>`:'')+(it.archivo?`<a class="abrir" target="_blank" rel="noopener" href="${esc('file:///'+String(it.archivo).replace(/\\/g,'/'))}">Abrir la nota ↗</a>`:'')+
-        `<div class="meta"><b>${esc(it.id)}</b> · ${esc(it.tag)} · ${esc(it.estado)}</div></div></li>`).join('');
+        `<div><div class="lb">${esc(it.label)}</div><div class="meta"><b>${esc(it.id)}</b> · ${esc(it.tag)} · ${esc(it.estado)}</div>`+(it.completo?`<details class="mas"><summary>Ver todo el texto</summary><div class="lb todo">${esc(it.completo)}</div></details>`:'')+(it.archivo?`<a class="abrir" target="_blank" rel="noopener" href="${esc('file:///'+String(it.archivo).replace(/\\/g,'/'))}">Abrir la nota ↗</a>`:'')+
+        `</div></li>`).join('');
       const el=document.createElement('div');el.className='pcard';el.id='card-'+p.id;
       el.innerHTML=`<div class="pcard-h"><i class="dot" style="color:${col}"></i>`+
         `<span class="t" style="color:${col}">${esc(p.label)}</span><span class="full">${esc(p.full)}</span>`+
@@ -659,7 +663,7 @@
 
   function draw(ts){
     if(W===0||H===0){requestAnimationFrame(draw);return;}
-    const t=ts*0.001;ctx.clearRect(0,0,W,H);chipsDibujados=[];
+    const t=ts*0.001;ctx.clearRect(0,0,W,H);chipsDibujados=[];const rotulos=[];
     const brain=CORE,pb=drift(brain,t,0,0);
     const projs=NODES.filter(n=>n.kind!=='core');
     const phase=Object.fromEntries(projs.map((c,i)=>[c.id,i]));   // fase de deriva por nodo, para que padre e hijo coincidan
@@ -680,7 +684,7 @@
       let rr=5+(it.estado==='abierto'?1:0);if(!reduce)rr+=((Math.sin(t*(1.6+it.nivel*0.5)+i)+1)/2)*(1.5+it.nivel);
       drawNode(pr.x,pr.y,rr,col,vis?1:.06,false);it._sx=pr.x;it._sy=pr.y;it._sr=rr;
       // los n3 llevan su ID visible (los demás, al pasar el mouse)
-      if(vis&&it.nivel>=3&&W>=600){ctx.globalAlpha=.95;ctx.fillStyle=col;ctx.font='600 10.5px ui-monospace,Consolas,monospace';ctx.textAlign='center';ctx.fillText(it.id,pr.x,pr.y+rr+13);}
+      if(vis&&it.nivel>=3&&W>=600)rotulos.push([pr.x,pr.y+rr+13,it.id,col]);
     });
     // proyectos (etiqueta tipo chip, legible sobre las aristas)
     projs.forEach((c,i)=>{const vis=inScope(c.scope),p=drift(c,t,4.5,i),col=nodeCol(c);
@@ -688,6 +692,7 @@
       if(vis)drawChip(p.x,p.y+c.r+19,c.label,col,12.5);
       if(vis&&c.resumen&&W>=600)drawChip(p.x,p.y+c.r+42,`${c.resumen.n} ítems`+(c.resumen.venc?` · ${c.resumen.venc} vencidos`:''),c.resumen.venc?COL.r3:COL.ink,11);
     });
+    for(const [x,y,tx,col] of rotulos)drawChip(x,y,tx,col,10.5);
     // núcleo
     drawNode(pb.x,pb.y,brain.r,COL.core,1,true);
     ctx.fillStyle='#04121a';ctx.beginPath();ctx.arc(pb.x,pb.y,brain.r*0.42,0,7);ctx.fill();
@@ -785,7 +790,13 @@
     const listar=()=>{
       if(!find&&!lobeSel){ if(!sel)detalle(null); return; }
       const res=vig.concat(PROP).filter(n=>coincide(n)&&(!lobeSel||temaDe(n)===lobeSel));
-      if(!res.length) return;
+      if(!res.length){
+        det.innerHTML='<div class="meta">Ninguna lección'+(lobeSel?' en '+esc(TEMAS[lobeSel].n):'')+(find?' con «'+esc(find)+'»':'')+'.</div><div class="links">'+
+          (lobeSel?'<button type="button" id="cx-sinlob">Quitar el lóbulo</button>':'')+(find?'<button type="button" id="cx-clear">Limpiar la búsqueda</button>':'')+'</div>';
+        const sl=document.getElementById('cx-sinlob'); if(sl) sl.addEventListener('click',()=>{lobeSel=null;lobesBox.querySelectorAll('button').forEach(x=>x.setAttribute('aria-pressed','false'));listar();});
+        const cl=document.getElementById('cx-clear'); if(cl) cl.addEventListener('click',()=>{const f=document.getElementById('cx-find');f.value='';find='';listar();f.focus();});
+        return;
+      }
       det.innerHTML='<div class="meta">'+res.length+' lección(es)'+(lobeSel?' en '+esc(TEMAS[lobeSel].n):'')+(find?' con «'+esc(find)+'»':'')+'</div><div class="res">'+
         res.slice(0,40).map(n=>'<button type="button" data-id="'+esc(n.id)+'">'+esc(n.id)+' · '+esc(n.titulo)+'</button>').join('')+'</div>';
       det.querySelectorAll('.res button').forEach(b=>b.addEventListener('click',()=>detalle(porId[b.dataset.id])));
@@ -816,11 +827,7 @@
     detalle(null);
     // Búsqueda sin resultados: decirlo, con un botón para limpiar.
     document.getElementById('cx-find').addEventListener('input',()=>{
-      const n=vig.concat(PROP).filter(coincide).length;
-      if(find&&!n){
-        det.innerHTML='<div class="meta">Ninguna lección coincide con «'+esc(find)+'».</div><div class="links"><button type="button" id="cx-clear">Limpiar la búsqueda</button></div>';
-        document.getElementById('cx-clear').addEventListener('click',()=>{const f=document.getElementById('cx-find');f.value='';find='';detalle(null);f.focus();});
-      }else{listar();}
+      listar();
     });
 
     // ---- ámbito: el saber queda entero; el control de la empresa se apaga en personal
@@ -1006,7 +1013,7 @@
   document.getElementById('stamp').innerHTML=
     (E.fecha!==hoy
       ? '<b style="color:#ff9a52">⚠ DATOS DEL '+esc(E.fecha)+', NO DE HOY ('+hoy+') — corre '+esc(CMD)+'</b>'
-      : 'build de hoy · '+esc(E.fecha))
+      : 'build de hoy · '+esc(E.fecha)+(E.generado?' · '+new Date(E.generado).toLocaleTimeString('es',{hour:'2-digit',minute:'2-digit'}):''))
     + hito
     + (avisos.length ? ' · <button type="button" class="stamp-btn" id="stamp-av">'+avisos.length+' aviso(s)</button>' : '');
   const sb=document.getElementById('stamp-av');
