@@ -79,7 +79,7 @@
   .float{position:absolute;z-index:4;background:rgba(9,14,23,.82);border:1px solid var(--line);border-radius:12px;backdrop-filter:blur(6px)}
   .legend{left:14px;bottom:14px;display:flex;gap:13px;flex-wrap:wrap;padding:9px 14px;font-family:var(--mono);font-size:11px;color:var(--muted)}
   .legend span{display:inline-flex;align-items:center;gap:7px}
-  .dot{width:9px;height:9px;border-radius:50%;box-shadow:0 0 8px currentColor}
+  .dot{width:9px;height:9px;border-radius:50%;background:currentColor;box-shadow:0 0 8px currentColor}
   .map-prio{right:14px;bottom:14px;padding:10px 14px;max-width:320px}
   .map-prio .k{font-family:var(--mono);font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:var(--muted)}
   .map-prio .v{font-family:var(--mono);font-size:13.5px;font-weight:600;margin-top:4px}
@@ -148,7 +148,7 @@
   .cx-side::-webkit-scrollbar{width:6px}
   .cx-side::-webkit-scrollbar-thumb{background:var(--line-strong);border-radius:6px}
   .cx-vit{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
-  .cx-vit div{background:var(--panel-2);border:1px solid var(--line);border-radius:10px;padding:8px 9px}
+  .cx-vit>div{background:var(--panel-2);border:1px solid var(--line);border-radius:10px;padding:8px 9px}
   .cx-vit .k{font-family:var(--mono);font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
   .cx-vit .v{font-family:var(--mono);font-size:21px;font-weight:600;margin-top:2px;font-variant-numeric:tabular-nums}
   .cx-sec .t{font-family:var(--mono);font-size:10px;letter-spacing:.18em;text-transform:uppercase;color:var(--muted);margin-bottom:6px}
@@ -200,6 +200,65 @@
     .map-prio{display:none}
   }
   @media (prefers-reduced-motion:reduce){.live b{animation:none}}
+  /* ===== vista HOY: la respuesta directa a «qué pide atención» ===== */
+  #view-hoy{overflow-y:auto;align-items:center}
+  .hoy-col{width:min(980px,100%);padding:18px clamp(14px,3vw,26px) 30px;display:flex;flex-direction:column;gap:16px}
+  .hoy-prio{background:linear-gradient(180deg,var(--panel-2),var(--panel));border:1px solid var(--line);border-left:3px solid var(--laboral);border-radius:14px;padding:16px 18px}
+  .hoy-prio.vieja{border-left-color:var(--r2)}
+  .hoy-prio .k{font-family:var(--mono);font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--muted)}
+  .hoy-prio .v{font-size:19px;font-weight:650;margin-top:6px;line-height:1.35}
+  .hoy-prio .note{font-size:13.5px;color:var(--muted);margin-top:6px;line-height:1.5}
+  .hoy-prio.vieja .note{color:var(--r2)}
+  .hoy-nums{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+  .hoy-nums button{appearance:none;text-align:left;font:inherit;color:inherit;cursor:pointer;background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:12px 14px}
+  .hoy-nums button:hover,.hoy-nums button[aria-pressed="true"]{border-color:var(--line-strong);background:var(--panel-2)}
+  .hoy-nums button:focus-visible{outline:2px solid var(--synapse);outline-offset:2px}
+  .hoy-nums .k{font-family:var(--mono);font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+  .hoy-nums .v{font-family:var(--mono);font-size:28px;font-weight:600;margin-top:4px;line-height:1}
+  .hoy-nums .note{font-size:12px;color:var(--muted);margin-top:5px}
+  .hoy-h{display:flex;align-items:baseline;justify-content:space-between;gap:10px;margin-top:4px}
+  .hoy-h h2{font-size:15px;margin:0;font-weight:650}
+  .hoy-h span{font-family:var(--mono);font-size:12px;color:var(--muted)}
+  .hoy-list{list-style:none;margin:0;padding:0;display:grid;gap:6px}
+  .hoy-list button{appearance:none;width:100%;text-align:left;font:inherit;color:inherit;cursor:pointer;display:grid;grid-template-columns:auto 1fr auto;gap:12px;align-items:start;
+    background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:11px 14px}
+  .hoy-list button:hover{border-color:var(--line-strong);background:var(--panel-2)}
+  .hoy-list button:focus-visible{outline:2px solid var(--synapse);outline-offset:2px}
+  .hoy-list .lb{font-size:14px;line-height:1.45;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+  .hoy-list .meta{font-family:var(--mono);font-size:12px;color:var(--muted);margin-top:3px}
+  .hoy-list .pj{font-family:var(--mono);font-size:12px;color:var(--muted);white-space:nowrap}
+  .avisos{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:4px 14px}
+  .avisos summary{cursor:pointer;font-family:var(--mono);font-size:12px;letter-spacing:.08em;color:var(--r1);padding:10px 0}
+  .avisos summary:focus-visible{outline:2px solid var(--synapse);outline-offset:2px}
+  .avisos li{font-size:13px;color:var(--muted);margin:6px 0;line-height:1.45;word-break:break-word}
+  /* tarjetas: filtros, búsqueda y foco al llegar desde el mapa */
+  .card-tools{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+  .chip{appearance:none;font-family:var(--mono);font-size:12px;color:var(--muted);background:var(--panel);border:1px solid var(--line-strong);border-radius:20px;padding:7px 12px;cursor:pointer}
+  .chip[aria-pressed="true"]{color:#04121a;background:var(--synapse);border-color:var(--synapse)}
+  .chip:focus-visible,.card-find:focus{outline:2px solid var(--synapse);outline-offset:2px}
+  .card-find{flex:1 1 220px;min-width:0;background:var(--panel-2);border:1px solid var(--line-strong);border-radius:20px;color:var(--ink);font:inherit;font-size:13px;padding:8px 14px}
+  .pcard.foco{border-color:var(--synapse);box-shadow:0 0 0 1px var(--synapse),0 0 24px rgba(53,224,208,.2)}
+  .pcard li.foco{background:rgba(53,224,208,.1)}
+  .lvl{white-space:nowrap}
+  .stamp-btn{appearance:none;font:inherit;background:none;border:0;color:var(--r1);cursor:pointer;padding:0;text-transform:inherit;letter-spacing:inherit}
+  .stamp-btn:focus-visible{outline:2px solid var(--synapse);outline-offset:2px}
+  .map-hint{right:14px;top:14px;padding:7px 12px;font-family:var(--mono);font-size:11.5px;color:var(--muted)}
+  @media (max-width:900px){
+    .hoy-nums{grid-template-columns:repeat(2,1fr)}
+    .hoy-list button{grid-template-columns:auto 1fr}
+    .hoy-list .pj{grid-column:2}
+  }
+  @media (max-width:600px){
+    header{padding:8px 12px;gap:8px}
+    .brand .sub{display:none}
+    .sigil{width:28px;height:28px}
+    .seg.tabs{order:3;width:100%;overflow-x:auto;scrollbar-width:none;flex-wrap:nowrap}
+    .seg.tabs button{flex:1 0 auto}
+    footer{flex-wrap:nowrap;white-space:nowrap;overflow:hidden;font-size:11px;padding:6px 12px}
+    footer .live{display:none}
+    footer #stamp{overflow:hidden;text-overflow:ellipsis}
+    .map-hint{display:none}
+  }
 </style>
 </head>
 <body>
@@ -215,7 +274,8 @@
     <div><h1>Personal&nbsp;OS</h1><div class="sub">Consola Neuronal</div></div>
   </div>
   <div class="seg tabs" role="group" aria-label="Vista">
-    <button data-view="mapa" aria-pressed="true">Mapa</button>
+    <button data-view="hoy" aria-pressed="true">Hoy<span class="n" id="tab-hoy"></span></button>
+    <button data-view="mapa" aria-pressed="false">Mapa</button>
     <button data-view="corteza" aria-pressed="false">Corteza<span class="n" id="tab-co"></span></button>
     <button data-view="tarjetas" aria-pressed="false">Tarjetas<span class="n" id="tab-items"></span></button>
     <button data-view="log" aria-pressed="false">Bitácora<span class="n" id="tab-syn"></span></button>
@@ -229,19 +289,36 @@
 
 <main>
   <!-- ===== MAPA: grafo a pantalla completa ===== -->
-  <section class="view active" id="view-mapa" aria-label="Mapa sináptico">
+  <!-- ===== HOY: qué pide atención, en orden ===== -->
+  <section class="view active" id="view-hoy" aria-label="Qué pide atención hoy">
+    <div class="hoy-col">
+      <div class="hoy-prio" id="hoy-prio"><div class="k">Prioridad #1</div><div class="v" id="hoy-prio-v">—</div><div class="note" id="hoy-prio-note"></div></div>
+      <div class="hoy-nums" role="group" aria-label="Filtros de lo que pide atención">
+        <button type="button" data-f="hoy" aria-pressed="false"><div class="k">Vence hoy</div><div class="v" id="n-hoy">—</div><div class="note">compromisos y entregas</div></button>
+        <button type="button" data-f="vencido" aria-pressed="false"><div class="k">Vencidos</div><div class="v" id="n-venc">—</div><div class="note" id="n-venc-note"></div></button>
+        <button type="button" data-f="n3" aria-pressed="false"><div class="k">Nivel 3</div><div class="v" id="n-n3">—</div><div class="note">riesgo alto o sin dueño</div></button>
+        <button type="button" data-f="todo" aria-pressed="true"><div class="k">Activos</div><div class="v" id="n-todo">—</div><div class="note" id="n-todo-note"></div></button>
+      </div>
+      <div class="hoy-h"><h2 id="hoy-h">Lo que pide atención</h2><span id="hoy-c"></span></div>
+      <ul class="hoy-list" id="hoy-list"></ul>
+      <details class="avisos" id="avisos"><summary id="avisos-s"></summary><ul id="avisos-l"></ul></details>
+    </div>
+  </section>
+
+  <section class="view" id="view-mapa" aria-label="Mapa de proyectos">
     <div class="canvas-shell">
       <canvas id="brain"></canvas>
       <div class="tip" id="tip"><div class="lb"></div><div class="mt"></div><div class="xd"></div></div>
       <div class="float map-scope" id="graph-scope">ámbito · ambas</div>
+      <div class="float map-hint">Toca un proyecto para ver sus ítems</div>
       <div class="float map-empty" id="map-empty">Sin ítems activos en este ámbito. Los riesgos, compromisos y alcances abiertos aparecen aquí colgando de su proyecto.</div>
       <div class="float legend">
         <span><i class="dot" style="color:var(--laboral)"></i>Laboral</span>
         <span><i class="dot" style="color:var(--personal)"></i>Personal</span>
         <span><i class="dot" style="color:var(--synapse)"></i>Núcleo</span>
-        <span><i class="dot" style="color:var(--r3)"></i>n3</span>
-        <span><i class="dot" style="color:var(--r2)"></i>n2</span>
-        <span><i class="dot" style="color:var(--r1)"></i>n1</span>
+        <span><i class="dot" style="color:var(--r3)"></i>Nivel 3 · urgente</span>
+        <span><i class="dot" style="color:var(--r2)"></i>Nivel 2</span>
+        <span><i class="dot" style="color:var(--r1)"></i>Nivel 1</span>
       </div>
       <div class="float map-prio"><div class="k">Prioridad #1</div><div class="v" id="map-prio-v">—</div><div class="note" id="map-prio-note"></div></div>
     </div>
@@ -278,10 +355,17 @@
 
   <!-- ===== TARJETAS: signos vitales + una tarjeta por proyecto ===== -->
   <section class="view" id="view-tarjetas" aria-label="Tarjetas por proyecto">
+    <div class="card-tools" role="group" aria-label="Filtrar ítems">
+      <button type="button" class="chip" data-cf="todo" aria-pressed="true">Todos</button>
+      <button type="button" class="chip" data-cf="vencido" aria-pressed="false">Vencidos</button>
+      <button type="button" class="chip" data-cf="n3" aria-pressed="false">Nivel 3</button>
+      <button type="button" class="chip" data-cf="hoy" aria-pressed="false">Vence hoy</button>
+      <input class="card-find" id="card-find" type="search" placeholder="Buscar por id, proyecto o texto…" aria-label="Buscar un ítem">
+    </div>
     <div class="vitals" aria-label="Signos vitales">
       <div class="vital risk"><div class="k" id="m-risk-k">Ítems activos</div><div class="v" id="m-risk">—</div><div class="note" id="m-risk-note"></div></div>
       <div class="vital"><div class="k" id="m-cli-k">Proyectos en foco</div><div class="v" id="m-cli">—</div><div class="note" id="m-cli-note"></div></div>
-      <div class="vital"><div class="k">Sinapsis hoy</div><div class="v" id="m-syn">—</div><div class="note" id="m-syn-note">resúmenes de la bitácora</div></div>
+      <div class="vital"><div class="k">Bitácora de hoy</div><div class="v" id="m-syn">—</div><div class="note" id="m-syn-note">tramos registrados</div></div>
       <div class="vital prio"><div class="k">Prioridad #1</div><div class="v" id="m-prio">—</div><div class="note" id="m-prio-note"></div></div>
     </div>
     <div class="cards" id="cards"></div>
@@ -316,6 +400,7 @@
   const metaCmd=document.querySelector('meta[name="comando-build"]');
   const CMD=(metaCmd&&metaCmd.content&&metaCmd.content.indexOf('__')!==0)?metaCmd.content:'node "<raíz del plugin>/scripts/build-consola.js"';
 
+  const reduce=matchMedia('(prefers-reduced-motion:reduce)').matches;
   // ===== DATOS =====
   // No viven aquí: los escribe build-consola.js en _datos/datos.js (window.ESTADO).
   const E = window.ESTADO;
@@ -346,8 +431,35 @@
   const itemsInScope=()=>ITEMS.filter(it=>byId[it.cli]&&inScope(byId[it.cli].scope));
   const set=(id,v)=>{document.getElementById(id).textContent=v;};
 
+  // Lo que pide atención: vence hoy, luego nivel 3, luego lo vencido más reciente (lo más viejo suele estar olvidado).
+  const venceHoy=it=>/vence HOY|entrega HOY/.test(it.estado);
+  const vencido=it=>(it.atraso||0)>0;
+  const peso=it=>(venceHoy(it)?1000:0)+it.nivel*100-Math.min(99,it.atraso||0);
+  let filtroHoy='todo', filtroCards='todo', buscaCards='';
+  const pasa=(it,f)=>f==='hoy'?venceHoy(it):f==='vencido'?vencido(it):f==='n3'?it.nivel>=3:true;
+  function renderHoy(its){
+    set('n-hoy',its.filter(venceHoy).length);
+    const venc=its.filter(vencido); set('n-venc',venc.length);
+    const viejo=venc.reduce((a,i)=>Math.max(a,i.atraso||0),0);
+    document.getElementById('n-venc-note').textContent=venc.length?`el más viejo, hace ${viejo} d`:'nada vencido';
+    set('n-n3',its.filter(i=>i.nivel>=3).length); set('n-todo',its.length);
+    document.getElementById('n-todo-note').textContent=`en ${new Set(its.map(i=>i.cli)).size} proyectos`;
+    set('tab-hoy',its.filter(i=>venceHoy(i)||i.nivel>=3).length);
+    const lista=its.filter(i=>pasa(i,filtroHoy)).sort((a,b)=>peso(b)-peso(a));
+    const tope=filtroHoy==='todo'?12:lista.length;
+    document.getElementById('hoy-h').textContent={todo:'Lo que pide atención',hoy:'Vence hoy',vencido:'Vencidos (lo más reciente primero)',n3:'Nivel 3'}[filtroHoy];
+    document.getElementById('hoy-c').textContent=lista.length>tope?`${tope} de ${lista.length} · el resto en Tarjetas`:`${lista.length}`;
+    const ul=document.getElementById('hoy-list');
+    ul.innerHTML=lista.length?'':'<li class="empty">Nada en este filtro. Buen día.</li>';
+    for(const it of lista.slice(0,tope)){
+      const li=document.createElement('li'),b=document.createElement('button');b.type='button';
+      b.innerHTML=`<span class="lvl n${esc(it.nivel)}">nivel ${esc(it.nivel)}</span><div><div class="lb">${esc(it.label)}</div><div class="meta"><b>${esc(it.id)}</b> · ${esc(it.estado)}</div></div><span class="pj">${esc(byId[it.cli].label)}</span>`;
+      b.addEventListener('click',()=>abrirCard(it.cli,it.id));li.appendChild(b);ul.appendChild(li);
+    }
+  }
   function refresh(){
     const its=itemsInScope();
+    renderHoy(its);
     const worst=its.reduce((a,r)=>Math.max(a,r.nivel),0);
     const projs=projsInScope();
     const projsWithItems=new Set(its.map(i=>i.cli)).size;
@@ -360,6 +472,8 @@
     document.getElementById('m-cli-note').textContent=isPers?tops.map(p=>p.label).join(' · '):[...new Set(its.map(i=>byId[i.cli].label))].join(' · ');
     const st=SINAPSIS.filter(s=>inScope(s.scope)); set('m-syn',st.length);
     const p=PRIO[scope]||sinFijar; set('m-prio',p.v||'sin fijar'); document.getElementById('m-prio-note').textContent=p.note||'';
+    set('hoy-prio-v',p.v||'sin fijar'); document.getElementById('hoy-prio-note').textContent=p.note||'';
+    document.getElementById('hoy-prio').classList.toggle('vieja',!!p.vieja||p.v==='sin fijar');
     set('map-prio-v',p.v||'sin fijar'); document.getElementById('map-prio-note').textContent=p.note||'';
     document.getElementById('graph-scope').textContent='ámbito · '+scope;
     document.getElementById('map-empty').style.display=its.length?'none':'block';
@@ -380,12 +494,14 @@
     });
     for(const p of order){
       const col=p.scope==='personal'?COL.personal:COL.laboral;
-      const rows=its.filter(i=>i.cli===p.id).sort((a,b)=>b.nivel-a.nivel);
+      const q=buscaCards;
+      const rows=its.filter(i=>i.cli===p.id&&pasa(i,filtroCards)&&(!q||(i.id+' '+i.label+' '+i.estado+' '+p.label+' '+p.full).toLowerCase().includes(q))).sort((a,b)=>peso(b)-peso(a));
+      if((filtroCards!=='todo'||q)&&!rows.length)continue;
       const lis=rows.map(it=>
-        `<li><span class="lvl n${esc(it.nivel)}">n${esc(it.nivel)}</span>`+
+        `<li id="it-${esc(it.id)}"><span class="lvl n${esc(it.nivel)}">nivel ${esc(it.nivel)}</span>`+
         `<div><div class="lb">${esc(it.label)}</div>`+
         `<div class="meta"><b>${esc(it.id)}</b> · ${esc(it.tag)} · ${esc(it.estado)}</div></div></li>`).join('');
-      const el=document.createElement('div');el.className='pcard';
+      const el=document.createElement('div');el.className='pcard';el.id='card-'+p.id;
       el.innerHTML=`<div class="pcard-h"><i class="dot" style="color:${col}"></i>`+
         `<span class="t" style="color:${col}">${esc(p.label)}</span><span class="full">${esc(p.full)}</span>`+
         `<span class="count">${rows.length} ítem${rows.length===1?'':'s'}</span></div>`+
@@ -409,23 +525,42 @@
     }
   }
 
-  // ===== pestañas de vista =====
-  document.querySelectorAll('.seg.tabs button').forEach(b=>b.addEventListener('click',()=>{
+  // ===== pestañas de vista (la URL recuerda la vista y el ámbito) =====
+  const irVista=(v,escribir)=>{
+    const b=document.querySelector(`.seg.tabs button[data-view="${v}"]`); if(!b) return;
     document.querySelectorAll('.seg.tabs button').forEach(x=>x.setAttribute('aria-pressed',x===b));
-    document.querySelectorAll('.view').forEach(v=>v.classList.toggle('active',v.id==='view-'+b.dataset.view));
-    if(b.dataset.view==='mapa')resize();
-    if(b.dataset.view==='corteza')cx.resize();
-  }));
+    document.querySelectorAll('.view').forEach(x=>x.classList.toggle('active',x.id==='view-'+v));
+    if(v==='mapa')resize();
+    if(v==='corteza')cx.resize();
+    if(escribir!==false){ try{ history.replaceState(null,'','#'+v+(scope!=='ambas'?'&'+scope:'')); }catch(_){} }
+  };
+  document.querySelectorAll('.seg.tabs button').forEach(b=>b.addEventListener('click',()=>irVista(b.dataset.view)));
+  // Desde Hoy o el mapa: abre la tarjeta del proyecto y resalta el ítem.
+  function abrirCard(cli,itemId){
+    filtroCards='todo';buscaCards='';document.getElementById('card-find').value='';
+    document.querySelectorAll('.chip').forEach(x=>x.setAttribute('aria-pressed',x.dataset.cf==='todo'));
+    refresh();irVista('tarjetas');
+    const card=document.getElementById('card-'+cli); if(!card) return;
+    document.querySelectorAll('.pcard.foco,.pcard li.foco').forEach(x=>x.classList.remove('foco'));
+    card.classList.add('foco');
+    const li=itemId&&document.getElementById('it-'+itemId); if(li) li.classList.add('foco');
+    (li||card).scrollIntoView({block:'center',behavior:reduce?'auto':'smooth'});
+  }
+  document.querySelectorAll('.hoy-nums button').forEach(b=>b.addEventListener('click',()=>{
+    filtroHoy=b.dataset.f; document.querySelectorAll('.hoy-nums button').forEach(x=>x.setAttribute('aria-pressed',x===b)); refresh(); }));
+  document.querySelectorAll('.chip').forEach(b=>b.addEventListener('click',()=>{
+    filtroCards=b.dataset.cf; document.querySelectorAll('.chip').forEach(x=>x.setAttribute('aria-pressed',x===b)); refresh(); }));
+  document.getElementById('card-find').addEventListener('input',ev=>{buscaCards=ev.target.value.trim().toLowerCase();refresh();});
   document.querySelectorAll('.seg.scope button').forEach(b=>b.addEventListener('click',()=>{
     scope=b.dataset.scope;
     document.querySelectorAll('.seg.scope button').forEach(x=>x.setAttribute('aria-pressed',x===b));
     refresh();
     cx.scope();
+    const v=(document.querySelector('.seg.tabs button[aria-pressed="true"]')||{}).dataset; if(v) irVista(v.view);
   }));
 
   // ===== canvas (pantalla completa) =====
   const cv=document.getElementById('brain'),ctx=cv.getContext('2d'),tip=document.getElementById('tip');
-  const reduce=matchMedia('(prefers-reduced-motion:reduce)').matches;
   let W=0,H=0,dpr=1,hover=null;
   const ip=ITEMS.map(()=>Math.random());   // partícula por arista nodo→ítem
   const np=NODES.map(()=>Math.random());   // partícula por arista núcleo→nodo
@@ -441,7 +576,13 @@
     W=rect.width;H=rect.height;cv.width=W*dpr;cv.height=H*dpr;ctx.setTransform(dpr,0,0,dpr,0,0);
     for(const n of NODES){n.bx=n.fx*W;n.by=n.fy*H;}
     const groups={};ITEMS.forEach(it=>{if(byId[it.cli])(groups[it.cli]=groups[it.cli]||[]).push(it);});
-    Object.entries(groups).forEach(([cid,rs])=>{
+    ITEMS.forEach(it=>{it.oculto=false;});
+    Object.entries(groups).forEach(([cid,rs0])=>{
+      // Con muchos ítems el abanico se vuelve una mancha: se dibujan los 3 más graves y el nodo lleva
+      // una insignia con el total; el detalle completo está a un toque, en su tarjeta.
+      const orden=[...rs0].sort((a,b)=>peso(b)-peso(a)); const rs=orden.length>6?orden.slice(0,3):orden;
+      orden.slice(rs.length).forEach(it=>{it.oculto=true;it.ref=byId[cid];});
+      byId[cid].resumen=orden.length>6?{n:orden.length,n3:orden.filter(i=>i.nivel>=3).length,venc:orden.filter(vencido).length}:null;
       // Los ítems se abren en abanico ALEJÁNDOSE del ancla del nodo (núcleo o nodo padre).
       const c=byId[cid],a0=anchorOf(c);let ang=Math.atan2(c.by-a0.by,c.bx-a0.bx);
       if(c===a0)ang=-Math.PI/2;
@@ -450,7 +591,7 @@
         r.bx=c.bx+Math.cos(a)*gap;r.by=c.by+Math.sin(a)*gap;r.ref=c;});
     });
   }
-  function drift(o,t,amp,i){return {x:o.bx+Math.cos(t*0.5+(i||0)+o.bx*0.01)*amp,y:o.by+Math.sin(t*0.6+(i||0)+o.by*0.01)*amp};}
+  function drift(o,t,amp,i){if(reduce)return {x:o.bx,y:o.by};return {x:o.bx+Math.cos(t*0.5+(i||0)+o.bx*0.01)*amp,y:o.by+Math.sin(t*0.6+(i||0)+o.by*0.01)*amp};}
 
   // Etiqueta legible: chip con fondo oscuro + borde del color del nodo.
   function drawChip(x,y,text,col,size){
@@ -480,8 +621,8 @@
     });
     // proyecto → ítems
     ITEMS.forEach((it,i)=>{
-      const c=it.ref;if(!c)return;const vis=inScope(c.scope);const pc=drift(c,t,4.5,0);
-      const pr={x:it.bx+Math.cos(t*0.5+i)*3,y:it.by+Math.sin(t*0.6+i)*3};const col=riskColor(it.nivel);
+      const c=it.ref;if(!c||it.oculto)return;const vis=inScope(c.scope);const pc=drift(c,t,4.5,0);
+      const pr=reduce?{x:it.bx,y:it.by}:{x:it.bx+Math.cos(t*0.5+i)*3,y:it.by+Math.sin(t*0.6+i)*3};const col=riskColor(it.nivel);
       ctx.globalAlpha=vis?0.30:0.04;ctx.strokeStyle=col;ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(pc.x,pc.y);ctx.lineTo(pr.x,pr.y);ctx.stroke();
       if(vis){if(!reduce){ip[i]+=0.006+it.nivel*0.002;if(ip[i]>1)ip[i]-=1;}const p=ip[i];ctx.globalAlpha=.95;ctx.fillStyle=col;ctx.shadowBlur=8;ctx.shadowColor=col;ctx.beginPath();ctx.arc(pc.x+(pr.x-pc.x)*p,pc.y+(pr.y-pc.y)*p,1.7,0,7);ctx.fill();ctx.shadowBlur=0;}
       let rr=5+(it.estado==='abierto'?1:0);rr+=((Math.sin(t*(1.6+it.nivel*0.5)+i)+1)/2)*(1.5+it.nivel);
@@ -493,6 +634,7 @@
     projs.forEach((c,i)=>{const vis=inScope(c.scope),p=drift(c,t,4.5,i),col=nodeCol(c);
       drawNode(p.x,p.y,c.r,col,vis?1:.06,false);c._sx=p.x;c._sy=p.y;c._sr=c.r;
       if(vis)drawChip(p.x,p.y+c.r+19,c.label,col,12.5);
+      if(vis&&c.resumen)drawChip(p.x,p.y+c.r+42,`${c.resumen.n} ítems · ${c.resumen.venc} vencidos`,COL.r3,11);
     });
     // núcleo
     drawNode(pb.x,pb.y,brain.r,COL.core,1,true);
@@ -509,18 +651,24 @@
 
   cv.addEventListener('mousemove',ev=>{
     const rect=cv.getBoundingClientRect(),mx=ev.clientX-rect.left,my=ev.clientY-rect.top;hover=null;
-    for(const it of ITEMS){if(byId[it.cli]&&inScope(byId[it.cli].scope)&&Math.hypot(mx-(it._sx||0),my-(it._sy||0))<(it._sr||6)+7){hover={t:'i',o:it};break;}}
+    for(const it of ITEMS){if(!it.oculto&&byId[it.cli]&&inScope(byId[it.cli].scope)&&Math.hypot(mx-(it._sx||0),my-(it._sy||0))<(it._sr||6)+7){hover={t:'i',o:it};break;}}
     if(!hover)for(const n of NODES){if(inScope(n.scope)&&Math.hypot(mx-(n._sx||0),my-(n._sy||0))<(n._sr||6)+8){hover={t:'n',o:n};break;}}
     if(hover){const o=hover.o;tip.style.left=o._sx+'px';tip.style.top=o._sy+'px';tip.style.opacity=1;
       if(hover.t==='i'){tip.querySelector('.lb').textContent=o.id+' · '+o.tag;tip.querySelector('.mt').textContent=byId[o.cli].label+' · nivel '+o.nivel+' · '+o.estado;tip.querySelector('.xd').textContent=o.label;}
       else if(o.kind==='core'){tip.querySelector('.lb').textContent=o.label||'NÚCLEO';tip.querySelector('.mt').textContent='núcleo · '+(o.full||'Personal OS');tip.querySelector('.xd').textContent='Segundo cerebro ejecutivo';}
       else{const nr=ITEMS.filter(it=>it.cli===o.id).length;
         const kind=o.parent?('sub-nodo de '+byId[o.parent].label):(o.scope==='personal'?'proyecto personal':'proyecto laboral');
-        tip.querySelector('.lb').textContent=o.full;tip.querySelector('.mt').textContent=kind+' · '+nr+' ítem(s)';tip.querySelector('.xd').textContent=o.issues||'';}
+        tip.querySelector('.lb').textContent=o.full;tip.querySelector('.mt').textContent=kind+' · '+nr+' ítem(s) · toca para verlos';tip.querySelector('.xd').textContent=o.issues||'';}
       cv.style.cursor='pointer';
     }else{tip.style.opacity=0;cv.style.cursor='default';}
   });
   cv.addEventListener('mouseleave',()=>{tip.style.opacity=0;});
+  // Clic o toque: abre la tarjeta del proyecto (o del ítem). En táctil el primer toque también sirve.
+  cv.addEventListener('click',ev=>{
+    const rect=cv.getBoundingClientRect(),mx=ev.clientX-rect.left,my=ev.clientY-rect.top;
+    for(const it of ITEMS){if(!it.oculto&&byId[it.cli]&&inScope(byId[it.cli].scope)&&Math.hypot(mx-(it._sx||0),my-(it._sy||0))<(it._sr||6)+9){abrirCard(it.cli,it.id);return;}}
+    for(const n of NODES){if(n.kind!=='core'&&inScope(n.scope)&&Math.hypot(mx-(n._sx||0),my-(n._sy||0))<(n._sr||6)+12){abrirCard(n.id);return;}}
+  });
 
   // ===================================================================== CORTEZA
   // Dos capas, como en el cerebro (D-062): el SABER (neocórtex: lecciones CO-### agrupadas en lóbulos
@@ -763,28 +911,34 @@
 
   new ResizeObserver(resize).observe(cv.parentElement);
   resize();refresh();requestAnimationFrame(draw);
-  // Enlace directo a una vista o ámbito: consola.html#corteza o #corteza&personal
-  for(const k of location.hash.slice(1).split('&').filter(Boolean)){
-    const b=document.querySelector(`.seg.tabs button[data-view="${CSS.escape(k)}"],.seg.scope button[data-scope="${CSS.escape(k)}"]`);
-    if(b)b.click();
-  }
+  // Enlace directo a una vista o ámbito: consola.html#corteza o #corteza&personal (también al cambiar el hash).
+  const leerHash=()=>{ for(const k of location.hash.slice(1).split('&').filter(Boolean)){
+    const b=document.querySelector(`.seg.scope button[data-scope="${CSS.escape(k)}"]`); if(b&&b.getAttribute('aria-pressed')!=='true')b.click(); }
+    const v=location.hash.slice(1).split('&').find(k=>document.querySelector(`.seg.tabs button[data-view="${CSS.escape(k)}"]`)); if(v)irVista(v,false); };
+  leerHash(); addEventListener('hashchange',leerHash);
 
-  // El pie declara SIEMPRE de qué día son los datos, y avisa si no son de hoy: un dato viejo
-  // mostrado como actual es justo el defecto que esta consola existe para evitar.
+  // El pie dice de cuándo es el build, si la #1 no es de hoy y cuántos avisos dejó (que se leen en Hoy).
   const hoy=hoyLocal();
   let hito='';
   if(E.hito&&E.hito.fecha){
     const dd=daysTo(E.hito.fecha);
-    const cuenta=dd===0?'HOY':dd>0?('en '+dd+'d'):('hace '+(-dd)+'d');
-    hito=' · '+esc(E.hito.etiqueta||'Hito')+' '+cuenta;
+    hito=dd<0?' · <b style="color:#ff9a52">'+esc(E.hito.etiqueta||'Hito')+' ya pasó (hace '+(-dd)+' d): actualízalo en el layout</b>'
+      :' · '+esc(E.hito.etiqueta||'Hito')+' '+(dd===0?'HOY':'en '+dd+' d');
   }
   const avisos=Array.isArray(E.avisos)?E.avisos:[];
+  const av=document.getElementById('avisos');
+  if(avisos.length){
+    document.getElementById('avisos-s').textContent=avisos.length+' aviso(s) del build: qué revisar en tus notas';
+    document.getElementById('avisos-l').innerHTML=avisos.map(a=>'<li>'+esc(a)+'</li>').join('');
+  }else av.hidden=true;
   document.getElementById('stamp').innerHTML=
     (E.fecha!==hoy
       ? '<b style="color:#ff9a52">⚠ DATOS DEL '+esc(E.fecha)+', NO DE HOY ('+hoy+') — corre '+esc(CMD)+'</b>'
-      : 'datos de hoy · '+esc(E.fecha))
+      : 'build de hoy · '+esc(E.fecha))
     + hito
-    + (avisos.length ? ' · <span style="color:#f6c760" title="'+esc(avisos.join(' | '))+'">'+avisos.length+' aviso(s) del build</span>' : '');
+    + (avisos.length ? ' · <button type="button" class="stamp-btn" id="stamp-av">'+avisos.length+' aviso(s)</button>' : '');
+  const sb=document.getElementById('stamp-av');
+  if(sb) sb.addEventListener('click',()=>{ irVista('hoy'); av.open=true; av.scrollIntoView({block:'center'}); });
 })();
 </script>
 </body>

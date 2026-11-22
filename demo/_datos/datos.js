@@ -3,7 +3,7 @@
 // Si algo está mal aquí, se corrige en la nota o en el layout y se vuelve a correr el build.
 // DEMOSTRACIÓN con datos ficticios: se publica en la landing.
 window.ESTADO = {
- "generado": "2026-11-21T23:37:46.186Z",
+ "generado": "2026-11-22T00:05:43.843Z",
  "fecha": "2026-11-21",
  "hito": {
   "etiqueta": "Entrega Cliente A",
@@ -30,7 +30,7 @@ window.ESTADO = {
    "fx": 0.74,
    "fy": 0.26,
    "r": 12,
-   "issues": "R-01 (n3): riesgo · A-001 (n3): alcance · R-04 (n2): riesgo"
+   "issues": "R-01 (nivel 3): riesgo · A-001 (nivel 3): alcance · R-04 (nivel 2): riesgo"
   },
   {
    "id": "CLB",
@@ -40,7 +40,7 @@ window.ESTADO = {
    "fx": 0.8,
    "fy": 0.66,
    "r": 10,
-   "issues": "C-01 (n3): espera a tercero · R-02 (n2): riesgo"
+   "issues": "C-01 (nivel 3): espera a tercero · R-02 (nivel 2): riesgo"
   },
   {
    "id": "PROY",
@@ -50,7 +50,7 @@ window.ESTADO = {
    "fx": 0.6,
    "fy": 0.16,
    "r": 9,
-   "issues": "R-03 (n1): riesgo"
+   "issues": "R-03 (nivel 1): riesgo"
   },
   {
    "id": "TRANS",
@@ -70,7 +70,7 @@ window.ESTADO = {
    "fx": 0.26,
    "fy": 0.22,
    "r": 10,
-   "issues": "C-04 (n1): compromiso"
+   "issues": "C-04 (nivel 1): compromiso"
   },
   {
    "id": "CURSO",
@@ -80,7 +80,7 @@ window.ESTADO = {
    "fx": 0.34,
    "fy": 0.7,
    "r": 11,
-   "issues": "C-03 (n2): compromiso"
+   "issues": "C-03 (nivel 2): compromiso"
   },
   {
    "id": "MOD1",
@@ -147,7 +147,9 @@ window.ESTADO = {
    "cli": "CLB",
    "clase": "compromiso",
    "nivel": 3,
-   "estado": "VENCIDO 2026-11-19",
+   "fecha": "2026-11-19",
+   "atraso": 2,
+   "estado": "vencido hace 2 d (2026-11-19)",
    "tag": "espera a tercero",
    "label": "Certificación del cliente. Pedida hace 11 días."
   },
@@ -156,6 +158,8 @@ window.ESTADO = {
    "cli": "CLA",
    "clase": "compromiso",
    "nivel": 2,
+   "fecha": "2026-11-24",
+   "atraso": 0,
    "estado": "abierto",
    "tag": "compromiso",
    "label": "Enviar acta firmada. Acta de la sesión de validación."
@@ -165,6 +169,8 @@ window.ESTADO = {
    "cli": "CURSO",
    "clase": "compromiso",
    "nivel": 2,
+   "fecha": "2026-11-25",
+   "atraso": 0,
    "estado": "abierto",
    "tag": "compromiso",
    "label": "Entregar el taller del módulo 2. Taller práctico."
@@ -174,6 +180,8 @@ window.ESTADO = {
    "cli": "LADO",
    "clase": "compromiso",
    "nivel": 1,
+   "fecha": null,
+   "atraso": 0,
    "estado": "abierto",
    "tag": "compromiso",
    "label": "Publicar la versión del proyecto personal. Sin fecha todavía."
@@ -184,6 +192,8 @@ window.ESTADO = {
    "clase": "alcance",
    "nivel": 3,
    "estado": "entrega 2026-11-27 (en 5 háb.) · 1 punto(s) sin dueño",
+   "fecha": "2026-11-27",
+   "atraso": 0,
    "tag": "alcance",
    "label": "Ajustes del módulo de reportes (10 puntos). Diez puntos prometidos con fecha."
   }
@@ -218,15 +228,18 @@ window.ESTADO = {
  "PRIO": {
   "laboral": {
    "v": "A-001 · entrega de reportes",
-   "note": "vence en 4 días hábiles"
+   "note": "vence en 4 días hábiles",
+   "fecha": "2026-11-21"
   },
   "ambas": {
    "v": "A-001 · entrega de reportes",
-   "note": "vence en 4 días hábiles"
+   "note": "vence en 4 días hábiles",
+   "fecha": "2026-11-21"
   },
   "personal": {
    "v": "Curso · módulo 2",
-   "note": "examen el viernes"
+   "note": "examen el viernes",
+   "fecha": "2026-11-21"
   }
  },
  "CORTEZA": {

@@ -144,7 +144,9 @@ function parsearFrontmatter(texto) {
   for (const linea of m[1].split(/\r?\n/)) {
     const kv = linea.match(/^([A-Za-z_][\w-]*):\s*(.*)$/);
     if (kv) {
+      // Un comentario al final («estado: cumplido   # nota») no es parte del valor: se quita fuera de comillas.
       let v = kv[2].trim();
+      if (!/^["']/.test(v)) v = v.replace(/\s+#.*$/, '').trim();
       if (/^\[.*\]$/.test(v)) v = v.slice(1, -1).split(',').map((s) => s.trim().replace(/^["']|["']$/g, '')).filter(Boolean).join(', ');
       else v = v.replace(/^"(.*)"$/, '$1').replace(/^'(.*)'$/, '$1');
       fm[kv[1]] = v;
@@ -184,7 +186,7 @@ function primerParrafo(cuerpo, tope = 420) {
   const sinTitulo = String(cuerpo || '').replace(/^#[^\n]*\n/m, '');
   const p = sinTitulo.split(/\r?\n\s*\r?\n/).map((s) => s.trim())
     .find((s) => s && !s.startsWith('#') && !s.startsWith('>') && !s.startsWith('_') && !s.startsWith('|')) || '';
-  return recortar(p.replace(/\s+/g, ' ').trim(), tope);
+  return recortar(p.replace(/\*\*|__|`/g, '').replace(/\s+/g, ' ').trim(), tope);
 }
 function recortar(s, tope) {
   return s.length > tope ? s.slice(0, tope).replace(/\s+\S*$/, '') + '…' : s;
@@ -203,6 +205,7 @@ const idDe = (fm, archivo) => txt(fm.id) || archivo.replace(/\.md$/, '').split(/
 
 const ITEMS = [];
 const sinNodo = [];
+const diasEntre = (a, b) => Math.round((Date.parse(b + 'T00:00:00') - Date.parse(a + 'T00:00:00')) / 864e5);
 
 /**
  * Resuelve el nodo de una nota. Si no tiene, cae al `nodo_por_defecto` del layout; y si tampoco hay,
@@ -214,7 +217,7 @@ function resolver(id, valor, clase) {
   if (cli) return cli;
   const destino = NODO_DEFECTO || ID_SIN_NODO;
   if (destino === ID_SIN_NODO && !byId[ID_SIN_NODO]) {
-    const n = { id: ID_SIN_NODO, label: 'SIN NODO', full: 'Notas cuyo proyecto no está en el layout', scope: 'laboral', fx: 0.62, fy: 0.86, r: 8 };
+    const n = { id: ID_SIN_NODO, label: 'Sin proyecto', full: 'Notas cuyo proyecto no está en el mapa (config/consola-layout.json)', scope: 'laboral', fx: 0.62, fy: 0.86, r: 8 };
     NODOS.push(n);
     byId[ID_SIN_NODO] = n;
   }
@@ -249,8 +252,8 @@ for (const nota of leerNotas('compromisos')) {
   const vencido = !!(fecha && fecha < HOY);
   ITEMS.push({
     id, cli, clase: 'compromiso',
-    nivel: vencido ? 3 : (fecha ? 2 : 1),
-    estado: vencido ? `VENCIDO ${fecha}` : (fecha === HOY ? 'vence HOY' : estadoCorto(fm.estado)),
+    nivel: vencido ? 3 : (fecha ? 2 : 1), fecha, atraso: vencido ? diasEntre(fecha, HOY) : 0,
+    estado: vencido ? `vencido hace ${diasEntre(fecha, HOY)} d (${fecha})` : (fecha === HOY ? 'vence HOY' : estadoCorto(fm.estado)),
     tag: primeraClave(fm.issues) || (/tercero/.test(txt(fm.direccion)) ? 'espera a tercero' : 'compromiso'),
     label: etiqueta(fm, nota.cuerpo),
   });
@@ -261,7 +264,7 @@ for (const nota of leerNotas('compromisos')) {
 for (const nota of leerNotas('alcances')) {
   const fm = nota.fm;
   const est = (txt(fm.estado) || 'activo').toLowerCase();
-  if (est === 'cumplido' || est === 'cancelado') continue;
+  if (CERRADO.test(est) || /^incumplido/.test(est)) continue;
   const id = idDe(fm, nota.archivo);
   const cli = resolver(id, fm.cliente || fm.proyecto, 'alcance');
   if (!cli) continue;
@@ -273,12 +276,12 @@ for (const nota of leerNotas('alcances')) {
   else if (habiles !== null && habiles <= 5) nivel = 2;
   let estado = est;
   if (!entrega) estado = 'SIN FECHA de entrega';
-  else if (habiles !== null && habiles < 0) estado = `VENCIDO ${entrega}`;
+  else if (habiles !== null && habiles < 0) estado = `vencido hace ${diasEntre(entrega, HOY)} d (${entrega})`;
   else if (habiles === 0) estado = 'entrega HOY';
   else if (habiles !== null) estado = `entrega ${entrega} (en ${habiles} háb.)`;
   if (sinDueno > 0) estado += ` · ${sinDueno} punto(s) sin dueño`;
   ITEMS.push({
-    id, cli, clase: 'alcance', nivel, estado,
+    id, cli, clase: 'alcance', nivel, estado, fecha: entrega, atraso: entrega && entrega < HOY ? diasEntre(entrega, HOY) : 0,
     tag: 'alcance',
     label: etiqueta(fm, nota.cuerpo),
   });
@@ -338,7 +341,7 @@ for (let i = ITEMS.length - 1; i >= 0; i--) {
 // El resumen del nodo (tooltip del mapa) se compone de sus ítems más graves.
 for (const n of NODOS) {
   const suyos = ITEMS.filter((it) => it.cli === n.id).sort((a, b) => b.nivel - a.nivel);
-  n.issues = suyos.length ? suyos.slice(0, 3).map((it) => `${it.id} (n${it.nivel}): ${it.tag}`).join(' · ') : '';
+  n.issues = suyos.length ? suyos.slice(0, 3).map((it) => `${it.id} (nivel ${it.nivel}): ${it.tag}`).join(' · ') : '';
 }
 
 // ---------------------------------------------------------------- 3. SINAPSIS (bitácora del día)
@@ -379,17 +382,27 @@ if (textoBitacora === null) {
 const sinFijar = { v: 'sin fijar', note: `Ninguna sesión ha fijado la prioridad de ${HOY}. Corre /brief y elígela; la consola no la inventa.` };
 const prioLeida = comun.leerJson(path.join(STATE, '_datos', 'prioridad.json'), null);
 if (!prioLeida) aviso('no existe _datos/prioridad.json (o no es JSON válido): la consola dirá que no hay prioridad fijada');
+// La fecha de la #1: la del campo `fecha` del archivo, o la de su última modificación.
+let fechaPrio = prioLeida && /^\d{4}-\d{2}-\d{2}$/.test(txt(prioLeida.fecha)) ? txt(prioLeida.fecha) : null;
+if (prioLeida && !fechaPrio) {
+  try { const m = fs.statSync(path.join(STATE, '_datos', 'prioridad.json')).mtime; fechaPrio = `${m.getFullYear()}-${String(m.getMonth() + 1).padStart(2, '0')}-${String(m.getDate()).padStart(2, '0')}`; } catch (_) { /* sin fecha */ }
+}
 const PRIO = {};
 for (const ambito of ['laboral', 'ambas', 'personal']) {
   const p = prioLeida && prioLeida[ambito];
-  PRIO[ambito] = p && txt(p.v) ? { v: txt(p.v), note: txt(p.note) } : sinFijar;
+  if (!(p && txt(p.v))) { PRIO[ambito] = sinFijar; continue; }
+  PRIO[ambito] = fechaPrio === HOY
+    ? { v: txt(p.v), note: txt(p.note), fecha: fechaPrio }
+    : { v: 'sin fijar hoy', note: `La última #1 es del ${fechaPrio || 'día desconocido'}: «${recortar(txt(p.v), 90)}». Corre /brief para fijar la de hoy.`, fecha: fechaPrio, vieja: true };
 }
+if (fechaPrio && fechaPrio !== HOY) aviso(`la prioridad #1 es del ${fechaPrio}, no de hoy: corre /brief para fijarla`);
 
 // ---------------------------------------------------------------- 5. HITO (opcional)
 
 let HITO = null;
 if (LAYOUT.hito && /^\d{4}-\d{2}-\d{2}$/.test(txt(LAYOUT.hito.fecha))) {
   HITO = { etiqueta: txt(LAYOUT.hito.etiqueta) || 'Hito', fecha: txt(LAYOUT.hito.fecha) };
+  if (HITO.fecha < HOY) { HITO.vencido = true; aviso(`el hito «${HITO.etiqueta}» del layout ya pasó (${HITO.fecha}): actualízalo o bórralo en config/consola-layout.json`); }
 }
 
 // ---------------------------------------------------------------- 6. CORTEZA (saber común) y CONTROL
