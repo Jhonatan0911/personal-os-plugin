@@ -112,7 +112,7 @@
   .pcard ul{list-style:none;margin:0;padding:8px 6px 10px}
   .pcard li{display:grid;grid-template-columns:auto 1fr;gap:10px;padding:8px 9px;border-radius:10px}
 
-  .lvl{font-family:var(--mono);font-size:10px;font-weight:600;letter-spacing:.08em;border:1px solid currentColor;border-radius:6px;padding:1px 6px;height:fit-content;margin-top:2px}
+  .lvl{font-family:var(--mono);font-size:11px;font-weight:600;letter-spacing:.08em;border:1px solid currentColor;border-radius:6px;padding:1px 6px;height:fit-content;margin-top:2px}
   .lvl.n3{color:var(--r3)} .lvl.n2{color:var(--r2)} .lvl.n1{color:var(--r1)}
   .pcard li .lb{font-size:13px;color:var(--ink);line-height:1.45}
   .pcard li .meta{font-family:var(--mono);font-size:10.5px;color:var(--muted-2);margin-top:3px;letter-spacing:.04em}
@@ -158,7 +158,7 @@
   .cx-ctl li{display:flex;align-items:center;gap:8px;font-size:12.5px;padding:3px 0}
   .cx-ctl li i{width:8px;height:8px;border-radius:2px;transform:rotate(45deg);flex:none}
   .cx-ctl li.off{color:var(--muted-2);text-decoration:line-through}
-  .cx-ctl li .s{margin-left:auto;font-family:var(--mono);font-size:9.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+  .cx-ctl li .s{margin-left:auto;font-family:var(--mono);font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
   .cx-lobes{display:grid;gap:3px}
   .cx-lobes button{appearance:none;border:1px solid transparent;background:transparent;color:var(--ink);font:inherit;font-size:12.5px;
     display:grid;grid-template-columns:96px 1fr 26px;align-items:center;gap:8px;padding:4px 6px;border-radius:8px;cursor:pointer;text-align:left}
@@ -274,6 +274,17 @@
     footer{flex-wrap:wrap;white-space:normal}
     #view-mapa .legend{display:none}
   }
+  .abrir{display:inline-block;margin:6px 0 0 12px;font-family:var(--mono);font-size:12px;color:var(--muted)}
+  .abrir:hover{color:var(--synapse)}
+  .pcard li:has(details[open]) .lb:not(.todo){display:none}
+  .lb.todo{white-space:pre-line}
+  .res{display:grid;gap:4px;margin-top:8px}
+  .res button{appearance:none;text-align:left;font:inherit;font-size:12.5px;color:var(--ink);background:transparent;border:1px solid var(--line);border-radius:8px;padding:7px 9px;cursor:pointer;min-height:36px}
+  .res button:hover,.res button:focus-visible{border-color:var(--synapse);outline:none}
+  @media (max-width:600px){
+    #stamp{font-size:11px}
+    .avisos summary,.hoy-list .meta{font-size:12px}
+  }
 </style>
 </head>
 <body>
@@ -313,7 +324,7 @@
       <div class="hoy-nums" role="group" aria-label="Filtros de lo que pide atención">
         <button type="button" data-f="hoy" aria-pressed="false"><div class="k">Vence hoy</div><div class="v" id="n-hoy">—</div><div class="note">compromisos y entregas</div></button>
         <button type="button" data-f="vencido" aria-pressed="false"><div class="k">Vencidos</div><div class="v" id="n-venc">—</div><div class="note" id="n-venc-note"></div></button>
-        <button type="button" data-f="n3" aria-pressed="false"><div class="k">Nivel 3</div><div class="v" id="n-n3">—</div><div class="note">riesgo alto o sin dueño</div></button>
+        <button type="button" data-f="n3" aria-pressed="false"><div class="k">Nivel 3</div><div class="v" id="n-n3">—</div><div class="note">riesgo alto, vencido o sin dueño</div></button>
         <button type="button" data-f="todo" aria-pressed="true"><div class="k">Activos</div><div class="v" id="n-todo">—</div><div class="note" id="n-todo-note"></div></button>
       </div>
       <div class="hoy-h"><h2 id="hoy-h">Lo que pide atención</h2><span id="hoy-c"></span></div>
@@ -451,7 +462,8 @@
   // Lo que pide atención: vence hoy, luego nivel 3, luego lo vencido más reciente (lo más viejo suele estar olvidado).
   const venceHoy=it=>/vence HOY|entrega HOY/.test(it.estado);
   const vencido=it=>(it.atraso||0)>0;
-  const peso=it=>(venceHoy(it)?1000:0)+it.nivel*100-Math.min(99,it.atraso||0);
+  const asumido=it=>/acept|verificad|informativo|en espera/i.test(it.estado||'');
+  const peso=it=>(venceHoy(it)?1000:0)+it.nivel*100-Math.min(99,it.atraso||0)-(asumido(it)?150:0);
   let filtroHoy='todo', filtroCards='todo', buscaCards='';
   const pasa=(it,f)=>f==='hoy'?venceHoy(it):f==='vencido'?vencido(it):f==='n3'?it.nivel>=3:true;
   function renderHoy(its){
@@ -466,7 +478,9 @@
     document.getElementById('hoy-h').textContent={todo:'Lo que pide atención',hoy:'Vence hoy',vencido:'Vencidos (lo más reciente primero)',n3:'Nivel 3'}[filtroHoy];
     document.getElementById('hoy-c').textContent=lista.length>tope?`${tope} de ${lista.length} · el resto en Tarjetas`:`${lista.length}`;
     const ul=document.getElementById('hoy-list');
-    ul.innerHTML=lista.length?'':'<li class="empty">Nada en este filtro. Buen día.</li>';
+    const nV=its.filter(vencido).length;
+    ul.innerHTML=lista.length?'':'<li class="empty">'+(filtroHoy==='hoy'?'Nada vence hoy.':'Nada en este filtro.')+(nV&&filtroHoy!=='vencido'?' Hay '+nV+' vencidos: <button type="button" class="chip" id="ver-venc">Ver vencidos</button>':'')+'</li>';
+    const vv=document.getElementById('ver-venc'); if(vv) vv.addEventListener('click',()=>document.querySelector('.hoy-nums button[data-f="vencido"]').click());
     for(const it of lista.slice(0,tope)){
       const li=document.createElement('li'),b=document.createElement('button');b.type='button';
       b.innerHTML=`<span class="lvl n${esc(it.nivel)}">nivel ${esc(it.nivel)}</span><div><div class="lb">${esc(it.label)}</div><div class="meta"><b>${esc(it.id)}</b> · ${esc(it.estado)}</div></div><span class="pj">${esc(byId[it.cli].label)}</span>`;
@@ -494,7 +508,7 @@
     document.getElementById('graph-scope').textContent='ámbito · '+scope;
     document.getElementById('map-empty').style.display=its.length?'none':'block';
     document.getElementById('stream-count').textContent=st.length+' hoy';
-    set('tab-items',its.length); set('tab-syn',st.length);
+    set('tab-syn',st.length);
     renderCards(projs,its);
     renderLog(st);
   }
@@ -515,7 +529,7 @@
       if((filtroCards!=='todo'||q)&&!rows.length)continue;
       const lis=rows.map(it=>
         `<li id="it-${esc(it.id)}"><span class="lvl n${esc(it.nivel)}">nivel ${esc(it.nivel)}</span>`+
-        `<div><div class="lb">${esc(it.label)}</div>`+(it.completo?`<details class="mas"><summary>Ver la nota completa</summary><div class="lb">${esc(it.completo)}</div></details>`:'')+
+        `<div><div class="lb">${esc(it.label)}</div>`+(it.completo?`<details class="mas"><summary>Ver todo el texto</summary><div class="lb todo">${esc(it.completo)}</div></details>`:'')+(it.archivo?`<a class="abrir" href="${esc('file:///'+String(it.archivo).replace(/\\/g,'/'))}">Abrir la nota ↗</a>`:'')+
         `<div class="meta"><b>${esc(it.id)}</b> · ${esc(it.tag)} · ${esc(it.estado)}</div></div></li>`).join('');
       const el=document.createElement('div');el.className='pcard';el.id='card-'+p.id;
       el.innerHTML=`<div class="pcard-h"><i class="dot" style="color:${col}"></i>`+
@@ -525,6 +539,9 @@
       box.appendChild(el);
     }
     vacioCards(box);
+    const vistos=box.querySelectorAll('.pcard li[id]').length;
+    document.getElementById('tab-items').textContent=(filtroCards!=='todo'||buscaCards)?vistos+'/'+its.length:its.length;
+    document.getElementById('m-risk').textContent=(filtroCards!=='todo'||buscaCards)?vistos+' de '+its.length:its.length;
   }
 
   function vacioCards(box){
@@ -553,6 +570,7 @@
     const b=document.querySelector(`.seg.tabs button[data-view="${v}"]`); if(!b) return;
     document.querySelectorAll('.seg.tabs button').forEach(x=>x.setAttribute('aria-pressed',x===b));
     document.querySelectorAll('.view').forEach(x=>x.classList.toggle('active',x.id==='view-'+v));
+    b.scrollIntoView({inline:'nearest',block:'nearest'});
     if(v==='mapa')resize();
     if(v==='corteza')cx.resize();
     if(escribir!==false){ try{ history.replaceState(null,'','#'+v+(scope!=='ambas'?'&'+scope:'')); }catch(_){} }
@@ -623,7 +641,7 @@
   // Etiqueta legible: chip con fondo oscuro + borde del color del nodo.
   function drawChip(x,y,text,col,size){
     ctx.font=`600 ${size}px ui-monospace,Consolas,monospace`;ctx.textAlign='center';ctx.textBaseline='middle';
-    const w=ctx.measureText(text).width+16,h=size+10,rx=x-w/2,ry=y-h/2;
+    const w=ctx.measureText(text).width+16,h=size+10,rx=Math.max(4,Math.min(W-w-4,x-w/2)),ry=y-h/2;x=rx+w/2;
     ctx.globalAlpha=.92;ctx.fillStyle='rgba(6,10,18,.85)';ctx.strokeStyle=col+'59';ctx.lineWidth=1;
     ctx.beginPath();
     if(ctx.roundRect)ctx.roundRect(rx,ry,w,h,h/2);else ctx.rect(rx,ry,w,h);
@@ -655,13 +673,13 @@
       let rr=5+(it.estado==='abierto'?1:0);if(!reduce)rr+=((Math.sin(t*(1.6+it.nivel*0.5)+i)+1)/2)*(1.5+it.nivel);
       drawNode(pr.x,pr.y,rr,col,vis?1:.06,false);it._sx=pr.x;it._sy=pr.y;it._sr=rr;
       // los n3 llevan su ID visible (los demás, al pasar el mouse)
-      if(vis&&it.nivel>=3){ctx.globalAlpha=.95;ctx.fillStyle=col;ctx.font='600 10.5px ui-monospace,Consolas,monospace';ctx.textAlign='center';ctx.fillText(it.id,pr.x,pr.y+rr+13);}
+      if(vis&&it.nivel>=3&&W>=600){ctx.globalAlpha=.95;ctx.fillStyle=col;ctx.font='600 10.5px ui-monospace,Consolas,monospace';ctx.textAlign='center';ctx.fillText(it.id,pr.x,pr.y+rr+13);}
     });
     // proyectos (etiqueta tipo chip, legible sobre las aristas)
     projs.forEach((c,i)=>{const vis=inScope(c.scope),p=drift(c,t,4.5,i),col=nodeCol(c);
       drawNode(p.x,p.y,c.r,col,vis?1:.06,false);c._sx=p.x;c._sy=p.y;c._sr=c.r;
       if(vis)drawChip(p.x,p.y+c.r+19,c.label,col,12.5);
-      if(vis&&c.resumen)drawChip(p.x,p.y+c.r+42,`${c.resumen.n} ítems · ${c.resumen.venc} vencidos`,COL.r3,11);
+      if(vis&&c.resumen&&W>=600)drawChip(p.x,p.y+c.r+42,`${c.resumen.n} ítems`+(c.resumen.venc?` · ${c.resumen.venc} vencidos`:''),c.resumen.venc?COL.r3:COL.ink,11);
     });
     // núcleo
     drawNode(pb.x,pb.y,brain.r,COL.core,1,true);
@@ -755,7 +773,17 @@
       b.addEventListener('click',()=>{lobeSel=lobeSel===k?null:k;lobesBox.querySelectorAll('button').forEach(x=>x.setAttribute('aria-pressed',x===b&&lobeSel===k));});
       lobesBox.appendChild(b);
     });
-    document.getElementById('cx-find').addEventListener('input',ev=>{find=ev.target.value.trim().toLowerCase();});
+    // Búsqueda o lóbulo elegido: además de atenuar el lienzo, lista las lecciones como botones (teclado y lector).
+    const listar=()=>{
+      if(!find&&!lobeSel){ if(!sel)detalle(null); return; }
+      const res=vig.concat(PROP).filter(n=>coincide(n)&&(!lobeSel||temaDe(n)===lobeSel));
+      if(!res.length) return;
+      det.innerHTML='<div class="meta">'+res.length+' lección(es)'+(lobeSel?' en '+esc(TEMAS[lobeSel].n):'')+(find?' con «'+esc(find)+'»':'')+'</div><div class="res">'+
+        res.slice(0,40).map(n=>'<button type="button" data-id="'+esc(n.id)+'">'+esc(n.id)+' · '+esc(n.titulo)+'</button>').join('')+'</div>';
+      det.querySelectorAll('.res button').forEach(b=>b.addEventListener('click',()=>detalle(porId[b.dataset.id])));
+    };
+    document.getElementById('cx-find').addEventListener('input',ev=>{find=ev.target.value.trim().toLowerCase();sel=null;listar();});
+    lobesBox.addEventListener('click',()=>setTimeout(()=>{sel=null;listar();},0));
     const coincide=n=>!find||(n.id+' '+n.titulo+' '+n.regla).toLowerCase().includes(find);
 
     const det=document.getElementById('cx-det');
@@ -794,7 +822,7 @@
       const ul=document.getElementById('cx-ctl');
       const on=CTL.filter(ctlOn).length;
       document.getElementById('cx-ctl-t').textContent=`Control en este ámbito · ${on}/${CTL.length}`;
-      ul.innerHTML=CTL.map(c=>{const o=ctlOn(c);const col=o?(c.soloEmpresa?COL.laboral:COL.core):'#4d5c76';
+      ul.innerHTML=CTL.map(c=>{const o=ctlOn(c);const col=o?(c.soloEmpresa?COL.laboral:COL.core):'#7d8aa3';
         return `<li class="${o?'':'off'}" title="${esc(c.detalle||'')}"><i style="background:${col}"></i>${esc(c.label)}<span class="s">${o?(c.soloEmpresa?'empresa':'siempre'):'silenciado'}</span></li>`;}).join('');
       const amb=(E.AMBITOS||[]).length?` Ámbitos declarados: ${(E.AMBITOS||[]).map(esc).join(', ')}.`:'';
       const msg={
@@ -898,7 +926,7 @@
         c2.globalAlpha=a;c2.fillStyle=gr;c2.beginPath();c2.arc(x,y,r*3.2,0,7);c2.fill();
         if(n.nivel==='criterio'){c2.strokeStyle=t2.col;c2.lineWidth=1.6;c2.beginPath();c2.arc(x,y,r,0,7);c2.stroke();}
         else{c2.fillStyle=t2.col;c2.shadowBlur=8+g*14;c2.shadowColor=t2.col;c2.beginPath();c2.arc(x,y,r,0,7);c2.fill();c2.shadowBlur=0;}
-        if(n.versiones){c2.globalAlpha=a*.5;c2.strokeStyle=t2.col;c2.lineWidth=.8;c2.beginPath();c2.arc(x,y,r+3.2,t*.8,t*.8+Math.PI*1.2);c2.stroke();}
+        if(n.versiones){const a0=reduce?0:t*.8;c2.globalAlpha=a*.5;c2.strokeStyle=t2.col;c2.lineWidth=.8;c2.beginPath();c2.arc(x,y,r+3.2,a0,a0+Math.PI*1.2);c2.stroke();}
         if(n===sel){c2.globalAlpha=1;c2.strokeStyle='#ffffff';c2.lineWidth=1.4;c2.beginPath();c2.arc(x,y,r+6,0,7);c2.stroke();}
       }
       c2.globalAlpha=1;
@@ -953,7 +981,7 @@
   let hito='';
   if(E.hito&&E.hito.fecha){
     const dd=daysTo(E.hito.fecha);
-    hito=dd<0?' · <b style="color:#ff9a52">'+esc(E.hito.etiqueta||'Hito')+' ya pasó (hace '+(-dd)+' d): actualízalo en el layout</b>'
+    hito=dd<0?' · <span style="color:#ff9a52;text-transform:none">hito vencido</span>'
       :' · '+esc(E.hito.etiqueta||'Hito')+' '+(dd===0?'HOY':'en '+dd+' d');
   }
   const frescura=[];

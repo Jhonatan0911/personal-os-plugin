@@ -200,8 +200,12 @@ const etiqueta = (fm, cuerpo) => {
 // Texto completo de la nota cuando la etiqueta quedó recortada: la tarjeta lo ofrece en «Ver la nota completa».
 const completoDe = (fm, cuerpo) => {
   const corto = etiqueta(fm, cuerpo);
-  const largo = [txt(fm.titulo) || txt(fm.nombre), primerParrafo(cuerpo, 4000)].filter(Boolean).join('. ');
-  return largo.length > corto.length ? largo : undefined;
+  // El cuerpo entero (sin markdown ni tablas), con un tope alto para no inflar datos.js.
+  const limpio = String(cuerpo || '').replace(/^#[^\n]*\n/m, '').split(/\r?\n/)
+    .filter((l) => !/^\s*\|/.test(l)).join('\n')
+    .replace(/\*\*|__|`/g, '').replace(/^#+\s*/gm, '').replace(/\n{3,}/g, '\n\n').trim();
+  const largo = recortar([txt(fm.titulo) || txt(fm.nombre), limpio].filter(Boolean).join('\n\n'), 20000);
+  return largo.replace(/\s+/g, ' ').length > corto.length + 20 ? largo : undefined;
 };
 /** `abierto_en_espera_de_tercero` -> `en espera de tercero`. */
 const estadoCorto = (e) => (txt(e) || 'abierto').replace(/^abierto_?/, '').replace(/_/g, ' ').trim() || 'abierto';
@@ -227,7 +231,7 @@ function resolver(id, valor, clase) {
     NODOS.push(n);
     byId[ID_SIN_NODO] = n;
   }
-  sinNodo.push(`${id} (${clase}, proyecto "${txt(valor) || 'vacío'}" -> ${byId[destino].label})`);
+  sinNodo.push({ id, proyecto: txt(valor).replace(/^\[\[(.*)\]\]$/, '$1').replace(/\s+#.*$/, '') || 'vacío' });
   return destino;
 }
 
@@ -243,7 +247,7 @@ for (const nota of leerNotas('riesgos')) {
     nivel: Math.min(3, Math.max(1, Number(fm.nivel) || 1)),
     estado: estadoCorto(fm.estado),
     tag: primeraClave(fm.issues) || 'riesgo',
-    label: etiqueta(fm, nota.cuerpo), completo: completoDe(fm, nota.cuerpo),
+    label: etiqueta(fm, nota.cuerpo), completo: completoDe(fm, nota.cuerpo), archivo: path.join(STATE, 'riesgos', nota.archivo),
   });
 }
 
@@ -261,7 +265,7 @@ for (const nota of leerNotas('compromisos')) {
     nivel: vencido ? 3 : (fecha ? 2 : 1), fecha, atraso: vencido ? diasEntre(fecha, HOY) : 0,
     estado: vencido ? `vencido hace ${diasEntre(fecha, HOY)} d (${fecha})` : (fecha === HOY ? 'vence HOY' : estadoCorto(fm.estado)),
     tag: primeraClave(fm.issues) || (/tercero/.test(txt(fm.direccion)) ? 'espera a tercero' : 'compromiso'),
-    label: etiqueta(fm, nota.cuerpo), completo: completoDe(fm, nota.cuerpo),
+    label: etiqueta(fm, nota.cuerpo), completo: completoDe(fm, nota.cuerpo), archivo: path.join(STATE, 'compromisos', nota.archivo),
   });
 }
 
@@ -289,7 +293,7 @@ for (const nota of leerNotas('alcances')) {
   ITEMS.push({
     id, cli, clase: 'alcance', nivel, estado, fecha: entrega, atraso: entrega && entrega < HOY ? diasEntre(entrega, HOY) : 0,
     tag: 'alcance',
-    label: etiqueta(fm, nota.cuerpo), completo: completoDe(fm, nota.cuerpo),
+    label: etiqueta(fm, nota.cuerpo), completo: completoDe(fm, nota.cuerpo), archivo: path.join(STATE, 'alcances', nota.archivo),
   });
 }
 
@@ -333,7 +337,9 @@ if (PREF && fs.existsSync(dirPersonal)) {
 }
 
 if (sinNodo.length) {
-  aviso(`notas sin nodo propio en el layout (añade su proyecto a mapa_proyecto_a_nodo): ${sinNodo.join(', ')}`);
+  const porProyecto = {};
+  for (const x of sinNodo) (porProyecto[x.proyecto] = porProyecto[x.proyecto] || []).push(x.id);
+  for (const [proy, ids] of Object.entries(porProyecto)) aviso(`proyecto «${recortar(proy, 60)}» no está en el mapa (añádelo a mapa_proyecto_a_nodo): ${ids.join(', ')}`);
 }
 
 // Red de seguridad: la consola hace byId[it.cli] sin comprobar; un cli inexistente la dejaría en blanco.

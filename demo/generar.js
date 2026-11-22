@@ -109,7 +109,9 @@ const html = fs.readFileSync(path.join(EST, 'consola.html'), 'utf8')
   .replace("'build de hoy · '+esc(E.fecha)", "'datos de ejemplo'");
 fs.writeFileSync(path.join(OUT, 'consola.html'), html, 'utf8');
 const datos = fs.readFileSync(path.join(EST, '_datos', 'datos.js'), 'utf8')
-  .split(TMP.replace(/\\/g, '\\\\')).join('<demo>').split(TMP).join('<demo>');
+  .split(TMP.replace(/\\/g, '\\\\')).join('<demo>').split(TMP).join('<demo>')
+  // La demo no enlaza a archivos: en la web no existen.
+  .replace(/\n\s*"archivo": "[^"]*",?/g, '');
 fs.writeFileSync(path.join(OUT, '_datos', 'datos.js'), datos.replace('ARCHIVO PRIVADO: no se publica ni se sube a ningún servicio.', 'DEMOSTRACIÓN con datos ficticios: se publica en la landing.'), 'utf8');
 fs.rmSync(TMP, { recursive: true, force: true });
 console.log('\nDemo escrita en', OUT);

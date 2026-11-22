@@ -3,7 +3,7 @@
 // Si algo está mal aquí, se corrige en la nota o en el layout y se vuelve a correr el build.
 // DEMOSTRACIÓN con datos ficticios: se publica en la landing.
 window.ESTADO = {
- "generado": "2026-11-22T00:14:54.030Z",
+ "generado": "2026-11-22T00:24:43.061Z",
  "fecha": "2026-11-21",
  "hito": {
   "etiqueta": "Entrega Cliente A",
@@ -113,7 +113,7 @@ window.ESTADO = {
    "nivel": 3,
    "estado": "abierto",
    "tag": "riesgo",
-   "label": "Alcance ampliado sin mover la fecha. Entraron dos puntos nuevos y la fecha sigue igual."
+   "label": "Alcance ampliado sin mover la fecha. Entraron dos puntos nuevos y la fecha sigue igual.",
   },
   {
    "id": "R-02",
@@ -122,7 +122,7 @@ window.ESTADO = {
    "nivel": 2,
    "estado": "abierto",
    "tag": "riesgo",
-   "label": "Dependencia externa sin confirmar. La API del tercero no tiene ambiente de pruebas."
+   "label": "Dependencia externa sin confirmar. La API del tercero no tiene ambiente de pruebas.",
   },
   {
    "id": "R-03",
@@ -131,7 +131,7 @@ window.ESTADO = {
    "nivel": 1,
    "estado": "abierto",
    "tag": "riesgo",
-   "label": "Documentación del módulo atrasada. Dos semanas sin actualizar."
+   "label": "Documentación del módulo atrasada. Dos semanas sin actualizar.",
   },
   {
    "id": "R-04",
@@ -140,7 +140,7 @@ window.ESTADO = {
    "nivel": 2,
    "estado": "abierto",
    "tag": "riesgo",
-   "label": "Prueba de carga pendiente. Sin fecha acordada con infraestructura."
+   "label": "Prueba de carga pendiente. Sin fecha acordada con infraestructura.",
   },
   {
    "id": "C-01",
@@ -151,7 +151,7 @@ window.ESTADO = {
    "atraso": 2,
    "estado": "vencido hace 2 d (2026-11-19)",
    "tag": "espera a tercero",
-   "label": "Certificación del cliente. Pedida hace 11 días."
+   "label": "Certificación del cliente. Pedida hace 11 días.",
   },
   {
    "id": "C-02",
@@ -162,7 +162,7 @@ window.ESTADO = {
    "atraso": 0,
    "estado": "abierto",
    "tag": "compromiso",
-   "label": "Enviar acta firmada. Acta de la sesión de validación."
+   "label": "Enviar acta firmada. Acta de la sesión de validación.",
   },
   {
    "id": "C-03",
@@ -173,7 +173,7 @@ window.ESTADO = {
    "atraso": 0,
    "estado": "abierto",
    "tag": "compromiso",
-   "label": "Entregar el taller del módulo 2. Taller práctico."
+   "label": "Entregar el taller del módulo 2. Taller práctico.",
   },
   {
    "id": "C-04",
@@ -184,7 +184,7 @@ window.ESTADO = {
    "atraso": 0,
    "estado": "abierto",
    "tag": "compromiso",
-   "label": "Publicar la versión del proyecto personal. Sin fecha todavía."
+   "label": "Publicar la versión del proyecto personal. Sin fecha todavía.",
   },
   {
    "id": "A-001",
@@ -195,7 +195,7 @@ window.ESTADO = {
    "fecha": "2026-11-27",
    "atraso": 0,
    "tag": "alcance",
-   "label": "Ajustes del módulo de reportes (10 puntos). Diez puntos prometidos con fecha."
+   "label": "Ajustes del módulo de reportes (10 puntos). Diez puntos prometidos con fecha.",
   }
  ],
  "SINAPSIS": [
