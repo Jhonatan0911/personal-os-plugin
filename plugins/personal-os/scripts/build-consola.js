@@ -519,10 +519,30 @@ const salidaDatos =
   '// ARCHIVO PRIVADO: no se publica ni se sube a ningún servicio.\n' +
   `window.ESTADO = ${JSON.stringify(datos, null, 1)};\n`;
 
-// Plantilla: la del usuario (config/consola.html) si decidió personalizarla; si no, la del plugin.
+// Plantilla: la del plugin. Si el usuario tiene una copia en config/consola.html y es distinta, se
+// ACTUALIZA sola a la del plugin (con respaldo), para que nadie se quede con un diseño viejo sin saberlo.
+// Excepción: una copia marcada con el texto `consola-personalizada` es diseño propio y no se toca.
 const rutaPlantillaUsuario = path.join(CONFIG_DIR, 'consola.html');
 const rutaPlantillaPlugin = path.join(comun.PLUGIN_ROOT, 'plantillas', 'consola.html');
-const plantilla = comun.leerTexto(rutaPlantillaUsuario, null) || comun.leerTexto(rutaPlantillaPlugin, null);
+const tplPlugin = comun.leerTexto(rutaPlantillaPlugin, null);
+let tplUsuario = comun.leerTexto(rutaPlantillaUsuario, null);
+if (tplUsuario && tplPlugin && tplUsuario !== tplPlugin && !/consola-personalizada/.test(tplUsuario)) {
+  if (DRY) {
+    console.log(`(dry-run) config/consola.html es distinta a la del plugin: se actualizaría con respaldo.`);
+  } else {
+    const respaldo = `${rutaPlantillaUsuario}.antes-${HOY}`;
+    try {
+      if (!fs.existsSync(respaldo)) fs.copyFileSync(rutaPlantillaUsuario, respaldo);
+      fs.writeFileSync(rutaPlantillaUsuario, tplPlugin, 'utf8');
+      console.log(`Plantilla de la consola actualizada a la del plugin (la anterior quedó en ${path.basename(respaldo)}).`);
+      tplUsuario = tplPlugin;
+    } catch (e) {
+      aviso(`no se pudo actualizar config/consola.html a la plantilla del plugin (${e.message}); se usa la del plugin igual`);
+      tplUsuario = null;
+    }
+  }
+}
+const plantilla = tplUsuario || tplPlugin;
 if (!plantilla) {
   console.error(`✖ No se encontró la plantilla de la consola (${rutaPlantillaPlugin}).`);
   process.exit(1);

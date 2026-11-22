@@ -1,5 +1,9 @@
 # Changelog
 
+## 3.18.1
+
+- **Consola · la plantilla se actualiza sola:** si el usuario tiene una copia en `<estado>/config/consola.html` distinta a la del plugin, `build-consola.js` la reemplaza por la del plugin y deja respaldo (`consola.html.antes-AAAA-MM-DD`). Así nadie se queda con un diseño viejo sin saberlo. Una copia marcada con `consola-personalizada` se respeta.
+
 ## 3.18.0
 
 - **Consola · auditoría de UX/UI en 13 rondas (de UX 35 % / UI 44 % a UX 92,5 % / UI 80-89 %, sin bloqueantes).**

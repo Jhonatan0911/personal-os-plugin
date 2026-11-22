@@ -11,8 +11,9 @@
 
   PLANTILLA SIN DATOS. Este archivo no trae datos dentro: carga _datos/datos.js con <script src> y lee
   window.ESTADO. Ambos los escribe build-consola.js (scripts/ del plugin) en la carpeta de estado.
-  Regenerar = correr el build; nunca editar el HTML generado. Si quieres personalizar el diseño, copia
-  esta plantilla a <estado>/config/consola.html: el build la usará en lugar de la del plugin.
+  Regenerar = correr el build; nunca editar el HTML generado. Una copia en <estado>/config/consola.html
+  se actualiza sola a esta plantilla en cada build (con respaldo .antes-AAAA-MM-DD). Si la personalizas a
+  propósito, escribe consola-personalizada en un comentario y el build la respeta.
 
   El layout del mapa (fx/fy/r/label/full/scope/parent) es diseño del usuario y vive en
   <estado>/config/consola-layout.json.
