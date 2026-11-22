@@ -237,7 +237,8 @@ function resolver(id, valor, clase) {
     NODOS.push(n);
     byId[ID_SIN_NODO] = n;
   }
-  sinNodo.push({ id, proyecto: txt(valor).replace(/^\[\[(.*)\]\]$/, '$1').replace(/\s+#.*$/, '') || 'vacío' });
+  const pv = txt(valor).replace(/^\[\[(.*)\]\]$/, '$1').replace(/\s+#.*$/, '');
+  sinNodo.push({ id, proyecto: vacio(pv) ? '(sin campo proyecto)' : pv });
   return destino;
 }
 
@@ -345,7 +346,9 @@ if (PREF && fs.existsSync(dirPersonal)) {
 if (sinNodo.length) {
   const porProyecto = {};
   for (const x of sinNodo) (porProyecto[x.proyecto] = porProyecto[x.proyecto] || []).push(x.id);
-  for (const [proy, ids] of Object.entries(porProyecto)) aviso(`proyecto «${recortar(proy, 60)}» no está en el mapa (añádelo a mapa_proyecto_a_nodo): ${ids.join(', ')}`);
+  for (const [proy, ids] of Object.entries(porProyecto)) aviso(proy === '(sin campo proyecto)'
+    ? `notas sin campo «proyecto» (complétalo en la nota): ${ids.join(', ')}`
+    : `proyecto «${recortar(proy, 60)}» no está en el mapa (añádelo a mapa_proyecto_a_nodo): ${ids.join(', ')}`);
 }
 
 // Red de seguridad: la consola hace byId[it.cli] sin comprobar; un cli inexistente la dejaría en blanco.
