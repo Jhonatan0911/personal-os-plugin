@@ -72,10 +72,10 @@
   #view-mapa{overflow:hidden}
   .canvas-shell{position:relative;flex:1 1 auto;min-height:0;overflow:hidden}
   canvas{position:absolute;inset:0;width:100%;height:100%;display:block}
-  .tip{position:absolute;pointer-events:none;transform:translate(-50%,-135%);z-index:5;background:rgba(6,10,18,.94);border:1px solid var(--line-strong);border-radius:9px;padding:9px 12px;font-family:var(--mono);font-size:12.5px;opacity:0;transition:opacity .12s;box-shadow:0 8px 24px rgba(0,0,0,.5);max-width:300px}
+  .tip{position:absolute;pointer-events:none;width:max-content;max-width:min(300px,calc(100% - 16px));z-index:5;background:rgba(6,10,18,.94);border:1px solid var(--line-strong);border-radius:9px;padding:9px 12px;font-family:var(--mono);font-size:12.5px;opacity:0;transition:opacity .12s;box-shadow:0 8px 24px rgba(0,0,0,.5);max-width:300px}
   .tip .lb{color:var(--ink);font-weight:600}
   .tip .mt{color:var(--muted);font-size:10.5px;letter-spacing:.06em;text-transform:uppercase;margin-top:3px}
-  .tip .xd{color:var(--muted);font-size:12px;margin-top:4px;line-height:1.45}
+  .tip .xd{color:var(--muted);font-size:12px;margin-top:4px;line-height:1.45;display:-webkit-box;-webkit-line-clamp:4;-webkit-box-orient:vertical;overflow:hidden}
   .float{position:absolute;z-index:4;background:rgba(9,14,23,.82);border:1px solid var(--line);border-radius:12px;backdrop-filter:blur(6px)}
   .legend{left:14px;bottom:14px;display:flex;gap:13px;flex-wrap:wrap;padding:9px 14px;font-family:var(--mono);font-size:11px;color:var(--muted)}
   .legend span{display:inline-flex;align-items:center;gap:7px}
@@ -294,6 +294,7 @@
   .pcard li:has(details[open]) .lb:not(.todo){display:none}
   .lb.todo{white-space:pre-line;max-height:60vh;overflow:auto;padding-right:6px}
   .acc{display:flex;flex-wrap:wrap;align-items:flex-start;column-gap:16px}
+  .pcard li:has(details[open]) .acc{flex-direction:column}
   .acc .mas{flex:1 1 100%;order:2}
   .acc .mas:not([open]){flex:0 0 auto;order:0}
   .mas[open] .ver,.mas:not([open]) .ocultar{display:none}
@@ -487,10 +488,12 @@
   const itemsInScope=()=>ITEMS.filter(it=>byId[it.cli]&&inScope(byId[it.cli].scope));
   const set=(id,v)=>{document.getElementById(id).textContent=v;};
   // Tooltip arriba del punto; si no cabe, debajo. Nunca fuera de los bordes.
-  function ubicarTip(el,x,y,ancho){
-    el.style.opacity=1; const w=el.offsetWidth||300, h=el.offsetHeight||80;
-    el.style.left=Math.max(w/2+8,Math.min(ancho-w/2-8,x))+'px'; el.style.top=y+'px';
-    el.style.transform=(y-h-18<0)?'translate(-50%,18px)':'translate(-50%,-135%)';
+  function ubicarTip(el,x,y,ancho,alto){
+    el.style.transform='none'; el.style.left='0px'; el.style.top='0px';
+    const w=el.offsetWidth, h=el.offsetHeight;
+    const left=Math.max(8,Math.min(ancho-w-8,x-w/2));
+    let top=y-h-16; if(top<8) top=y+18; if(top+h>alto-8) top=Math.max(8,alto-h-8);
+    el.style.left=left+'px'; el.style.top=top+'px'; el.style.opacity=1;
   }
 
   // Lo que pide atención: vence hoy, luego nivel 3, luego lo vencido más reciente (lo más viejo suele estar olvidado).
@@ -662,7 +665,7 @@
     if(Math.abs(rect.width-W)<1&&Math.abs(rect.height-H)<1)return;    // guarda anti-bucle de resize
     dpr=Math.min(window.devicePixelRatio||1,2);
     W=rect.width;H=rect.height;cv.width=W*dpr;cv.height=H*dpr;ctx.setTransform(dpr,0,0,dpr,0,0);
-    for(const n of NODES){n.bx=Math.max(40,Math.min(W-40,n.fx*W));n.by=Math.max(70,Math.min(H-(W>600?110:90),n.fy*H));}
+    for(const n of NODES){n.bx=Math.max(40,Math.min(W-40,n.fx*W));n.by=Math.max(70,Math.min(H-pieMapa()-46,n.fy*H));}
     const groups={};ITEMS.forEach(it=>{if(byId[it.cli])(groups[it.cli]=groups[it.cli]||[]).push(it);});
     ITEMS.forEach(it=>{it.oculto=false;});
     Object.entries(groups).forEach(([cid,rs0])=>{
@@ -728,8 +731,8 @@
     // proyectos (etiqueta tipo chip, legible sobre las aristas)
     projs.forEach((c,i)=>{const vis=inScope(c.scope),p=drift(c,t,4.5,i),col=nodeCol(c);
       drawNode(p.x,p.y,c.r,col,vis?1:.06,false);c._sx=p.x;c._sy=p.y;c._sr=c.r;
-      if(vis)drawChip(p.x,p.y+c.r+19,c.label,col,12.5);
-      if(vis&&c.resumen&&W>=600)drawChip(p.x,p.y+c.r+42,`${c.resumen.n} ítems`+(c.resumen.venc?` · ${c.resumen.venc} vencidos`:''),c.resumen.venc?COL.r3:COL.ink,11);
+      if(vis){drawChip(p.x,p.y+c.r+19,c.label,col,12.5);const ch=chipsDibujados[chipsDibujados.length-1];if(ch)ch.id=c.id;}
+      if(vis&&c.resumen&&W>=600){drawChip(p.x,p.y+c.r+42,`${c.resumen.n} ítems`+(c.resumen.venc?` · ${c.resumen.venc} vencidos`:''),c.resumen.venc?COL.r3:COL.ink,11);const cr=chipsDibujados[chipsDibujados.length-1];if(cr)cr.id=c.id;}
     });
     for(const [x,y,tx,col] of rotulos)drawChip(x,y,tx,col,10.5,true);
     // núcleo
@@ -749,14 +752,15 @@
     if(ev.pointerType==='touch'){tip.style.opacity=0;return;}
     const rect=cv.getBoundingClientRect(),mx=ev.clientX-rect.left,my=ev.clientY-rect.top;hover=null;
     for(const it of ITEMS){if(!it.oculto&&byId[it.cli]&&inScope(byId[it.cli].scope)&&Math.hypot(mx-(it._sx||0),my-(it._sy||0))<(it._sr||6)+7){hover={t:'i',o:it};break;}}
+    if(!hover)for(const c of chipsDibujados){if(c.id&&Math.abs(mx-c.x)<=c.w/2&&Math.abs(my-c.y)<=c.h/2&&byId[c.id]){hover={t:'n',o:byId[c.id]};break;}}
     if(!hover)for(const n of NODES){if(inScope(n.scope)&&Math.hypot(mx-(n._sx||0),my-(n._sy||0))<(n._sr||6)+8){hover={t:'n',o:n};break;}}
-    if(hover){const o=hover.o;ubicarTip(tip,o._sx,o._sy,W);
+    if(hover){const o=hover.o;
       if(hover.t==='i'){tip.querySelector('.lb').textContent=o.id+' · '+o.tag;tip.querySelector('.mt').textContent=byId[o.cli].label+' · nivel '+o.nivel+' · '+o.estado;tip.querySelector('.xd').textContent=o.label;}
       else if(o.kind==='core'){tip.querySelector('.lb').textContent=o.label||'NÚCLEO';tip.querySelector('.mt').textContent='núcleo · '+(o.full||'Personal OS');tip.querySelector('.xd').textContent='Segundo cerebro ejecutivo';}
       else{const nr=ITEMS.filter(it=>it.cli===o.id).length;
         const kind=o.parent?('sub-nodo de '+byId[o.parent].label):o.scope==='both'?'ítems sin proyecto en el mapa':(o.scope==='personal'?'proyecto personal':'proyecto laboral');
         tip.querySelector('.lb').textContent=o.full;tip.querySelector('.mt').textContent=kind+' · '+nr+' ítem(s) · toca para verlos';tip.querySelector('.xd').textContent=o.issues||'';}
-      cv.style.cursor='pointer';
+      ubicarTip(tip,o._sx,o._sy,W,H);cv.style.cursor='pointer';
     }else{tip.style.opacity=0;cv.style.cursor='default';}
   });
   cv.addEventListener('mouseleave',()=>{tip.style.opacity=0;});
@@ -764,6 +768,7 @@
   cv.addEventListener('click',ev=>{
     const rect=cv.getBoundingClientRect(),mx=ev.clientX-rect.left,my=ev.clientY-rect.top;
     for(const it of ITEMS){if(!it.oculto&&byId[it.cli]&&inScope(byId[it.cli].scope)&&Math.hypot(mx-(it._sx||0),my-(it._sy||0))<(it._sr||6)+9){abrirCard(it.cli,it.id);return;}}
+    for(const c of chipsDibujados){if(c.id&&Math.abs(mx-c.x)<=c.w/2&&Math.abs(my-c.y)<=c.h/2){abrirCard(c.id);return;}}
     for(const n of NODES){if(n.kind!=='core'&&inScope(n.scope)&&Math.hypot(mx-(n._sx||0),my-(n._sy||0))<(n._sr||6)+12){abrirCard(n.id);return;}}
   });
 
@@ -832,7 +837,7 @@
       if(!res.length){
         det.innerHTML='<div class="meta">Ninguna lección'+(lobeSel?' en '+esc(TEMAS[lobeSel].n):'')+(find?' con «'+esc(find)+'»':'')+'.</div><div class="links">'+
           (lobeSel?'<button type="button" id="cx-sinlob">Quitar el lóbulo</button>':'')+(find?'<button type="button" id="cx-clear">Limpiar la búsqueda</button>':'')+'</div>';
-        const sl=document.getElementById('cx-sinlob'); if(sl) sl.addEventListener('click',()=>{lobeSel=null;lobesBox.querySelectorAll('button').forEach(x=>x.setAttribute('aria-pressed','false'));listar();});
+        const sl=document.getElementById('cx-sinlob'); if(sl) sl.addEventListener('click',()=>{lobeSel=null;lobesBox.querySelectorAll('button').forEach(x=>x.setAttribute('aria-pressed','false'));listar();const b=det.querySelector('.res button');(b||document.getElementById('cx-find')).focus();});
         const cl=document.getElementById('cx-clear'); if(cl) cl.addEventListener('click',()=>{const f=document.getElementById('cx-find');f.value='';find='';listar();f.focus();});
         return;
       }
@@ -865,7 +870,7 @@
         (links?`<div class="links">${links}</div>`:'');
       det.querySelectorAll('.links button').forEach(b=>b.addEventListener('click',()=>detalle(porId[b.dataset.id])));
       const h3=det.querySelector('h3'); if(h3){h3.tabIndex=-1;h3.focus({preventScroll:true});}
-      const vb=document.getElementById('cx-volver'); if(vb) vb.addEventListener('click',()=>{side.classList.remove('leyendo');sel=null;if(find||lobeSel)listar();else detalle(null);});
+      const vb=document.getElementById('cx-volver'); if(vb) vb.addEventListener('click',()=>{const leida=n.id;side.classList.remove('leyendo');sel=null;if(find||lobeSel){listar();const b=det.querySelector('.res button[data-id="'+CSS.escape(leida)+'"]')||det.querySelector('.res button');if(b)b.focus();}else{detalle(null);document.getElementById('cx-find').focus();}});
       if(!reduce)fire(n,1);
     }
     detalle(null);
@@ -1012,11 +1017,12 @@
       if(ev.pointerType==='touch'){tip2.style.opacity=0;return;}
       const r=cvs.getBoundingClientRect();hov=pick(ev.clientX-r.left,ev.clientY-r.top);
       if(!hov){tip2.style.opacity=0;cvs.style.cursor='default';return;}
-      const o=hov.o;ubicarTip(tip2,o._sx,o._sy,W);cvs.style.cursor='pointer';
+      const o=hov.o;cvs.style.cursor='pointer';
       if(hov.t==='n'){tip2.querySelector('.lb').textContent=o.id+' · '+o.titulo;
         tip2.querySelector('.mt').textContent=TEMAS[temaDe(o)].n+' · '+(o.estado==='propuesta'?'propuesta en el sueño':o.nivel)+(o.casos?' · '+o.casos+' caso(s)':'')+((grado[o.id]||0)?' · '+grado[o.id]+' sinapsis':'');
         tip2.querySelector('.xd').textContent=o.estado==='propuesta'?'Espera tu aprobación o un segundo caso que la confirme.':(o.aplica&&o.aplica.length?'Se carga al tocar '+o.aplica.join(' '):'Siempre presente: es método.');}
       else{const on=ctlOn(o);tip2.querySelector('.lb').textContent=o.label;tip2.querySelector('.mt').textContent=on?(o.soloEmpresa?'solo en sesiones de la empresa':'en todas las sesiones'):'silenciado en este ámbito';tip2.querySelector('.xd').textContent=o.detalle||'';}
+      ubicarTip(tip2,o._sx,o._sy,W,H);
     });
     cvs.addEventListener('mouseleave',()=>{tip2.style.opacity=0;hov=null;});
     cvs.addEventListener('click',ev=>{tip2.style.opacity=0;const r=cvs.getBoundingClientRect();const h=pick(ev.clientX-r.left,ev.clientY-r.top);if(h&&h.t==='n')detalle(h.o);});
