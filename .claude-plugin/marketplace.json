@@ -8,7 +8,7 @@
       "name": "personal-os",
       "source": "./plugins/personal-os",
       "description": "Personal OS: 24 skills para Claude Code enfocadas en productividad, trabajo y rendimiento, con memoria persistente que aprende contigo (bitácora, corteza de lecciones y sueño semanal). Brief diario, compromisos punto por punto, sprints, PRs, horas trazables y status del equipo sobre Jira, Outlook y Teams.",
-      "version": "3.17.0",
+      "version": "3.18.0",
       "author": { "name": "Jhonatan Piña" }
     }
   ]

@@ -1,5 +1,15 @@
 # Changelog
 
+## 3.18.0
+
+- **Consola · auditoría de UX/UI en 13 rondas (de UX 35 % / UI 44 % a UX 92,5 % / UI 80-89 %, sin bloqueantes).**
+  - **Pestaña Hoy** (la de entrada): la prioridad #1 con su fecha (si no es de hoy lo dice en naranja), cuatro cifras que filtran (vence hoy, vencidos con su antigüedad, nivel 3, todos) y «Lo que pide atención» ordenado; cada fila abre su tarjeta. Franja de frescura si los datos o el hito no son de hoy; avisos del build en una lista, no en un tooltip.
+  - **Datos honestos en el build:** quita los comentarios YAML del frontmatter (alcances cumplidos ya no cuentan como activos), fecha la prioridad y el hito, días de atraso por ítem, texto completo de la nota y su ruta, avisos de proyectos sin mapear agrupados en uno, «Sin proyecto» en un hueco libre y visible en ambos ámbitos.
+  - **Mapa:** proyectos con muchos ítems muestran los 3 más graves y una insignia con el total; clic o toque en nodo, nombre, insignia o ítem abre su tarjeta; rótulos que no chocan; tooltips que nunca salen de la pantalla.
+  - **Tarjetas:** filtros, búsqueda con vacío y «Limpiar», 8 ítems por tarjeta con «Ver los N restantes», «Ver todo» a lo ancho y «Abrir ↗» la nota.
+  - **Corteza:** la búsqueda y los lóbulos listan lecciones como botones (teclado y lector), «Abrir la lección ↗», controles del panel con su detalle, lectura a pantalla completa en celular con «Volver».
+  - **Celular, accesibilidad y movimiento:** cabecera compacta con las 5 pestañas, ámbito como selector, objetivos de 44 px, foco gestionado tras cada acción, anuncios `aria-live`, URL que recuerda vista y ámbito, y todo quieto con «reducir movimiento».
+
 ## 3.17.0
 
 - **Consola · pestaña Corteza:** el cerebro se ve. `build-consola.js` lee las notas `CO-###` de `conocimiento.dir` (regla, porqué, cuándo no aplica, casos, versiones del historial y sus «Ver también»), las propuestas del sueño y las semanas ya consolidadas, y las pinta como lóbulos por tema con sinapsis reales entre notas. Arriba, la capa de control (núcleo de la empresa, vigías, guardia); al cambiar el ámbito a Personal se apaga el control de la empresa y el saber queda entero. Búsqueda, detalle de cada lección al tocarla, filtro por lóbulo y enlace directo `consola.html#corteza&personal`. Sin corteza configurada, la pestaña explica cómo activarla.
