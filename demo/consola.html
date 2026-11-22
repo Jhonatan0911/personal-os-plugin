@@ -182,6 +182,7 @@
   #view-corteza .legend{left:14px;bottom:14px;flex-direction:column;gap:6px}
   @media (max-width:900px){
     .cx-side{top:auto;left:14px;right:14px;width:auto;max-height:42%}
+    .cx-side.leyendo{max-height:calc(100% - 28px);top:14px}
     #view-corteza .legend{display:none}
     .cx-head{max-width:calc(100% - 28px)}
   }
@@ -269,6 +270,10 @@
   .mas .lb{margin-top:6px;color:var(--muted)}
   .chip{min-height:36px}
   .stamp-btn{min-height:28px;padding:2px 6px}
+  @media (max-width:680px){ .stamp-btn{min-height:44px} }
+  .vitals.filtrando .vital:not(.risk){opacity:.45}
+  .volver{appearance:none;font:inherit;font-family:var(--mono);font-size:12px;color:var(--synapse);background:transparent;border:1px solid var(--line-strong);border-radius:10px;padding:0 12px;min-height:44px;margin-bottom:10px;cursor:pointer}
+  .hoy-h .chip{margin-left:6px}
   .empty .chip{margin-left:8px}
   .scope-sel{display:none;background:var(--panel);color:var(--ink);border:1px solid var(--line-strong);border-radius:10px;font-family:var(--mono);font-size:12px;padding:0 10px;min-height:44px}
   @media (max-width:600px){
@@ -277,12 +282,17 @@
     .seg.tabs{-webkit-mask-image:linear-gradient(90deg,#000 85%,transparent);mask-image:linear-gradient(90deg,#000 85%,transparent);padding-right:24px}
     footer{flex-wrap:wrap;white-space:normal}
     #view-mapa .legend{left:8px;right:8px;bottom:8px;gap:8px;padding:6px 10px;font-size:10.5px}
-    #view-mapa .legend span:nth-child(3),#view-mapa .legend span:nth-child(5),#view-mapa .legend span:nth-child(6){display:none}
+    #view-mapa .legend{flex-wrap:wrap}
+    #view-mapa .legend span:nth-child(3){display:none}
   }
   .abrir{display:inline-flex;align-items:center;min-height:32px;margin:2px 0 0 0;font-family:var(--mono);font-size:12px;color:var(--muted)}
   .abrir:hover{color:var(--synapse)}
   .pcard li:has(details[open]) .lb:not(.todo){display:none}
-  .lb.todo{white-space:pre-line;max-height:50vh;overflow:auto;padding-right:6px}
+  .lb.todo{white-space:pre-line;display:-webkit-box;-webkit-line-clamp:40;-webkit-box-orient:vertical;overflow:hidden}
+  .acc{display:flex;flex-wrap:wrap;align-items:flex-start;column-gap:16px}
+  .acc .mas{flex:1 1 100%;order:2}
+  .acc .mas:not([open]){flex:0 0 auto;order:0}
+  .mas[open] .ver,.mas:not([open]) .ocultar{display:none}
   .res{display:grid;gap:4px;margin-top:8px}
   .res button{appearance:none;text-align:left;font:inherit;font-size:12.5px;color:var(--ink);background:transparent;border:1px solid var(--line);border-radius:8px;padding:7px 9px;cursor:pointer;min-height:36px}
   .res button:hover,.res button:focus-visible{border-color:var(--synapse);outline:none}
@@ -482,7 +492,10 @@
     const lista=its.filter(i=>pasa(i,filtroHoy)).sort((a,b)=>peso(b)-peso(a));
     const tope=filtroHoy==='todo'?12:lista.length;
     document.getElementById('hoy-h').textContent={todo:'Lo que pide atención',hoy:'Vence hoy',vencido:'Vencidos (los más recientes primero)',n3:'Nivel 3'}[filtroHoy];
-    document.getElementById('hoy-c').textContent=lista.length>tope?`${tope} de ${lista.length} · el resto en Tarjetas`:`${lista.length}`;
+    const hc=document.getElementById('hoy-c');
+    hc.innerHTML=lista.length>tope?`${tope} de ${lista.length} · <button type="button" class="chip" id="ver-resto">Ver los ${lista.length} en Tarjetas</button>`:`${lista.length}`;
+    const vr=document.getElementById('ver-resto'); if(vr) vr.addEventListener('click',()=>{filtroCards=filtroHoy;
+      document.querySelectorAll('.chip[data-cf]').forEach(x=>x.setAttribute('aria-pressed',x.dataset.cf===filtroCards));refresh();irVista('tarjetas');});
     const ul=document.getElementById('hoy-list');
     const nV=its.filter(vencido).length;
     ul.innerHTML=lista.length?'':'<li class="empty">'+(filtroHoy==='hoy'?'Nada vence hoy.':'Nada en este filtro.')+(nV&&filtroHoy!=='vencido'?' Hay '+nV+' vencidos: <button type="button" class="chip" id="ver-venc">Ver vencidos</button>':'')+'</li>';
@@ -535,7 +548,7 @@
       if((filtroCards!=='todo'||q)&&!rows.length)continue;
       const lis=rows.map(it=>
         `<li id="it-${esc(it.id)}"><span class="lvl n${esc(it.nivel)}">nivel ${esc(it.nivel)}</span>`+
-        `<div><div class="lb">${esc(it.label)}</div><div class="meta"><b>${esc(it.id)}</b> · ${esc(it.tag)} · ${esc(it.estado)}</div>`+(it.completo?`<details class="mas"><summary>Ver todo el texto</summary><div class="lb todo">${esc(it.completo)}</div></details>`:'')+(it.archivo?`<a class="abrir" target="_blank" rel="noopener" href="${esc('file:///'+String(it.archivo).replace(/\\/g,'/'))}">Abrir la nota ↗</a>`:'')+
+        `<div><div class="lb">${esc(it.label)}</div><div class="meta"><b>${esc(it.id)}</b> · ${esc(it.tag)} · ${esc(it.estado)}</div>`+`<div class="acc">`+(it.completo?`<details class="mas"><summary><span class="ver">Ver todo el texto</span><span class="ocultar">Ocultar el texto</span></summary><div class="lb todo">${esc(it.completo)}</div></details>`:'')+(it.archivo?`<a class="abrir" target="_blank" rel="noopener" href="${esc('file:///'+String(it.archivo).replace(/\\/g,'/'))}">Abrir la nota ↗</a>`:'')+`</div>`+
         `</div></li>`).join('');
       const el=document.createElement('div');el.className='pcard';el.id='card-'+p.id;
       el.innerHTML=`<div class="pcard-h"><i class="dot" style="color:${col}"></i>`+
@@ -548,6 +561,7 @@
     const vistos=box.querySelectorAll('.pcard li[id]').length;
     document.getElementById('tab-items').textContent=(filtroCards!=='todo'||buscaCards)?vistos+'/'+its.length:its.length;
     document.getElementById('m-risk').textContent=(filtroCards!=='todo'||buscaCards)?vistos+' de '+its.length:its.length;
+    document.querySelector('.vitals').classList.toggle('filtrando',filtroCards!=='todo'||!!buscaCards);
   }
 
   function vacioCards(box){
@@ -625,7 +639,7 @@
     if(Math.abs(rect.width-W)<1&&Math.abs(rect.height-H)<1)return;    // guarda anti-bucle de resize
     dpr=Math.min(window.devicePixelRatio||1,2);
     W=rect.width;H=rect.height;cv.width=W*dpr;cv.height=H*dpr;ctx.setTransform(dpr,0,0,dpr,0,0);
-    for(const n of NODES){n.bx=Math.max(40,Math.min(W-40,n.fx*W));n.by=Math.max(70,Math.min(H-80,n.fy*H));}
+    for(const n of NODES){n.bx=Math.max(40,Math.min(W-40,n.fx*W));n.by=Math.max(70,Math.min(H-(W>600?110:90),n.fy*H));}
     const groups={};ITEMS.forEach(it=>{if(byId[it.cli])(groups[it.cli]=groups[it.cli]||[]).push(it);});
     ITEMS.forEach(it=>{it.oculto=false;});
     Object.entries(groups).forEach(([cid,rs0])=>{
@@ -646,10 +660,12 @@
 
   // Etiqueta legible: chip con fondo oscuro + borde del color del nodo.
   let chipsDibujados=[];
-  function drawChip(x,y,text,col,size){
+  function drawChip(x,y,text,col,size,fijo){
     // Si choca con otro chip ya dibujado en este cuadro, baja hasta encontrar hueco.
     ctx.font=`600 ${size}px ui-monospace,Consolas,monospace`;{const w0=ctx.measureText(text).width+16,h0=size+10;let k=0;
-      while(k<6&&chipsDibujados.some(c=>Math.abs(c.x-x)<(c.w+w0)/2&&Math.abs(c.y-y)<(c.h+h0)/2)){y+=h0+2;k++;}
+      const choca=()=>chipsDibujados.some(c=>Math.abs(c.x-x)<(c.w+w0)/2&&Math.abs(c.y-y)<(c.h+h0)/2);
+      if(fijo&&choca())return;
+      while(k<6&&choca()){y+=h0+2;k++;}
       chipsDibujados.push({x,y,w:w0,h:h0});}
     ctx.font=`600 ${size}px ui-monospace,Consolas,monospace`;ctx.textAlign='center';ctx.textBaseline='middle';
     const w=ctx.measureText(text).width+16,h=size+10,rx=Math.max(4,Math.min(W-w-4,x-w/2)),ry=y-h/2;x=rx+w/2;
@@ -692,7 +708,7 @@
       if(vis)drawChip(p.x,p.y+c.r+19,c.label,col,12.5);
       if(vis&&c.resumen&&W>=600)drawChip(p.x,p.y+c.r+42,`${c.resumen.n} ítems`+(c.resumen.venc?` · ${c.resumen.venc} vencidos`:''),c.resumen.venc?COL.r3:COL.ink,11);
     });
-    for(const [x,y,tx,col] of rotulos)drawChip(x,y,tx,col,10.5);
+    for(const [x,y,tx,col] of rotulos)drawChip(x,y,tx,col,10.5,true);
     // núcleo
     drawNode(pb.x,pb.y,brain.r,COL.core,1,true);
     ctx.fillStyle='#04121a';ctx.beginPath();ctx.arc(pb.x,pb.y,brain.r*0.42,0,7);ctx.fill();
@@ -811,8 +827,10 @@
       if(!n){det.innerHTML='<div class="meta">Toca una neurona para leer la lección: su regla, el porqué y cuándo no aplica.</div>';return;}
       const t=TEMAS[temaDe(n)];
       const links=(n.enlaces||[]).filter(e=>porId[e]).map(e=>`<button type="button" data-id="${esc(e)}">${esc(e)}</button>`).join('');
-      if(innerWidth<=900) requestAnimationFrame(()=>det.scrollIntoView({block:'nearest'}));
-      det.innerHTML=`<div class="id">${esc(n.id)} · ${esc(t.n)} · ${n.estado==='propuesta'?'PROPUESTA':esc(n.nivel)}</div>`+
+      const side=document.getElementById('cx-side');
+      if(innerWidth<=900&&n){ side.classList.add('leyendo'); requestAnimationFrame(()=>{side.scrollTop=0;det.scrollIntoView({block:'start'});}); }
+      else side.classList.remove('leyendo');
+      det.innerHTML=(innerWidth<=900?'<button type="button" class="volver" id="cx-volver">← Volver al cerebro</button>':'')+`<div class="id">${esc(n.id)} · ${esc(t.n)} · ${n.estado==='propuesta'?'PROPUESTA':esc(n.nivel)}</div>`+
         `<h3>${esc(n.titulo)}</h3>`+
         (n.regla?`<p><b>Regla</b>${esc(n.regla)}</p>`:'')+
         (n.porque?`<p><b>Por qué</b>${esc(n.porque)}</p>`:'')+
@@ -822,6 +840,7 @@
         `${n.versiones?' · '+esc(n.versiones)+' ajuste(s)':''}</div>`+
         (links?`<div class="links">${links}</div>`:'');
       det.querySelectorAll('.links button').forEach(b=>b.addEventListener('click',()=>detalle(porId[b.dataset.id])));
+      const vb=document.getElementById('cx-volver'); if(vb) vb.addEventListener('click',()=>{side.classList.remove('leyendo');detalle(null);});
       if(!reduce)fire(n,1);
     }
     detalle(null);
@@ -988,7 +1007,7 @@
     const partes=location.hash.slice(1).split('&').filter(Boolean);
     const v=partes.find(k=>document.querySelector(`.seg.tabs button[data-view="${CSS.escape(k)}"]`));
     const sc=partes.find(k=>['ambas','laboral','personal'].includes(k));
-    if(sc&&sc!==scope) fijarAmbito(sc);
+    const quiere=sc||'ambas'; if(quiere!==scope) fijarAmbito(quiere);
     if(v) irVista(v,false); };
   leerHash(); addEventListener('hashchange',leerHash);
 
