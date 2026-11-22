@@ -220,7 +220,8 @@
   .hoy-nums .k{font-family:var(--mono);font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
   .hoy-nums .v{font-family:var(--mono);font-size:28px;font-weight:600;margin-top:4px;line-height:1}
   .hoy-nums .note{font-size:12px;color:var(--muted);margin-top:5px}
-  .hoy-h{display:flex;align-items:baseline;justify-content:space-between;gap:10px;margin-top:4px}
+  .hoy-h{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:6px 10px;margin-top:4px}
+  #hoy-c{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
   .hoy-h h2{font-size:15px;margin:0;font-weight:650}
   .hoy-h span{font-family:var(--mono);font-size:12px;color:var(--muted)}
   .hoy-list{list-style:none;margin:0;padding:0;display:grid;gap:6px}
@@ -271,6 +272,7 @@
   }
   .fresh{background:rgba(255,154,82,.1);border:1px solid rgba(255,154,82,.4);border-radius:12px;padding:10px 14px;color:var(--r2);font-size:13.5px;line-height:1.5;display:grid;gap:4px}
   .mas{display:block}
+  .mas[open] summary{position:sticky;top:0;background:var(--panel);z-index:1}
   .mas summary{display:inline-flex;align-items:center;min-height:32px;cursor:pointer;font-family:var(--mono);font-size:12px;color:var(--synapse);margin-top:4px}
   .mas summary:focus-visible{outline:2px solid var(--synapse);outline-offset:2px}
   .mas .lb{margin-top:6px;color:var(--muted)}
@@ -312,10 +314,14 @@
   .acc{column-gap:18px}
   .mas-items{margin:4px 10px 12px}
   @media (max-width:600px){
-    #stamp .larga{display:none}
+    #stamp .larga .f{display:none}
     footer{flex-wrap:nowrap;white-space:nowrap}
   }
   @media (max-width:680px){ .chip{min-height:44px} }
+  .cx-ctl li button{appearance:none;display:flex;align-items:center;gap:8px;width:100%;font:inherit;color:inherit;background:none;border:0;padding:4px 0;cursor:pointer;text-align:left;min-height:32px}
+  .cx-ctl li button:focus-visible{outline:2px solid var(--synapse);outline-offset:2px}
+  .cx-ctl li.off button{text-decoration:line-through}
+  .stamp-btn{text-transform:none}
 </style>
 </head>
 <body>
@@ -518,7 +524,7 @@
     document.getElementById('n-todo-note').textContent=`en ${new Set(its.map(i=>i.cli)).size} proyectos`+(sinP?` · ${sinP} sin proyecto (se ven en ambos ámbitos)`:'');
     const lista=its.filter(i=>pasa(i,filtroHoy)).sort((a,b)=>peso(b)-peso(a));
     const tope=filtroHoy==='todo'?12:lista.length;
-    document.getElementById('hoy-h').textContent={todo:'Lo que pide atención',hoy:'Vence hoy',vencido:'Vencidos · por nivel, y dentro de cada nivel los más recientes',n3:'Nivel 3'}[filtroHoy];
+    document.getElementById('hoy-h').textContent={todo:'Lo que pide atención',hoy:'Vence hoy',vencido:'Vencidos',n3:'Nivel 3'}[filtroHoy];
     const hc=document.getElementById('hoy-c');
     hc.innerHTML=lista.length>tope?`${tope} de ${lista.length} · <button type="button" class="chip" id="ver-resto">Ver los ${lista.length} en Tarjetas</button>`:`${lista.length}`;
     const vr=document.getElementById('ver-resto'); if(vr) vr.addEventListener('click',()=>{filtroCards=filtroHoy;NODES.forEach(n=>abiertas.add(n.id));
@@ -737,7 +743,7 @@
     projs.forEach((c,i)=>{const vis=inScope(c.scope),p=drift(c,t,4.5,i),col=nodeCol(c);
       drawNode(p.x,p.y,c.r,col,vis?1:.06,false);c._sx=p.x;c._sy=p.y;c._sr=c.r;
       if(vis){drawChip(p.x,p.y+c.r+19,c.label,col,12.5);const ch=chipsDibujados[chipsDibujados.length-1];if(ch)ch.id=c.id;}
-      if(vis&&c.resumen&&W>=600){drawChip(p.x,p.y+c.r+42,`${c.resumen.n} ítems`+(c.resumen.venc?` · ${c.resumen.venc} vencidos`:''),c.resumen.venc?COL.r3:COL.ink,11);const cr=chipsDibujados[chipsDibujados.length-1];if(cr)cr.id=c.id;}
+      if(vis&&c.resumen){drawChip(p.x,p.y+c.r+42,W>=600?`${c.resumen.n} ítems`+(c.resumen.venc?` · ${c.resumen.venc} vencidos`:''):`${c.resumen.n}`+(c.resumen.venc?` · ${c.resumen.venc} venc.`:''),c.resumen.venc?COL.r3:COL.ink,11);const cr=chipsDibujados[chipsDibujados.length-1];if(cr)cr.id=c.id;}
     });
     for(const [x,y,tx,col] of rotulos)drawChip(x,y,tx,col,10.5,true);
     // núcleo
@@ -764,7 +770,7 @@
       else if(o.kind==='core'){tip.querySelector('.lb').textContent=o.label||'NÚCLEO';tip.querySelector('.mt').textContent='núcleo · '+(o.full||'Personal OS');tip.querySelector('.xd').textContent='Segundo cerebro ejecutivo';}
       else{const nr=ITEMS.filter(it=>it.cli===o.id).length;
         const kind=o.parent?('sub-nodo de '+byId[o.parent].label):o.scope==='both'?'ítems sin proyecto en el mapa':(o.scope==='personal'?'proyecto personal':'proyecto laboral');
-        tip.querySelector('.lb').textContent=o.full;tip.querySelector('.mt').textContent=kind+' · '+nr+' ítem(s) · toca para verlos';tip.querySelector('.xd').textContent=o.issues||'';}
+        tip.querySelector('.lb').textContent=o.full;tip.querySelector('.mt').textContent=kind+' · '+nr+(nr===1?' ítem':' ítems')+' · toca para verlos';tip.querySelector('.xd').textContent=o.issues||'';}
       ubicarTip(tip,o._sx,o._sy,W,H);cv.style.cursor='pointer';
     }else{tip.style.opacity=0;cv.style.cursor='default';}
   });
@@ -822,7 +828,7 @@
 
     // ---- panel: sueño, lóbulos, búsqueda
     const sl=document.getElementById('cx-sleep');
-    sl.innerHTML=`<b>${esc(CZ.semanas||0)}</b> semana(s) de bitácora consolidadas`+(CZ.ultimaSemana?` · la última, <b>${esc(CZ.ultimaSemana)}</b>`:'')+
+    sl.innerHTML=`<b>${esc(CZ.semanas||0)}</b> ${CZ.semanas===1?'semana':'semanas'} de bitácora consolidadas`+(CZ.ultimaSemana?` · la última, <b>${esc(CZ.ultimaSemana)}</b>`:'')+
       `.<br><b>${PROP.length}</b> propuesta(s) esperando tu aprobación o un segundo caso.`+
       (CZ.validacion&&/^FALLA/i.test(CZ.validacion)?`<br><span class="bad">⚠ ${esc(CZ.validacion)}</span>`:'');
     let lobeSel=null,sel=null,find='';
@@ -846,7 +852,7 @@
         const cl=document.getElementById('cx-clear'); if(cl) cl.addEventListener('click',()=>{const f=document.getElementById('cx-find');f.value='';find='';listar();f.focus();});
         return;
       }
-      det.innerHTML='<div class="meta">'+res.length+' lección(es)'+(lobeSel?' en '+esc(TEMAS[lobeSel].n):'')+(find?' con «'+esc(find)+'»':'')+'</div><div class="res">'+
+      det.innerHTML='<div class="meta">'+res.length+(res.length===1?' lección':' lecciones')+(lobeSel?' en '+esc(TEMAS[lobeSel].n):'')+(find?' con «'+esc(find)+'»':'')+'</div><div class="res">'+
         res.slice(0,40).map(n=>'<button type="button" data-id="'+esc(n.id)+'">'+esc(n.id)+' · '+esc(n.titulo)+'</button>').join('')+'</div>';
       det.querySelectorAll('.res button').forEach(b=>b.addEventListener('click',()=>detalle(porId[b.dataset.id])));
     };
@@ -892,7 +898,8 @@
       const on=CTL.filter(ctlOn).length;
       document.getElementById('cx-ctl-t').textContent=`Control en este ámbito · ${on}/${CTL.length}`;
       ul.innerHTML=CTL.map(c=>{const o=ctlOn(c);const col=o?(c.soloEmpresa?COL.laboral:COL.core):'#7d8aa3';
-        return `<li class="${o?'':'off'}" title="${esc(c.detalle||'')}"><i style="background:${col}"></i>${esc(c.label)}<span class="s">${o?(c.soloEmpresa?'empresa':'siempre'):'silenciado'}</span></li>`;}).join('');
+        return `<li class="${o?'':'off'}"><button type="button" data-ctl="${CTL.indexOf(c)}"><i style="background:${col}"></i>${esc(c.label)}<span class="s">${o?(c.soloEmpresa?'empresa':'siempre'):'silenciado'}</span></button></li>`;}).join('');
+      ul.querySelectorAll('button[data-ctl]').forEach(b=>b.addEventListener('click',()=>verControl(CTL[+b.dataset.ctl])));
       const amb=(E.AMBITOS||[]).length?` Ámbitos declarados: ${(E.AMBITOS||[]).map(esc).join(', ')}.`:'';
       const msg={
         ambas:`Sesión central: <b>${vig.length} lecciones</b> y los <b>${CTL.length} controles</b> encendidos.`,
@@ -912,7 +919,8 @@
       dpr=Math.min(window.devicePixelRatio||1,2);W=r.width;H=r.height;cvs.width=W*dpr;cvs.height=H*dpr;c2.setTransform(dpr,0,0,dpr,0,0);
       const ancho=W>900?W-360:W, alto=W>900?H:H*0.58;
       // Franja libre: debajo del encabezado (control y sus etiquetas) y encima del pie (sueño).
-      const top=W>900?150:(W<560?40:120), bot=alto-(W>900?54:30);
+      const ley=document.querySelector('#view-corteza .legend'), lr=ley&&ley.offsetParent?ley.getBoundingClientRect():null, cr=cvs.getBoundingClientRect();
+      const top=W>900?150:(W<560?(lr?lr.bottom-cr.top+70:40):120), bot=alto-(W>900?54:30);
       const cxC=ancho/2, cyC=(top+bot)/2+4;
       let ry=(bot-top)/2-62, rx=Math.min(ancho*0.4,ry/0.62);
       ry=Math.min(ry,rx*0.72);
@@ -1030,7 +1038,8 @@
       ubicarTip(tip2,o._sx,o._sy,W,H);
     });
     cvs.addEventListener('mouseleave',()=>{tip2.style.opacity=0;hov=null;});
-    cvs.addEventListener('click',ev=>{tip2.style.opacity=0;const r=cvs.getBoundingClientRect();const h=pick(ev.clientX-r.left,ev.clientY-r.top);if(h&&h.t==='n')detalle(h.o);else if(h&&h.t==='c'){const c=h.o,on=ctlOn(c);det.innerHTML='<div class="id">CONTROL · '+(c.soloEmpresa?'solo sesiones de la empresa':'todas las sesiones')+'</div><h3>'+esc(c.label)+'</h3><p>'+esc(c.detalle||'')+'</p>'+'<div class="meta">'+(on?'Encendido en este ámbito.':'Silenciado en este ámbito.')+'</div>';}});
+    cvs.addEventListener('click',ev=>{tip2.style.opacity=0;const r=cvs.getBoundingClientRect();const h=pick(ev.clientX-r.left,ev.clientY-r.top);if(h&&h.t==='n')detalle(h.o);else if(h&&h.t==='c')verControl(h.o);});
+    function verControl(c){const on=ctlOn(c);det.innerHTML='<div class="id">CONTROL · '+(c.soloEmpresa?'solo sesiones de la empresa':'todas las sesiones')+'</div><h3>'+esc(c.label)+'</h3><p>'+esc(c.detalle||'')+'</p>'+'<div class="meta">'+(on?'Encendido en este ámbito.':'Silenciado en este ámbito.')+'</div>';const h3=det.querySelector('h3');if(h3){h3.tabIndex=-1;h3.focus({preventScroll:true});}}
     new ResizeObserver(()=>{W=0;resizeCx();}).observe(cvs.parentElement);
     requestAnimationFrame(drawCx);
     return {resize(){W=0;resizeCx();},scope:scopeCx};
@@ -1062,7 +1071,7 @@
   const avisos=Array.isArray(E.avisos)?E.avisos:[];
   const av=document.getElementById('avisos');
   if(avisos.length){
-    document.getElementById('avisos-s').textContent=avisos.length+' aviso(s) del build: qué revisar en tus notas';
+    document.getElementById('avisos-s').textContent=avisos.length+(avisos.length===1?' aviso':' avisos')+' del build: qué revisar en tus notas';
     document.getElementById('avisos-l').innerHTML=avisos.map(a=>'<li>'+esc(a)+'</li>').join('');
   }else av.hidden=true;
   document.getElementById('stamp').innerHTML=
@@ -1070,7 +1079,7 @@
       ? '<b style="color:#ff9a52">⚠ DATOS DEL '+esc(E.fecha)+', NO DE HOY ('+hoy+') — corre '+esc(CMD)+'</b>'
       : '<span class="larga">datos de ejemplo · </span>'+(E.generado?'a las '+new Date(E.generado).toLocaleTimeString('es',{hour:'2-digit',minute:'2-digit'}):''))
     + hito
-    + (avisos.length ? ' · <button type="button" class="stamp-btn" id="stamp-av">'+avisos.length+' aviso(s)</button>' : '');
+    + (avisos.length ? ' · <button type="button" class="stamp-btn" id="stamp-av">'+avisos.length+(avisos.length===1?' aviso':' avisos')+'</button>' : '');
   const sb=document.getElementById('stamp-av');
   if(sb) sb.addEventListener('click',()=>{ irVista('hoy'); av.open=true; av.scrollIntoView({block:'center'}); document.getElementById('avisos-s').focus(); });
 })();
