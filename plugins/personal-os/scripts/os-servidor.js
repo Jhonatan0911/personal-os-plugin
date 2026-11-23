@@ -133,6 +133,8 @@ function estado() {
     acciones: Object.entries(accionesConfig()).map(([id, a]) => ({ id, etiqueta: a.etiqueta || id, ayuda: a.ayuda || '',
       confirmar: a.confirmar || null, mostrar_si: a.mostrar_si || null, ocultar_si: a.ocultar_si || null })),
     hoy: C.hoyISO(),
+    // Consumo real del proceso del servidor (la página mide el suyo en el navegador).
+    recursos: { servidor_mb: Math.round(process.memoryUsage().rss / 1048576), desde: INICIO, oficina: fs.existsSync(path.join(STATE || '', 'oficina.html')) },
   };
 }
 
@@ -598,6 +600,7 @@ async function ejecutar(id, cuerpo) {
  */
 function consolaConApp(html) {
   const inyeccion = `<script>window.OS_TOKEN=${JSON.stringify(TOKEN)};window.OS_VERSION=${JSON.stringify(VERSION)};</script>`
+    + '<script src="/plantillas/identidad-agente.js" charset="utf-8"></script>'
     + '<script src="/plantillas/consola-app.js" charset="utf-8"></script>';
   const ancla = /(<script src="_datos\/datos\.js"[^>]*><\/script>)/;
   return ancla.test(html) ? html.replace(ancla, `$1\n${inyeccion}`) : html.replace(/<\/body>/i, `${inyeccion}</body>`);
@@ -659,6 +662,11 @@ const servidor = http.createServer((req, res) => {
     if (ruta.startsWith('/estado/') && STATE) {
       const r = estatico(STATE, ruta.slice('/estado'.length));
       return r.codigo === 200 ? enviar(200, r.tipo, r.cuerpo) : enviar(r.codigo, 'text/plain', String(r.codigo));
+    }
+    // La oficina 3D (en la carpeta de estado) importa three.js por rutas absolutas /_vendor/...
+    if (ruta.startsWith('/_vendor/') && STATE) {
+      const r = estatico(STATE, ruta);
+      return r.codigo === 200 ? enviar(200, r.tipo, r.cuerpo, { 'Cache-Control': 'max-age=86400' }) : enviar(r.codigo, 'text/plain', String(r.codigo));
     }
     if (ruta.startsWith('/plantillas/')) {
       const r = estatico(PLANTILLAS, ruta.slice('/plantillas'.length));

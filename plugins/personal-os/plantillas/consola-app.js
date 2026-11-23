@@ -73,18 +73,19 @@ dialog.osm-dlg::backdrop{background:rgba(3,6,12,.72)}dialog.osm-dlg h2{margin:0 
   // ------------------------------------------------------------ pestañas y vistas (las maneja la consola)
   const tabs = $(".seg.tabs"), main = $("main"), footer = $("footer");
   if (!tabs || !main) return;
-  tabs.append(el("button", { type: "button", textContent: "Mandos" }), el("button", { type: "button", textContent: "⚙ Config" }));
-  tabs.lastElementChild.previousElementSibling.dataset.view = "mandos"; tabs.lastElementChild.dataset.view = "config";
-  tabs.querySelectorAll("button[data-view=mandos],button[data-view=config]").forEach((b) => b.setAttribute("aria-pressed", "false"));
+  for (const [v, t] of [["oficina", "Oficina"], ["mandos", "Mandos"], ["config", "⚙ Config"]]) {
+    const b = el("button", { type: "button", textContent: t }); b.dataset.view = v; b.setAttribute("aria-pressed", "false"); tabs.append(b);
+  }
 
   const vMandos = el("section", { className: "view", id: "view-mandos", ariaLabel: "Mandos del Personal OS" });
   const vConfig = el("section", { className: "view", id: "view-config", ariaLabel: "Configuración" });
-  main.append(vMandos, vConfig);
+  const vOficina = el("section", { className: "view", id: "view-oficina", ariaLabel: "Oficina 3D de los agentes" });
+  main.append(vOficina, vMandos, vConfig);
 
   // Por si la consola de este usuario no engancha botones nuevos (plantilla propia): el cambio de vista
   // también se hace aquí, con el mismo efecto que el suyo.
   tabs.addEventListener("click", (ev) => {
-    const b = ev.target.closest("button[data-view]"); if (!b || !["mandos", "config"].includes(b.dataset.view)) return;
+    const b = ev.target.closest("button[data-view]"); if (!b || !["oficina", "mandos", "config"].includes(b.dataset.view)) return;
     setTimeout(() => {
       if ($("#view-" + b.dataset.view).classList.contains("active")) return;
       tabs.querySelectorAll("button").forEach((x) => x.setAttribute("aria-pressed", x === b));
@@ -94,9 +95,48 @@ dialog.osm-dlg::backdrop{background:rgba(3,6,12,.72)}dialog.osm-dlg h2{margin:0 
   // Al entrar a Config, se carga la lista de agentes (una vez; nunca en el refresco, CO-096).
   new MutationObserver(() => { if (vConfig.classList.contains("active") && !ag.datos) agCargar(); }).observe(vConfig, { attributes: true, attributeFilter: ["class"] });
 
+  // ------------------------------------------------------------ OFICINA 3D (con interruptor para aliviar carga)
+  // La escena solo existe mientras la pestaña está a la vista Y la oficina está encendida: al salir de la pestaña o
+  // apagarla, el iframe se vacía (about:blank) y la GPU y la RAM de three.js se liberan. La elección se recuerda.
+  const OF_CLAVE = "os-oficina";
+  const ofEncendida = () => { try { return localStorage.getItem(OF_CLAVE) !== "off"; } catch (_) { return true; } };
+  const ofMarco = el("iframe", { title: "Oficina 3D de los agentes", style: "flex:1 1 auto;width:100%;border:0;background:var(--ground)" });
+  const ofBoton = el("button", { type: "button", className: "osm-btn", style: "position:absolute;top:12px;right:14px;z-index:2" });
+  const ofApagada = el("div", { style: "flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;text-align:center;padding:24px" },
+    el("p", { className: "osm-k", textContent: "Oficina apagada" }),
+    el("p", { className: "osm-nota", style: "max-width:460px;margin:0", textContent: "Está apagada para aliviar la carga: no corre la escena 3D ni usa GPU. Tus agentes siguen trabajando igual; su estado lo ves en ⚙ Config." }),
+    el("button", { type: "button", className: "osm-btn prim", textContent: "Encender la oficina", onclick: () => ofFijar(true) }));
+  vOficina.style.position = "relative";
+  vOficina.append(ofBoton, ofMarco, ofApagada);
+  function ofSync() {
+    const on = ofEncendida(), visible = vOficina.classList.contains("active");
+    ofBoton.textContent = on ? "⏻ Apagar oficina" : "⏻ Encender"; ofBoton.hidden = !on;
+    ofApagada.hidden = on; ofMarco.hidden = !on;
+    const quiere = on && visible ? "/estado/oficina.html?embebida=1" : "about:blank";
+    if (!ofMarco.src.endsWith(quiere)) ofMarco.src = quiere;
+    pintarRam();
+  }
+  function ofFijar(on) { try { localStorage.setItem(OF_CLAVE, on ? "on" : "off"); } catch (_) { /* sin almacenamiento: vale para esta visita */ } decir(on ? "oficina encendida" : "oficina apagada: se liberó la escena 3D", "ok"); ofSync(); }
+  ofBoton.addEventListener("click", () => ofFijar(false));
+  new MutationObserver(ofSync).observe(vOficina, { attributes: true, attributeFilter: ["class"] });
+
   // ------------------------------------------------------------ pie: estado del OS y línea de resultado
   const pie = el("span", { className: "osm-pie" },
-    el("span", { id: "osm-os" }, el("span", { className: "luz" }), "…"), el("button", { type: "button", id: "osm-os-b", textContent: "…" }), el("span", { id: "osm-linea" }));
+    el("span", { id: "osm-os" }, el("span", { className: "luz" }), "…"), el("button", { type: "button", id: "osm-os-b", textContent: "…" }),
+    el("span", { id: "osm-ram", title: "" }), el("span", { id: "osm-linea" }));
+  // Consumo de RAM del Personal OS: el servidor (memoria real de su proceso) y esta página (memoria JavaScript que
+  // reporta el navegador, solo en los basados en Chromium; es una aproximación). La GPU no se puede medir desde aquí.
+  function pintarRam() {
+    try {
+      const r = $("#osm-ram"); if (!r) return;
+      const srv = window.__osRec && window.__osRec.servidor_mb;
+      const pag = performance && performance.memory ? Math.round(performance.memory.usedJSHeapSize / 1048576) : null;
+      const of = ofEncendida() ? (vOficina.classList.contains("active") ? "oficina corriendo" : "oficina en pausa") : "oficina apagada";
+      const partes = [srv != null ? `servidor ${srv} MB` : null, pag != null ? `página ~${pag} MB` : null, of].filter(Boolean);
+      r.textContent = "· RAM " + partes.join(" · ");
+      r.title = "Servidor: memoria real del proceso Node. Página: memoria JavaScript que reporta el navegador (aproximada; no incluye GPU ni el resto de la pestaña). La oficina solo consume mientras su pestaña está abierta y encendida.";
+    } catch (_) { /* el pie nunca rompe la consola */ }
+  }
   if (footer) footer.insertBefore(pie, footer.lastElementChild);
   const decir = (t, tono) => { const l = $("#osm-linea"); l.textContent = t ? "· " + t : ""; l.className = tono || ""; };
 
@@ -205,7 +245,7 @@ dialog.osm-dlg::backdrop{background:rgba(3,6,12,.72)}dialog.osm-dlg h2{margin:0 
   async function refrescar() {
     try {
       const [e, i] = await Promise.all([fetch("/api/estado").then((r) => r.json()), fetch("/api/indicadores").then((r) => r.json())]);
-      inds = Array.isArray(i) ? i : []; est = e; pintarInd(); pintar();
+      inds = Array.isArray(i) ? i : []; est = e; window.__osRec = e.recursos || null; pintarInd(); pintar(); pintarRam();
     } catch (_) {
       filas.servidor.textContent = "sin respuesta"; filas.servidor.className = "val osm-error";
       decir("el servidor no responde (revisa con os-servidor.js --salud)", "error");
@@ -224,7 +264,8 @@ dialog.osm-dlg::backdrop{background:rgba(3,6,12,.72)}dialog.osm-dlg h2{margin:0 
   const AG_GRUPOS = { mios: "Míos", propios: "Propios del Personal OS", terceros: "De terceros", integrados: "Integrado de Claude Code" };
   const AG_HERR = { lectura: "Leer archivos", edicion: "Editar archivos", terminal: "Terminal", web: "Web" };
   const AG_MODELOS = { inherit: "El de la sesión", sonnet: "Sonnet", opus: "Opus", haiku: "Haiku", fable: "Fable" };
-  const PALETA = { red: "#ff6b6b", blue: "#4c9bff", green: "#3ee08f", yellow: "#f6c760", purple: "#a97bff", orange: "#ff9a52", pink: "#ff7ac6", cyan: "#35e0d0" };
+  const IA = window.IdentidadAgente;   // identidad compartida con la oficina 3D (plantillas/identidad-agente.js)
+  const PALETA = IA.PALETA, familiaDe = IA.familiaDe, FAMILIAS = IA.FAMILIAS;
   const COLOR_ES = { red: "rojo", blue: "azul", green: "verde", yellow: "amarillo", purple: "violeta", orange: "naranja", pink: "rosa", cyan: "turquesa" };
   const ACC_ES = { gafas: "Gafas", lupa: "Lupa", pluma: "Pluma", casco: "Casco", boina: "Boina", auriculares: "Auriculares", escudo: "Escudo", portapapeles: "Portapapeles", corbatin: "Corbatín", brujula: "Brújula" };
   const RIESGO = { escribe: new Set(["Write", "Edit", "NotebookEdit", "MultiEdit"]), ejecuta: new Set(["Bash", "PowerShell"]) };
@@ -279,7 +320,6 @@ details.osm-crudo>summary{cursor:pointer;font-family:var(--mono);font-size:10.5p
 ` }));
 
   // ---- mascota SVG paramétrica
-  const hash = (s) => { let h = 2166136261; for (const c of String(s)) { h ^= c.codePointAt(0); h = Math.imul(h, 16777619); } return h >>> 0; };
   const CUERPOS = [
     "M50 16C75 16 88 34 88 58C88 81 72 93 50 93C28 93 12 81 12 58C12 34 25 16 50 16Z",
     "M50 12C63 30 86 44 86 65C86 83 70 93 50 93C30 93 14 83 14 65C14 44 37 30 50 12Z",
@@ -288,14 +328,6 @@ details.osm-crudo>summary{cursor:pointer;font-family:var(--mono);font-size:10.5p
     "M50 12L84 31Q89 34 89 40V69Q89 75 84 78L50 95L16 78Q11 75 11 69V40Q11 34 16 31Z",
     "M50 18C70 16 90 30 88 56C87 80 70 94 50 93C30 94 13 80 12 56C10 30 30 20 50 18Z",
   ];
-  const accDeOficio = (o, h) => {
-    const t = String(o || "").toLowerCase();
-    const reglas = [[/revis|audit|calidad|qa|test/, "lupa"], [/arquitect|frontend|ui|ux|diseñ|angular/, "gafas"], [/redact|escrit|correo|document|copy/, "pluma"],
-      [/segur|appsec|guardi/, "escudo"], [/plan|estim|sprint|gesti|pm\b|lider|líder/, "portapapeles"], [/explor|investig|research|brief|busc/, "brujula"],
-      [/bd|datos|sql|backend|infra|devops/, "casco"], [/soporte|teams|chat|atenci/, "auriculares"]];
-    for (const [re, a] of reglas) if (re.test(t)) return a;
-    return ["boina", "corbatin", "gafas", "auriculares"][h % 4];
-  };
   const ACC_SVG = {
     gafas: (c) => `<g fill="none" stroke="#0b1220" stroke-width="3"><circle cx="38" cy="50" r="9"/><circle cx="62" cy="50" r="9"/><path d="M47 50h6M29 48l-8-3M71 48l8-3"/></g><g fill="#fff" opacity=".18"><circle cx="38" cy="50" r="8"/><circle cx="62" cy="50" r="8"/></g>`,
     lupa: () => `<g transform="translate(70 66) rotate(-30)"><rect x="-2.5" y="10" width="5" height="16" rx="2.5" fill="#6b4f2a"/><circle r="11" fill="#cfe9ff" fill-opacity=".35" stroke="#e6ecf7" stroke-width="3.5"/></g>`,
@@ -308,21 +340,6 @@ details.osm-crudo>summary{cursor:pointer;font-family:var(--mono);font-size:10.5p
     corbatin: () => `<g transform="translate(50 84)"><path d="M0 0L-12 -7V7Z M0 0L12 -7V7Z" fill="#ff5f7e"/><circle r="3.4" fill="#d6455f"/></g>`,
     brujula: () => `<g transform="translate(74 70)"><circle r="12" fill="#f3e3c2" stroke="#b8862b" stroke-width="2.5"/><path d="M0 -8L3 0L0 8L-3 0Z" fill="#ff5f7e"/><path d="M0 0L3 0L0 8L-3 0Z" fill="#4c9bff"/></g>`,
   };
-  // Familias (modelo xAI: misma base, variaciones controladas). Todos los de una familia comparten cuerpo,
-  // color base, remate y un emblema en el pecho; se distinguen por ojos, boca, accesorio y un matiz del color.
-  const FAMILIAS = {
-    mios: { titulo: "Míos", libre: true },
-    os: { titulo: "Personal OS", cuerpo: 0, remate: 0, color: "#35e0d0", emblema: "sinapsis" },
-    claude: { titulo: "Claude Code (integrados)", cuerpo: 1, remate: 3, color: "#d97757", emblema: "estrella" },
-    gsd: { titulo: "GSD", cuerpo: 2, remate: 1, color: "#f6c760", emblema: "g" },
-    sueltos: { titulo: "Otros", cuerpo: 3, remate: 2, color: "#a97bff", emblema: null },
-  };
-  const familiaDe = (a) => a.grupo === "mios" ? "mios" : a.grupo === "propios" ? "os" : a.grupo === "integrados" ? "claude"
-    : /^gsd-/.test(a.nombre || "") ? "gsd" : "sueltos";
-  // Matiz dentro de la familia: aclara u oscurece el color base hasta un 14 % según el nombre.
-  const matiz = (hex, h) => { const f = ((h % 29) - 14) / 100, n = parseInt(hex.slice(1), 16);
-    const c = [n >> 16, (n >> 8) & 255, n & 255].map((v) => Math.max(0, Math.min(255, Math.round(f > 0 ? v + (255 - v) * f : v * (1 + f)))));
-    return "#" + c.map((v) => v.toString(16).padStart(2, "0")).join(""); };
   const EMBLEMAS = {
     sinapsis: `<g transform="translate(50 79)"><circle r="7.5" fill="#0b1220" opacity=".55"/><circle r="2.4" fill="#35e0d0"/><g stroke="#e6ecf7" stroke-width="1.3"><line x1="0" y1="0" x2="5" y2="-4"/><line x1="0" y1="0" x2="-5" y2="-3"/><line x1="0" y1="0" x2="1" y2="5.5"/></g></g>`,
     estrella: `<g transform="translate(50 79)" fill="#fff4ec">${[0, 45, 90, 135].map((r) => `<rect x="-1.3" y="-7" width="2.6" height="14" rx="1.3" transform="rotate(${r})"/>`).join("")}</g>`,
@@ -330,13 +347,9 @@ details.osm-crudo>summary{cursor:pointer;font-family:var(--mono);font-size:10.5p
   };
   let idM = 0;
   function mascota(a, tam, estado) {
-    const h = hash(a.nombre || a.agentType || "?");
-    const fam = FAMILIAS[familiaDe(a)] || FAMILIAS.sueltos;
-    // En una familia manda el color de la familia (el parecido); el `color` propio solo pinta a los tuyos.
-    const color = fam.libre ? (PALETA[a.color] || Object.values(PALETA)[h % 8]) : matiz(fam.color, h);
-    const cuerpo = CUERPOS[fam.cuerpo != null ? fam.cuerpo : (h >>> 3) % CUERPOS.length];
-    const ojo = (h >>> 7) % 3, boca = (h >>> 9) % 3, remate = fam.remate != null ? fam.remate : (h >>> 11) % 4;
-    const acc = a.accesorio && ACC_SVG[a.accesorio] ? a.accesorio : accDeOficio(a.oficio || a.descripcion, h);
+    // La identidad sale del módulo compartido con la oficina 3D: los dos dibujan al agente igual.
+    const I = IA.identidad(a), fam = { emblema: I.emblema };
+    const h = I.semilla, color = I.color, cuerpo = CUERPOS[I.cuerpo], ojo = I.ojo, boca = I.boca, remate = I.remate, acc = I.accesorio;
     const id = "osmg" + (++idM);
     const ojos = ojo === 0 ? `<circle cx="38" cy="50" r="6.5" fill="#0b1220"/><circle cx="62" cy="50" r="6.5" fill="#0b1220"/><circle cx="40" cy="47.5" r="2.2" fill="#fff"/><circle cx="64" cy="47.5" r="2.2" fill="#fff"/>`
       : ojo === 1 ? `<ellipse cx="38" cy="50" rx="4.6" ry="7" fill="#0b1220"/><ellipse cx="62" cy="50" rx="4.6" ry="7" fill="#0b1220"/><circle cx="39.5" cy="47" r="1.8" fill="#fff"/><circle cx="63.5" cy="47" r="1.8" fill="#fff"/>`
