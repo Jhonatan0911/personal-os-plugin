@@ -177,7 +177,9 @@ const DIR_AGENTES = path.join(require('os').homedir(), '.claude', 'agents');
 const PAPELERA = path.join(C.OS_HOME, '_papelera-agentes');
 const ORIGEN_MIO = 'personal-os-usuario';
 const RESERVADOS = new Set(['general-purpose', 'explore', 'plan', 'claude', 'fork', 'statusline-setup', 'claude-code-guide']);
-const MODELOS = ['inherit', 'sonnet', 'opus', 'haiku'];
+const MODELOS = ['inherit', 'sonnet', 'opus', 'haiku', 'fable'];
+const COLORES = ['red', 'blue', 'green', 'yellow', 'purple', 'orange', 'pink', 'cyan'];   // los de Claude Code
+const ACCESORIOS = ['', 'gafas', 'lupa', 'pluma', 'casco', 'boina', 'auriculares', 'escudo', 'portapapeles', 'corbatin', 'brujula'];
 const GRUPOS_HERR = {
   lectura: ['Read', 'Grep', 'Glob'], edicion: ['Write', 'Edit'], terminal: ['Bash', 'PowerShell'], web: ['WebFetch', 'WebSearch'],
 };
@@ -203,13 +205,22 @@ function leerAgente(ruta) {
     if (!k) continue;
     ultima = k[1];
     let v = k[2].trim();
-    if (/^".*"$/.test(v)) { try { v = JSON.parse(v); } catch (_) { v = v.slice(1, -1); } }
+    if (/^\[.*\]$/.test(v)) { try { v = JSON.parse(v); } catch (_) { v = v.slice(1, -1).split(',').map((s) => s.trim().replace(/^["']|["']$/g, '')).filter(Boolean); } }
+    else if (/^".*"$/.test(v)) { try { v = JSON.parse(v); } catch (_) { v = v.slice(1, -1); } }
     else if (/^'.*'$/.test(v)) v = v.slice(1, -1).replace(/''/g, "'");
     fm[ultima] = v;
   }
   const tools = Array.isArray(fm.tools) ? fm.tools : String(fm.tools || '').split(',').map((s) => s.trim()).filter(Boolean);
+  const lista = (x) => (Array.isArray(x) ? x : x ? [String(x)] : []).map(String).filter(Boolean);
   return { nombre: fm.name || path.basename(ruta, '.md'), descripcion: String(fm.description || ''), herramientas: tools,
-    modelo: fm.model || 'inherit', origen: fm.origen || null, instrucciones: m[2].trim(), archivo: path.basename(ruta) };
+    modelo: fm.model || 'inherit', origen: fm.origen || null, archivo: path.basename(ruta),
+    // El bloque fijo de memoria lo pone la consola: no se muestra ni se edita como parte de las instrucciones.
+    instrucciones: m[2].replace(/\n*<!-- memoria-os:inicio -->[\s\S]*?<!-- memoria-os:fin -->\n*/g, '\n').trim(),
+    memoria: fm.memory || null,
+    // Ficha (modelo Grok Bot: trabajo, metas y límites) + identidad. `color` es el campo oficial de Claude Code;
+    // el resto son claves propias que Claude Code ignora sin error (doc oficial de subagentes).
+    color: COLORES.includes(fm.color) ? fm.color : null, oficio: fm.oficio || '', lema: fm.lema || '',
+    objetivo: fm.objetivo || '', meta: fm.meta || '', limites: lista(fm.limites), accesorio: fm.accesorio || '' };
 }
 
 function listarAgentes() {
@@ -228,7 +239,157 @@ function listarAgentes() {
     const a = leerAgente(path.join(C.PLUGIN_ROOT, 'agents', `${n}.md`));
     if (a) lista.push(Object.assign(a, { grupo: 'propios', candado: true }));
   }
-  return { agentes: lista, grupos_herramientas: GRUPOS_HERR, modelos: MODELOS, carpeta: DIR_AGENTES };
+  return { agentes: lista, grupos_herramientas: GRUPOS_HERR, modelos: MODELOS, colores: COLORES, accesorios: ACCESORIOS.filter(Boolean),
+    carpeta: DIR_AGENTES, actividad: actividad() };
+}
+
+/**
+ * Actividad real por tipo de agente, desde los eventos que escriben los hooks en <estado>/_runtime/agentes-AAAA-MM-DD.jsonl
+ * (SubagentStart / SubagentStop por id). De ahí: usos 7 y 30 días, última vez, si corre ahora y las últimas ejecuciones.
+ * Lo que los eventos no traen (resultado, tarea) no se inventa. Caché de 10 s.
+ */
+let cacheAct = { t: 0, datos: null };
+function actividad() {
+  if (cacheAct.datos && Date.now() - cacheAct.t < 10000) return cacheAct.datos;
+  const dir = path.join(STATE || '', '_runtime');
+  let archivos = [];
+  try { archivos = fs.readdirSync(dir).filter((f) => /^agentes-\d{4}-\d{2}-\d{2}\.jsonl$/.test(f)).sort().slice(-30); } catch (_) { /* sin hooks */ }
+  const corridas = new Map();
+  for (const f of archivos) {
+    for (const l of (C.leerTexto(path.join(dir, f), '') || '').split('\n')) {
+      if (!l.trim()) continue;
+      let ev; try { ev = JSON.parse(l); } catch (_) { continue; }
+      if (!ev.id) continue;
+      const c = corridas.get(ev.id) || { id: ev.id, tipo: null, inicio: null, fin: null, sesion: ev.sesion || null, tarea: null };
+      if (ev.agentType) c.tipo = ev.agentType;
+      if (ev.tarea) c.tarea = String(ev.tarea).slice(0, 200);
+      if (ev.estado === 'trabajando') { if (!c.inicio || ev.ts < c.inicio) c.inicio = ev.ts; c.fin = null; }
+      else if (ev.estado === 'libre') c.fin = ev.ts;
+      corridas.set(ev.id, c);
+    }
+  }
+  const ahora = Date.now(), D = 86400000, porTipo = {};
+  for (const c of corridas.values()) {
+    if (!c.tipo || !c.inicio) continue;
+    const t = porTipo[c.tipo] || (porTipo[c.tipo] = { usos7: 0, usos30: 0, ultima: null, corriendo: false, desde: null, ejecuciones: [] });
+    const ini = Date.parse(c.inicio);
+    if (ahora - ini < 7 * D) t.usos7++;
+    if (ahora - ini < 30 * D) t.usos30++;
+    const ult = c.fin || c.inicio;
+    if (!t.ultima || ult > t.ultima) t.ultima = ult;
+    // Corriendo: arrancó y no ha terminado, y no hace más de 3 h (un cierre perdido no lo deja "trabajando" para siempre).
+    if (!c.fin && ahora - ini < 3 * 3600000) { t.corriendo = true; t.desde = c.inicio; }
+    t.ejecuciones.push({ inicio: c.inicio, fin: c.fin, duracion_s: c.fin ? Math.max(0, Math.round((Date.parse(c.fin) - ini) / 1000)) : null, sesion: c.sesion ? String(c.sesion).slice(0, 8) : null, tarea: c.tarea });
+  }
+  for (const t of Object.values(porTipo)) t.ejecuciones = t.ejecuciones.sort((a, b) => (a.inicio < b.inicio ? 1 : -1)).slice(0, 10);
+  cacheAct = { t: Date.now(), datos: { generado: new Date().toISOString(), dias: archivos.length, porTipo } };
+  return cacheAct.datos;
+}
+
+// ------------------------------------------------------------------ memoria del agente (conocimiento y experiencia)
+
+const DIR_MEM = path.join(require('os').homedir(), '.claude', 'agent-memory');
+const BLOQUE_MEMORIA = `<!-- memoria-os:inicio -->
+## Tu memoria: conocimiento y experiencia
+Tienes una carpeta de memoria persistente. Su índice \`MEMORY.md\` ya está en tu contexto.
+- **Antes de trabajar:** revisa el índice y lee con Read los archivos de \`conocimiento/\` que apliquen a la tarea. Los escribe el usuario: son guías y convenciones que mandan sobre tus preferencias.
+- **Al terminar:** si aprendiste algo que te sirva la próxima vez (una corrección del usuario, un error y su causa, una decisión con su porqué, algo que funcionó), guárdalo en \`experiencia/<tema>.md\` (un archivo por tema; amplía el existente antes de crear otro) y agrega o actualiza su línea en la sección «Experiencia» de \`MEMORY.md\`.
+- No toques \`conocimiento/\` ni la sección «Conocimiento» del índice: son del usuario. Mantén \`MEMORY.md\` por debajo de 200 líneas.
+- Nunca guardes secretos ni datos reales de personas.
+<!-- memoria-os:fin -->`;
+const RUTA_MEM = /^(MEMORY\.md|(conocimiento|experiencia)\/[a-z0-9][a-z0-9-]{0,60}\.md)$/;
+
+function indiceInicial(nombre) {
+  return `# Memoria de ${nombre}\n\n## Conocimiento\n<!-- conocimiento:inicio -->\n<!-- conocimiento:fin -->\n\n## Experiencia\n(El agente agrega aquí una línea por cada archivo de experiencia/.)\n`;
+}
+
+/** Reescribe la sección «Conocimiento» del índice con los archivos que hay en conocimiento/ (su título = primera línea #). */
+function reindexarConocimiento(nombre) {
+  const dir = path.join(DIR_MEM, nombre);
+  const ruta = path.join(dir, 'MEMORY.md');
+  let idx = C.leerTexto(ruta, null) || indiceInicial(nombre);
+  if (!/<!-- conocimiento:inicio -->[\s\S]*?<!-- conocimiento:fin -->/.test(idx)) idx = idx.replace(/^(# .*\n)/, `$1\n## Conocimiento\n<!-- conocimiento:inicio -->\n<!-- conocimiento:fin -->\n`);
+  let arch = [];
+  try { arch = fs.readdirSync(path.join(dir, 'conocimiento')).filter((f) => f.endsWith('.md')).sort(); } catch (_) { /* vacío */ }
+  const lineas = arch.map((f) => {
+    const t = (C.leerTexto(path.join(dir, 'conocimiento', f), '') || '').match(/^#\s+(.+)$/m);
+    return `- [${t ? t[1].trim() : f.slice(0, -3)}](conocimiento/${f})`;
+  });
+  idx = idx.replace(/<!-- conocimiento:inicio -->[\s\S]*?<!-- conocimiento:fin -->/, `<!-- conocimiento:inicio -->\n${lineas.join('\n')}${lineas.length ? '\n' : ''}<!-- conocimiento:fin -->`);
+  fs.mkdirSync(dir, { recursive: true });
+  fs.writeFileSync(ruta, idx, 'utf8');
+}
+
+function memoriaDe(nombre) {
+  if (!/^[a-z0-9][a-z0-9-]{2,39}$/.test(nombre)) return { error: 'nombre inválido' };
+  const dir = path.join(DIR_MEM, nombre);
+  const archivos = [];
+  for (const g of ['conocimiento', 'experiencia']) {
+    let fs_ = [];
+    try { fs_ = fs.readdirSync(path.join(dir, g)).filter((f) => f.endsWith('.md')); } catch (_) { /* vacío */ }
+    for (const f of fs_.sort()) {
+      const r = path.join(dir, g, f); const st = fs.statSync(r);
+      const t = (C.leerTexto(r, '') || '').match(/^#\s+(.+)$/m);
+      archivos.push({ grupo: g, ruta: `${g}/${f}`, titulo: t ? t[1].trim() : f.slice(0, -3), bytes: st.size, modificado: st.mtime.toISOString() });
+    }
+  }
+  const indice = C.leerTexto(path.join(dir, 'MEMORY.md'), null);
+  return { carpeta: dir, existe: fs.existsSync(dir), indice, lineas_indice: indice ? indice.split('\n').length : 0, archivos };
+}
+
+function leerMemoria(nombre, ruta) {
+  if (!/^[a-z0-9][a-z0-9-]{2,39}$/.test(nombre) || !RUTA_MEM.test(ruta)) return null;
+  return C.leerTexto(path.join(DIR_MEM, nombre, ruta), null);
+}
+
+function esMio(nombre) {
+  const r = path.join(DIR_AGENTES, `${nombre}.md`);
+  const a = fs.existsSync(r) ? leerAgente(r) : null;
+  return !!(a && a.origen === ORIGEN_MIO);
+}
+
+function guardarConocimiento(b) {
+  const nombre = String(b.agente || '');
+  if (!esMio(nombre)) return { ok: false, mensaje: 'solo se escribe conocimiento en tus agentes' };
+  const slug = String(b.slug || '').trim();
+  if (!/^[a-z0-9][a-z0-9-]{1,60}$/.test(slug)) return { ok: false, mensaje: 'el nombre del archivo va en minúsculas, números y guiones' };
+  const titulo = String(b.titulo || '').replace(/\s+/g, ' ').trim();
+  if (titulo.length < 3 || titulo.length > 90) return { ok: false, mensaje: 'el título va de 3 a 90 caracteres' };
+  let contenido = String(b.contenido || '').replace(/\r\n/g, '\n').trim();
+  if (contenido.length < 10) return { ok: false, mensaje: 'el contenido está vacío' };
+  if (contenido.length > 60000) return { ok: false, mensaje: 'el archivo pasa de 60 KB: pártelo por temas' };
+  if (!/^#\s/.test(contenido)) contenido = `# ${titulo}\n\n${contenido}`;
+  else contenido = contenido.replace(/^#\s+.*$/m, `# ${titulo}`);
+  const dir = path.join(DIR_MEM, nombre, 'conocimiento');
+  fs.mkdirSync(dir, { recursive: true });
+  const dest = path.join(dir, `${slug}.md`), tmp = dest + '.tmp';
+  if (b.original && b.original !== slug) {
+    if (!/^[a-z0-9][a-z0-9-]{1,60}$/.test(b.original)) return { ok: false, mensaje: 'original inválido' };
+    if (fs.existsSync(dest)) return { ok: false, mensaje: `ya existe conocimiento/${slug}.md` };
+  } else if (!b.original && fs.existsSync(dest)) return { ok: false, mensaje: `ya existe conocimiento/${slug}.md` };
+  fs.writeFileSync(tmp, contenido + '\n', 'utf8'); fs.renameSync(tmp, dest);
+  if (b.original && b.original !== slug) moverMemoriaAPapelera(nombre, `conocimiento/${b.original}.md`);
+  reindexarConocimiento(nombre);
+  if (C.leerTexto(dest, '') !== contenido + '\n') return { ok: false, mensaje: 'se escribió pero no se pudo releer igual' };
+  return { ok: true, mensaje: `conocimiento/${slug}.md guardado e indexado en MEMORY.md` };
+}
+
+function moverMemoriaAPapelera(nombre, ruta) {
+  const desde = path.join(DIR_MEM, nombre, ruta);
+  if (!fs.existsSync(desde)) return;
+  fs.mkdirSync(PAPELERA, { recursive: true });
+  const sello = new Date().toISOString().replace(/[:.]/g, '-');
+  fs.renameSync(desde, path.join(PAPELERA, `${nombre}--${ruta.replace('/', '--').slice(0, -3)}.${sello}.md`));
+}
+
+function borrarConocimiento(b) {
+  const nombre = String(b.agente || ''), slug = String(b.slug || '');
+  if (!esMio(nombre)) return { ok: false, mensaje: 'solo se borra conocimiento de tus agentes' };
+  if (!/^[a-z0-9][a-z0-9-]{1,60}$/.test(slug)) return { ok: false, mensaje: 'nombre inválido' };
+  if (!fs.existsSync(path.join(DIR_MEM, nombre, 'conocimiento', `${slug}.md`))) return { ok: false, mensaje: 'no existe' };
+  moverMemoriaAPapelera(nombre, `conocimiento/${slug}.md`);
+  reindexarConocimiento(nombre);
+  return { ok: true, mensaje: `conocimiento/${slug}.md movido a la papelera` };
 }
 
 /** Valida y arma el .md. Devuelve {error} o {nombre, texto}. */
@@ -249,12 +410,39 @@ function armarAgente(b) {
     if (!/^[A-Za-z][A-Za-z0-9_-]*(\*)?$/.test(t)) return { error: `herramienta con nombre inválido: «${t}»` };
     if (!herr.includes(t)) herr.push(t);
   }
-  // La descripción va entre comillas dobles (JSON es YAML válido): así un «: » no rompe la skill (bug de la 3.2.1).
+  // Ficha: textos de una línea con su tope; límites, hasta 6 líneas.
+  const corto = (v, max, campo) => {
+    const s = String(v || '').replace(/\s+/g, ' ').trim();
+    if (s.length > max) throw new Error(`${campo} pasa de ${max} caracteres`);
+    return s;
+  };
+  let ficha;
+  try {
+    ficha = {
+      oficio: corto(b.oficio, 40, 'el oficio'), lema: corto(b.lema, 90, 'el lema'),
+      objetivo: corto(b.objetivo, 220, 'el objetivo'), meta: corto(b.meta, 220, 'la meta de cierre'),
+      limites: (Array.isArray(b.limites) ? b.limites : String(b.limites || '').split('\n')).map((l, i) => corto(l, 140, `el límite ${i + 1}`)).filter(Boolean),
+    };
+  } catch (e) { return { error: e.message }; }
+  if (ficha.limites.length > 6) return { error: 'máximo 6 límites' };
+  const color = COLORES.includes(b.color) ? b.color : null;
+  const accesorio = ACCESORIOS.includes(b.accesorio) ? b.accesorio : '';
+
+  // Los textos van entre comillas dobles (JSON es YAML válido): así un «: » no rompe nada (bug de la 3.2.1).
   const fm = ['---', `name: ${nombre}`, `description: ${JSON.stringify(descripcion)}`];
   if (herr.length) fm.push(`tools: ${herr.join(', ')}`);
   if (modelo !== 'inherit') fm.push(`model: ${modelo}`);
+  if (color) fm.push(`color: ${color}`);
+  for (const k of ['oficio', 'lema', 'objetivo', 'meta']) if (ficha[k]) fm.push(`${k}: ${JSON.stringify(ficha[k])}`);
+  if (ficha.limites.length) fm.push(`limites: ${JSON.stringify(ficha.limites)}`);
+  if (accesorio) fm.push(`accesorio: ${accesorio}`);
+  // Memoria nativa de Claude Code (doc de subagentes): `memory: user` → ~/.claude/agent-memory/<nombre>/, con
+  // MEMORY.md como índice (sus primeras 200 líneas entran solas) y Read/Write/Edit habilitadas para esa carpeta.
+  if (b.memoria) fm.push('memory: user');
   fm.push(`origen: ${ORIGEN_MIO}`, '---', '');
-  return { nombre, texto: fm.join('\n') + instrucciones + '\n' };
+  let cuerpo = instrucciones.replace(/\n*<!-- memoria-os:inicio -->[\s\S]*?<!-- memoria-os:fin -->\n*/g, '\n').trim();
+  if (b.memoria) cuerpo += '\n\n' + BLOQUE_MEMORIA;
+  return { nombre, texto: fm.join('\n') + cuerpo + '\n' };
 }
 
 function guardarAgente(b) {
@@ -282,7 +470,9 @@ function guardarAgente(b) {
   const leido = leerAgente(destino);
   if (!leido || leido.nombre !== r.nombre || leido.origen !== ORIGEN_MIO) return { ok: false, mensaje: 'se escribió pero no se pudo releer igual: revisa el archivo' };
   if (original && original !== r.nombre) moverAPapelera(original);
-  return { ok: true, mensaje: `«${r.nombre}» guardado · aparece en la próxima sesión de Claude` };
+  if (b.memoria && !fs.existsSync(path.join(DIR_MEM, r.nombre, 'MEMORY.md'))) reindexarConocimiento(r.nombre);
+  // Claude Code vigila ~/.claude/agents y toma el cambio en segundos, sin reiniciar (doc oficial de subagentes).
+  return { ok: true, mensaje: `«${r.nombre}» guardado · Claude Code lo toma en unos segundos, sin reiniciar` };
 }
 
 function moverAPapelera(nombre) {
@@ -367,6 +557,8 @@ const PROPIAS = {
   // En una instalación suelta build-consola necesita --config-dir: va en servidor.consola_args.
   'agente-guardar': (b) => guardarAgente(b),
   'agente-borrar': (b) => borrarAgente(b),
+  'agente-conocimiento': (b) => guardarConocimiento(b),
+  'agente-conocimiento-borrar': (b) => borrarConocimiento(b),
   'consola-build': () => correr([NODE, path.join(C.SCRIPTS_DIR, 'build-consola.js'),
     ...((C.config().servidor || {}).consola_args || [])], true),
 };
@@ -429,6 +621,14 @@ const servidor = http.createServer((req, res) => {
     }
     if (ruta === '/api/estado') {
       try { return json(200, estado()); } catch (e) { return json(500, { error: String(e && e.message) }); }
+    }
+    if (ruta === '/api/config/memoria') {
+      const n = url.searchParams.get('agente') || '', r = url.searchParams.get('ruta');
+      if (r) { const t = leerMemoria(n, r); return t === null ? json(404, { error: 'no existe' }) : json(200, { ruta: r, contenido: t }); }
+      const m = memoriaDe(n); return json(m.error ? 400 : 200, m);
+    }
+    if (ruta === '/api/config/actividad') {
+      try { return json(200, actividad()); } catch (e) { return json(500, { error: String(e && e.message) }); }
     }
     if (ruta === '/api/config/agentes') {
       try { return json(200, listarAgentes()); } catch (e) { return json(500, { error: String(e && e.message) }); }
