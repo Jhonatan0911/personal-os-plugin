@@ -18,6 +18,7 @@
 
   // ------------------------------------------------------------ estilos (variables de la consola)
   document.head.append(el("style", { textContent: `
+#view-oficina [hidden],#view-config [hidden],#view-mandos [hidden]{display:none!important}
 .osm-col{width:min(1080px,100%);margin:0 auto;padding:18px clamp(14px,3vw,26px) 30px;display:flex;flex-direction:column;gap:16px;overflow:auto;flex:1 1 auto;min-height:0}
 .osm-k{font-family:var(--mono);font-size:10.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--muted);margin:0 0 10px}
 .osm-panel{background:linear-gradient(180deg,rgba(17,26,41,.75),rgba(15,22,34,.75));border:1px solid var(--line);border-radius:16px;padding:16px}
@@ -100,13 +101,14 @@ dialog.osm-dlg::backdrop{background:rgba(3,6,12,.72)}dialog.osm-dlg h2{margin:0 
   // apagarla, el iframe se vacía (about:blank) y la GPU y la RAM de three.js se liberan. La elección se recuerda.
   const OF_CLAVE = "os-oficina";
   const ofEncendida = () => { try { return localStorage.getItem(OF_CLAVE) !== "off"; } catch (_) { return true; } };
-  const ofMarco = el("iframe", { title: "Oficina 3D de los agentes", style: "flex:1 1 auto;width:100%;border:0;background:var(--ground)" });
-  const ofBoton = el("button", { type: "button", className: "osm-btn", style: "position:absolute;top:12px;right:14px;z-index:2" });
-  const ofApagada = el("div", { style: "flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;text-align:center;padding:24px" },
+  // Absoluto a toda la vista: como ítem flex el iframe se quedaba en sus 150 px por defecto.
+  const ofMarco = el("iframe", { title: "Oficina 3D de los agentes", style: "position:absolute;inset:0;width:100%;height:100%;border:0;background:var(--ground)" });
+  const ofBoton = el("button", { type: "button", className: "osm-btn", style: "position:absolute;bottom:14px;right:14px;z-index:2" });   // abajo: arriba están los chips de la escena
+  const ofApagada = el("div", { style: "position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;text-align:center;padding:24px" },
     el("p", { className: "osm-k", textContent: "Oficina apagada" }),
     el("p", { className: "osm-nota", style: "max-width:460px;margin:0", textContent: "Está apagada para aliviar la carga: no corre la escena 3D ni usa GPU. Tus agentes siguen trabajando igual; su estado lo ves en ⚙ Config." }),
     el("button", { type: "button", className: "osm-btn prim", textContent: "Encender la oficina", onclick: () => ofFijar(true) }));
-  vOficina.style.position = "relative";
+  // La vista ya es position:absolute (inset:0) por la consola: es el contenedor de la escena; no se le cambia el position.
   vOficina.append(ofBoton, ofMarco, ofApagada);
   function ofSync() {
     const on = ofEncendida(), visible = vOficina.classList.contains("active");
