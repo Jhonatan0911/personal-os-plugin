@@ -1,0 +1,164 @@
+<template>
+  <script src="assets/identidad-agente.js"></script>
+  <style>
+    #root { position: absolute; inset: 0; font-family: "Inter", sans-serif; color: #e6ecf7; }
+    /* La ficha real del agente, a ~1.8x. La tarjeta de la lista se expande en este panel. */
+    .f-pan { position: absolute; left: 96px; top: 60px; width: 1080px; height: 960px; border-radius: 16px; overflow: hidden;
+      background: #0f1622; border: 2px solid rgba(53,224,208,.55); }
+    .f-head { position: absolute; left: 0; right: 0; top: 0; height: 300px; z-index: 2; background: #0f1622;
+      border-bottom: 1px solid rgba(120,150,200,.14); }
+    .f-m .ok { opacity: 0; }
+    .f-m svg { width: 100%; height: 100%; overflow: visible; display: block; }
+    .f-m { position: absolute; left: 146px; top: 100px; width: 200px; height: 200px; transform-origin: 0 0; }
+    .f-id { position: absolute; left: 290px; top: 34px; right: 36px; }
+    .f-name { font-family: "JetBrains Mono", monospace; font-weight: 700; font-size: 52px; letter-spacing: -.01em; }
+    .f-lema { font-style: italic; font-size: 32px; color: #b9c4d6; margin-top: 8px; }
+    .f-chips { display: flex; gap: 14px; margin-top: 22px; }
+    .f-chip { font-family: "JetBrains Mono", monospace; font-weight: 700; font-size: 26px; letter-spacing: .06em; text-transform: uppercase;
+      border: 1.5px solid rgba(120,150,200,.35); border-radius: 10px; padding: 6px 16px; display: flex; align-items: center; gap: 10px; color: #c9d3e4; }
+    .f-chip.of { color: #4c9bff; border-color: rgba(76,155,255,.7); }
+    .f-chip svg { width: 24px; height: 24px; }
+    .f-state { font-family: "JetBrains Mono", monospace; font-weight: 700; font-size: 26px; color: #35e0d0;
+      display: flex; align-items: center; gap: 12px; margin-bottom: 6px; }
+    .f-state i { width: 14px; height: 14px; border-radius: 50%; background: #35e0d0; box-shadow: 0 0 14px #35e0d0; display: block; }
+    .f-view { position: absolute; left: 0; right: 0; top: 300px; bottom: 0; overflow: hidden; }
+    .f-body { position: absolute; left: 50px; right: 50px; top: 40px; }
+    .f-lbl { font-family: "JetBrains Mono", monospace; font-size: 26px; letter-spacing: .14em; color: #5fc7bd; text-transform: uppercase; }
+    .f-lim { margin-top: 22px; list-style: none; }
+    .f-lim li { font-size: 34px; line-height: 1.3; margin-bottom: 22px; display: flex; align-items: center; gap: 22px; opacity: 0; }
+    .f-lim li b { width: 34px; height: 34px; border-radius: 50%; flex: none; border: 2.5px solid #ff6b6b; position: relative; }
+    .f-lim li b::after { content: ""; position: absolute; left: 4px; right: 4px; top: 13px; height: 3px; background: #ff6b6b; transform: rotate(-45deg); }
+    .f-sep { height: 1px; background: rgba(120,150,200,.18); margin: 34px 0 40px; }
+    .f-cols { display: grid; grid-template-columns: 1fr 1fr; gap: 34px; margin-top: 22px; }
+    .f-col h4 { font-family: "JetBrains Mono", monospace; font-weight: 400; font-size: 26px; letter-spacing: 0; color: #8796ae; text-transform: none; margin-bottom: 18px; line-height: 1.3; }
+    .f-col h4 em { font-style: normal; color: #5fc7bd; display: block; letter-spacing: .12em; text-transform: uppercase; }
+    .f-file { position: relative; border: 2px solid rgba(120,150,200,.25); border-radius: 14px; padding: 20px 22px; background: #0b111b; overflow: hidden; }
+    .f-file .nm { font-size: 30px; font-weight: 700; line-height: 1.25; }
+    .f-file .mt { font-family: "JetBrains Mono", monospace; font-size: 26px; color: #8796ae; margin-top: 8px; }
+    .f-lines { margin-top: 0; height: 0; overflow: hidden; }
+    .f-lines p { font-size: 26px; line-height: 1.35; color: #b9c4d6; padding: 8px 12px; border-radius: 8px; margin-top: 8px; }
+    .f-empty { border: 2px dashed rgba(120,150,200,.25); border-radius: 14px; padding: 22px; font-family: "JetBrains Mono", monospace; font-size: 26px; color: #6d7c94; }
+    .f-exp { border-color: rgba(53,224,208,.75); background: #0e1d24; opacity: 0; }
+    .f-exp .nm { padding-right: 60px; }
+    .f-tick { position: absolute; right: 20px; top: 20px; width: 46px; height: 46px; border-radius: 50%; background: #35e0d0; display: flex; align-items: center; justify-content: center; }
+    .f-tick svg { width: 28px; height: 28px; }
+    .f-title { position: absolute; left: 1222px; width: 560px; font-weight: 900; font-size: 92px; letter-spacing: -.03em; line-height: 1.05; }
+    .f-title span { display: inline-block; margin-right: .24em; opacity: 0; }
+    .f-title .acc { color: #35e0d0; }
+    #f-t1 { top: 360px; }
+    #f-t2 { top: 300px; }
+  </style>
+  <div id="root" data-composition-id="ficha" data-width="1920" data-height="1080">
+    <div class="f-pan" id="f-pan">
+      <div class="f-view">
+        <div class="f-body" id="f-body">
+          <div class="f-lbl" id="f-lbl-lim">Límites</div>
+          <ul class="f-lim">
+            <li id="f-l1"><b></b>No aprueba sin leer los criterios de aceptación.</li>
+            <li id="f-l2"><b></b>No toca la base de datos.</li>
+            <li id="f-l3"><b></b>No sube nada a producción.</li>
+          </ul>
+          <div class="f-sep"></div>
+          <div class="f-lbl">Memoria</div>
+          <div class="f-cols">
+            <div class="f-col">
+              <h4><em>Conocimiento</em>lo escribes tú</h4>
+              <div class="f-file" id="f-know">
+                <div class="nm">Criterios de revisión del equipo</div>
+                <div class="mt">1 KB · hace 2 d</div>
+                <div class="f-lines" id="f-lines">
+                  <p id="f-p1">Primero, los criterios.</p>
+                  <p id="f-p2">Validación borrada = hallazgo.</p>
+                  <p id="f-p3">Hallazgo con archivo y línea.</p>
+                </div>
+              </div>
+            </div>
+            <div class="f-col">
+              <h4><em>Experiencia</em>la escribe el agente</h4>
+              <div class="f-empty" id="f-empty">Aún sin experiencias</div>
+              <div class="f-file f-exp" id="f-exp">
+                <div class="f-tick" id="f-tick"><svg viewBox="0 0 24 24"><path d="M5 12l5 5 9-10" stroke="#0b1220" stroke-width="3.4" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+                <div class="nm">Validaciones que no se pueden borrar</div>
+                <div class="mt">1 KB · ahora</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="f-head" id="f-head">
+        <div class="f-id" id="f-id">
+          <div class="f-state" id="f-state"><i id="f-sdot"></i>trabajando · 1 min</div>
+          <div class="f-name">revisor-de-codigo</div>
+          <div class="f-lema">«Leo el diff antes que el título.»</div>
+          <div class="f-chips">
+            <span class="f-chip"><svg viewBox="0 0 24 24"><path d="M4 20l4-1 11-11-3-3L5 16z" fill="none" stroke="#c9d3e4" stroke-width="2"/></svg>tuyo</span>
+            <span class="f-chip of">Revisor de código</span>
+            <span class="f-chip"><svg viewBox="0 0 24 24"><path d="M9 4a4 4 0 0 0-4 4 4 4 0 0 0-1 7 4 4 0 0 0 5 5V4zM15 4a4 4 0 0 1 4 4 4 4 0 0 1 1 7 4 4 0 0 1-5 5V4z" fill="#ff7ac6"/></svg>memoria</span>
+          </div>
+        </div>
+      </div>
+    </div>
+    <!-- La mascota vive fuera del panel: llega desde la tarjeta de la lista y se va a la oficina. -->
+    <div class="f-m" id="f-m" data-layout-allow-overflow></div>
+    <div class="f-title" id="f-t1"><span>Con</span><span>oficio</span><span>y</span><span class="acc">límites.</span></div>
+    <div class="f-title" id="f-t2"><span>Y</span><span>aprenden</span><span>de</span><span>cada</span><span class="acc">trabajo.</span></div>
+  </div>
+  <script>
+    (function () {
+      const r = window.IdentidadAgente.svg({ nombre: "revisor-de-codigo", grupo: "mios", oficio: "Revisor de código", color: "blue", accesorio: "lupa" });
+      document.getElementById("f-m").innerHTML = r.svg.replace(/osmg(\d+)/g, "frev$1");
+
+      const tl = gsap.timeline({ paused: true });
+      const M = "#f-m";
+      
+      // Morph: el contenedor de la tarjeta (60,200 · 900x118) se abre en la ficha.
+      tl.fromTo("#f-pan", { clipPath: "inset(154px 180px 688px 0px round 16px)" },
+        { clipPath: "inset(0px 0px 0px 0px round 16px)", duration: 0.85, ease: "power2.inOut" }, 0);
+      // La mascota viaja de la tarjeta (88 px) a la cabecera (200 px), con su propia curva.
+      tl.fromTo(M, { x: -26, y: 129, scale: 0.44 }, { x: 0, y: 0, scale: 1, duration: 0.85, ease: "power2.inOut" }, 0);
+      tl.fromTo("#f-id > *:not(.f-state)", { opacity: 0, filter: "blur(6px)" }, { opacity: 1, filter: "blur(0px)", duration: 0.4, stagger: 0.08, ease: "expo.out" }, 0.55);
+      tl.fromTo("#f-state", { opacity: 0 }, { opacity: 1, duration: 0.3, ease: "power2.out" }, 0.8);
+      tl.fromTo("#f-lbl-lim", { opacity: 0 }, { opacity: 1, duration: 0.3, ease: "power2.out" }, 1.0);
+
+      // Sigue trabajando: rebote cada 0.7 s y chispas, ciclos contados (11.9 s = 17 ciclos).
+      tl.fromTo(M + " .cu", { y: 0 }, { y: -5, duration: 0.35, ease: "sine.inOut", yoyo: true, repeat: 33 }, 0);
+      tl.fromTo(M + " .chispa", { opacity: 0.4, scale: 0.7, transformOrigin: "50% 50%" }, { opacity: 1, scale: 1.08, duration: 0.35, ease: "sine.inOut", yoyo: true, repeat: 33 }, 0);
+      tl.fromTo("#f-sdot", { opacity: 1 }, { opacity: 0.35, duration: 0.35, ease: "sine.inOut", yoyo: true, repeat: 33 }, 0);
+      // Parpadeos a tiempos fijos mientras lee.
+      [2.4, 5.6, 8.9].forEach((t) => {
+        tl.to(M + " .oj", { scaleY: 0.1, transformOrigin: "50% 50%", duration: 0.07, ease: "power2.in" }, t);
+        tl.to(M + " .oj", { scaleY: 1, duration: 0.1, ease: "power2.out" }, t + 0.08);
+      });
+
+      // Título 1 y los límites, uno a uno.
+      tl.fromTo("#f-t1 span", { opacity: 0, filter: "blur(6px)" }, { opacity: 1, filter: "blur(0px)", duration: 0.13, stagger: 0.07, ease: "power2.out" }, 1.2);
+      ["#f-l1", "#f-l2", "#f-l3"].forEach((s, i) => tl.fromTo(s, { opacity: 0, x: -30, filter: "blur(6px)" },
+        { opacity: 1, x: 0, filter: "blur(0px)", duration: 0.55, ease: "expo.out" }, 1.9 + i * 0.6));
+      tl.to("#f-t1 span", { opacity: 0, filter: "blur(8px)", duration: 0.16, stagger: 0.04, ease: "power3.in" }, 6.0);
+
+      // MEMORIA: la ficha baja hasta la sección Memoria (la cabecera se queda).
+      tl.to("#f-body", { y: -305, duration: 1.0, ease: "power2.inOut" }, 6.3);
+      tl.fromTo("#f-t2 span", { opacity: 0, filter: "blur(6px)" }, { opacity: 1, filter: "blur(0px)", duration: 0.13, stagger: 0.07, ease: "power2.out" }, 7.0);
+      // Abre «Criterios de revisión del equipo» y resalta 3 líneas.
+      tl.to("#f-know", { borderColor: "rgba(53,224,208,.7)", duration: 0.3, ease: "power2.out" }, 7.6);
+      tl.fromTo("#f-lines", { height: 0 }, { height: 190, duration: 0.6, ease: "expo.out" }, 7.75);
+      ["#f-p1", "#f-p2", "#f-p3"].forEach((s, i) => {
+        tl.to(s, { backgroundColor: "rgba(53,224,208,.16)", color: "#e6ecf7", duration: 0.25, ease: "power2.out" }, 8.3 + i * 0.45);
+      });
+      // Cierra el archivo.
+      tl.to("#f-lines", { height: 0, duration: 0.35, ease: "power3.in" }, 9.75);
+      tl.to("#f-know", { borderColor: "rgba(120,150,200,.25)", duration: 0.3 }, 9.8);
+      // En Experiencia aterriza la lección nueva, con el ✓ cian.
+      tl.to("#f-empty", { opacity: 0, filter: "blur(6px)", duration: 0.15, ease: "power3.in" }, 10.1);
+      tl.set("#f-empty", { display: "none" }, 10.26);
+      tl.fromTo("#f-exp", { opacity: 0, y: -60, scale: 1.08, filter: "blur(8px)" },
+        { opacity: 1, y: 0, scale: 1, filter: "blur(0px)", duration: 0.6, ease: "expo.out" }, 10.26);
+      tl.fromTo("#f-tick", { scale: 0, rotate: -60 }, { scale: 1, rotate: 0, duration: 0.45, ease: "back.out(1.6)" }, 10.55);
+      tl.to("#f-t2 span", { opacity: 0, filter: "blur(8px)", duration: 0.16, stagger: 0.04, ease: "power3.in" }, 12.2);
+
+      // La mascota se separa: el panel se va y ella queda sola para cruzar a la oficina.
+      tl.to("#f-pan", { opacity: 0, filter: "blur(12px)", scale: 0.97, duration: 0.4, ease: "power3.in" }, 12.45);
+      window.__timelines["ficha"] = tl;
+    })();
+  </script>
+</template>

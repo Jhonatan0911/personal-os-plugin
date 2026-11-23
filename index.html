@@ -299,7 +299,53 @@
   .reel-btn:hover{border-color:#8b9bff;background:rgba(7,11,18,.85)}
   /* ahora sueña · video y consola en vivo */
   nav[aria-label="Secciones"]{margin-top:36px}
-  .suena{margin-top:8px}
+  
+/* ===== Ahora tiene equipo (prefijo eq-) ===== */
+.eq-h span{color:#35e0d0}
+:root[data-theme="light"] .eq-h span{color:#0e9488}
+@media (prefers-color-scheme:light){:root:not([data-theme="dark"]) .eq-h span{color:#0e9488}}
+.eq-escena{margin-top:22px;background:radial-gradient(900px 400px at 85% -20%,rgba(76,155,255,.12),transparent 60%),radial-gradient(700px 380px at 5% 0%,rgba(169,123,255,.10),transparent 60%),#070b12;
+  border:1px solid var(--term-line);border-radius:var(--radius);padding:clamp(16px,3vw,26px);color:#e6ecf7;box-shadow:var(--shadow)}
+.eq-k{font-family:var(--mono);font-size:.72rem;letter-spacing:.18em;text-transform:uppercase;color:#8796ae;margin:0 0 12px}
+.eq-fams{display:grid;gap:16px}
+.eq-fam{display:grid;grid-template-columns:minmax(120px,170px) 1fr;gap:14px;align-items:center;border-top:1px solid rgba(120,150,200,.14);padding-top:14px}
+.eq-fam:first-child{border-top:0;padding-top:0}
+.eq-fam b{display:block;font-family:var(--mono);font-size:.82rem;letter-spacing:.06em;color:#e6ecf7}
+.eq-fam small{display:block;font-size:.8rem;color:#8796ae;margin-top:3px;line-height:1.4}
+.eq-fila{display:flex;flex-wrap:wrap;gap:8px}
+.eq-m{appearance:none;background:none;border:0;padding:0;cursor:pointer;width:58px;height:58px;position:relative;border-radius:14px}
+.eq-m:focus-visible{outline:2px solid #35e0d0;outline-offset:3px}
+.eq-m svg{width:100%;height:100%;overflow:visible}
+.eq-m .cu{transform-box:fill-box;transform-origin:50% 100%;animation:eq-resp 4.2s ease-in-out infinite}
+.eq-m .oj{transform-box:fill-box;transform-origin:50% 50%;animation:eq-parp 6.5s infinite}
+.eq-m .chispa{opacity:0}.eq-m .ok{opacity:0;transition:opacity .4s}
+.eq-m.trabajando .cu{animation:eq-bote .7s ease-in-out infinite}.eq-m.trabajando .oj{animation:eq-mira 1.4s ease-in-out infinite}
+.eq-m.trabajando .chispa{animation:eq-chis 1.2s ease-in-out infinite}.eq-m.listo .ok{opacity:1}
+.eq-m .nm{position:absolute;left:50%;bottom:-6px;transform:translate(-50%,100%);white-space:nowrap;font:600 .68rem var(--mono);color:#e6ecf7;
+  background:#0f1622;border:1px solid rgba(120,150,200,.25);border-radius:7px;padding:2px 6px;opacity:0;pointer-events:none;transition:opacity .15s;z-index:3}
+.eq-m:hover .nm,.eq-m:focus-visible .nm{opacity:1}
+@keyframes eq-resp{0%,100%{transform:scale(1,1)}50%{transform:scale(1.025,.975)}}
+@keyframes eq-parp{0%,94%,100%{transform:scaleY(1)}96%{transform:scaleY(.1)}}
+@keyframes eq-bote{0%,100%{transform:translateY(0) scale(1,1)}40%{transform:translateY(-6%) scale(.98,1.03)}}
+@keyframes eq-mira{0%,100%{transform:translateX(0)}30%{transform:translateX(-6%)}70%{transform:translateX(6%)}}
+@keyframes eq-chis{0%{opacity:0;transform:translateY(0) scale(.6)}50%{opacity:1}100%{opacity:0;transform:translateY(-10px) scale(1)}}
+@media (prefers-reduced-motion:reduce){.eq-m *{animation:none!important}}
+.eq-pista{font-size:.82rem;color:#8796ae;margin:16px 0 0}
+.eq-anat{display:grid;grid-template-columns:160px 1fr;gap:20px;align-items:center}
+.eq-anat .eq-m{width:150px;height:150px;cursor:default}
+.eq-reglas{list-style:none;margin:0;padding:0;display:grid;gap:9px}
+.eq-reglas li{font-size:.92rem;line-height:1.45}
+.eq-reglas code{font-family:var(--mono);font-size:.85em;color:#35e0d0;background:rgba(53,224,208,.08);padding:1px 6px;border-radius:5px}
+.eq-dos{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:18px}
+.eq-caja{background:#0f1622;border:1px solid rgba(120,150,200,.2);border-radius:12px;padding:14px}
+.eq-caja p{margin:6px 0 0;font-size:.88rem;line-height:1.5;color:#cdd6e8}
+.eq-caja code{font-family:var(--mono);font-size:.82em;color:#a9b9d8}
+.eq-ofi{margin:22px 0 0;border-radius:var(--radius);overflow:hidden;border:1px solid var(--term-line);background:#eef1ec;box-shadow:var(--shadow)}
+.eq-ofi img{display:block;width:100%;height:auto}
+.eq-ofi figcaption{padding:12px 16px;font-size:.88rem;color:var(--muted);background:var(--panel)}
+@media (max-width:640px){.eq-fam{grid-template-columns:1fr}.eq-anat{grid-template-columns:1fr;justify-items:center}.eq-dos{grid-template-columns:1fr}.eq-m{width:52px;height:52px}}
+
+.suena{margin-top:8px}
   .suena-h{font-size:clamp(2.4rem,7vw,3.6rem);letter-spacing:-.045em;line-height:1;margin:10px 0 10px}
   .suena-h span{color:#35e0d0}
   :root[data-theme="light"] .suena-h span{color:#0e9488}
@@ -476,7 +522,7 @@
       <div class="spot"></div>
     </div>
     <div class="brandmark" aria-hidden="true">🧭</div>
-    <div class="eyebrow h-seq" style="animation-delay:0.05s">Plugin para Claude Code <span class="ver">v3.18.1</span> <a class="new-pill" href="#sec-suena">Nuevo: ahora sueña →</a></div>
+    <div class="eyebrow h-seq" style="animation-delay:0.05s">Plugin para Claude Code <span class="ver">v3.18.1</span> <a class="new-pill" href="#sec-equipo">Nuevo: ahora tiene equipo →</a></div>
     <h1 class="h-seq" style="animation-delay:0.17s">Personal&nbsp;OS</h1>
     <p class="lede h-seq" style="animation-delay:0.29s">Cada mañana te dice <b>qué vence, qué prometiste y qué se está cayendo</b> en Jira, Outlook y Teams; arma tu timesheet y revisa tus PR. Y <b>aprende de tus errores</b> para acompañarte en todos tus proyectos. <b>24 skills para Claude Code.</b></p>
 
@@ -498,7 +544,8 @@
 
   <nav aria-label="Secciones" class="toc-bar">
     <ul class="toc">
-      <li><a href="#sec-suena">Ahora sueña</a></li>
+      <li><a href="#sec-equipo">Ahora tiene equipo</a></li>
+<li><a href="#sec-suena">Ahora sueña</a></li>
       <li><a href="#que">Qué hace</a></li>
       <li><a href="#cerebro">Cerebro</a></li>
       <li><a href="#why">Por qué</a></li>
@@ -511,6 +558,46 @@
     <button type="button" class="tema" id="tema" aria-label="Tema: el del sistema. Cambiar a claro" title="Tema: sistema"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><rect x="3" y="4" width="18" height="12" rx="2"/><path d="M8 20h8M12 16v4"/></svg></button>
   </nav>
 
+
+  <section aria-labelledby="equipo" class="suena" id="sec-equipo">
+    <div class="eyebrow">Lo nuevo · agentes con cara, oficio y memoria</div>
+    <h2 id="equipo" class="suena-h eq-h">Ahora tiene <span>equipo.</span></h2>
+    <p class="sec-sub">Cada subagente de Claude Code tiene su <b>mascota</b>, su <b>ficha</b> (oficio, objetivo, meta de cierre y límites) y una <b>memoria</b> en Markdown que crece con cada trabajo. En la consola los ves trabajar de verdad, y en la <b>oficina 3D</b> tienen escritorio.</p>
+    <figure class="reel">
+      <video id="reel-equipo" src="assets/tiene-equipo.mp4" poster="assets/tiene-equipo.jpg" autoplay muted loop playsinline preload="metadata"
+        aria-label="Video: un agente revisor recibe un pedido, lee su memoria, aprende algo nuevo y vuelve a su escritorio en la oficina 3D"></video>
+      <button type="button" class="reel-btn" id="reel-equipo-btn" aria-label="Pausar el video">❚❚</button>
+    </figure>
+    <div class="tx"><details class="older"><summary>Leer lo que cuenta el video</summary><p class="prose">En la terminal de Claude Code alguien pide revisar un cambio del login con el agente revisor-de-codigo. Su mascota despierta en la consola y pasa a «trabajando». La cámara entra a su ficha: «Revisor de código», el lema «Leo el diff antes que el título» y sus límites. Lee su conocimiento («Criterios de revisión del equipo») y al terminar escribe una experiencia nueva («Validaciones que no se pueden borrar»). Luego vuelve a su escritorio en la oficina 3D. Cierra con «Ahora tiene equipo» y el comando /consola.</p></details></div>
+
+    <div class="eq-escena" aria-labelledby="eq-fam-t">
+      <p class="eq-k" id="eq-fam-t">Cada familia se reconoce de un vistazo</p>
+      <div class="eq-fams" id="eq-fams"></div>
+      <p class="eq-pista">Toca o pasa el cursor sobre una mascota: se pone a trabajar. En la consola lo hacen solas, cuando el agente trabaja de verdad.</p>
+    </div>
+
+    <div class="eq-escena">
+      <p class="eq-k">De dónde sale cada rasgo</p>
+      <div class="eq-anat">
+        <div id="eq-anat-m" aria-hidden="true"></div>
+        <ul class="eq-reglas">
+          <li><b>Su nombre</b> le da la cara: ojos, boca y un matiz del color. Siempre la misma, sin dibujar nada.</li>
+          <li><b>Su oficio</b> le pone el accesorio: lupa para el que revisa, gafas para el arquitecto, pluma para el que redacta.</li>
+          <li><b>Su familia</b> le da el cuerpo, el color base y el emblema del pecho. El color es el campo oficial <code>color</code> de Claude Code.</li>
+          <li><b>Su estado es real</b>: los hooks registran cuándo arranca y termina cada subagente, y la mascota rebota mientras trabaja.</li>
+        </ul>
+      </div>
+      <div class="eq-dos">
+        <div class="eq-caja"><p class="eq-k" style="margin:0">La ficha</p><p>Oficio, lema, objetivo, meta de cierre y límites, como un compañero con contrato. Los tuyos se crean y editan en <code>/consola → ⚙ Config</code>; los del Personal OS y los de terceros llevan candado.</p></div>
+        <div class="eq-caja"><p class="eq-k" style="margin:0">La memoria</p><p>Usa la memoria nativa de Claude Code (<code>memory: user</code>). <b>Conocimiento</b>: lo escribes tú. <b>Experiencia</b>: la escribe el agente al terminar. Todo en Markdown en <code>~/.claude/agent-memory/&lt;agente&gt;/</code>.</p></div>
+      </div>
+    </div>
+
+    <figure class="eq-ofi">
+      <img src="assets/oficina-agentes.png" alt="Oficina 3D: escritorios con las mascotas de los agentes residentes, cada una con el color y el accesorio de su familia" loading="lazy" width="1920" height="1080">
+      <figcaption>La oficina: tus agentes y los del Personal OS tienen escritorio fijo; los demás entran de visita solo mientras trabajan. Es una pestaña de la consola y se apaga con un botón si quieres aliviar carga; el pie de la consola muestra cuánta RAM usa.</figcaption>
+    </figure>
+  </section>
 
   <section aria-labelledby="suena" class="suena" id="sec-suena">
     <div class="eyebrow">Lo nuevo · el sueño semanal</div>
@@ -1107,6 +1194,58 @@
 
 </div>
 
+<script src="plugins/personal-os/plantillas/identidad-agente.js"></script>
+<script>
+(function(){
+  /* Galería de familias: el MISMO módulo que usa la consola del plugin (plugins/personal-os/plantillas/identidad-agente.js). */
+  var IA = window.IdentidadAgente; if(!IA) return;
+  var FAMS = [
+    { t:'Tuyos', d:'Libres: forma, color y cara salen de su nombre y su ficha.', a:[
+      {nombre:'revisor-de-codigo',grupo:'mios',oficio:'Revisor de código',color:'blue',accesorio:'lupa'},
+      {nombre:'master-frontend',grupo:'mios',oficio:'Arquitecto frontend',color:'cyan'},
+      {nombre:'redactor-de-actas',grupo:'mios',oficio:'Redactor',color:'pink'},
+      {nombre:'guardian-de-secretos',grupo:'mios',oficio:'Seguridad',color:'green'}]},
+    { t:'Personal OS', d:'Osito turquesa con la sinapsis en el pecho.', a:['brief-jira','brief-outlook','brief-teams','redactor-correos','refutador-requerimiento','revisor-estimacion']
+      .map(function(n){ return {nombre:n,grupo:'propios',descripcion:n}; })},
+    { t:'Claude Code', d:'Los integrados: gota terracota con la estrella.', a:['general-purpose','Explore','Plan','claude-code-guide']
+      .map(function(n){ return {nombre:n,grupo:'integrados',descripcion:n}; })},
+    { t:'Otros marcos', d:'Cada marco instalado es una familia: cápsula y su insignia.', a:['gsd-planner','gsd-executor','gsd-debugger','gsd-verifier','gsd-code-reviewer']
+      .map(function(n){ return {nombre:n,grupo:'terceros',descripcion:n}; })}
+  ];
+  function mascota(a, grande){
+    var b = document.createElement(grande ? 'div' : 'button');
+    if(!grande){ b.type = 'button'; b.setAttribute('aria-label', a.nombre + ': pulsa para ponerlo a trabajar'); }
+    b.className = 'eq-m';
+    var r = IA.svg(a);
+    b.innerHTML = r.svg + (grande ? '' : '<span class="nm">' + a.nombre + '</span>');
+    b.querySelectorAll('.cu,.oj').forEach(function(g){ g.style.animationDelay = '-' + ((r.semilla % 4000) / 1000) + 's'; });
+    if(!grande){
+      var t = null;
+      var trabajar = function(){ clearTimeout(t); b.classList.remove('listo'); b.classList.add('trabajando');
+        t = setTimeout(function(){ b.classList.remove('trabajando'); b.classList.add('listo'); t = setTimeout(function(){ b.classList.remove('listo'); }, 2200); }, 2600); };
+      b.addEventListener('mouseenter', trabajar); b.addEventListener('click', trabajar); b.addEventListener('focus', trabajar);
+    }
+    return b;
+  }
+  var caja = document.getElementById('eq-fams');
+  if(caja) FAMS.forEach(function(f){
+    var fila = document.createElement('div'); fila.className = 'eq-fila';
+    f.a.forEach(function(a){ fila.appendChild(mascota(a)); });
+    var fam = document.createElement('div'); fam.className = 'eq-fam';
+    var tt = document.createElement('div'); tt.innerHTML = '<b></b><small></small>';
+    tt.querySelector('b').textContent = f.t; tt.querySelector('small').textContent = f.d;
+    fam.appendChild(tt); fam.appendChild(fila); caja.appendChild(fam);
+  });
+  var an = document.getElementById('eq-anat-m');
+  if(an) an.appendChild(mascota({nombre:'revisor-de-codigo',grupo:'mios',oficio:'Revisor de código',color:'blue',accesorio:'lupa'}, true));
+  /* Botón de pausa del reel nuevo, igual que el de «Ahora sueña». */
+  var v = document.getElementById('reel-equipo'), bt = document.getElementById('reel-equipo-btn');
+  if(v && bt){
+    if(window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches){ v.removeAttribute('autoplay'); v.pause(); bt.textContent='▶'; bt.setAttribute('aria-label','Reproducir el video'); }
+    bt.addEventListener('click', function(){ if(v.paused){ v.play(); bt.textContent='❚❚'; bt.setAttribute('aria-label','Pausar el video'); } else { v.pause(); bt.textContent='▶'; bt.setAttribute('aria-label','Reproducir el video'); } });
+  }
+})();
+</script>
 <script>
   var estado = document.getElementById('copy-status');
   document.querySelectorAll('.cmd button[data-copy]').forEach(function(btn){

@@ -1,0 +1,127 @@
+<template>
+  <script src="assets/identidad-agente.js"></script>
+  <style>
+    #root { position: absolute; inset: 0; font-family: "Inter", sans-serif; color: #e6ecf7; }
+    /* La lista ⚙ CONFIG de la consola, reconstruida a ~2.1x de su tamaño real. */
+    .l-list { position: absolute; left: 510px; top: 60px; width: 900px; }
+    .l-top { display: flex; align-items: center; gap: 16px; height: 64px; margin-bottom: 26px; }
+    .l-sig { width: 50px; height: 50px; }
+    .l-brand { font-family: "JetBrains Mono", monospace; font-weight: 700; font-size: 28px; letter-spacing: .16em; }
+    .l-brand em { font-style: normal; color: #35e0d0; }
+    .l-tab { margin-left: auto; font-family: "JetBrains Mono", monospace; font-weight: 700; font-size: 26px; letter-spacing: .12em;
+      color: #e6ecf7; border: 1.5px solid rgba(53,224,208,.55); background: rgba(53,224,208,.08); border-radius: 12px; padding: 8px 20px; }
+    .l-sec { font-family: "JetBrains Mono", monospace; font-size: 26px; letter-spacing: .14em; color: #5fc7bd; height: 46px;
+      display: flex; align-items: center; gap: 12px; margin: 10px 0 8px; }
+    .l-sec svg { width: 18px; height: 18px; }
+    .l-card { position: relative; display: flex; align-items: center; gap: 22px; height: 118px; padding: 0 26px 0 22px; margin-bottom: 16px;
+      background: #0f1622; border: 2px solid rgba(120,150,200,.22); border-radius: 16px; }
+    .l-m { width: 88px; height: 88px; flex: none; }
+    .l-m .chispa, .l-m .ok { opacity: 0; }
+    .l-m svg { width: 100%; height: 100%; overflow: visible; display: block; }
+    .l-tx { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px; }
+    .l-tx b { font-family: "JetBrains Mono", monospace; font-weight: 700; font-size: 30px; white-space: nowrap; }
+    .l-tx span { font-size: 26px; color: #b9c4d6; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: flex; align-items: center; gap: 10px; }
+    .l-tx span svg { width: 22px; height: 22px; flex: none; }
+    .l-meta { position: relative; width: 290px; height: 80px; flex: none; }
+    .l-meta > div { position: absolute; inset: 0; display: flex; flex-direction: column; justify-content: center; align-items: flex-end;
+      font-family: "JetBrains Mono", monospace; font-size: 26px; color: #8796ae; line-height: 1.3; white-space: nowrap; }
+    .l-work { color: #35e0d0 !important; font-weight: 700; opacity: 0; flex-direction: row !important; align-items: center !important; justify-content: flex-end !important; gap: 12px; }
+    .l-work i { width: 14px; height: 14px; border-radius: 50%; background: #35e0d0; display: block; box-shadow: 0 0 14px #35e0d0; }
+    .l-title { position: absolute; left: 1064px; width: 680px; top: 300px; font-weight: 900; font-size: 92px; letter-spacing: -.03em; line-height: 1.05; }
+    .l-title span { display: inline-block; margin-right: .24em; opacity: 0; }
+    .l-title .acc { color: #35e0d0; }
+  </style>
+  <div id="root" data-composition-id="lista" data-width="1920" data-height="1080">
+    <div class="l-list" id="l-list">
+      <div class="l-top" id="l-top">
+        <svg class="l-sig" viewBox="0 0 48 48" fill="none">
+          <circle cx="24" cy="24" r="6" fill="#35e0d0"/>
+          <g stroke="#4c9bff" stroke-width="1.5"><line x1="24" y1="24" x2="40" y2="12"/><line x1="24" y1="24" x2="42" y2="30"/><line x1="24" y1="24" x2="34" y2="42"/></g>
+          <g stroke="#a97bff" stroke-width="1.5"><line x1="24" y1="24" x2="8" y2="14"/><line x1="24" y1="24" x2="6" y2="30"/><line x1="24" y1="24" x2="16" y2="42"/></g>
+          <g fill="#e6ecf7"><circle cx="40" cy="12" r="2.6"/><circle cx="42" cy="30" r="2.6"/><circle cx="34" cy="42" r="2.6"/><circle cx="8" cy="14" r="2.6"/><circle cx="6" cy="30" r="2.6"/><circle cx="16" cy="42" r="2.6"/></g>
+        </svg>
+        <span class="l-brand">PERSONAL <em>OS</em></span>
+        <span class="l-tab">⚙ CONFIG</span>
+      </div>
+      <div class="l-sec" id="l-sec1"><svg viewBox="0 0 10 10"><path d="M1 3h8L5 8z" fill="#5fc7bd"/></svg>MÍOS · 1</div>
+      <div class="l-card" id="l-c-rev">
+        <div class="l-m" id="l-m-rev"></div>
+        <div class="l-tx"><b>revisor-de-codigo</b><span><em style="font-style:italic">«Leo el diff antes que el título.»</em></span></div>
+        <div class="l-meta"><div id="l-idle">hace 2 h<br />1 esta semana</div><div class="l-work" id="l-work"><i></i><span id="l-wtxt">trabajando · 0 min</span></div></div>
+      </div>
+      <div class="l-sec" id="l-sec2"><svg viewBox="0 0 10 10"><path d="M1 3h8L5 8z" fill="#5fc7bd"/></svg>PERSONAL OS · 6</div>
+      <div class="l-card l-os" id="l-c1"><div class="l-m" id="l-m1"></div>
+        <div class="l-tx"><b>brief-jira</b><span><svg viewBox="0 0 16 16"><rect x="3" y="7" width="10" height="8" rx="2" fill="#f6c760"/><path d="M5 7V5a3 3 0 0 1 6 0v2" stroke="#f6c760" stroke-width="2" fill="none"/></svg>Explorador de Jira del brief</span></div>
+        <div class="l-meta"><div>hace 3 d<br />5 esta semana</div></div></div>
+      <div class="l-card l-os" id="l-c2"><div class="l-m" id="l-m2"></div>
+        <div class="l-tx"><b>brief-outlook</b><span><svg viewBox="0 0 16 16"><rect x="3" y="7" width="10" height="8" rx="2" fill="#f6c760"/><path d="M5 7V5a3 3 0 0 1 6 0v2" stroke="#f6c760" stroke-width="2" fill="none"/></svg>Explorador de Outlook</span></div>
+        <div class="l-meta"><div>hace 6 h<br />8 esta semana</div></div></div>
+      <div class="l-card l-os" id="l-c3"><div class="l-m" id="l-m3"></div>
+        <div class="l-tx"><b>brief-teams</b><span><svg viewBox="0 0 16 16"><rect x="3" y="7" width="10" height="8" rx="2" fill="#f6c760"/><path d="M5 7V5a3 3 0 0 1 6 0v2" stroke="#f6c760" stroke-width="2" fill="none"/></svg>Explorador de Teams</span></div>
+        <div class="l-meta"><div>hace 6 h<br />7 esta semana</div></div></div>
+      <div class="l-card l-os" id="l-c4"><div class="l-m" id="l-m4"></div>
+        <div class="l-tx"><b>revisor-estimacion</b><span><svg viewBox="0 0 16 16"><rect x="3" y="7" width="10" height="8" rx="2" fill="#f6c760"/><path d="M5 7V5a3 3 0 0 1 6 0v2" stroke="#f6c760" stroke-width="2" fill="none"/></svg>Revisor adversarial</span></div>
+        <div class="l-meta"><div>hace 5 d<br />1 esta semana</div></div></div>
+    </div>
+    <div class="l-title" id="l-title"><span>Tus</span><span>agentes</span><span>ya</span><span>tienen</span><span class="acc">cara.</span></div>
+  </div>
+  <script>
+    (function () {
+      // Las mascotas salen del mismo módulo que usa la consola (assets/identidad-agente.js).
+      const pinta = (sel, agente, pref) => {
+        const r = window.IdentidadAgente.svg(agente);
+        document.querySelector(sel).innerHTML = r.svg.replace(/osmg(\d+)/g, pref + "$1");
+      };
+      pinta("#l-m-rev", { nombre: "revisor-de-codigo", grupo: "mios", oficio: "Revisor de código", color: "blue", accesorio: "lupa" }, "lrev");
+      pinta("#l-m1", { nombre: "brief-jira", grupo: "propios", oficio: "Explorador de Jira del brief" }, "l1g");
+      pinta("#l-m2", { nombre: "brief-outlook", grupo: "propios", oficio: "Explorador de Outlook del brief" }, "l2g");
+      pinta("#l-m3", { nombre: "brief-teams", grupo: "propios", oficio: "Explorador de Teams del brief" }, "l3g");
+      pinta("#l-m4", { nombre: "revisor-estimacion", grupo: "propios", oficio: "Revisor adversarial de estimaciones" }, "l4g");
+
+      const tl = gsap.timeline({ paused: true });
+      const R = "#l-m-rev";
+      // Estado inicial: chispas y ✓ apagados; el revisor dormido.
+            tl.set(R + " .oj", { scaleY: 0.12, transformOrigin: "50% 50%" }, 0);
+
+      // Todos respiran: escala 1.025/0.975 en 4.2 s, ciclos contados (sin repeat:-1). Cada uno desfasado.
+      ["#l-m1", "#l-m2", "#l-m3", "#l-m4"].forEach((m, i) => {
+        tl.fromTo(m + " .cu", { scaleY: 0.975, scaleX: 1.02, transformOrigin: "50% 100%" },
+          { scaleY: 1.025, scaleX: 0.985, duration: 1.9 + 0.13 * i, ease: "sine.inOut", yoyo: true, repeat: 4 }, 0);
+        // Parpadeos a tiempos fijos.
+        [0.9 + i * 0.7, 4.6 + i * 0.9, 8.3 + i * 0.5].forEach((t) => {
+          tl.to(m + " .oj", { scaleY: 0.1, transformOrigin: "50% 50%", duration: 0.07, ease: "power2.in" }, t);
+          tl.to(m + " .oj", { scaleY: 1, duration: 0.1, ease: "power2.out" }, t + 0.08);
+        });
+      });
+      tl.fromTo(R + " .cu", { scaleY: 0.975, scaleX: 1.02, transformOrigin: "50% 100%" },
+        { scaleY: 1.025, scaleX: 0.985, duration: 2.1, ease: "sine.inOut", yoyo: true, repeat: 2 }, 0);
+      // Dormido: entreabre los ojos despacio y los vuelve a cerrar.
+      tl.to(R + " .oj", { scaleY: 0.45, duration: 0.6, ease: "sine.inOut" }, 1.3);
+      tl.to(R + " .oj", { scaleY: 0.12, duration: 0.7, ease: "sine.inOut" }, 2.0);
+
+      // PEDIDO: la lista se desliza al borde izquierdo para dejar entrar la terminal.
+      tl.to("#l-list", { x: -414, duration: 1.0, ease: "power2.inOut" }, 3.0);
+
+      // DESPIERTA: abre los ojos, la tarjeta se selecciona y su estado pasa a «trabajando».
+      tl.to(R + " .oj", { scaleY: 1.15, duration: 0.18, ease: "power4.out" }, 6.3);
+      tl.to(R + " .oj", { scaleY: 1, duration: 0.2, ease: "power2.out" }, 6.48);
+      tl.to("#l-c-rev", { borderColor: "rgba(53,224,208,.85)", backgroundColor: "#0f1c26", boxShadow: "0 0 0 4px rgba(53,224,208,.12)", duration: 0.4, ease: "power2.out" }, 6.45);
+      tl.to("#l-idle", { opacity: 0, filter: "blur(6px)", duration: 0.15, ease: "power3.in" }, 6.55);
+      tl.fromTo("#l-work", { opacity: 0, filter: "blur(6px)" }, { opacity: 1, filter: "blur(0px)", duration: 0.2, ease: "power2.out" }, 6.67);
+      // Trabajando: rebote -5 % cada 0.7 s (ciclos contados) y chispas.
+      tl.fromTo(R + " .cu", { y: 0 }, { y: -5, duration: 0.35, ease: "sine.inOut", yoyo: true, repeat: 11 }, 6.65);
+      tl.fromTo(R + " .chispa", { opacity: 0, scale: 0.6, transformOrigin: "50% 50%" }, { opacity: 1, scale: 1.08, duration: 0.35, ease: "sine.inOut", yoyo: true, repeat: 11 }, 6.65);
+      tl.fromTo("#l-work i", { opacity: 1 }, { opacity: 0.35, duration: 0.35, ease: "sine.inOut", yoyo: true, repeat: 11 }, 6.65);
+
+      // Título, palabra por palabra (blur 6 → 0 en 0.13 s, 0.07 s entre palabras); quieto al aterrizar.
+      tl.fromTo("#l-title span", { opacity: 0, filter: "blur(6px)" }, { opacity: 1, filter: "blur(0px)", duration: 0.13, stagger: 0.07, ease: "power2.out" }, 8.35);
+      tl.to("#l-title span", { opacity: 0, filter: "blur(8px)", duration: 0.16, stagger: 0.04, ease: "power3.in" }, 10.25);
+
+      // Se va todo menos la tarjeta del revisor: ella se convierte en la ficha.
+      tl.to("#l-top, #l-sec1, #l-sec2, .l-os", { opacity: 0, filter: "blur(10px)", duration: 0.3, stagger: 0.03, ease: "power3.in" }, 10.45);
+      tl.to("#l-c-rev .l-tx, #l-c-rev .l-meta", { opacity: 0, duration: 0.2, ease: "power3.in" }, 10.75);
+
+      window.__timelines["lista"] = tl;
+    })();
+  </script>
+</template>
