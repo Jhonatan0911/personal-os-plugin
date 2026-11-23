@@ -82,6 +82,21 @@ for (const n of notas) {
   for (const t of PROHIBIDOS) if (plano.includes(t)) errores.push(`${nom}: contiene un término confidencial («${t}»): abstraerlo antes de que cruce de contexto`);
 }
 
+// Ajustes propuestos: cada nota vigente recibe UNA sola propuesta de ajuste (el sueño corre por semanas y
+// tendía a abrir otra en vez de sumarle el caso a la pendiente). Su **Regla.** es la nota ya ajustada y completa.
+const ajustesPorNota = new Map();
+for (const n of notas) {
+  if (n.fm.estado !== 'propuesta' || !/^ajustar/i.test(String(n.fm.propone || ''))) continue;
+  const nom = path.basename(n.ruta);
+  const objetivo = String(n.fm.ajusta || (String(n.fm.propone).match(/CO-\d{3,}/) || [])[0] || '').trim();
+  if (!/^CO-\d{3,}$/.test(objetivo)) { errores.push(`${nom}: propone ajustar pero no dice qué nota (use «ajusta: CO-###» o «propone: ajustar CO-###»)`); continue; }
+  if (!ajustesPorNota.has(objetivo)) ajustesPorNota.set(objetivo, []);
+  ajustesPorNota.get(objetivo).push(nom);
+}
+for (const [objetivo, lista] of ajustesPorNota) {
+  if (lista.length > 1) errores.push(`${objetivo} tiene ${lista.length} propuestas de ajuste (${lista.join(', ')}): únalas en una sola con la regla completa`);
+}
+
 if (errores.length) {
   console.error(`La corteza tiene ${errores.length} problema(s); no se genera nada:`);
   for (const e of errores) console.error('  - ' + e);

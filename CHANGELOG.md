@@ -1,5 +1,9 @@
 # Changelog
 
+## 3.18.2
+
+- **Corteza · un ajuste por nota:** `conocimiento-build.js --check` rechaza dos propuestas de ajuste a la misma nota vigente y las que dicen «ajustar» sin decir qué nota (`ajusta: CO-###`). El sueño semanal corre por semanas y abría un ajuste nuevo en cada una en vez de sumarle el caso al pendiente; ponerse al día con cuatro semanas dejó 23 ajustes para 13 notas, casi todos sin el párrafo **Regla.** completo.
+
 ## 3.18.1
 
 - **Consola · la plantilla se actualiza sola:** si el usuario tiene una copia en `<estado>/config/consola.html` distinta a la del plugin, `build-consola.js` la reemplaza por la del plugin y deja respaldo (`consola.html.antes-AAAA-MM-DD`). Así nadie se queda con un diseño viejo sin saberlo. Una copia marcada con `consola-personalizada` se respeta.
