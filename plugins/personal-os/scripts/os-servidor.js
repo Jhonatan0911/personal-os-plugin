@@ -380,11 +380,16 @@ async function ejecutar(id, cuerpo) {
 
 // ------------------------------------------------------------------ servidor
 
-function paginaApp() {
-  const ruta = path.join(PLANTILLAS, 'app.html');
-  const html = fs.existsSync(ruta) ? fs.readFileSync(ruta, 'utf8')
-    : '<!doctype html><meta charset="utf-8"><title>Personal OS</title><p>Consola unificada: servidor activo. La app llega en la fase F2.</p><script>window.OS_TOKEN="__OS_TOKEN__"</script>';
-  return html.replace(/__OS_TOKEN__/g, TOKEN).replace(/__OS_VERSION__/g, VERSION);
+/**
+ * La app ES la consola (decisión del usuario, 23/11: nada de «app dentro de app»). Al servir consola.html se
+ * le inyecta el token y consola-app.js JUSTO DESPUÉS de sus datos y ANTES de su script: así sus pestañas
+ * nuevas (Mandos, Config) ya existen cuando la consola engancha las suyas. La plantilla no se toca.
+ */
+function consolaConApp(html) {
+  const inyeccion = `<script>window.OS_TOKEN=${JSON.stringify(TOKEN)};window.OS_VERSION=${JSON.stringify(VERSION)};</script>`
+    + '<script src="/plantillas/consola-app.js" charset="utf-8"></script>';
+  const ancla = /(<script src="_datos\/datos\.js"[^>]*><\/script>)/;
+  return ancla.test(html) ? html.replace(ancla, `$1\n${inyeccion}`) : html.replace(/<\/body>/i, `${inyeccion}</body>`);
 }
 
 function estatico(base, rel) {
@@ -416,7 +421,12 @@ const servidor = http.createServer((req, res) => {
 
   if (req.method === 'GET') {
     if (ruta === '/salud') return json(200, { ok: true, version: VERSION, pid: process.pid, desde: INICIO });
-    if (ruta === '/' || ruta === '/app') return enviar(200, MIME['.html'], paginaApp());
+    if (ruta === '/' || ruta === '/app') return enviar(302, 'text/plain', 'a la consola', { Location: '/estado/consola.html' + (url.search || '') });
+    if (ruta === '/estado/consola.html' && STATE) {
+      const r = estatico(STATE, '/consola.html');
+      if (r.codigo !== 200) return enviar(404, 'text/plain; charset=utf-8', 'la consola no se ha construido: corre /consola o build-consola.js');
+      return enviar(200, MIME['.html'], consolaConApp(r.cuerpo.toString('utf8')));
+    }
     if (ruta === '/api/estado') {
       try { return json(200, estado()); } catch (e) { return json(500, { error: String(e && e.message) }); }
     }

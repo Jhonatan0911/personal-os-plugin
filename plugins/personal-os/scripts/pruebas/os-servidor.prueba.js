@@ -33,7 +33,7 @@ function pedir({ metodo = 'GET', ruta = '/', host = `127.0.0.1:${P}`, cab = {}, 
   const srv = spawn(process.execPath, [SRV, '--puerto', String(P)], { stdio: ['ignore', 'pipe', 'pipe'] });
   srv.stderr.on('data', (d) => process.stderr.write('[srv] ' + d));
   await new Promise((r) => setTimeout(r, 900));
-  const pag = await pedir({ ruta: '/' });
+  const pag = await pedir({ ruta: '/estado/consola.html' });
   const token = (pag.d.match(/OS_TOKEN\s*=\s*"([0-9a-f]+)"/) || [])[1];
   const O = `http://127.0.0.1:${P}`;
   const J = { 'Content-Type': 'application/json' };
@@ -41,7 +41,9 @@ function pedir({ metodo = 'GET', ruta = '/', host = `127.0.0.1:${P}`, cab = {}, 
   const casos = [
     ['salud con Host propio', 200, { ruta: '/salud' }],
     ['salud con Host ajeno (DNS rebinding)', 403, { ruta: '/salud', host: 'evil.example:' + P }],
-    ['la página trae el token', 'token', null],
+    ['la raíz lleva a la consola', 302, { ruta: '/' }],
+    ['la consola trae el token y el módulo', 'token', null],
+    ['el módulo de la app', 200, { ruta: '/plantillas/consola-app.js' }],
     ['estado', 200, { ruta: '/api/estado' }],
     ['indicadores', 200, { ruta: '/api/indicadores' }],
     ['traversal con ..', [403, 404], { ruta: '/estado/../../.claude/personal-os/config.json' }],
@@ -61,7 +63,7 @@ function pedir({ metodo = 'GET', ruta = '/', host = `127.0.0.1:${P}`, cab = {}, 
   let fallos = 0;
   for (const [nombre, espera, req] of casos) {
     let ok, obtenido;
-    if (espera === 'token') { ok = !!token && token.length === 48; obtenido = token ? 'sí' : 'no'; }
+    if (espera === 'token') { ok = !!token && token.length === 48 && pag.d.includes('/plantillas/consola-app.js'); obtenido = ok ? 'sí' : 'no'; }
     else { const r = await pedir(req); obtenido = r.codigo; ok = Array.isArray(espera) ? espera.includes(r.codigo) : r.codigo === espera; }
     if (!ok) fallos++;
     console.log(`${ok ? 'OK   ' : 'FALLO'} ${nombre}: esperado ${espera}, obtenido ${obtenido}`);
