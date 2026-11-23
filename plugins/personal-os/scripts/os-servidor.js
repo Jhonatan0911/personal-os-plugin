@@ -166,6 +166,145 @@ async function indicadores() {
   return datos;
 }
 
+// ------------------------------------------------------------------ agentes (F3)
+
+/*
+ * Tres grupos, sacados de los archivos (CO-086):
+ *   · propios del OS → los que trae el plugin (PLUGIN_ROOT/agents o la lista que deja el sync). Candado.
+ *   · míos           → frontmatter `origen: personal-os-usuario`. Se crean, editan y borran desde la app.
+ *   · de terceros    → todo lo demás (otros frameworks, sueltos). Candado.
+ * Solo se escribe en ~/.claude/agents. El borrado mueve a <os-home>/_papelera-agentes (fuera de la carpeta
+ * que Claude Code escanea). Un agente nuevo aparece en la siguiente sesión de Claude.
+ */
+const DIR_AGENTES = path.join(require('os').homedir(), '.claude', 'agents');
+const PAPELERA = path.join(C.OS_HOME, '_papelera-agentes');
+const ORIGEN_MIO = 'personal-os-usuario';
+const RESERVADOS = new Set(['general-purpose', 'explore', 'plan', 'claude', 'fork', 'statusline-setup', 'claude-code-guide']);
+const MODELOS = ['inherit', 'sonnet', 'opus', 'haiku'];
+const GRUPOS_HERR = {
+  lectura: ['Read', 'Grep', 'Glob'], edicion: ['Write', 'Edit'], terminal: ['Bash', 'PowerShell'], web: ['WebFetch', 'WebSearch'],
+};
+
+function propiosDelOs() {
+  const s = new Set();
+  try { for (const f of fs.readdirSync(path.join(C.PLUGIN_ROOT, 'agents'))) if (f.endsWith('.md')) s.add(f.slice(0, -3)); } catch (_) { /* instalación suelta */ }
+  for (const n of (C.leerJson(path.join(C.OS_HOME, 'plugin-version.json'), {}) || {}).agentes || []) s.add(n);
+  return s;
+}
+
+/** Frontmatter con `clave: valor` y listas YAML con guion (como `tools:` de algunos agentes). */
+function leerAgente(ruta) {
+  const texto = C.leerTexto(ruta, '') || '';
+  const m = texto.match(/^---\r?\n([\s\S]*?)\r?\n---\r?\n?([\s\S]*)$/);
+  if (!m) return null;
+  const fm = {}; let ultima = null;
+  for (const l of m[1].split(/\r?\n/)) {
+    if (/^\s*#/.test(l) || !l.trim()) continue;
+    const item = l.match(/^\s+-\s+(.*)$/);
+    if (item && ultima) { fm[ultima] = (Array.isArray(fm[ultima]) ? fm[ultima] : []).concat(item[1].trim()); continue; }
+    const k = l.match(/^([A-Za-z_][\w-]*):\s*(.*)$/);
+    if (!k) continue;
+    ultima = k[1];
+    let v = k[2].trim();
+    if (/^".*"$/.test(v)) { try { v = JSON.parse(v); } catch (_) { v = v.slice(1, -1); } }
+    else if (/^'.*'$/.test(v)) v = v.slice(1, -1).replace(/''/g, "'");
+    fm[ultima] = v;
+  }
+  const tools = Array.isArray(fm.tools) ? fm.tools : String(fm.tools || '').split(',').map((s) => s.trim()).filter(Boolean);
+  return { nombre: fm.name || path.basename(ruta, '.md'), descripcion: String(fm.description || ''), herramientas: tools,
+    modelo: fm.model || 'inherit', origen: fm.origen || null, instrucciones: m[2].trim(), archivo: path.basename(ruta) };
+}
+
+function listarAgentes() {
+  const propios = propiosDelOs();
+  const lista = [];
+  let archivos = [];
+  try { archivos = fs.readdirSync(DIR_AGENTES).filter((f) => f.endsWith('.md')); } catch (_) { /* sin carpeta */ }
+  for (const f of archivos.sort()) {
+    const a = leerAgente(path.join(DIR_AGENTES, f));
+    if (!a) { lista.push({ nombre: f.slice(0, -3), grupo: 'terceros', candado: true, error: 'frontmatter ilegible' }); continue; }
+    const grupo = a.origen === ORIGEN_MIO ? 'mios' : propios.has(a.nombre) ? 'propios' : 'terceros';
+    lista.push(Object.assign(a, { grupo, candado: grupo !== 'mios' }));
+  }
+  // Los del plugin que no estén copiados en ~/.claude/agents (instalación como plugin) también se ven.
+  for (const n of propios) if (!lista.some((a) => a.nombre === n)) {
+    const a = leerAgente(path.join(C.PLUGIN_ROOT, 'agents', `${n}.md`));
+    if (a) lista.push(Object.assign(a, { grupo: 'propios', candado: true }));
+  }
+  return { agentes: lista, grupos_herramientas: GRUPOS_HERR, modelos: MODELOS, carpeta: DIR_AGENTES };
+}
+
+/** Valida y arma el .md. Devuelve {error} o {nombre, texto}. */
+function armarAgente(b) {
+  const nombre = String(b.nombre || '').trim();
+  if (!/^[a-z0-9][a-z0-9-]{2,39}$/.test(nombre)) return { error: 'el nombre va en minúsculas, números y guiones (3 a 40), sin espacios' };
+  if (RESERVADOS.has(nombre)) return { error: `«${nombre}» es un nombre reservado de Claude Code` };
+  const descripcion = String(b.descripcion || '').replace(/\s+/g, ' ').trim();
+  if (descripcion.length < 20) return { error: 'la descripción (cuándo usarlo) necesita al menos 20 caracteres: es lo que Claude lee para decidir llamarlo' };
+  if (descripcion.length > 1000) return { error: 'la descripción pasa de 1000 caracteres' };
+  const instrucciones = String(b.instrucciones || '').replace(/\r\n/g, '\n').trim();
+  if (instrucciones.length < 20) return { error: 'las instrucciones necesitan al menos 20 caracteres' };
+  if (/^---\s*$/m.test(instrucciones)) return { error: 'las instrucciones no pueden tener una línea con solo «---» (rompe el frontmatter)' };
+  const modelo = MODELOS.includes(b.modelo) ? b.modelo : 'inherit';
+  const herr = [];
+  for (const g of b.grupos || []) for (const t of GRUPOS_HERR[g] || []) if (!herr.includes(t)) herr.push(t);
+  for (const t of String(b.otras || '').split(',').map((s) => s.trim()).filter(Boolean)) {
+    if (!/^[A-Za-z][A-Za-z0-9_-]*(\*)?$/.test(t)) return { error: `herramienta con nombre inválido: «${t}»` };
+    if (!herr.includes(t)) herr.push(t);
+  }
+  // La descripción va entre comillas dobles (JSON es YAML válido): así un «: » no rompe la skill (bug de la 3.2.1).
+  const fm = ['---', `name: ${nombre}`, `description: ${JSON.stringify(descripcion)}`];
+  if (herr.length) fm.push(`tools: ${herr.join(', ')}`);
+  if (modelo !== 'inherit') fm.push(`model: ${modelo}`);
+  fm.push(`origen: ${ORIGEN_MIO}`, '---', '');
+  return { nombre, texto: fm.join('\n') + instrucciones + '\n' };
+}
+
+function guardarAgente(b) {
+  const r = armarAgente(b);
+  if (r.error) return { ok: false, mensaje: r.error };
+  const destino = path.join(DIR_AGENTES, `${r.nombre}.md`);
+  const original = b.original ? String(b.original) : null;
+  if (original && !/^[a-z0-9][a-z0-9-]{2,39}$/.test(original)) return { ok: false, mensaje: 'original inválido' };
+  const existe = fs.existsSync(destino);
+  if (existe) {
+    const a = leerAgente(destino);
+    if (!a || a.origen !== ORIGEN_MIO) return { ok: false, mensaje: `ya existe un agente «${r.nombre}» que no es tuyo: tiene candado` };
+    if (original !== r.nombre) return { ok: false, mensaje: `ya tienes un agente llamado «${r.nombre}»` };
+  }
+  if (original && original !== r.nombre) {
+    const viejo = path.join(DIR_AGENTES, `${original}.md`);
+    const a = fs.existsSync(viejo) ? leerAgente(viejo) : null;
+    if (!a || a.origen !== ORIGEN_MIO) return { ok: false, mensaje: `«${original}» no es tuyo o ya no existe` };
+  }
+  fs.mkdirSync(DIR_AGENTES, { recursive: true });
+  const tmp = destino + '.tmp';
+  fs.writeFileSync(tmp, r.texto, 'utf8');
+  fs.renameSync(tmp, destino);
+  // Se relee lo escrito (CO-029): si no se lee igual, no se da por guardado.
+  const leido = leerAgente(destino);
+  if (!leido || leido.nombre !== r.nombre || leido.origen !== ORIGEN_MIO) return { ok: false, mensaje: 'se escribió pero no se pudo releer igual: revisa el archivo' };
+  if (original && original !== r.nombre) moverAPapelera(original);
+  return { ok: true, mensaje: `«${r.nombre}» guardado · aparece en la próxima sesión de Claude` };
+}
+
+function moverAPapelera(nombre) {
+  fs.mkdirSync(PAPELERA, { recursive: true });
+  const sello = new Date().toISOString().replace(/[:.]/g, '-');
+  fs.renameSync(path.join(DIR_AGENTES, `${nombre}.md`), path.join(PAPELERA, `${nombre}.${sello}.md`));
+}
+
+function borrarAgente(b) {
+  const nombre = String(b.nombre || '');
+  if (!/^[a-z0-9][a-z0-9-]{2,39}$/.test(nombre)) return { ok: false, mensaje: 'nombre inválido' };
+  const ruta = path.join(DIR_AGENTES, `${nombre}.md`);
+  const a = fs.existsSync(ruta) ? leerAgente(ruta) : null;
+  if (!a) return { ok: false, mensaje: `no existe «${nombre}»` };
+  if (a.origen !== ORIGEN_MIO) return { ok: false, mensaje: `«${nombre}» tiene candado: no es tuyo` };
+  moverAPapelera(nombre);
+  return { ok: true, mensaje: `«${nombre}» movido a la papelera (${PAPELERA.replace(/\\/g, '/')})` };
+}
+
 // ------------------------------------------------------------------ acciones (lista cerrada)
 
 /** Las del usuario: `config.json → servidor.acciones`. {id: {etiqueta, ayuda, confirmar, cmd: [...], esperar}} */
@@ -229,6 +368,8 @@ const PROPIAS = {
     return abrirEnSistema(destinos[b.destino]);
   },
   // En una instalación suelta build-consola necesita --config-dir: va en servidor.consola_args.
+  'agente-guardar': (b) => guardarAgente(b),
+  'agente-borrar': (b) => borrarAgente(b),
   'consola-build': () => correr([NODE, path.join(C.SCRIPTS_DIR, 'build-consola.js'),
     ...((C.config().servidor || {}).consola_args || [])], true),
 };
@@ -281,6 +422,9 @@ const servidor = http.createServer((req, res) => {
     if (ruta === '/' || ruta === '/app') return enviar(200, MIME['.html'], paginaApp());
     if (ruta === '/api/estado') {
       try { return json(200, estado()); } catch (e) { return json(500, { error: String(e && e.message) }); }
+    }
+    if (ruta === '/api/config/agentes') {
+      try { return json(200, listarAgentes()); } catch (e) { return json(500, { error: String(e && e.message) }); }
     }
     if (ruta === '/api/indicadores') {
       indicadores().then((d) => json(200, d), (e) => json(500, { error: String(e && e.message) }));

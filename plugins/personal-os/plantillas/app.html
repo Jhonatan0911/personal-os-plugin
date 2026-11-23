@@ -93,6 +93,38 @@ dialog h2{margin:0 0 8px;font-size:16px}
 dialog p{margin:0 0 16px;color:var(--muted-2)}
 dialog .botones{display:flex;justify-content:flex-end;gap:8px}
 .vacio{color:var(--muted);font-size:13px}
+
+/* Agentes (prefijo ag-) */
+.ag-cab{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.ag-cab .micro{margin:0}
+.ag-cuerpo{display:grid;grid-template-columns:minmax(240px,320px) 1fr;gap:14px;margin-top:14px}
+.ag-lista{display:flex;flex-direction:column;gap:14px;max-height:62vh;overflow:auto;padding-right:4px}
+.ag-grupo h3{font:600 11px var(--mono);letter-spacing:1.2px;text-transform:uppercase;color:var(--muted);margin:0 0 6px}
+.ag-item{display:flex;align-items:center;gap:8px;width:100%;text-align:left;background:var(--panel-2);border:1px solid var(--line);border-radius:10px;padding:8px 10px;margin-bottom:4px;cursor:pointer}
+.ag-item:hover{border-color:var(--line-strong)}
+.ag-item[aria-current=true]{border-color:var(--synapse);background:var(--panel-3)}
+.ag-item .ag-n{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-family:var(--mono);font-size:13px}
+.ag-item .ag-ico{font-size:12px;color:var(--muted)}
+.ag-detalle{background:var(--panel-2);border:1px solid var(--line);border-radius:12px;padding:16px;min-height:300px}
+.ag-detalle h2{margin:0 0 4px;font:600 16px var(--mono)}
+.ag-etq{display:inline-block;font:600 11px var(--mono);letter-spacing:.8px;border-radius:999px;padding:2px 8px;border:1px solid var(--line-strong);color:var(--muted-2);margin-bottom:10px}
+.ag-etq.mio{color:var(--synapse);border-color:rgba(53,224,208,.4)}
+.ag-campo{display:flex;flex-direction:column;gap:4px;margin-bottom:12px}
+.ag-campo label,.ag-campo .ag-l{font-size:12px;color:var(--muted-2)}
+.ag-campo small{font-size:12px;color:var(--muted)}
+.ag-campo input[type=text],.ag-campo textarea,.ag-campo select{background:var(--ground);color:var(--ink);border:1px solid var(--line-strong);border-radius:8px;padding:8px 10px;font:13px var(--sans);width:100%}
+.ag-campo textarea{font-family:var(--mono);min-height:180px;resize:vertical}
+.ag-campo textarea.ag-corta{min-height:70px;font-family:var(--sans)}
+.ag-casillas{display:flex;flex-wrap:wrap;gap:6px 14px}
+.ag-casillas label{display:flex;align-items:center;gap:6px;font-size:13px;color:var(--ink)}
+.ag-casillas input{width:auto;accent-color:var(--synapse)}
+.ag-ver{white-space:pre-wrap;font:12px/1.55 var(--mono);color:var(--muted-2);background:var(--ground);border:1px solid var(--line);border-radius:8px;padding:10px;max-height:40vh;overflow:auto}
+.ag-pie{display:flex;align-items:center;gap:8px;margin-top:8px;flex-wrap:wrap}
+.ag-pie .espacio{flex:1}
+.ag-sucio{font-size:12px;color:var(--r1)}
+.ag-error{font-size:13px;color:var(--r3);margin:0 0 10px}
+.btn.peligro{border-color:rgba(255,95,126,.45);color:var(--r3)}
+@media (max-width:800px){.ag-cuerpo{grid-template-columns:1fr}}
 @media (prefers-reduced-motion:no-preference){.accion,.btn,nav [role=tab]{transition:border-color .15s,background .15s,color .15s}}
 @media (max-width:720px){header{flex-wrap:wrap}nav[role=tablist]{margin-left:0;order:3;width:100%}}
 </style>
@@ -148,9 +180,16 @@ dialog .botones{display:flex;justify-content:flex-end;gap:8px}
 
   <section role="tabpanel" id="p-config" aria-labelledby="t-config" hidden>
     <div class="rejilla">
-      <div class="tarjeta ancha">
-        <p class="micro">Agentes</p>
-        <p class="vacio">Aquí se van a crear y editar tus agentes. Los propios del Personal OS y los de terceros se verán con candado. (Fase F3 del plan.)</p>
+      <div class="tarjeta ancha ag-caja">
+        <div class="ag-cab">
+          <p class="micro">Agentes</p>
+          <button class="btn primario" type="button" id="ag-nuevo">+ Nuevo agente</button>
+        </div>
+        <p class="nota">Los tuyos se crean, editan y borran aquí. Los propios del Personal OS y los de terceros tienen candado: los mantiene su actualización. Un agente nuevo o editado aparece en la <b>próxima sesión</b> de Claude.</p>
+        <div class="ag-cuerpo">
+          <div class="ag-lista" id="ag-lista" aria-label="Agentes"><p class="vacio">Cargando…</p></div>
+          <div class="ag-detalle" id="ag-detalle"><p class="vacio">Elige un agente o crea uno nuevo.</p></div>
+        </div>
       </div>
     </div>
   </section>
@@ -215,6 +254,7 @@ function elegir(t, foco = true) {
   }
   if (foco) t.focus();
   try { localStorage.setItem("os-pestana", t.id); } catch (_) {}
+  if (window.alAbrirPestana) window.alAbrirPestana(t.id);
 }
 tabs.forEach((t, i) => {
   t.addEventListener("click", () => elegir(t));
@@ -225,7 +265,7 @@ tabs.forEach((t, i) => {
 });
 // Pestaña inicial: la del enlace (#consola, #mandos, #config) o la última que se usó.
 (() => {
-  const h = location.hash.slice(1), porHash = h && document.getElementById("t-" + h);
+  const h = location.hash.slice(1).split("/")[0], porHash = h && document.getElementById("t-" + h);
   if (porHash) return elegir(porHash, false);
   try { const g = localStorage.getItem("os-pestana"); const t = g && document.getElementById(g); if (t) elegir(t, false); } catch (_) {}
 })();
@@ -313,6 +353,126 @@ $("#os-boton").addEventListener("click", async () => {
     confirmarTexto: act ? "Se pausa en TODAS las sesiones: deja de leer el estado y de recordarte riesgos y compromisos al abrir." : null });
 });
 document.querySelector('[data-accion="consola-build"]').addEventListener("click", (ev) => correrAccion("consola-build", { etiqueta: "Reconstruir la consola", boton: ev.currentTarget, recargar: true }));
+
+// ---------------- ⚙ Configuración · Agentes (F3)
+// La lista se carga al abrir la pestaña y tras guardar; NUNCA en el refresco de 30 s (no pisa lo que se escribe, CO-096).
+const AG_GRUPOS = { mios: "Míos", propios: "Propios del Personal OS", terceros: "De terceros" };
+const AG_HERR = { lectura: "Leer archivos", edicion: "Editar archivos", terminal: "Terminal", web: "Web" };
+const AG_MODELOS = { inherit: "El de la sesión", sonnet: "Sonnet", opus: "Opus", haiku: "Haiku" };
+let ag = { datos: null, actual: null, sucio: false };
+const el = (tag, props = {}, ...hijos) => { const e = document.createElement(tag); Object.assign(e, props); for (const h of hijos) if (h != null) e.append(h); return e; };
+
+async function agCargar(seleccionar = null) {
+  try {
+    ag.datos = await fetch("/api/config/agentes").then((r) => r.json());
+  } catch (e) { $("#ag-lista").replaceChildren(el("p", { className: "ag-error", textContent: "No pude leer los agentes: " + e.message })); return; }
+  agPintarLista();
+  if (seleccionar) { const a = ag.datos.agentes.find((x) => x.nombre === seleccionar); if (a) agVer(a, true); }
+}
+
+function agPintarLista() {
+  const caja = $("#ag-lista"); caja.replaceChildren();
+  for (const g of Object.keys(AG_GRUPOS)) {
+    const lista = ag.datos.agentes.filter((a) => a.grupo === g);
+    const sec = el("div", { className: "ag-grupo" }, el("h3", { textContent: `${AG_GRUPOS[g]} · ${lista.length}` }));
+    if (!lista.length) sec.append(el("p", { className: "vacio", textContent: g === "mios" ? "Todavía no has creado ninguno." : "Ninguno." }));
+    for (const a of lista) {
+      const b = el("button", { type: "button", className: "ag-item", title: a.descripcion || "" },
+        el("span", { className: "ag-n", textContent: a.nombre }), el("span", { className: "ag-ico", textContent: a.candado ? "🔒" : "✎", ariaLabel: a.candado ? "con candado" : "editable" }));
+      b.setAttribute("aria-current", ag.actual && ag.actual.nombre === a.nombre ? "true" : "false");
+      b.addEventListener("click", () => agVer(a));
+      sec.append(b);
+    }
+    caja.append(sec);
+  }
+}
+
+async function agPuedeSalir() {
+  if (!ag.sucio) return true;
+  return confirmar("Cambios sin guardar", "Tienes cambios sin guardar en este agente. ¿Los descartas?");
+}
+
+async function agVer(a, forzar = false) {
+  if (!forzar && !(await agPuedeSalir())) return;
+  ag.actual = a; ag.sucio = false; agPintarLista();
+  const d = $("#ag-detalle");
+  if (!a.candado) return agFormulario(a);
+  d.replaceChildren(
+    el("h2", { textContent: a.nombre }),
+    el("span", { className: "ag-etq", textContent: `🔒 ${AG_GRUPOS[a.grupo]}` }),
+    el("div", { className: "ag-campo" }, el("span", { className: "ag-l", textContent: "Cuándo usarlo" }), el("div", { textContent: a.descripcion || a.error || "—" })),
+    el("div", { className: "ag-campo" }, el("span", { className: "ag-l", textContent: "Herramientas" }), el("div", { className: "val", textContent: (a.herramientas || []).join(", ") || "todas (hereda las de la sesión)" })),
+    el("div", { className: "ag-campo" }, el("span", { className: "ag-l", textContent: "Modelo" }), el("div", { textContent: AG_MODELOS[a.modelo] || a.modelo })),
+    el("div", { className: "ag-campo" }, el("span", { className: "ag-l", textContent: "Instrucciones" }), el("div", { className: "ag-ver", textContent: a.instrucciones || "" })),
+    el("p", { className: "nota", textContent: a.grupo === "propios" ? "Lo mantiene el plugin del Personal OS: cualquier cambio a mano se pierde en la próxima actualización." : "Lo mantiene otra herramienta o lo instalaste aparte. No se edita desde aquí." }));
+}
+
+function agFormulario(a) {
+  const nuevo = !a;
+  ag.actual = a || null; ag.sucio = false;
+  const herr = new Set((a && a.herramientas) || []);
+  const grupos = Object.keys(AG_HERR).filter((g) => (ag.datos.grupos_herramientas[g] || []).every((t) => herr.has(t)));
+  const enGrupos = new Set(grupos.flatMap((g) => ag.datos.grupos_herramientas[g]));
+  const otras = [...herr].filter((t) => !enGrupos.has(t)).join(", ");
+  const id = (s) => "ag-f-" + s;
+  const campo = (lab, ctl, ayuda) => el("div", { className: "ag-campo" }, el("label", { htmlFor: ctl.id, textContent: lab }), ctl, ayuda ? el("small", { textContent: ayuda }) : null);
+  const iNombre = el("input", { type: "text", id: id("nombre"), value: a ? a.nombre : "", autocomplete: "off", spellcheck: false, placeholder: "p. ej. revisor-de-correos" });
+  const iDesc = el("textarea", { id: id("desc"), className: "ag-corta", value: a ? a.descripcion : "", placeholder: "Qué hace y cuándo debe llamarlo Claude. Ej.: Revisa un borrador de correo antes de enviarlo…" });
+  const iOtras = el("input", { type: "text", id: id("otras"), value: otras, autocomplete: "off", spellcheck: false, placeholder: "nombres exactos separados por coma, p. ej. mcp__servidor__herramienta" });
+  const iModelo = el("select", { id: id("modelo") }, ...Object.entries(AG_MODELOS).map(([v, t]) => el("option", { value: v, textContent: t, selected: (a ? a.modelo : "inherit") === v })));
+  const iInstr = el("textarea", { id: id("instr"), value: a ? a.instrucciones : "", placeholder: "Eres… Tu trabajo es… Devuelve…" });
+  const casillas = el("div", { className: "ag-casillas", role: "group", ariaLabel: "Herramientas" },
+    ...Object.entries(AG_HERR).map(([g, t]) => el("label", {}, el("input", { type: "checkbox", value: g, checked: grupos.includes(g) }), `${t} (${ag.datos.grupos_herramientas[g].join(", ")})`)));
+  const sucio = el("span", { className: "ag-sucio", textContent: "" });
+  const error = el("p", { className: "ag-error", hidden: true, role: "alert" });
+  const guardar = el("button", { type: "button", className: "btn primario", textContent: "Guardar" });
+  const descartar = el("button", { type: "button", className: "btn", textContent: nuevo ? "Cancelar" : "Descartar cambios" });
+  const borrar = nuevo ? null : el("button", { type: "button", className: "btn peligro", textContent: "Borrar" });
+
+  const form = el("div", {},
+    el("h2", { textContent: nuevo ? "Nuevo agente" : a.nombre }),
+    el("span", { className: "ag-etq mio", textContent: nuevo ? "nuevo · tuyo" : "✎ tuyo" }),
+    error,
+    campo("Nombre", iNombre, "Minúsculas, números y guiones. Es como Claude lo invoca."),
+    campo("Cuándo usarlo", iDesc, "Claude lee esto para decidir si lo llama: di qué hace y en qué situaciones."),
+    el("div", { className: "ag-campo" }, el("span", { className: "ag-l", textContent: "Herramientas" }), casillas,
+      el("small", { textContent: "Sin ninguna marcada ni escrita, el agente hereda todas las de la sesión." })),
+    campo("Otras herramientas", iOtras),
+    campo("Modelo", iModelo),
+    campo("Instrucciones", iInstr, "El prompt del agente: quién es, qué hace, qué no hace y qué devuelve."),
+    el("div", { className: "ag-pie" }, guardar, descartar, sucio, el("span", { className: "espacio" }), borrar));
+  $("#ag-detalle").replaceChildren(form);
+  form.addEventListener("input", () => { ag.sucio = true; sucio.textContent = "● Sin guardar"; });
+
+  descartar.addEventListener("click", async () => {
+    if (!(await agPuedeSalir())) return;
+    ag.sucio = false; nuevo ? ($("#ag-detalle").replaceChildren(el("p", { className: "vacio", textContent: "Elige un agente o crea uno nuevo." })), ag.actual = null, agPintarLista()) : agVer(a, true);
+  });
+  guardar.addEventListener("click", async () => {
+    error.hidden = true; guardar.setAttribute("aria-busy", "true");
+    const cuerpo = { nombre: iNombre.value.trim(), descripcion: iDesc.value, instrucciones: iInstr.value, modelo: iModelo.value, otras: iOtras.value,
+      grupos: [...casillas.querySelectorAll("input:checked")].map((c) => c.value), original: nuevo ? null : a.nombre };
+    try {
+      const r = await accion("agente-guardar", cuerpo);
+      if (!r.ok) { error.textContent = r.mensaje; error.hidden = false; decir(`Agente: ${r.mensaje}`, "error"); return; }
+      ag.sucio = false; decir(r.mensaje, "ok"); await agCargar(cuerpo.nombre);
+    } catch (e) { error.textContent = e.message; error.hidden = false; }
+    finally { guardar.removeAttribute("aria-busy"); }
+  });
+  if (borrar) borrar.addEventListener("click", async () => {
+    if (!(await confirmar(`Borrar «${a.nombre}»`, "Se mueve a la papelera del Personal OS (no se pierde) y deja de cargarse desde la próxima sesión de Claude."))) return;
+    const r = await accion("agente-borrar", { nombre: a.nombre });
+    decir(r.mensaje, r.ok ? "ok" : "error");
+    if (r.ok) { ag.sucio = false; ag.actual = null; $("#ag-detalle").replaceChildren(el("p", { className: "vacio", textContent: "Elige un agente o crea uno nuevo." })); await agCargar(); }
+  });
+  iNombre.focus();
+}
+
+$("#ag-nuevo").addEventListener("click", async () => { if (await agPuedeSalir()) { ag.actual = null; agPintarLista(); agFormulario(null); } });
+window.alAbrirPestana = (id) => { if (id === "t-config" && !ag.datos) agCargar(); };
+// #config/nuevo abre directo el formulario de un agente nuevo.
+if (!$("#p-config").hidden) agCargar().then(() => { if (location.hash === "#config/nuevo") agFormulario(null); });
+window.addEventListener("beforeunload", (e) => { if (ag.sucio) { e.preventDefault(); e.returnValue = ""; } });
 
 // Refresco cada 30 s, solo con la página visible: no gasta nada en segundo plano.
 let reloj = null;
