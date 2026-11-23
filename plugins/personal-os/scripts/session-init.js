@@ -83,6 +83,19 @@ try {
     }
   } catch (e) { /* sin propuestas: nada */ }
 
+  // Testigo del servidor de la consola (D-065, CO-070): si el usuario lo declaró activo y no corre, se dice.
+  try {
+    if ((cfg.servidor || {}).activo === true) {
+      let vivo = false;
+      const marca = C.leerJson(path.join(C.OS_HOME, '_servidor.json'), null);
+      if (marca && marca.pid) { try { process.kill(marca.pid, 0); vivo = true; } catch (_) { vivo = false; } }
+      if (!vivo) {
+        out += `\n\n⚠️ **El servidor de la consola no está corriendo** (declarado activo en config.json → servidor). `
+             + `Comprobar con \`node "${C.SCRIPTS_DIR.replace(/\\/g, '/')}/os-servidor.js" --salud\` y avisarlo en la primera línea.`;
+      }
+    }
+  } catch (e) { /* sin servidor declarado: nada */ }
+
   // Núcleo de reglas de la organización (reglas-organizacion/build.py con salida.nucleo apuntando a
   // <os-home>/nucleo-empresa.md): solo en sesiones de la empresa. El hook guardia sigue en todas.
   try {
