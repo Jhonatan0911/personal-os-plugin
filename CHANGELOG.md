@@ -1,5 +1,22 @@
 # Changelog
 
+## 4.0.0 · Ahora tiene equipo
+
+Versión mayor: la consola pasa a ser **la app** del Personal OS y los subagentes de Claude Code ganan identidad, ficha y memoria.
+
+- **La consola es la app.** `os-servidor.js` sirve la consola y le inyecta `plantillas/consola-app.js`, que suma las pestañas **Oficina**, **Mandos** y **⚙ Config** a su propia barra (sin cascarón ni iframe de la consola). Abierta como archivo, la consola queda igual que siempre. Se retira `plantillas/app.html`. `/consola` abre la app si el servidor responde, como una pestaña del navegador por defecto; `--crear-acceso` deja un acceso `.url` en el Escritorio.
+- **Agentes con identidad (modelo Grok Bot / Muse, adaptado a Claude Code).** En ⚙ Config cada agente tiene:
+  - **Mascota SVG por familia** (`plantillas/identidad-agente.js`, una sola fórmula para la consola, la oficina, la landing y el video): la familia fija cuerpo, color base y emblema (Personal OS, Claude Code integrados, GSD, otros); el nombre da ojos, boca y matiz; el oficio, el accesorio. Respira, parpadea y rebota cuando el agente trabaja de verdad.
+  - **Ficha**: oficio, lema, objetivo, meta de cierre y límites, más el campo oficial `color`. Panel en tres capas: lista, ficha y registro.
+  - **Actividad real** desde los hooks (`_runtime/agentes-*.jsonl`): usos de 7 y 30 días, última vez, si corre ahora y sus últimas ejecuciones. Los integrados de Claude Code se listan aunque no tengan archivo.
+  - **Memoria en Markdown** con la memoria nativa de Claude Code (`memory: user` → `~/.claude/agent-memory/<agente>/`): **conocimiento** que escribe el usuario (se indexa solo en `MEMORY.md`) y **experiencia** que escribe el agente.
+  - Los tuyos se crean, editan y borran (a la papelera, fuera de la carpeta que escanea Claude Code); los del Personal OS y los de terceros llevan candado. Claude Code toma los cambios en caliente.
+- **Oficina** (pestaña): la escena 3D se carga solo con la pestaña abierta y se apaga con un botón para aliviar carga; los residentes (tuyos y del Personal OS) tienen escritorio fijo y los demás entran de visita mientras trabajan. El servidor sirve `/_vendor` y la oficina deja de necesitar un servidor aparte.
+- **RAM en el pie de la consola**: memoria real del servidor y la que reporta la página.
+- **Seguridad del servidor**: 22 pruebas de control en `scripts/pruebas/os-servidor.prueba.js` (Host, Origin, token, lista cerrada, traversal también por `/_vendor`).
+- **Landing**: sección «Ahora tiene equipo» con video (HyperFrames, datos ficticios), galería viva de familias y la oficina.
+- **mesa-nueva · carpetas de entrega:** toda mesa nace con `revision-pr/` (una carpeta `AAAA-MM-DD-<persona>/` por cada entrega del equipo, con su `ENTREGA.md` y los adjuntos tal como llegaron; ahí se anota el veredicto de `revisar-pr`) y `final/` (el paquete de paso a producción). El `README.md` de `final/` se genera desde `paso_produccion.entregables` y `.aprobaciones` de `fuentes.yaml`, con archivos `<id>.*` y `aprobaciones/`, para que `paso-a-produccion` lo verifique con `paquete.py --carpeta <mesa>/final`.
+
 ## 3.19.0
 
 - **Consola unificada (primera entrega):** una sola app en el navegador con las pestañas **Consola** (la consola neuronal de siempre), **Mandos** (estado del OS, exigencia, indicadores y acciones) y **⚙ Configuración** (los agentes llegan en la próxima versión). La sirve `scripts/os-servidor.js`, un servidor local en Node puro, sin dependencias, de unos 47 MB.

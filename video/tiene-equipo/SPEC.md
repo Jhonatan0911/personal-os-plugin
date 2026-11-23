@@ -39,7 +39,7 @@ SHOTS:   f0-90     GANCHO: la lista ⚙ CONFIG a 1.6x: «Míos · 1» con el rev
                    al cerrar, en Experiencia aterriza «Validaciones que no se pueden borrar» con el ✓ cian. Título: «Y aprenden de cada trabajo.»
          f720-900  OFICINA: la mascota se separa de la ficha y la cámara se aleja/entra a la captura de la oficina 3D hasta
                    su escritorio (carry across); se asienta, .ok encima. Título: «Con su oficina.»
-         f900-1080 CIERRE: «Ahora tiene equipo.» 120 px (la palabra «equipo» en cian); debajo lockup «Personal OS 3.20» +
+         f900-1080 CIERRE: «Ahora tiene equipo.» 120 px (la palabra «equipo» en cian); debajo lockup «Personal OS 4.0» +
                    chip de comando «/consola», quieto 2.5 s.
 BANNED:  mascotas de Anana; datos reales (clientes, personas, servidores, empresa); escribir en un prompt como apertura;
          tres tarjetas en fila; título sobre captura atenuada; logo en una esquina; partículas decorativas; todo entrando con

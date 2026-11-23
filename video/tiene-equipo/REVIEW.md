@@ -11,7 +11,7 @@ Estado: `check` sin errores; **sin render** (espera aprobación de la vista prev
 | `terminal` | `compositions/terminal.html` | 3–8.2 s (encima de la lista) | pedido a 28 car/s y línea «● revisor-de-codigo(Revisar el cambio del login)» |
 | `ficha` | `compositions/ficha.html` | 11–24 s | morph tarjeta → ficha, límites uno a uno, baja a Memoria, abre el conocimiento, aterriza la experiencia ✓ |
 | `oficina` | `compositions/oficina.html` | 24–30 s | iris desde la mascota a la captura real, carry across al escritorio, ✓, la cámara entra |
-| `cierre` | `compositions/cierre.html` | 30–36 s | «Ahora tiene equipo.» 120 px + lockup Personal OS 3.20 + `/consola`, quieto 3.8 s |
+| `cierre` | `compositions/cierre.html` | 30–36 s | «Ahora tiene equipo.» 120 px + lockup Personal OS 4.0 + `/consola`, quieto 3.8 s |
 
 ## Decisiones creativas
 
@@ -52,6 +52,6 @@ Estado: `check` sin errores; **sin render** (espera aprobación de la vista prev
 - P2 · t=21.67 s · la mitad inferior del panel queda vacía en Memoria → si se quiere, mostrar debajo «MEMORY.md · índice».
 - P2 · t=30.0–30.3 s · 0.3 s de suelo vacío antes del claim (respiro deliberado; acortar si se siente muerto).
 - Ojo con la captura `assets/oficina-principal.png`: es la real y muestra también la etiqueta `master-angular-20` (un agente
-  propio, no del SPEC). No es un dato de cliente, pero conviene que Jhonatan decida si queda en un video público.
+  propio, no del SPEC). No es un dato de cliente, pero conviene que el autor decida si queda en un video público.
 - Plano más débil: la oficina (24–30 s) es una captura fija con zoom; con más tiempo, un recorrido real grabado de la
   oficina 3D le daría el «producto actuando» que hoy solo da el ✓.

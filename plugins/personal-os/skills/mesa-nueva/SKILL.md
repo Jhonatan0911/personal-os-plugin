@@ -98,6 +98,12 @@ Crear la estructura (plana; `mesas/` solo si hay varias líneas):
 │   ├─ dbread.ps1             SQL solo lectura, solo TEST
 │   ├─ mongoread.ps1 / .py    Mongo solo lectura, solo TEST
 │   └─ sql/                   publicacion_req_<id>.sql + rollback_req_<id>.sql
+├─ revision-pr/               lo que entregan los devs para revisión, una carpeta por entrega
+│   └─ AAAA-MM-DD-<persona>/  ENTREGA.md + scripts, evidencias y adjuntos tal como llegaron
+├─ final/                     paquete de paso a producción (lo que se manda a Arquitectura)
+│   ├─ <id>.*                 un archivo por entregable de `paso_produccion.entregables`
+│   ├─ aprobaciones/          certificación, aprobación del cliente y de Arquitectura
+│   └─ README.md              checklist generada desde la configuración (no copiada)
 ├─ repos/<carpeta>/           ÚNICO árbol de trabajo por repo
 ├─ mesas/<NN>-<linea>/        (opcional) README de la línea + junctions a repos/
 ├─ .planning/                 GSD (paso 7, con OK)
@@ -110,6 +116,21 @@ Copiar los cinco scripts desde `${CLAUDE_SKILL_DIR}/assets/` a `<mesa>/scripts/`
 placeholders de los wrappers de BD (tabla en `references/mantenimiento.md` §Placeholders). Si la mesa
 no tiene backend con esa cadena, dejarlo apuntando al primero y **decirlo en el reporte**: un wrapper
 que apunta al appsettings equivocado falla ruidosamente (bien), pero conviene saberlo antes.
+
+**Carpetas de entrega (`revision-pr/` y `final/`)** — van en toda mesa, aunque arranque vacía:
+
+- `revision-pr/` recibe todo lo que el equipo entrega para revisión: ramas y commits, scripts SQL con su
+  rollback, evidencias, capturas, matrices. Cada entrega va en `revision-pr/AAAA-MM-DD-<persona>/` con un
+  `ENTREGA.md` (quién, qué issue, repos y ramas con su commit, scripts y qué falta). Los adjuntos se
+  guardan **tal como llegaron**; el veredicto de `revisar-pr` se anota en ese mismo `ENTREGA.md`.
+  Los scripts aprobados se pasan a `scripts/sql/` con la convención `publicacion_req_<id>.sql` /
+  `rollback_req_<id>.sql`.
+- `final/` es el paquete de paso a producción. Su `README.md` se **genera** leyendo
+  `paso_produccion.entregables` y `paso_produccion.aprobaciones` de `fuentes.yaml` (la sección de la
+  skill `paso-a-produccion`): una fila por entregable con su `id`, nombre y responsable, y el nombre de
+  archivo que se espera (`<id>.*`). Las aprobaciones van en `final/aprobaciones/`. Con esa forma,
+  `paso-a-produccion` verifica la mesa con `paquete.py --carpeta <mesa>/final`. Si `fuentes.yaml` no
+  trae `paso_produccion`, `final/` se crea con `aprobaciones/` y un README que lo dice.
 
 Escribir `MESA.json` — es lo que hace la mesa reproducible y lo que leen `mesa-clonar.ps1`,
 `mesa-status.ps1` y `/retomar`:
@@ -305,6 +326,8 @@ Antes de reportar "lista", comprobar y decir el resultado de cada punto:
 - [ ] `grep` de la mesa por el PAT y por `password=` no devuelve nada fuera de `.git/config` y de los
       `appsettings` versionados que ya venían así en el repo.
 - [ ] `README.md`, `CLAUDE.md`, `MESA.json` y `HANDOFF.md` existen y son coherentes entre sí.
+- [ ] Existen `revision-pr/` y `final/` (con `aprobaciones/`), y `final/README.md` lista los mismos
+      entregables que `paso_produccion` en `fuentes.yaml`.
 - [ ] Los repos nuevos que no estaban en el catálogo quedaron **añadidos** a tu catálogo
       (`mesa_nueva.catalogo_repos`), no a la carpeta de la skill.
 

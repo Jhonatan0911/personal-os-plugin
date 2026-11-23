@@ -1,6 +1,6 @@
 # Storylines · «Ahora tiene equipo» (23/11/2026)
 
-Elegida por Jhonatan: **A**.
+Elegida: **A**.
 
 ## A · Un agente, de punta a punta (elegida)
 Un personaje hace el trabajo · cadena objeto a objeto. Seguimos a `revisor-de-codigo` (mascota con lupa): en la terminal de
