@@ -34,9 +34,16 @@ const CFG_SRV = cfg.servidor || {};
 const PUERTO = Number(C.arg('--puerto', null) || CFG_SRV.puerto || 7318);
 const STATE = C.stateDir();
 const PLANTILLAS = path.join(C.PLUGIN_ROOT, 'plantillas');
-const MARCA = path.join(C.OS_HOME, '_servidor.json');      // pid y puerto, sin el token
+// pid y puerto, sin el token. Una marca por puerto: una instancia de prueba en otro puerto no pisa la real.
+const MARCA = path.join(C.OS_HOME, `_servidor-${PUERTO}.json`);
 const TOKEN = crypto.randomBytes(24).toString('hex');
-const VERSION = (() => { try { return require(path.join(C.PLUGIN_ROOT, '.claude-plugin', 'plugin.json')).version; } catch (_) { return '?'; } })();
+// Versión: la del plugin; en una instalación suelta, la que el sync deja en <os-home>/plugin-version.json.
+const VERSION = (() => {
+  for (const r of [path.join(C.PLUGIN_ROOT, '.claude-plugin', 'plugin.json'), path.join(C.OS_HOME, 'plugin-version.json')]) {
+    const j = C.leerJson(r, null); if (j && j.version) return j.version;
+  }
+  return '?';
+})();
 const HOSTS = new Set([`127.0.0.1:${PUERTO}`, `localhost:${PUERTO}`]);
 const ORIGENES = new Set([`http://127.0.0.1:${PUERTO}`, `http://localhost:${PUERTO}`]);
 const NODE = process.execPath;
@@ -60,6 +67,27 @@ function salud(cb) {
 
 if (process.argv.includes('--salud')) {
   salud((ok, d) => { console.log(ok ? `vivo en ${PUERTO}: ${d}` : `no responde en ${PUERTO} (${d})`); process.exit(ok ? 0 : 1); });
+  return;
+}
+
+// Acceso directo en el Escritorio que abre la app como ventana propia (Edge en modo app, sin barra).
+if (process.argv.includes('--crear-acceso')) {
+  if (process.platform !== 'win32') { console.error('El acceso directo solo se crea en Windows.'); process.exit(1); }
+  const edge = [path.join(process.env['ProgramFiles(x86)'] || '', 'Microsoft', 'Edge', 'Application', 'msedge.exe'),
+    path.join(process.env.ProgramFiles || '', 'Microsoft', 'Edge', 'Application', 'msedge.exe')].find((r) => fs.existsSync(r));
+  if (!edge) { console.error('No encontré Microsoft Edge; abre http://127.0.0.1:' + PUERTO + '/ en tu navegador.'); process.exit(1); }
+  const icono = C.arg('--icono', null);
+  const q = (s) => String(s).replace(/'/g, "''");
+  // Nunca pisa un acceso ajeno con el mismo nombre (p. ej. el de una app anterior): usa otro nombre.
+  const ps = `$d=[Environment]::GetFolderPath('Desktop');$w=New-Object -ComObject WScript.Shell;$l=Join-Path $d 'Personal OS.lnk';`
+    + `if((Test-Path $l) -and ($w.CreateShortcut($l).TargetPath -notlike '*msedge.exe')){$l=Join-Path $d 'Personal OS (consola).lnk'};`
+    + `$s=$w.CreateShortcut($l);$s.TargetPath='${q(edge)}';`
+    + `$s.Arguments='--app=http://127.0.0.1:${PUERTO}/ --window-size=1280,860';$s.Description='Personal OS: consola, mandos y configuración';`
+    + (icono ? `$s.IconLocation='${q(icono)}';` : '') + `$s.Save();Write-Output $l`;
+  execFile('powershell', ['-NoProfile', '-NonInteractive', '-Command', ps], { windowsHide: true }, (e, out, err) => {
+    if (e) { console.error(`✖ ${(err || e.message).trim()}`); process.exit(1); }
+    console.log(`Acceso directo: ${String(out).trim()}`);
+  });
   return;
 }
 
@@ -103,9 +131,39 @@ function estado() {
     },
     tablero: { md: mtime(path.join(STATE || '', 'tablero.md')), html: mtime(path.join(STATE || '', 'tablero.html')) },
     consola: mtime(path.join(STATE || '', 'consola.html')),
-    acciones: Object.entries(accionesConfig()).map(([id, a]) => ({ id, etiqueta: a.etiqueta || id, ayuda: a.ayuda || '', confirmar: a.confirmar || null })),
+    // mostrar_si / ocultar_si: {indicador, valor}. Así una acción se alterna con su contraria
+    // (abrir o cerrar un widget) según lo que diga un indicador, sin que la app conozca el widget.
+    acciones: Object.entries(accionesConfig()).map(([id, a]) => ({ id, etiqueta: a.etiqueta || id, ayuda: a.ayuda || '',
+      confirmar: a.confirmar || null, mostrar_si: a.mostrar_si || null, ocultar_si: a.ocultar_si || null })),
     hoy: C.hoyISO(),
   };
+}
+
+// ------------------------------------------------------------------ indicadores (módulos del usuario)
+
+/**
+ * `config.json → servidor.indicadores`: [{id, etiqueta, cmd: [...]}]. Cada comando imprime UNA línea JSON
+ * {valor, detalle, tono: ok|aviso|error|neutro}. Así entran datos propios del usuario (horas de la jornada,
+ * un widget) sin que el plugin conozca sus rutas. Caché corta: la página los pide cada 30 s solo si está visible.
+ */
+let cacheInd = { t: 0, datos: null };
+async function indicadores() {
+  if (cacheInd.datos && Date.now() - cacheInd.t < 20000) return cacheInd.datos;
+  const lista = ((C.config().servidor || {}).indicadores || []).filter((i) => i && /^[a-z0-9-]{2,40}$/.test(i.id) && Array.isArray(i.cmd));
+  const datos = await Promise.all(lista.map((i) => new Promise((resolve) => {
+    const [exe, ...args] = i.cmd.map(sustituir);
+    // 30 s: un indicador que lee un libro de Excel tarda en frío más de 10 s.
+    execFile(exe, args, { windowsHide: true, timeout: 30000, cwd: STATE || C.OS_HOME }, (e, out, err) => {
+      let r;
+      try { r = JSON.parse(String(out || '').trim().split(/\r?\n/).pop()); } catch (_) { r = null; }
+      // Nunca un número inventado: si el comando falla o no da JSON, se dice POR QUÉ (no la línea de comandos).
+      const causa = e && e.killed ? 'tardó más de 30 s' : (String(err || '').trim().split(/\r?\n/).pop() || (e ? `salió con código ${e.code}` : 'no devolvió JSON'));
+      resolve(Object.assign({ id: i.id, etiqueta: i.etiqueta || i.id },
+        r && typeof r === 'object' ? r : { valor: 'sin dato', detalle: causa.slice(0, 160), tono: 'error' }));
+    });
+  })));
+  cacheInd = { t: Date.now(), datos };
+  return datos;
 }
 
 // ------------------------------------------------------------------ acciones (lista cerrada)
@@ -170,7 +228,9 @@ const PROPIAS = {
     if (!destinos[b.destino]) return { ok: false, mensaje: `destino desconocido: ${b.destino}` };
     return abrirEnSistema(destinos[b.destino]);
   },
-  'consola-build': () => correr([NODE, path.join(C.SCRIPTS_DIR, 'build-consola.js')], true),
+  // En una instalación suelta build-consola necesita --config-dir: va en servidor.consola_args.
+  'consola-build': () => correr([NODE, path.join(C.SCRIPTS_DIR, 'build-consola.js'),
+    ...((C.config().servidor || {}).consola_args || [])], true),
 };
 
 async function ejecutar(id, cuerpo) {
@@ -202,7 +262,8 @@ const servidor = http.createServer((req, res) => {
   const enviar = (codigo, tipo, cuerpo, extra) => {
     res.writeHead(codigo, Object.assign({
       'Content-Type': tipo, 'Cache-Control': 'no-store', 'X-Content-Type-Options': 'nosniff',
-      'X-Frame-Options': 'DENY', 'Referrer-Policy': 'no-referrer',
+      // SAMEORIGIN: la app muestra la consola en un iframe propio; ninguna página ajena puede enmarcarla.
+      'X-Frame-Options': 'SAMEORIGIN', 'Content-Security-Policy': "frame-ancestors 'self'", 'Referrer-Policy': 'no-referrer',
     }, extra || {}));
     res.end(cuerpo);
   };
@@ -220,6 +281,10 @@ const servidor = http.createServer((req, res) => {
     if (ruta === '/' || ruta === '/app') return enviar(200, MIME['.html'], paginaApp());
     if (ruta === '/api/estado') {
       try { return json(200, estado()); } catch (e) { return json(500, { error: String(e && e.message) }); }
+    }
+    if (ruta === '/api/indicadores') {
+      indicadores().then((d) => json(200, d), (e) => json(500, { error: String(e && e.message) }));
+      return;
     }
     if (ruta.startsWith('/estado/') && STATE) {
       const r = estatico(STATE, ruta.slice('/estado'.length));

@@ -1,5 +1,17 @@
 # Changelog
 
+## 3.19.0
+
+- **Consola unificada (primera entrega):** una sola app en el navegador con las pestañas **Consola** (la consola neuronal de siempre), **Mandos** (estado del OS, exigencia, indicadores y acciones) y **⚙ Configuración** (los agentes llegan en la próxima versión). La sirve `scripts/os-servidor.js`, un servidor local en Node puro, sin dependencias, de unos 47 MB.
+  - **Seguridad:** solo `127.0.0.1`; se validan `Host` (contra DNS rebinding) y `Origin`, y se exige un token aleatorio por arranque que solo viaja dentro de la página. Hay una lista cerrada de acciones (ninguna ruta ni comando libre) y los estáticos salen sin traversal. 18 pruebas de control en `scripts/pruebas/os-servidor.prueba.js`.
+  - **Acciones propias:** pausar o activar el OS, mover la exigencia (por `exigencia.js`), reconstruir la consola y abrir el tablero, la bitácora de hoy o la carpeta de estado. Las tuyas se declaran en `config.json → servidor.acciones` (`{etiqueta, ayuda, confirmar, cmd: [...], esperar, mostrar_si, ocultar_si}`, con `${STATE}`, `${OS_HOME}`, `${SCRIPTS}` y `${NODE}`).
+  - **Indicadores:** `servidor.indicadores` (`[{id, etiqueta, cmd}]`). Cada comando imprime una línea JSON `{valor, detalle, tono}`; si falla, la app lo muestra en rojo con la causa, nunca un número inventado.
+  - **Arranque y testigo:** `node os-servidor.js --instalar-tarea` lo deja oculto al iniciar sesión (acceso en la carpeta Inicio; no pide administrador) y `--crear-acceso` pone en el Escritorio una ventana propia (Edge en modo app), sin pisar un acceso ajeno. Con `servidor.activo: true`, el arranque de Claude avisa si no está corriendo.
+
+  ```json
+  "servidor": { "activo": true, "puerto": 7318, "acciones": {}, "indicadores": [] }
+  ```
+
 ## 3.18.2
 
 - **Corteza · un ajuste por nota:** `conocimiento-build.js --check` rechaza dos propuestas de ajuste a la misma nota vigente y las que dicen «ajustar» sin decir qué nota (`ajusta: CO-###`). El sueño semanal corre por semanas y abría un ajuste nuevo en cada una en vez de sumarle el caso al pendiente; ponerse al día con cuatro semanas dejó 23 ajustes para 13 notas, casi todos sin el párrafo **Regla.** completo.

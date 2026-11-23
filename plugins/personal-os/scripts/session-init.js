@@ -87,7 +87,7 @@ try {
   try {
     if ((cfg.servidor || {}).activo === true) {
       let vivo = false;
-      const marca = C.leerJson(path.join(C.OS_HOME, '_servidor.json'), null);
+      const marca = C.leerJson(path.join(C.OS_HOME, `_servidor-${cfg.servidor.puerto || 7318}.json`), null);
       if (marca && marca.pid) { try { process.kill(marca.pid, 0); vivo = true; } catch (_) { vivo = false; } }
       if (!vivo) {
         out += `\n\n⚠️ **El servidor de la consola no está corriendo** (declarado activo en config.json → servidor). `
