@@ -221,7 +221,7 @@ dialog.osm-dlg::backdrop{background:rgba(3,6,12,.72)}dialog.osm-dlg h2{margin:0 
   // Capa 1: la lista (mascota con estado real, oficio, lema, uso). Capa 2: la ficha (objetivo, meta, límites,
   // equipo, actividad, memoria). Capa 3: el registro crudo, plegado. Mascota SVG paramétrica: el cuerpo, los ojos
   // y la boca salen del nombre; el accesorio, del oficio; el color es el campo oficial `color` de Claude Code.
-  const AG_GRUPOS = { mios: "Míos", propios: "Propios del Personal OS", terceros: "De terceros" };
+  const AG_GRUPOS = { mios: "Míos", propios: "Propios del Personal OS", terceros: "De terceros", integrados: "Integrado de Claude Code" };
   const AG_HERR = { lectura: "Leer archivos", edicion: "Editar archivos", terminal: "Terminal", web: "Web" };
   const AG_MODELOS = { inherit: "El de la sesión", sonnet: "Sonnet", opus: "Opus", haiku: "Haiku", fable: "Fable" };
   const PALETA = { red: "#ff6b6b", blue: "#4c9bff", green: "#3ee08f", yellow: "#f6c760", purple: "#a97bff", orange: "#ff9a52", pink: "#ff7ac6", cyan: "#35e0d0" };
@@ -308,12 +308,34 @@ details.osm-crudo>summary{cursor:pointer;font-family:var(--mono);font-size:10.5p
     corbatin: () => `<g transform="translate(50 84)"><path d="M0 0L-12 -7V7Z M0 0L12 -7V7Z" fill="#ff5f7e"/><circle r="3.4" fill="#d6455f"/></g>`,
     brujula: () => `<g transform="translate(74 70)"><circle r="12" fill="#f3e3c2" stroke="#b8862b" stroke-width="2.5"/><path d="M0 -8L3 0L0 8L-3 0Z" fill="#ff5f7e"/><path d="M0 0L3 0L0 8L-3 0Z" fill="#4c9bff"/></g>`,
   };
+  // Familias (modelo xAI: misma base, variaciones controladas). Todos los de una familia comparten cuerpo,
+  // color base, remate y un emblema en el pecho; se distinguen por ojos, boca, accesorio y un matiz del color.
+  const FAMILIAS = {
+    mios: { titulo: "Míos", libre: true },
+    os: { titulo: "Personal OS", cuerpo: 0, remate: 0, color: "#35e0d0", emblema: "sinapsis" },
+    claude: { titulo: "Claude Code (integrados)", cuerpo: 1, remate: 3, color: "#d97757", emblema: "estrella" },
+    gsd: { titulo: "GSD", cuerpo: 2, remate: 1, color: "#f6c760", emblema: "g" },
+    sueltos: { titulo: "Otros", cuerpo: 3, remate: 2, color: "#a97bff", emblema: null },
+  };
+  const familiaDe = (a) => a.grupo === "mios" ? "mios" : a.grupo === "propios" ? "os" : a.grupo === "integrados" ? "claude"
+    : /^gsd-/.test(a.nombre || "") ? "gsd" : "sueltos";
+  // Matiz dentro de la familia: aclara u oscurece el color base hasta un 14 % según el nombre.
+  const matiz = (hex, h) => { const f = ((h % 29) - 14) / 100, n = parseInt(hex.slice(1), 16);
+    const c = [n >> 16, (n >> 8) & 255, n & 255].map((v) => Math.max(0, Math.min(255, Math.round(f > 0 ? v + (255 - v) * f : v * (1 + f)))));
+    return "#" + c.map((v) => v.toString(16).padStart(2, "0")).join(""); };
+  const EMBLEMAS = {
+    sinapsis: `<g transform="translate(50 79)"><circle r="7.5" fill="#0b1220" opacity=".55"/><circle r="2.4" fill="#35e0d0"/><g stroke="#e6ecf7" stroke-width="1.3"><line x1="0" y1="0" x2="5" y2="-4"/><line x1="0" y1="0" x2="-5" y2="-3"/><line x1="0" y1="0" x2="1" y2="5.5"/></g></g>`,
+    estrella: `<g transform="translate(50 79)" fill="#fff4ec">${[0, 45, 90, 135].map((r) => `<rect x="-1.3" y="-7" width="2.6" height="14" rx="1.3" transform="rotate(${r})"/>`).join("")}</g>`,
+    g: `<g transform="translate(50 79)"><rect x="-8" y="-7" width="16" height="14" rx="4" fill="#0b1220" opacity=".7"/><text y="4.2" text-anchor="middle" font-family="ui-monospace,Consolas,monospace" font-size="11" font-weight="700" fill="#f6c760">G</text></g>`,
+  };
   let idM = 0;
   function mascota(a, tam, estado) {
     const h = hash(a.nombre || a.agentType || "?");
-    const color = PALETA[a.color] || Object.values(PALETA)[h % 8];
-    const cuerpo = CUERPOS[(h >>> 3) % CUERPOS.length];
-    const ojo = (h >>> 7) % 3, boca = (h >>> 9) % 3, remate = (h >>> 11) % 4;
+    const fam = FAMILIAS[familiaDe(a)] || FAMILIAS.sueltos;
+    // En una familia manda el color de la familia (el parecido); el `color` propio solo pinta a los tuyos.
+    const color = fam.libre ? (PALETA[a.color] || Object.values(PALETA)[h % 8]) : matiz(fam.color, h);
+    const cuerpo = CUERPOS[fam.cuerpo != null ? fam.cuerpo : (h >>> 3) % CUERPOS.length];
+    const ojo = (h >>> 7) % 3, boca = (h >>> 9) % 3, remate = fam.remate != null ? fam.remate : (h >>> 11) % 4;
     const acc = a.accesorio && ACC_SVG[a.accesorio] ? a.accesorio : accDeOficio(a.oficio || a.descripcion, h);
     const id = "osmg" + (++idM);
     const ojos = ojo === 0 ? `<circle cx="38" cy="50" r="6.5" fill="#0b1220"/><circle cx="62" cy="50" r="6.5" fill="#0b1220"/><circle cx="40" cy="47.5" r="2.2" fill="#fff"/><circle cx="64" cy="47.5" r="2.2" fill="#fff"/>`
@@ -330,7 +352,7 @@ details.osm-crudo>summary{cursor:pointer;font-family:var(--mono);font-size:10.5p
 <g class="chispa"><path d="M86 18l2 5 5 2-5 2-2 5-2-5-5-2 5-2z" fill="${color}"/><path d="M14 26l1.5 3.5 3.5 1.5-3.5 1.5-1.5 3.5-1.5-3.5-3.5-1.5 3.5-1.5z" fill="#fff"/></g>
 <g class="cu">${sobre ? "" : rem}<path d="${cuerpo}" fill="url(#${id})" stroke="rgba(0,0,0,.28)" stroke-width="2"/><ellipse cx="50" cy="80" rx="20" ry="8" fill="#fff" opacity=".14"/>
 <ellipse cx="28" cy="62" rx="6" ry="3.6" fill="#ff7ab0" opacity=".5"/><ellipse cx="72" cy="62" rx="6" ry="3.6" fill="#ff7ab0" opacity=".5"/>
-<g class="oj">${ojos}</g>${bocaS}${ACC_SVG[acc](color)}</g>
+${fam.emblema ? EMBLEMAS[fam.emblema] : ""}<g class="oj">${ojos}</g>${bocaS}${ACC_SVG[acc](color)}</g>
 <g class="ok"><circle cx="84" cy="82" r="11" fill="#3ee08f" stroke="#0b1220" stroke-width="2.5"/><path d="M78 82l4 4 8-8" stroke="#0b1220" stroke-width="3" fill="none" stroke-linecap="round"/></g></svg>`;
     const caja = el("span", { className: "osm-m " + (estado || "reposo") });
     caja.style.width = caja.style.height = tam + "px";
@@ -383,10 +405,12 @@ details.osm-crudo>summary{cursor:pointer;font-family:var(--mono);font-size:10.5p
     agLista.replaceChildren();
     const orden = (a, b) => { const ea = actDe(a.nombre) || {}, eb = actDe(b.nombre) || {};
       return (eb.corriendo ? 1 : 0) - (ea.corriendo ? 1 : 0) || String(eb.ultima || "").localeCompare(String(ea.ultima || "")) || a.nombre.localeCompare(b.nombre); };
-    for (const g of Object.keys(AG_GRUPOS)) {
-      const l = ag.datos.agentes.filter((a) => a.grupo === g).sort(orden);
-      const sec = el("details", { className: "osm-g", open: g !== "terceros" }, el("summary", { textContent: `${AG_GRUPOS[g]} · ${l.length}` }));
-      if (!l.length) sec.append(el("p", { className: "osm-vacio", textContent: g === "mios" ? "Todavía no has creado ninguno." : "Ninguno." }));
+    // La lista se agrupa por familia; las grandes (GSD, integrados) arrancan plegadas.
+    for (const g of Object.keys(FAMILIAS)) {
+      const l = ag.datos.agentes.filter((a) => familiaDe(a) === g).sort(orden);
+      if (!l.length && g !== "mios") continue;
+      const sec = el("details", { className: "osm-g", open: l.length <= 8 }, el("summary", { textContent: `${FAMILIAS[g].titulo} · ${l.length}` }));
+      if (!l.length) sec.append(el("p", { className: "osm-vacio", textContent: "Todavía no has creado ninguno." }));
       for (const a of l) {
         const t = actDe(a.nombre);
         const est = el("span", { className: "s" }); est.dataset.estadoDe = a.nombre;
@@ -433,7 +457,8 @@ details.osm-crudo>summary{cursor:pointer;font-family:var(--mono);font-size:10.5p
         el("td", { textContent: x.tarea || "tarea no registrada" }), el("td", { textContent: "sesión " + (x.sesion || "?") })))) : el("p", { className: "osm-vacio", textContent: "Sin ejecuciones registradas." }));
     const mem = el("div", {});
     const crudo = el("details", { className: "osm-crudo osm-sec" }, el("summary", { textContent: "Registro (instrucciones completas)" }), el("div", { className: "osm-ver", style: "margin-top:8px", textContent: a.instrucciones || "" }));
-    const pie = a.candado ? el("p", { className: "osm-nota", textContent: a.grupo === "propios" ? "Lo mantiene el plugin del Personal OS: un cambio a mano se pierde en la próxima actualización." : "Lo mantiene otra herramienta o lo instalaste aparte. No se edita desde aquí." })
+    const pie = a.candado ? el("p", { className: "osm-nota", textContent: a.grupo === "propios" ? "Lo mantiene el plugin del Personal OS: un cambio a mano se pierde en la próxima actualización."
+      : a.grupo === "integrados" ? "Viene integrado en Claude Code: no tiene archivo y no se edita." : "Lo mantiene otra herramienta o lo instalaste aparte. No se edita desde aquí." })
       : el("div", { className: "osm-pie-f", style: "margin-top:14px" }, el("button", { type: "button", className: "osm-btn prim", textContent: "Editar ficha", onclick: () => agForm(a) }));
     agDet.replaceChildren(heroe, ficha, sec("Equipo (herramientas)", equipo), act, mem, crudo, pie);
     aplicarEstados();

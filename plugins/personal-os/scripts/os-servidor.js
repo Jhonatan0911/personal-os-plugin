@@ -179,6 +179,16 @@ const ORIGEN_MIO = 'personal-os-usuario';
 const RESERVADOS = new Set(['general-purpose', 'explore', 'plan', 'claude', 'fork', 'statusline-setup', 'claude-code-guide']);
 const MODELOS = ['inherit', 'sonnet', 'opus', 'haiku', 'fable'];
 const COLORES = ['red', 'blue', 'green', 'yellow', 'purple', 'orange', 'pink', 'cyan'];   // los de Claude Code
+// Agentes integrados de Claude Code (no tienen archivo). Descripción corta para la consola.
+const INTEGRADOS = {
+  'general-purpose': 'Agente de propósito general de Claude Code: investiga, busca código y hace tareas de varios pasos.',
+  Explore: 'Explorador de solo lectura de Claude Code: barre muchos archivos y devuelve la conclusión.',
+  Plan: 'Arquitecto de Claude Code: diseña planes de implementación paso a paso.',
+  'claude-code-guide': 'Guía de Claude Code: responde sobre Claude Code, el Agent SDK y la API.',
+  'statusline-setup': 'Configura la línea de estado de Claude Code.',
+  fork: 'Copia de la sesión que trabaja en segundo plano con todo el contexto.',
+  'workflow-subagent': 'Subagente que lanzan los workflows de Claude Code.',
+};
 const ACCESORIOS = ['', 'gafas', 'lupa', 'pluma', 'casco', 'boina', 'auriculares', 'escudo', 'portapapeles', 'corbatin', 'brujula'];
 const GRUPOS_HERR = {
   lectura: ['Read', 'Grep', 'Glob'], edicion: ['Write', 'Edit'], terminal: ['Bash', 'PowerShell'], web: ['WebFetch', 'WebSearch'],
@@ -233,6 +243,15 @@ function listarAgentes() {
     if (!a) { lista.push({ nombre: f.slice(0, -3), grupo: 'terceros', candado: true, error: 'frontmatter ilegible' }); continue; }
     const grupo = a.origen === ORIGEN_MIO ? 'mios' : propios.has(a.nombre) ? 'propios' : 'terceros';
     lista.push(Object.assign(a, { grupo, candado: grupo !== 'mios' }));
+  }
+  // Los integrados de Claude Code no son archivos: se listan los conocidos y los que aparecen en la actividad.
+  const act = actividad();
+  const tipos = new Set(Object.keys(INTEGRADOS).concat(Object.keys(act.porTipo).filter((t) => /^[A-Za-z][\w-]{1,40}$/.test(t))));
+  for (const n of tipos) {
+    if (lista.some((a) => a.nombre === n) || propios.has(n)) continue;
+    if (!INTEGRADOS[n] && !act.porTipo[n]) continue;
+    lista.push({ nombre: n, descripcion: INTEGRADOS[n] || 'Tipo de agente visto en la actividad de tus sesiones (sin archivo en ~/.claude/agents).',
+      herramientas: [], modelo: 'inherit', instrucciones: '', grupo: 'integrados', candado: true, oficio: '', lema: '', objetivo: '', meta: '', limites: [], color: null, accesorio: '', memoria: null });
   }
   // Los del plugin que no estén copiados en ~/.claude/agents (instalación como plugin) también se ven.
   for (const n of propios) if (!lista.some((a) => a.nombre === n)) {
