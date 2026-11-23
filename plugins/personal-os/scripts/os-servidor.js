@@ -70,23 +70,20 @@ if (process.argv.includes('--salud')) {
   return;
 }
 
-// Acceso directo en el Escritorio que abre la app como ventana propia (Edge en modo app, sin barra).
+// Acceso en el Escritorio que abre la app como una PESTAÑA del navegador por defecto, igual que /consola
+// (decisión del usuario, 23/11: nada de ventana aparte). Es un acceso a Internet (.url), sin consola ni flash.
 if (process.argv.includes('--crear-acceso')) {
-  if (process.platform !== 'win32') { console.error('El acceso directo solo se crea en Windows.'); process.exit(1); }
-  const edge = [path.join(process.env['ProgramFiles(x86)'] || '', 'Microsoft', 'Edge', 'Application', 'msedge.exe'),
-    path.join(process.env.ProgramFiles || '', 'Microsoft', 'Edge', 'Application', 'msedge.exe')].find((r) => fs.existsSync(r));
-  if (!edge) { console.error('No encontré Microsoft Edge; abre http://127.0.0.1:' + PUERTO + '/ en tu navegador.'); process.exit(1); }
+  if (process.platform !== 'win32') { console.error(`Abre http://127.0.0.1:${PUERTO}/ en tu navegador.`); process.exit(1); }
   const icono = C.arg('--icono', null);
   const q = (s) => String(s).replace(/'/g, "''");
-  // Nunca pisa un acceso ajeno con el mismo nombre (p. ej. el de una app anterior): usa otro nombre.
-  const ps = `$d=[Environment]::GetFolderPath('Desktop');$w=New-Object -ComObject WScript.Shell;$l=Join-Path $d 'Personal OS.lnk';`
-    + `if((Test-Path $l) -and ($w.CreateShortcut($l).TargetPath -notlike '*msedge.exe')){$l=Join-Path $d 'Personal OS (consola).lnk'};`
-    + `$s=$w.CreateShortcut($l);$s.TargetPath='${q(edge)}';`
-    + `$s.Arguments='--app=http://127.0.0.1:${PUERTO}/ --window-size=1280,860';$s.Description='Personal OS: consola, mandos y configuración';`
-    + (icono ? `$s.IconLocation='${q(icono)}';` : '') + `$s.Save();Write-Output $l`;
+  const contenido = ['[InternetShortcut]', `URL=http://127.0.0.1:${PUERTO}/`].concat(icono ? [`IconFile=${icono}`, 'IconIndex=0'] : []).join('\r\n') + '\r\n';
+  // Nunca pisa un acceso ajeno: si «Personal OS.url» existe y apunta a otra cosa, usa otro nombre.
+  const ps = `$d=[Environment]::GetFolderPath('Desktop');$l=Join-Path $d 'Personal OS.url';`
+    + `if((Test-Path (Join-Path $d 'Personal OS.lnk')) -or ((Test-Path $l) -and -not ((Get-Content $l -Raw) -match '127\\.0\\.0\\.1:${PUERTO}'))){$l=Join-Path $d 'Personal OS (consola).url'};`
+    + `[IO.File]::WriteAllText($l,'${q(contenido)}');Write-Output $l`;
   execFile('powershell', ['-NoProfile', '-NonInteractive', '-Command', ps], { windowsHide: true }, (e, out, err) => {
     if (e) { console.error(`✖ ${(err || e.message).trim()}`); process.exit(1); }
-    console.log(`Acceso directo: ${String(out).trim()}`);
+    console.log(`Acceso directo: ${String(out).trim()} (abre una pestaña en el navegador por defecto)`);
   });
   return;
 }
