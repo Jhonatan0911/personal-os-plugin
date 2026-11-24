@@ -1,5 +1,9 @@
 # Changelog
 
+## 4.0.1
+
+- **Vigía de compromisos · alcances traspasados:** un alcance con `estado: traspasado` (más `traspasado_a` y `traspasado_el`) deja de vigilarse como propio (entrega, fuente viva y puntos sin dueño) cuando otro líder lo hereda. Solo siguen sonando, como «HITO TUYO EN UN ALCANCE TRASPASADO», los hitos con fecha que nombran al usuario (`nombreCorto()`), hasta que los cierre o los reasigne en la nota. El resumen cuenta los traspasados aparte. Los expedientes de requerimiento aceptan `traspasado_a` con la misma regla: sus compromisos con el cliente pasan al nuevo líder y de sus cortes solo suenan los que nombran al usuario como responsable.
+
 ## 4.0.0 · Ahora tiene equipo
 
 Versión mayor: la consola pasa a ser **la app** del Personal OS y los subagentes de Claude Code ganan identidad, ficha y memoria.

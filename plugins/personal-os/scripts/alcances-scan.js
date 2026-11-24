@@ -242,8 +242,38 @@ function analizar(base, hoy) {
   const legibles = alcances.filter((a) => !ilegibles.includes(a));
   const activos = legibles.filter((a) => {
     const e = (txt(a.fm.estado) || 'activo').toLowerCase();
-    return e !== 'cumplido' && e !== 'cancelado';
+    return e !== 'cumplido' && e !== 'cancelado' && e !== 'traspasado';
   });
+
+  // (0) Alcances TRASPASADOS a otro líder (`estado: traspasado`, `traspasado_a`, `traspasado_el`).
+  //     El alcance ya no es del usuario: no se vigilan su entrega, su fuente ni sus puntos.
+  //     Solo siguen sonando los hitos con fecha que nombran al usuario como responsable,
+  //     hasta que él los cierre o los reasigne en la nota.
+  const yo = C.nombreCorto();
+  const reYo = yo && yo !== 'el usuario'
+    ? new RegExp(`(^|[^\\p{L}])${yo}([^\\p{L}]|$)`, 'iu') : null;
+  const traspasados = legibles.filter((a) => (txt(a.fm.estado) || '').toLowerCase() === 'traspasado');
+  for (const a of traspasados) {
+    if (!reYo) continue;
+    const fm = a.fm;
+    const id = txt(fm.id) || a.archivo.replace(/\.md$/, '');
+    const cliente = txt(fm.cliente) || 'SIN CLIENTE';
+    const nombre = txt(fm.nombre) || id;
+    const etiqueta = `${id} · ${cliente} · ${nombre} (traspasado a ${txt(fm.traspasado_a) || '¿?'})`;
+    for (const h of (Array.isArray(fm.hitos) ? fm.hitos : [])) {
+      const [f, que, est] = String(h).split('|').map((s) => (s || '').trim());
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(f || '')) continue;
+      if (/^(hecho|cumplido|cancelado|reemplazado)/i.test(est || '')) continue;
+      if (!reYo.test(que || '')) continue;
+      const cuando = cuandoVence(hoy, f);
+      if (!cuando) continue;
+      HITOS.push({ id, cliente, nombre, fecha: f, que: `${que} (alcance traspasado)`, cuando });
+      hallazgos.push({ sev: 'CRITICO', alcance: etiqueta,
+        titulo: `HITO TUYO EN UN ALCANCE TRASPASADO ${cuando}: ${que}`,
+        detalle: `Fecha del hito: ${f}.`,
+        accion: 'Cerrarlo con evidencia o reasignarlo en la nota al nuevo líder.' });
+    }
+  }
 
   for (const a of activos) {
     const fm = a.fm;
@@ -432,7 +462,7 @@ function analizar(base, hoy) {
   }
 
   return { hallazgos, vencidos, sospechas, hitos: HITOS, totalAlcances: alcances.length, activos: activos.length,
-           expedientes };
+           traspasados: traspasados.length, expedientes };
 }
 
 /**
@@ -502,8 +532,13 @@ function vigilarExpedientes(base, hoy, notas, hallazgos) {
     }
     leidos++;
 
-    const cortes = lista(exp.cortes);
-    const compromisos = lista(exp.compromisos);
+    // Expediente TRASPASADO a otro líder (`traspasado_a`): sus compromisos con el cliente los
+    // persigue el nuevo líder; de sus cortes solo siguen los que nombran al usuario como responsable.
+    const traspasadoA = txt(exp.traspasado_a);
+    const yo = C.nombreCorto();
+    const reYo = yo && yo !== 'el usuario' ? new RegExp(`(^|[^\\p{L}])${yo}([^\\p{L}]|$)`, 'iu') : null;
+    const cortes = lista(exp.cortes).filter((c) => !traspasadoA || (reYo && reYo.test(txt(c.responsable))));
+    const compromisos = traspasadoA ? [] : lista(exp.compromisos);
     if (!cortes.length && !compromisos.length) continue;
     conFechas++;
 
@@ -662,7 +697,8 @@ function render(r, hoy, base) {
 
   L.push('## ⚠️ VIGÍA DE COMPROMISOS — ' + hoy);
   L.push('');
-  L.push(`Alcances vigilados: **${r.activos} activos** de ${r.totalAlcances}. ` +
+  L.push(`Alcances vigilados: **${r.activos} activos** de ${r.totalAlcances}` +
+         (r.traspasados ? ` (${r.traspasados} traspasado(s): solo suenan tus hitos)` : '') + '. ' +
          `Críticos: **${criticos.length}** · Alertas: ${alertas.length}. ` +
          `Exigencia: **${EXIGENCIA.etiqueta}**` +
          (EXIGENCIA.aviso ? ` ⚠️ (${EXIGENCIA.aviso}; se usa el nivel por defecto)` : '') + '.' +
