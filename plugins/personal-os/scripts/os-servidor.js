@@ -71,6 +71,11 @@ function compararVersion(a, b) {
   for (let i = 0; i < Math.max(x.length, y.length); i++) { if ((x[i] || 0) !== (y[i] || 0)) return (x[i] || 0) < (y[i] || 0) ? -1 : 1; }
   return 0;
 }
+// Registro de errores del servidor (corre oculto: sin esto, si no arranca nadie sabe por qué).
+const LOG_SRV = path.join(C.OS_HOME, 'servidor.log');
+function anotarLog(linea) {
+  try { fs.mkdirSync(C.OS_HOME, { recursive: true }); fs.appendFileSync(LOG_SRV, `${new Date().toISOString()} [${process.pid}] ${linea}\n`); } catch (_) { /* sin log */ }
+}
 const LNK_INICIO = path.join(process.env.APPDATA || '', 'Microsoft', 'Windows', 'Start Menu', 'Programs', 'Startup', `${TAREA}.lnk`);
 function abrirNavegador(url) {
   if (process.platform === 'win32') execFile('cmd', ['/c', 'start', '', url], { windowsHide: true }, () => {});
@@ -87,6 +92,21 @@ function abrirNavegador(url) {
 if (process.argv.includes('--asegurar')) {
   const url = `http://127.0.0.1:${PUERTO}/`;
   const lanzar = () => {
+    // Windows: por WMI (Win32_Process.Create). El proceso nace fuera del árbol de Claude Code, así que no muere
+    // cuando termina el comando que lo lanzó (en algunos equipos la herramienta cierra todo su árbol al salir).
+    // conhost --headless lo deja sin ventana, igual que el arranque de Inicio. Si WMI falla, spawn desacoplado.
+    // WMI no hereda el entorno: con PERSONAL_OS_HOME (instalaciones de prueba) se usa spawn para no perderlo.
+    if (process.platform === 'win32' && !process.env.PERSONAL_OS_HOME) {
+      const q = (s) => String(s).replace(/'/g, "''");
+      const conhost = path.join(process.env.SystemRoot || 'C:\\Windows', 'System32', 'conhost.exe');
+      const linea = `"${conhost}" --headless "${NODE}" "${__filename}" --puerto ${PUERTO}`;
+      const ps = `$r = Invoke-CimMethod -ClassName Win32_Process -MethodName Create -Arguments @{ CommandLine = '${q(linea)}'; CurrentDirectory = '${q(path.dirname(__filename))}' }; $r.ReturnValue`;
+      try {
+        const out = require('child_process').execFileSync('powershell', ['-NoProfile', '-NonInteractive', '-Command', ps], { encoding: 'utf8', windowsHide: true, timeout: 15000 });
+        if (String(out).trim() === '0') return;
+        anotarLog(`WMI no lanzó el servidor (ReturnValue ${String(out).trim()}); se usa spawn`);
+      } catch (e) { anotarLog(`WMI falló (${e.message.split('\n')[0]}); se usa spawn`); }
+    }
     const p = spawn(NODE, [__filename, '--puerto', String(PUERTO)], { cwd: path.dirname(__filename), detached: true, stdio: 'ignore', windowsHide: true });
     p.unref();
   };
@@ -100,6 +120,10 @@ if (process.argv.includes('--asegurar')) {
       setTimeout(() => process.exit(0), 300);
     } else {
       console.error(`✖ El servidor no respondió en ${url} (${d}). Si el puerto ${PUERTO} lo usa otro programa, cambia config.json → servidor.puerto.`);
+      try {
+        const cola = fs.readFileSync(LOG_SRV, 'utf8').trim().split('\n').slice(-8).join('\n');
+        if (cola) console.error(`Últimas líneas de ${LOG_SRV}:\n${cola}`);
+      } catch (_) { console.error(`(sin registro en ${LOG_SRV})`); }
       process.exit(1);
     }
   };
@@ -782,8 +806,9 @@ function guardarPasoProduccion(b) {
  * password, catalogos, modo_lectura, modo_escritura y lo que traiga) que leen los wrappers de los proyectos y /bd-test:
  * la consola edita esos mismos archivos sin moverlos ni quitarles campos. El registro `<BD_HOME>/conexiones-bd.json`
  * guarda nombre, motor y etiquetas; si no existe se siembra descubriendo `~/.claude/<carpeta>/bd-*.json`.
- * Los permisos por acción viven en `permisos` del archivo de la conexión. F1: la consola los GUARDA; hacerlos cumplir
- * (guardia y wrappers) es la F2. La contraseña nunca sale por GET ni por logs: solo por POST /revelar con token.
+ * Los permisos por acción viven en `permisos` del archivo de la conexión y los hacen cumplir el guardia y los wrappers
+ * (D-071 F2). Leer tiene modo (bloqueado · preguntar · automatico); las escrituras valen siempre «script»: Claude
+ * nunca las ejecuta, las entrega como script de publicación + rollback. La contraseña nunca sale por GET ni por logs: solo por POST /revelar con token.
  * Pruebas: --bd-dir <carpeta> (registro y conexiones nuevas) y --bd-descubrir <carpeta> (en vez de ~/.claude).
  */
 const BD_HOME = path.resolve(C.arg('--bd-dir', null) || C.OS_HOME);
@@ -794,8 +819,8 @@ const BD_ACCIONES = [
   { id: 'actualizar', nombre: 'Actualizar', sql: 'UPDATE / MERGE' }, { id: 'borrar', nombre: 'Borrar', sql: 'DELETE / TRUNCATE' },
   { id: 'estructura', nombre: 'Estructura', sql: 'CREATE / ALTER / DROP' }, { id: 'ejecutar', nombre: 'Ejecutar', sql: 'EXEC / procedimientos' },
 ];
-const BD_MODOS = ['bloqueado', 'preguntar', 'automatico'];
-const BD_PERMISOS_DEFECTO = { leer: 'preguntar', crear: 'bloqueado', actualizar: 'bloqueado', borrar: 'bloqueado', estructura: 'bloqueado', ejecutar: 'bloqueado' };
+const BDP = require('./lib/bd-permisos.js');
+const BD_MODOS = BDP.MODOS_LECTURA;   // solo para Leer; las escrituras valen siempre BDP.MODO_ESCRITURA ('script')
 const BD_ETIQUETAS = ['produccion', 'staging', 'qa', 'develop', 'test'];
 const BD_MOTORES = ['sqlserver', 'postgresql', 'mysql', 'oracle', 'mongodb', 'otro'];
 const slug = (s) => /^[a-z0-9][a-z0-9-]{0,40}$/.test(String(s || ''));
@@ -856,15 +881,10 @@ function bdRegistro() {
 }
 /** El permiso efectivo de cada acción (con los de por defecto) y los campos heredados que leen /bd-test y los wrappers. */
 function bdPermisos(d) {
-  const p = Object.assign({}, BD_PERMISOS_DEFECTO);
-  for (const a of BD_ACCIONES) if (d && d.permisos && BD_MODOS.includes(d.permisos[a.id])) p[a.id] = d.permisos[a.id];
-  // Sin `permisos` todavía: la lectura toma el modo heredado (automatico | supervisado).
-  if (d && !d.permisos && d.modo_lectura === 'automatico') p.leer = 'automatico';
-  return p;
+  return BDP.permisos(d);   // leer con su modo (o el heredado de /bd-test); escrituras siempre 'script'
 }
 function bdCompatibles(p) {
-  // /bd-test solo entiende lecturas automatico|supervisado y escrituras supervisado (siempre piden OK por huella).
-  // Hasta la F2 los wrappers no leen `permisos`: el campo heredado de escritura queda en supervisado.
+  // /bd-test solo entiende lecturas automatico|supervisado; la escritura queda en supervisado (Claude entrega el script).
   return { modo_lectura: p.leer === 'automatico' ? 'automatico' : 'supervisado', modo_escritura: 'supervisado' };
 }
 function bdListar() {
@@ -879,7 +899,7 @@ function bdListar() {
       servidor: d.servidor || '', usuario: d.usuario || '', catalogos: Array.isArray(d.catalogos) ? d.catalogos : [],
       password_guardada: typeof d.password === 'string' && d.password.length > 0, actualizado, permisos: bdPermisos(d) };
   });
-  return { conexiones, acciones: BD_ACCIONES, modos: BD_MODOS, motores: BD_MOTORES,
+  return { conexiones, acciones: BD_ACCIONES, modos: BD_MODOS, modo_escritura: BDP.MODO_ESCRITURA, motores: BD_MOTORES,
     etiquetas_estandar: BD_ETIQUETAS, etiquetas_propias: reg.etiquetas_propias, registro: BD_REGISTRO };
 }
 function bdPermitidaYLeida(c) {
@@ -902,7 +922,7 @@ function bdGuardar(b) {
     if (!b.permisos || typeof b.permisos !== 'object' || Array.isArray(b.permisos)) return { ok: false, mensaje: 'permisos inválidos' };
     for (const [k, v] of Object.entries(b.permisos)) {
       if (!BD_ACCIONES.some((a) => a.id === k)) return { ok: false, mensaje: `acción desconocida: ${k}` };
-      if (!BD_MODOS.includes(v)) return { ok: false, mensaje: `modo desconocido para ${k}: ${v}` };
+      if (k === 'leer' ? !BD_MODOS.includes(v) : v !== BDP.MODO_ESCRITURA) return { ok: false, mensaje: k === 'leer' ? `modo desconocido para leer: ${v}` : `${k}: Claude no ejecuta escrituras; su único valor es «script»` };
     }
   }
   if (b.password !== undefined && (typeof b.password !== 'string' || b.password.length > 500)) return { ok: false, mensaje: 'contraseña inválida' };
@@ -926,7 +946,7 @@ function bdGuardar(b) {
   if (b.usuario !== undefined) d.usuario = b.usuario;
   if (b.catalogos !== undefined) d.catalogos = b.catalogos;
   if (typeof b.password === 'string' && b.password.length) d.password = b.password; // vacía = conservar
-  const p = Object.assign(bdPermisos(d), b.permisos || {});
+  const p = Object.assign(bdPermisos(d), b.permisos && b.permisos.leer ? { leer: b.permisos.leer } : {});
   d.permisos = p;
   Object.assign(d, bdCompatibles(p));
   bdEscribir(ent.archivo, d, a);
@@ -1185,7 +1205,10 @@ const servidor = http.createServer((req, res) => {
 
 const INICIO = new Date().toISOString();
 
+process.on('uncaughtException', (e) => { anotarLog(`ERROR sin atrapar: ${e && e.stack || e}`); process.exit(1); });
+
 servidor.on('error', (e) => {
+  anotarLog(e.code === 'EADDRINUSE' ? `puerto ${PUERTO} ocupado por otro programa` : `ERROR al escuchar: ${e.message}`);
   console.error(e.code === 'EADDRINUSE' ? `✖ El puerto ${PUERTO} está ocupado (¿ya hay otro os-servidor?). Prueba --salud.` : `✖ ${e.message}`);
   process.exit(1);
 });
@@ -1198,6 +1221,7 @@ for (const s of ['SIGINT', 'SIGTERM']) process.on(s, () => process.exit(0));
 servidor.listen(PUERTO, '127.0.0.1', () => {
   try { fs.writeFileSync(MARCA, JSON.stringify({ pid: process.pid, puerto: PUERTO, desde: INICIO, version: VERSION }, null, 2)); } catch (_) { /* el testigo lo dirá */ }
   const url = `http://127.0.0.1:${PUERTO}/`;
+  anotarLog(`arrancado ${VERSION} en ${url} desde ${__filename}`);
   console.log(`Personal OS ${VERSION} en ${url} · solo 127.0.0.1 · estado: ${STATE || '(sin configurar)'}`);
   if (process.argv.includes('--abrir') && process.platform === 'win32') execFile('cmd', ['/c', 'start', '', url], { windowsHide: true }, () => {});
 });

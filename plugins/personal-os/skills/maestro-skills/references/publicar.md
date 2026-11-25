@@ -35,6 +35,12 @@
    `/plugin marketplace add <ruta-local>` + `/plugin install <plugin>@<marketplace>`; invocar la skill
    nueva una vez.
 7. **Evals** si hay suite: `claude plugin eval .`
+7-bis. **Instalación limpia (obligatorio si el plugin trae scripts, hooks o servidor):** una prueba que instale el
+   plugin como lo recibe alguien nuevo, en carpetas temporales, y recorra cada vista y comando. En personal-os:
+   `node plugins/personal-os/scripts/pruebas/instalacion-limpia.prueba.js`; con un solo fallo **no se publica**.
+   Probar solo en el equipo del autor no sirve: su configuración, completada a mano con el tiempo, tapa lo que
+   falla en un equipo nuevo (pasó el 25/11/2026: consola, corteza y app rotas en los clientes y bien en local).
+   Cada bug que reporte un usuario y la prueba no hubiera atrapado se agrega como control nuevo.
 8. **Commit** con mensaje de versión. **Push y tag solo con el OK explícito del usuario.**
 
 ## 3. Cómo lo reciben los usuarios

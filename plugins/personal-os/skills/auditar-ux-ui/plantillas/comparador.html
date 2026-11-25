@@ -1,0 +1,109 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Propuestas de diseño</title>
+<!-- Generado por auditar-ux-ui/scripts/propuestas.py. No se edita a mano: se edita propuestas.json o cada propuesta-*.html y se vuelve a generar. -->
+<style>
+:root{--fondo:#f6f7f9;--panel:#fff;--tinta:#16181d;--tenue:#5b6270;--linea:#dfe3ea;--acento:#2f6bff;--acento-t:#fff;--sombra:0 1px 2px rgba(0,0,0,.06),0 8px 24px rgba(0,0,0,.06);
+  --sans:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;--mono:ui-monospace,"Cascadia Code",Menlo,Consolas,monospace}
+@media (prefers-color-scheme:dark){:root:not([data-theme=light]){--fondo:#0e1116;--panel:#161a21;--tinta:#e8ebf1;--tenue:#9aa3b2;--linea:#2a303a;--acento:#6d9bff;--acento-t:#0b0e13;--sombra:0 1px 2px rgba(0,0,0,.4)}}
+:root[data-theme=dark]{--fondo:#0e1116;--panel:#161a21;--tinta:#e8ebf1;--tenue:#9aa3b2;--linea:#2a303a;--acento:#6d9bff;--acento-t:#0b0e13;--sombra:0 1px 2px rgba(0,0,0,.4)}
+*{box-sizing:border-box}
+body{margin:0;background:var(--fondo);color:var(--tinta);font:15px/1.5 var(--sans)}
+header{padding:20px clamp(16px,3vw,32px) 12px;display:flex;flex-wrap:wrap;gap:12px 24px;align-items:flex-end;justify-content:space-between}
+h1{margin:0;font-size:clamp(18px,2.2vw,24px);font-weight:650;letter-spacing:-.01em}
+.sub{color:var(--tenue);font-size:13px;margin-top:2px}
+.barra{display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between;padding:0 clamp(16px,3vw,32px) 12px;border-bottom:1px solid var(--linea)}
+.seg{display:inline-flex;gap:2px;background:var(--panel);border:1px solid var(--linea);border-radius:10px;padding:3px}
+.seg button{appearance:none;border:0;background:none;color:var(--tenue);font:600 13px var(--sans);padding:8px 14px;border-radius:7px;cursor:pointer;min-height:40px}
+.seg button:hover{color:var(--tinta)}
+.seg button[aria-selected=true],.seg button[aria-pressed=true]{background:var(--acento);color:var(--acento-t)}
+.seg button:focus-visible{outline:2px solid var(--acento);outline-offset:2px}
+.reco{font:600 11px var(--mono);letter-spacing:.04em;margin-left:6px;opacity:.85}
+main{padding:16px clamp(16px,3vw,32px) 40px}
+.ficha{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px 24px;background:var(--panel);border:1px solid var(--linea);border-radius:12px;padding:16px 20px;margin-bottom:16px}
+.ficha .idea{grid-column:1/-1;font-size:17px;font-weight:600}
+.ficha b{display:block;font-size:12px;color:var(--tenue);font-weight:600;margin-bottom:2px}
+.escena{display:flex;justify-content:center}
+.marco{background:var(--panel);border:1px solid var(--linea);border-radius:10px;box-shadow:var(--sombra);overflow:hidden;transform-origin:top center}
+.marco iframe{display:block;border:0;background:#fff}
+.actual{display:grid;gap:16px}
+.actual figure{margin:0;background:var(--panel);border:1px solid var(--linea);border-radius:10px;padding:12px}
+.actual img{max-width:100%;height:auto;display:block;margin:0 auto;border-radius:6px}
+.actual figcaption{font-size:13px;color:var(--tenue);margin-top:8px;text-align:center}
+.vacio{color:var(--tenue);padding:40px;text-align:center}
+@media (max-width:600px){.seg button{padding:8px 10px}}
+@media (prefers-reduced-motion:no-preference){.marco{transition:width .2s ease}}
+</style>
+</head>
+<body>
+<header>
+  <div><h1 id="titulo"></h1><div class="sub" id="sub"></div></div>
+</header>
+<div class="barra">
+  <div class="seg" role="tablist" aria-label="Propuestas" id="tabs"></div>
+  <div class="seg" role="group" aria-label="Ancho de pantalla" id="anchos">
+    <button type="button" data-w="1440" aria-pressed="true">Escritorio 1440</button>
+    <button type="button" data-w="768" aria-pressed="false">Tableta 768</button>
+    <button type="button" data-w="390" aria-pressed="false">Celular 390</button>
+  </div>
+</div>
+<main>
+  <section class="ficha" id="ficha" aria-live="polite"></section>
+  <div class="escena" id="escena"><div class="marco" id="marco"><iframe id="frame" title="Propuesta"></iframe></div></div>
+  <div class="actual" id="actual" hidden></div>
+</main>
+<script>
+const DATOS = /*__DATOS__*/null;
+const ALTO = { 1440: 900, 768: 1024, 390: 844 };
+const $ = (s) => document.querySelector(s);
+const esc = (t) => String(t == null ? '' : t).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+let estado = { p: null, w: 1440 };
+try { const g = JSON.parse(localStorage.getItem('comparador:' + DATOS.titulo) || 'null'); if (g) estado = Object.assign(estado, g); } catch (_) { /* sin almacenamiento */ }
+
+$('#titulo').textContent = DATOS.titulo;
+$('#sub').textContent = [DATOS.vista, DATOS.fecha, 'Recomendada: ' + DATOS.recomendada].filter(Boolean).join(' · ');
+document.title = DATOS.titulo;
+
+const pestañas = DATOS.propuestas.map((p) => p.id).concat(DATOS.actual && DATOS.actual.length ? ['Actual'] : []);
+if (!pestañas.includes(estado.p)) estado.p = DATOS.recomendada || pestañas[0];
+$('#tabs').innerHTML = pestañas.map((id) => `<button type="button" role="tab" data-p="${esc(id)}" aria-selected="false">${id === 'Actual' ? 'Actual' : 'Propuesta ' + esc(id)}${id === DATOS.recomendada ? '<span class="reco">· recomendada</span>' : ''}</button>`).join('');
+
+function escalar() {
+  const m = $('#marco'); const disp = $('main').clientWidth - 2; const s = Math.min(1, disp / estado.w);
+  m.style.width = estado.w + 'px'; m.style.transform = `scale(${s})`;
+  $('#frame').style.width = estado.w + 'px'; $('#frame').style.height = ALTO[estado.w] + 'px';
+  $('#escena').style.height = (ALTO[estado.w] * s + 2) + 'px';
+}
+function pintar() {
+  document.querySelectorAll('#tabs button').forEach((b) => b.setAttribute('aria-selected', String(b.dataset.p === estado.p)));
+  document.querySelectorAll('#anchos button').forEach((b) => b.setAttribute('aria-pressed', String(Number(b.dataset.w) === estado.w)));
+  const esActual = estado.p === 'Actual';
+  $('#escena').hidden = esActual; $('#actual').hidden = !esActual;
+  if (esActual) {
+    $('#ficha').innerHTML = '<div class="idea">Así se ve hoy</div><div>Capturas reales de la vista auditada, para comparar.</div>';
+    const caps = DATOS.actual.filter((a) => !a.ancho || a.ancho === estado.w);
+    $('#actual').innerHTML = (caps.length ? caps : DATOS.actual).map((a) => `<figure><img src="${esc(a.img)}" alt="${esc(a.texto || 'Captura actual')}" loading="lazy"><figcaption>${esc(a.texto || '')}${a.ancho ? ' · ' + a.ancho + ' px' : ''}</figcaption></figure>`).join('') || '<p class="vacio">Sin capturas.</p>';
+  } else {
+    const p = DATOS.propuestas.find((x) => x.id === estado.p);
+    $('#ficha').innerHTML = `<div class="idea">${esc(p.id)} · ${esc(p.idea)}</div><div><b>Qué gana</b>${esc(p.gana)}</div><div><b>Qué pierde</b>${esc(p.pierde)}</div><div><b>Nivel de cambio</b>${esc(p.nivel)}</div>${p.antipatrones ? `<div><b>Antipatrones que elimina</b>${esc(p.antipatrones)}</div>` : ''}`;
+    const f = $('#frame'); if (f.getAttribute('src') !== p.archivo) f.setAttribute('src', p.archivo);
+    f.title = 'Propuesta ' + p.id;
+    escalar();
+  }
+  try { localStorage.setItem('comparador:' + DATOS.titulo, JSON.stringify(estado)); } catch (_) { /* sin almacenamiento */ }
+}
+$('#tabs').addEventListener('click', (e) => { const b = e.target.closest('button'); if (b) { estado.p = b.dataset.p; pintar(); } });
+$('#tabs').addEventListener('keydown', (e) => {
+  if (e.key !== 'ArrowRight' && e.key !== 'ArrowLeft') return;
+  const i = pestañas.indexOf(estado.p); estado.p = pestañas[(i + (e.key === 'ArrowRight' ? 1 : pestañas.length - 1)) % pestañas.length];
+  pintar(); document.querySelector(`#tabs button[data-p="${estado.p}"]`).focus();
+});
+$('#anchos').addEventListener('click', (e) => { const b = e.target.closest('button'); if (b) { estado.w = Number(b.dataset.w); pintar(); } });
+addEventListener('resize', () => { if (estado.p !== 'Actual') escalar(); });
+pintar();
+</script>
+</body>
+</html>

@@ -79,24 +79,20 @@ El conmutador **Ambas / Laboral / Personal** filtra grafo, signos vitales, tarje
 2. **Prioridad del día:** si el brief fijó la #1, escríbela en `<stateDir>/_datos/prioridad.json` con la
    forma `{"laboral":{"v":"…","note":"…"},"ambas":{…},"personal":{…}}`. Es lo único que el build no
    puede derivar. No la inventes: si no hay #1 fijada, deja que la consola diga "sin fijar".
-3. **Corre el build:**
-   `node "<raíz del plugin>/scripts/build-consola.js"`
-   La raíz del plugin aparece en el contexto de la sesión en la línea **"Scripts del plugin:"** que
-   inyecta el hook de arranque. Opciones: `--dry-run` (solo muestra el resumen y los avisos),
-   `--hoy AAAA-MM-DD` (otra fecha), `--estado <ruta>` (otra carpeta de estado, para pruebas).
+3. **Corre el build y ábrela con un solo comando:**
+   `node "<raíz del plugin>/scripts/build-consola.js" --abrir`
+   (la raíz del plugin está en la línea «Scripts del plugin:» del contexto). Con `--abrir`, **el propio script**
+   arranca el servidor de la consola si no corre (o lo reinicia si quedó en una versión vieja del plugin) y
+   abre la app con Oficina, mandos y ⚙ Config como pestaña del navegador. No abras nada tú. Solo si el
+   servidor no arranca, el script abre el HTML suelto e imprime el motivo (las últimas líneas de
+   `<OS_HOME>/servidor.log`): díselo al usuario en la primera línea. Opciones: `--dry-run` (solo resumen y
+   avisos), `--hoy AAAA-MM-DD`, `--estado <ruta>`.
 4. **Lee los avisos del build y trátalos como trabajo, no como ruido:** cada uno señala un dato que
    falta en la fuente (una nota sin frontmatter, un proyecto que no está en el layout, la bitácora sin
    líneas OS, el layout de ejemplo en uso). Propón la corrección en la nota o en el layout.
-5. **Ábrela en el navegador por defecto** (es local; abrir no es publicar) con
-   `node "<raíz del plugin>/scripts/os-servidor.js" --asegurar --abrir`: arranca el servidor de la consola
-   si no corre (o lo reinicia si quedó en una versión vieja del plugin) y abre la app, que trae la consola
-   con Oficina, mandos y ⚙ Config. **Si sale bien, nunca abras el HTML suelto.** Solo si sale con error,
-   abre el archivo y di por qué no arrancó:
-   - Windows (PowerShell): `Start-Process "<stateDir>\consola.html"` · macOS: `open` · Linux: `xdg-open`.
-   Si la salida dice «Arranque al iniciar Windows: NO instalado», ofrece una vez en el modal
-   `os-servidor.js --instalar-tarea` (deja un lanzador en la carpeta del OS que sobrevive a las actualizaciones).
-   El puerto sale de `config.json → servidor.puerto` (7318 por defecto). La app se abre como una pestaña más
-   del navegador, nunca como ventana aparte.
+5. **Arranque con Windows:** si la salida dice «Arranque al iniciar Windows: NO instalado», ofrece una vez en el
+   modal `os-servidor.js --instalar-tarea` (deja un lanzador en la carpeta del OS que sobrevive a las
+   actualizaciones del plugin).
 6. **Cierra en 2–3 líneas** con qué cambió (ítems nuevos o cerrados, cambio de #1, sinapsis nuevas) y
    los avisos que quedaron pendientes.
 

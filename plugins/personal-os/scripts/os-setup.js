@@ -30,6 +30,27 @@ const CARPETAS = ['riesgos', 'compromisos', 'decisiones', 'alcances', 'personas'
 const hecho = [];
 const respetado = [];
 
+/** Valores de ejemplo de plantillas/config.json que nunca deben quedar como datos reales. */
+const EJEMPLOS = new Set(['Nombre de un cliente', 'nombre-de-un-servidor', '10.0.0.', 'Tu Nombre']);
+const esEjemplo = (v) => typeof v === 'string' && (/^\/ruta\//.test(v) || EJEMPLOS.has(v));
+/** Quita en sitio los valores de ejemplo: strings «/ruta/…», listas con ejemplos y objetos cuya ruta es de ejemplo. */
+function limpiarEjemplos(o) {
+  let n = 0;
+  if (Array.isArray(o)) {
+    for (let i = o.length - 1; i >= 0; i--) {
+      const v = o[i];
+      if (esEjemplo(v) || (v && typeof v === 'object' && !Array.isArray(v) && esEjemplo(v.ruta))) { o.splice(i, 1); n++; }
+      else if (v && typeof v === 'object') n += limpiarEjemplos(v);
+    }
+  } else if (o && typeof o === 'object') {
+    for (const k of Object.keys(o)) {
+      if (k === 'owner') continue;   // «Tu Nombre» lo reemplaza --owner; si no lo dan, se queda para que se vea
+      if (esEjemplo(o[k])) { delete o[k]; n++; } else if (o[k] && typeof o[k] === 'object') n += limpiarEjemplos(o[k]);
+    }
+  }
+  return n;
+}
+
 function escribir(ruta, contenido) {
   if (fs.existsSync(ruta)) { respetado.push(ruta); return; }
   if (!dry) {
@@ -82,6 +103,21 @@ try {
   const existente = C.leerJson(rutaCfg, null);
   const base = existente || C.leerJson(path.join(PLANT, 'config.json'), {}) || {};
   base.stateDir = estado.replace(/\\/g, '/');
+  // La plantilla trae ejemplos («/ruta/a/…», «Nombre de un cliente»). Antes se copiaban tal cual y en un equipo
+  // nuevo la corteza, los ámbitos y la búsqueda apuntaban a rutas que no existen (25/11/2026: «la corteza no está
+  // configurada» en la primera instalación de un cliente). Se quitan, también de un config.json ya sembrado.
+  const quitados = limpiarEjemplos(base);
+  if (quitados) hecho.push(`config.json: ${quitados} valor(es) de ejemplo quitados`);
+  // Corteza (saber común): por defecto dentro del estado. Si la ruta declarada no existe, se usa esta.
+  const co = base.conocimiento = (base.conocimiento && typeof base.conocimiento === 'object') ? base.conocimiento : {};
+  const dirCO = co.dir ? path.resolve(String(co.dir).replace(/^~(?=$|[\\/])/, require('os').homedir())) : null;
+  if (!dirCO || !fs.existsSync(dirCO)) {
+    co.dir = path.join(estado, 'conocimiento').replace(/\\/g, '/');
+    if (!dry) fs.mkdirSync(path.join(estado, 'conocimiento', '_propuestas'), { recursive: true });
+    hecho.push(`${co.dir}/ (corteza: tus lecciones CO-###; el sueño semanal propone las primeras)`);
+  }
+  if (!co.salida) co.salida = '~/.claude/rules/conocimiento';
+  if (!Array.isArray(co.terminosProhibidos)) co.terminosProhibidos = [];
   if (owner) base.owner = owner;
   if (zona) base.zonaHoraria = zona;
   if (festivos) base.festivos = Array.from(new Set([...(Array.isArray(base.festivos) ? base.festivos : []), ...festivos])).sort();

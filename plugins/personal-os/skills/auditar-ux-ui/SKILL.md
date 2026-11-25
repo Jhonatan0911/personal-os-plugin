@@ -1,7 +1,7 @@
 ---
 name: auditar-ux-ui
-description: Audita, rediseña y pule la UX y la UI de una herramienta (un artifact HTML, un tablero, una consola, una pantalla) como lo haría un equipo de diseñador gráfico senior, diseñador de producto y experto en desarrollo de UI, siempre contra una marca (la de la organización en lo laboral, la identidad propia del producto en lo personal). Primero da un veredicto de dirección (pulir, reestructurar o rediseñar, incluso cambiar tarjetas por un dashboard, una tabla o una gráfica, o volverlo minimalista), luego mide tres porcentajes (UX, UI y Marca, más alto = mejor) contra varas fijas y cierra la brecha completa en una sola ronda, con un evaluador independiente y capturas reales en varios anchos. Úsala cuando digan "auditar ux/ui", "pásale la skill de diseño", "que quede corporativo", "dale un porcentaje de ux", "no paramos hasta 90", "pulir el tablero", "rediséñalo", "hazlo más minimalista", "esto se ve feo" o pidan subir la calidad visual de algo. No es para diseñar desde cero algo que no existe (artifact-design) ni para revisar el código de un PR (revisar-pr).
-argument-hint: "[auditar | hasta la meta <N>% | rediseñar | más sobrio | más audaz] <archivo, url o vista>"
+description: Audita, rediseña y pule la UX y la UI de una herramienta o un diseño (artifact HTML, tablero, consola, pantalla o archivo de Figma) como un equipo de diseñador gráfico senior, diseñador de producto y experto en UI, siempre contra una marca. Primero da un veredicto de dirección (pulir, reestructurar o rediseñar: tarjetas a dashboard, tabla o gráfica, o minimalista), mide UX, UI y Marca en % contra varas fijas y cierra la brecha completa en una ronda, con evaluador independiente, capturas reales en varios anchos (o los frames de Figma) y siempre abre en el navegador la página de propuestas A/B/C con vista de escritorio, tableta y celular. Úsala cuando digan "auditar ux/ui", "pásale la skill de diseño", "que quede corporativo", "dale un porcentaje de ux", "no paramos hasta 90", "audita este Figma", "rediséñalo", "hazlo más minimalista", "esto se ve feo" o pidan subir la calidad visual de algo. No es para diseñar desde cero (artifact-design) ni para revisar un PR (revisar-pr).
+argument-hint: "[auditar | hasta la meta <N>% | rediseñar | más sobrio | más audaz] <archivo, url, enlace de Figma o vista>"
 ---
 
 # auditar-ux-ui — dirección, medida y brecha completa
@@ -13,7 +13,10 @@ juzga flujos y arquitectura de información; y un desarrollador de UI que sabe l
 **No se limita a pulir lo que hay**: si la vista está mal planteada, lo dice y propone el cambio de fondo.
 
 ## 0. Modos y meta
-- **Auditar:** veredicto de dirección, tres porcentajes y brecha completa. No toca nada.
+- **Auditar:** veredicto de dirección, tres porcentajes, brecha completa y **la página de propuestas abierta**
+  (paso 3-bis). No toca la herramienta.
+- **En todos los modos se abre la página de propuestas** (A/B y C, con Escritorio 1440 · Tableta 768 · Celular
+  390): es lo que el usuario mira para decidir. Sin la página abierta, la skill no ha terminado.
 - **Hasta la meta** ("no paramos hasta…"): auditar, ejecutar la dirección aprobada y la brecha completa,
   y verificar. Meta por defecto **≥ 90 % en UX, UI y Marca**.
 - **Rediseñar:** salta la medición inicial y va directo a la dirección (paso 3), con propuestas para elegir.
@@ -53,6 +56,33 @@ organización **nunca** va dentro del plugin: vive en su perfil, en el estado.
   Si la vista vive dentro de un shell con selector de sede o de cuenta, el guion entra solo con la cuenta
   de TEST del perfil (nunca la escribe en el guion).
 
+### 2-bis. Si la fuente es Figma (un enlace `figma.com/...` o «el Figma de…»)
+El diseño se mira en Figma, no se imagina. Sin ver los frames no hay auditoría: nunca se entrega un informe
+escrito «de memoria» sobre un Figma que no se abrió.
+1. **Conector.** Usa el MCP oficial de Figma (herramientas `mcp__…Figma__*`; si están diferidas, cárgalas con
+   ToolSearch). Si no está conectado o pide autenticación, **para** y dile al usuario cómo conectarlo
+   (Claude Code → `/mcp` → Figma → autenticar, o el conector de Figma en claude.ai) y que vuelva a correr
+   la skill. Si el plugin de Figma trae sus skills (`/figma-use`, `/figma-design-to-code`), cárgalas antes de
+   llamarlas, como exigen sus instrucciones.
+2. **Abrir el archivo.** Del enlace saca `fileKey` y `node-id` (cambia `-` por `:`; en `/branch/` usa la
+   rama; en `/board/` es FigJam y en `/make/` es Make). Abre la sesión del archivo (`create_session`) y lista
+   las páginas y los frames (`get_metadata`). Si el enlace no trae `node-id`, confirma en el modal qué frames
+   o qué flujo se audita (máximo 12 frames por ronda).
+3. **Evidencia.** Por cada frame, `get_screenshot`: esas son las capturas de la auditoría (equivalen a las de
+   Playwright y van al evaluador y al informe). Las variantes de ancho son los frames de escritorio, tableta y
+   celular que existan; **si falta un ancho, es un hallazgo** (responsive sin diseñar), no se inventa.
+   Los estados (vacío, error, cargando, hover, foco) se buscan entre los frames y los componentes con sus
+   variantes; si no están diseñados, también es un hallazgo.
+4. **La marca desde Figma.** `get_variable_defs` da los tokens reales (colores, tipos, espacios). Se cruzan
+   con el perfil de marca (paso 1): un color o un tamaño suelto que no sale de las variables cuenta en contra.
+   Si el archivo no tiene variables ni estilos, eso mismo es el primer hallazgo de Marca.
+5. **El evaluador** recibe las capturas de Figma, la lista de frames y los tokens. Lo que solo se ve en un
+   prototipo navegando (transiciones, flujo) se dice como «no verificable desde los frames».
+6. **Propuestas.** Los mockups A/B/C (paso 3-bis) se hacen en HTML igual. Después, si el usuario elige una y
+   quiere tenerla en Figma, ofrécelo en el modal y súbela como **página nueva** del mismo archivo
+   («Propuesta A · <fecha>») con las herramientas de escritura del conector. **Nunca se modifican los frames
+   originales.**
+
 ## 3. Veredicto de dirección (antes de medir el detalle)
 El evaluador mira cada vista como un todo y responde:
 1. **¿La forma corresponde al contenido?** Datos que se comparan van en una tabla o una gráfica, no en
@@ -65,18 +95,29 @@ El evaluador mira cada vista como un todo y responde:
    **reestructurar** (cambian el orden, los grupos y algunos componentes) o **rediseñar** (otra forma: menos
    tarjetas, dashboard, tabla, gráfica, minimalismo).
 
-### 3-bis. Cambio grande → mockups en HTML y CSS antes de tocar el código
-Si el veredicto es **reestructurar o rediseñar** (o el usuario pide «rediseñar»), no se toca la herramienta
-hasta que el usuario elija sobre **mockups navegables**:
-1. **Una página de comparación** en `<proyecto>/.diseno/propuestas/<AAAA-MM-DD>-<vista>/index.html`
-   (para un artifact, junto a su archivo). Es un solo HTML autocontenido, con CSS en línea y sin dependencias
-   salvo las fuentes de la marca. Lleva:
-   - las propuestas **A, B y C** (2 como mínimo y 3 como máximo; la recomendada es la A), cada una en su
-     pestaña, más la pestaña **«Actual»**, que es la captura de hoy, para comparar;
-   - en cada propuesta, su idea en una línea, **qué gana y qué pierde**, el nivel de cambio y los
-     antipatrones que elimina;
-   - un selector de ancho (**escritorio 1440 / tableta 768 / celular 390**) que muestra la propuesta en un
-     marco de ese ancho.
+### 3-bis. Siempre: propuestas en mockups HTML antes de tocar el código
+**Toda auditoría termina con la página de propuestas abierta**, sea cual sea el veredicto, y no se toca la
+herramienta hasta que el usuario elija sobre esos **mockups navegables**. Qué propuestas van según el veredicto:
+- **Pulir:** A = la vista con toda la brecha aplicada (mismo esquema, detalles resueltos); B = una variante de
+  carácter (más sobria o más audaz); C, opcional, una reestructura si se ve una mejor.
+- **Reestructurar o rediseñar:** A, B y C son formas distintas (ver punto 2).
+
+Cómo se hacen:
+1. **La página de comparación NO se escribe a mano: la arma el script.** En
+   `<proyecto>/.diseno/propuestas/<AAAA-MM-DD>-<vista>/` (para un artifact, junto a su archivo; sin proyecto,
+   en `<stateDir>/diseno/propuestas/…`) se escriben solo:
+   - `propuesta-a.html`, `propuesta-b.html` (y `-c`): **cada propuesta es un HTML autocontenido y responsive**
+     (con `<meta name="viewport">`, CSS en línea, sin dependencias salvo las fuentes de la marca), porque se
+     muestra dentro de un marco de 1440, 768 o 390 px;
+   - `actual-<ancho>.png`: las capturas de hoy (paso 2);
+   - `propuestas.json`: `titulo`, `vista`, `fecha`, `recomendada` y, por propuesta, `id`, `idea` (una línea),
+     `gana`, `pierde`, `nivel`, `antipatrones` y `archivo`; en `actual`, cada captura con `img`, `ancho` y `texto`.
+   Luego: `python "${CLAUDE_SKILL_DIR}/scripts/propuestas.py" --carpeta <esa carpeta> --abrir`. El script valida
+   (2 o 3 propuestas, archivos y capturas presentes, viewport), escribe `index.html` desde
+   `plantillas/comparador.html` y lo abre en el navegador por defecto: pestañas **A · B · C · Actual**, la ficha
+   de cada propuesta (idea, qué gana, qué pierde, nivel, antipatrones) y el selector **Escritorio 1440 ·
+   Tableta 768 · Celular 390**. Si el script sale con error, se corrige lo que dice y se vuelve a correr; **no
+   se sigue al modal sin la página abierta.**
 2. **Las propuestas son distintas de verdad, no tres variantes de color.** Ejemplos: A, minimalista sin
    tarjetas, con formularios agrupados; B, dashboard arriba con el detalle en tabla; C, lista con panel
    lateral. Cada una usa **los tokens y la marca reales** (paso 1) y el **contenido real** de la vista:
@@ -85,15 +126,14 @@ hasta que el usuario elija sobre **mockups navegables**:
 3. **Es solo forma, sin lógica.** Los mockups no se conectan a nada ni guardan nada: es HTML estático con
    interacciones mínimas (pestañas, el selector de ancho, un hover). Se miran en captura a 1440 y 390 antes
    de mostrarlos.
-4. **Se abren en el navegador por defecto** como pestaña (si es laboral y hay que compartirla, se publica
-   como artifact privado). Después se pregunta en el modal: **A · B · C · ninguna (con qué cambiar) ·
+4. **Ya quedaron abiertas** en el navegador por el script (si es laboral y hay que compartirlas, se publica
+   la carpeta como artifact privado). Al usuario se le da la ruta del `index.html`. Después se pregunta en el modal: **A · B · C · ninguna (con qué cambiar) ·
    combinar** (p. ej. «la estructura de B con la tipografía de A»). En la vista previa de cada opción va un
    boceto ASCII de la propuesta.
 5. **Si dice «ninguna» o «combinar»,** se hace una ronda más de mockups con su indicación antes de tocar el
    código. Con la elección aprobada se ejecuta (paso 7) y la propuesta elegida pasa a ser el criterio de
    «hecho»: el resultado final se compara con su mockup en captura.
 
-Para pulir (cambios de detalle) no hace falta mockup: se ejecuta la brecha directo.
 **Se conserva la funcionalidad** (datos, permisos, flujos, accesibilidad); lo que cambia es la forma.
 
 ## 4. Rúbrica (cada dimensión de 1 a 5, contra `varas.md`)
@@ -140,8 +180,8 @@ El evaluador no premia lo que no puede verificar y lo dice.
 
 ## 7. Ciclo
 1. **Medir** con el evaluador, en los pasos 2 a 6.
-2. **Decidir:** si el veredicto pide reestructurar o rediseñar, primero van los mockups A, B y C (paso
-   3-bis) y la elección del usuario, **antes** de tocar nada. Las demás decisiones del usuario (quitar una función, cambiar un flujo) también se
+2. **Decidir:** siempre primero los mockups (paso 3-bis), con la página abierta por `propuestas.py`, y la
+   elección del usuario en el modal, **antes** de tocar nada. Las demás decisiones del usuario (quitar una función, cambiar un flujo) también se
    preguntan al principio, nunca al final.
 3. **Ejecutar todo** en una sola ronda: la dirección elegida y la brecha completa, empezando por los P0.
    Primero se ordenan los tokens (escala de espacio y de tipo, colores de la marca) y después los
@@ -149,12 +189,21 @@ El evaluador no premia lo que no puede verificar y lo dice.
    antes de pasar a medir.
 4. **Verificar** con un evaluador **nuevo** y capturas nuevas. Se para cuando los tres % llegan a la meta.
 
-## 8. Entregar
-- Tabla de rondas: ronda, dirección, UX %, UI %, Marca % y qué cambió.
-- Capturas de antes y después.
-- Los P0 y P1 que quedaron.
-- Lo que no se pudo verificar: teclado real, lector de pantalla, otro navegador.
-- Si se quiere seguir, las 3 cosas que más subirían la nota.
+## 8. Entregar: un informe visual, no un texto en el chat
+El resultado es una **página HTML** que se abre en el navegador por defecto como pestaña:
+`<proyecto>/.diseno/auditorias/<AAAA-MM-DD>-<vista>/index.html`. Si no hay carpeta de proyecto (por ejemplo,
+solo un enlace de Figma), va en `<stateDir>/diseno/auditorias/…`. Es un solo HTML autocontenido, con las
+capturas embebidas o junto a él, con la marca de la herramienta auditada y modo claro y oscuro. Lleva:
+- arriba, el **veredicto de dirección** y los **tres %** grandes, con su escala (flojo, correcto, pulido, listo);
+- la tabla de rondas: ronda, dirección, UX %, UI %, Marca % y qué cambió;
+- las **capturas** por ancho, con antes y después cuando hubo cambios, y cada hallazgo marcado sobre su
+  captura o al lado (número, severidad y elemento);
+- la **brecha completa** agrupada por severidad (P0 → P3), cada una con problema, impacto y cambio propuesto;
+- el enlace a los mockups A/B/C si los hubo, y al Figma auditado si la fuente fue Figma;
+- lo que no se pudo verificar (teclado real, lector de pantalla, otro navegador, prototipo) y, si se quiere
+  seguir, las 3 cosas que más subirían la nota.
+En lo laboral, si hay que compartirlo, se publica como artifact privado y se da el enlace. En el chat va
+solo un resumen de 5 líneas con los % y la ruta o el enlace del informe.
 
 ## Reglas de oro
 - **Dirección antes que detalle:** no se pule lo que hay que rediseñar.
@@ -174,4 +223,5 @@ El evaluador no premia lo que no puede verificar y lo dice.
 |---|---|
 | `varas.md` | Siempre que se mida: qué es un 5 en cada dimensión (se le pasa al evaluador) |
 | `antipatrones.md` | En el veredicto de dirección y al medir carácter: lo que delata una plantilla genérica o una UI hecha por IA |
+| `scripts/propuestas.py` + `plantillas/comparador.html` | En el paso 3-bis: arma y abre la página de propuestas A/B/C con selector de ancho |
 | `perfiles/marca-ejemplo.md` | Al crear o completar el perfil de marca de una organización (formato con datos ficticios) |

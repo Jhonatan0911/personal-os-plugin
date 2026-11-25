@@ -823,7 +823,13 @@
     const temaDe=n=>TEMAS[n.tema]?n.tema:'metodo';
     if(!CZ||!Array.isArray(CZ.notas)){
       empty.style.display='flex';
-      empty.innerHTML='<div><b style="color:#e6ecf7">La corteza no está configurada.</b><br>Declara <code>conocimiento.dir</code> en config.json (la carpeta de tus notas CO-###), corre <code>conocimiento-build.js</code> y vuelve a generar la consola.</div>';
+      empty.innerHTML='<div><b style="color:#e6ecf7">Tu corteza todavía no tiene carpeta.</b><br>Pídele a Claude <code>/os-setup</code>: crea la carpeta de tus lecciones sin tocar lo que ya tienes. Después vuelve a abrir <code>/consola</code>.</div>';
+      document.getElementById('cx-side').style.display='none';
+      return {resize(){},scope(){}};
+    }
+    if(!CZ.notas.length&&!(CZ.propuestas||[]).length){
+      empty.style.display='flex';
+      empty.innerHTML='<div><b style="color:#e6ecf7">Tu corteza está lista, todavía sin lecciones.</b><br>Aquí aparece lo que aprendes trabajando. Cuando algo valga la pena recordarlo, dile a Claude «guarda esta lección»: te la propone con su porqué y, al aprobarla, queda aquí y en todos tus proyectos.</div>';
       document.getElementById('cx-side').style.display='none';
       return {resize(){},scope(){}};
     }

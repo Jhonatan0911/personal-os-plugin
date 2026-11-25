@@ -456,8 +456,19 @@ function leerCO(ruta) {
   };
 }
 let CORTEZA = null;
-const dirCO = CFG.conocimiento && txt(CFG.conocimiento.dir)
-  ? path.resolve(txt(CFG.conocimiento.dir).replace(/^~(?=$|[\\/])/, require('os').homedir())) : null;
+// La declarada en config.json; si no está o no existe (p. ej. quedó el ejemplo «/ruta/a/…» de la plantilla), la de
+// por defecto que siembra /os-setup: <estado>/conocimiento.
+const dirCO = (() => {
+  const decl = CFG.conocimiento && txt(CFG.conocimiento.dir)
+    ? path.resolve(txt(CFG.conocimiento.dir).replace(/^~(?=$|[\\/])/, require('os').homedir())) : null;
+  if (decl && fs.existsSync(decl)) return decl;
+  const porDefecto = path.join(STATE, 'conocimiento');
+  if (fs.existsSync(porDefecto)) {
+    if (decl) aviso(`corteza: config.json → conocimiento.dir apunta a una carpeta que no existe (${decl}); se usa ${porDefecto}. Corre /os-setup para corregirlo.`);
+    return porDefecto;
+  }
+  return decl;
+})();
 if (dirCO && fs.existsSync(dirCO)) {
   const deCarpeta = (d) => { try { return fs.readdirSync(d).filter((n) => /^CO-\d+.*\.md$/i.test(n)).map((n) => path.join(d, n)); } catch (_) { return []; } };
   const notas = deCarpeta(dirCO).map(leerCO).filter((n) => n && n.id);
@@ -585,4 +596,16 @@ try {
 }
 console.log(`\nEscrito: ${rutaHtml}`);
 console.log(`         ${rutaDatos} (${(salidaDatos.length / 1024).toFixed(1)} KB)`);
-console.log('Vista LOCAL y privada: ábrela con doble clic; nunca la publiques.');
+console.log('Vista LOCAL y privada: nunca la publiques.');
+
+// --abrir (4.3.0): el script, no el modelo, deja el servidor corriendo y abre la APP (Oficina, ⚙ Config). Antes
+// /consola dependía de que el modelo siguiera un paso aparte y, en equipos nuevos, terminaba abriendo el HTML suelto.
+if (process.argv.includes('--abrir')) {
+  const { spawnSync, execFile } = require('child_process');
+  const r = spawnSync(process.execPath, [path.join(__dirname, 'os-servidor.js'), '--asegurar', '--abrir'], { stdio: 'inherit', timeout: 60000 });
+  if (r.status !== 0) {
+    console.error('\n⚠️ El servidor de la consola no arrancó: se abre el HTML suelto (sin Oficina ni ⚙ Config). Arriba está el motivo.');
+    if (process.platform === 'win32') execFile('cmd', ['/c', 'start', '', rutaHtml], { windowsHide: true }, () => {});
+    else execFile(process.platform === 'darwin' ? 'open' : 'xdg-open', [rutaHtml], () => {});
+  }
+}

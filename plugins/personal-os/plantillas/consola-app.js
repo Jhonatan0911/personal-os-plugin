@@ -222,6 +222,7 @@ table.osm-perm{width:100%;border-collapse:collapse}
 .osm-perm input:disabled{border-style:dashed;cursor:not-allowed}
 .osm-perm input:disabled:checked{border-color:var(--r1)}.osm-perm input:disabled:checked::after{background:var(--r1)}
 .osm-perm input:focus-visible{outline:2px solid var(--synapse);outline-offset:3px}
+.osm-perm td.osm-perm-script{text-align:left;padding:10px var(--sp-2);color:var(--muted-2);font:400 var(--fs-sm) var(--sans)}
 .osm-perm .sh{display:none}.osm-perm abbr{text-decoration:none;cursor:help}
 .osm-aviso-c{display:flex;gap:var(--sp-3);align-items:flex-start;border-radius:12px;padding:var(--sp-3) var(--sp-4);margin:0 0 var(--sp-4);font-size:var(--fs-sm);line-height:1.5;color:var(--ink-2);background:var(--r3-suave)}
 .osm-aviso-c.amb{background:var(--r1-suave)}
@@ -1139,10 +1140,11 @@ dialog.osm-dlg.ancho{max-width:600px}
     el("h2", { textContent: "Bases de datos: cómo funcionan los permisos" }),
     el("div", { className: "osm-ayuda-t" },
       el("p", { textContent: "Cada conexión guarda su servidor, usuario, contraseña, las bases que puede usar y sus permisos. Las que ya usaban tus herramientas se quedan donde estaban; las que creas aquí quedan en la carpeta del Personal OS. El nombre y las etiquetas los pones tú: la etiqueta dice qué es (producción, staging, QA o una tuya)." }),
-      el("p", {}, el("b", { textContent: "Un permiso por acción. " }), "Leer, crear, actualizar, borrar, cambiar la estructura y ejecutar procedimientos tienen cada uno su modo: ",
-        el("b", { textContent: "bloqueado" }), " (Claude no lo hace), ", el("b", { textContent: "me pregunta" }), " (te muestra la consulta y la base y espera tu OK) o ",
-        el("b", { textContent: "automático" }), " (lo hace sin preguntar y te muestra qué hizo)."),
-      el("p", {}, el("b", { textContent: "Qué funciona hoy. " }), "Leer en automático ya funciona. En las escrituras, «automático» llega en la próxima versión: por eso hoy no se puede elegir y Claude te sigue pidiendo OK antes de escribir."),
+      el("p", {}, el("b", { textContent: "Leer tiene tres modos. " }), el("b", { textContent: "Bloqueado" }), ": Claude no consulta esa base. ",
+        el("b", { textContent: "Me pregunta" }), ": te muestra la consulta y la base y espera tu OK cada vez. ",
+        el("b", { textContent: "Automático" }), ": consulta sin preguntarte, siempre con límite de filas y sin mostrar contraseñas."),
+      el("p", {}, el("b", { textContent: "Las escrituras las ejecutas tú. " }), "Crear, actualizar, borrar, cambiar la estructura y ejecutar procedimientos no tienen modo: Claude nunca los ejecuta en ninguna base. Te entrega el script de publicación con su rollback y tú lo corres por tus canales."),
+      el("p", {}, el("b", { textContent: "Quién lo hace cumplir. " }), "El guardia de Claude Code revisa cada comando antes de correrlo y los lectores de base de datos (dbread, mongoread) revisan la conexión a la que van. Los dos leen esta misma tabla."),
       el("p", {}, el("b", { textContent: "Por qué puede saltar una alerta. " }), "Tu organización puede tener sus propias reglas, y se revisan aparte de este panel. Aunque aquí pongas una base de producción en automático, esas reglas pueden bloquear la acción o avisarte: siempre gana la más estricta."),
       el("p", {}, el("b", { textContent: "La contraseña. " }), "No viaja al abrir la página. El botón del ojo la pide al servidor local de tu computador solo cuando lo pulsas y se vuelve a ocultar a los 30 segundos o al salir de la ficha. Para cambiarla, escribe la nueva y guarda; si dejas el campo vacío se conserva la que hay.")),
     el("div", { className: "osm-pie-f" }, el("span", { className: "esp" }), el("button", { type: "button", className: "osm-btn prim", textContent: "Entendido" })));
@@ -1151,7 +1153,7 @@ dialog.osm-dlg.ancho{max-width:600px}
   bdAyuda.querySelector("button").addEventListener("click", () => bdAyuda.close());
   bdAyuda.addEventListener("close", () => bdAyudaBtn.focus());   // con «Entendido» o con Escape
   paneles.bd.append(
-    el("div", { className: "osm-tp-h" }, el("p", { textContent: "Las conexiones que Claude puede usar y qué puede hacer en cada una. Hoy el automático solo aplica a Leer." }), bdAyudaBtn, bdNueva),
+    el("div", { className: "osm-tp-h" }, el("p", { textContent: "Las conexiones que Claude puede leer y cómo. Las escrituras siempre te llegan como script." }), bdAyudaBtn, bdNueva),
     split("bd", el("div", { className: "osm-lista" }, saltar(bdDet), buscador("Buscar conexión", (q) => { bd.filtro = q; if (bd.datos) bdPintar(); }), bdLista), bdDet));
 
   const ESCRITURA = ["crear", "actualizar", "borrar", "estructura", "ejecutar"];
@@ -1162,9 +1164,8 @@ dialog.osm-dlg.ancho{max-width:600px}
   const etqTxt = (t) => ETQ_ES[t] || t;
   const ACC_DESC = { leer: "consultar datos", crear: "agregar filas", actualizar: "cambiar filas", borrar: "eliminar filas", estructura: "tablas, columnas, índices", ejecutar: "procedimientos almacenados" };
   const resumenPerm = (p) => {
-    p = p || {}; const esc = ESCRITURA.map((x) => p[x] || "bloqueado"); const uno = esc.every((x) => x === esc[0]);
-    const escTxt = uno ? (esc[0] === "bloqueado" ? "bloqueadas" : esc[0] === "preguntar" ? "te preguntan" : "automáticas") : "mixtas";
-    return `Leer: ${MODO_CORTO[p.leer || "preguntar"]} · escrituras ${escTxt}`;
+    p = p || {};
+    return `Leer: ${MODO_CORTO[p.leer || "preguntar"]} · escrituras como script`;
   };
   async function bdCargar(sel) {
     if (!bd.datos) conEsqueleto(bdLista, 2);
@@ -1204,7 +1205,7 @@ dialog.osm-dlg.ancho{max-width:600px}
     if (c) { recordar("bd", c.id); if (tabActual === "bd") escribirEnlace("bd", c.id); }
     const nueva = !c;
     c = c || { id: null, nombre: "", motor: (bd.datos.motores || ["sqlserver"])[0], servidor: "", usuario: "", catalogos: [], etiquetas: [], password_guardada: false,
-      permisos: { leer: "preguntar", crear: "bloqueado", actualizar: "bloqueado", borrar: "bloqueado", estructura: "bloqueado", ejecutar: "bloqueado" } };
+      permisos: { leer: "preguntar" } };
     const P = pieGuardar(nueva ? null : "Quitar conexión", { cancelar: nueva });
     P.limpio();
     if (bd.guardadoEn && bd.guardadoEn.id === c.id) { P.est.textContent = `Guardado a las ${bd.guardadoEn.hora}`; P.est.className = "est ok"; }
@@ -1289,9 +1290,8 @@ dialog.osm-dlg.ancho{max-width:600px}
     };
     bEtq.addEventListener("click", crearEtq);
     iEtq.addEventListener("keydown", (ev) => { if (ev.key === "Enter") { ev.preventDefault(); crearEtq(); } if (ev.key === "Escape") { cajaNueva.hidden = true; bMas.setAttribute("aria-expanded", "false"); bMas.focus(); } });
-    // permisos por acción: cada fila es un radiogroup; «automático» en escrituras llega en la próxima versión
-    const perm = Object.assign({}, c.permisos);
-    const heredado = ESCRITURA.filter((x) => perm[x] === "automatico");   // guardado antes: se conserva, pero hoy no surte efecto
+    // permisos (D-071 F2): Leer es un radiogroup; las escrituras no tienen modo, Claude entrega el script
+    const perm = { leer: (c.permisos && c.permisos.leer) || "preguntar" };
     const CORTO = { bloqueado: "Bloq.", preguntar: "Pregunta", automatico: "Auto" };
     const thModo = (m) => { const th = el("th", { scope: "col" }, el("span", { className: "lg", textContent: MODO_ES[m] }), el("abbr", { className: "sh", title: MODO_ES[m], textContent: CORTO[m] }));
       th.setAttribute("aria-label", MODO_ES[m]); return th; };
@@ -1299,13 +1299,17 @@ dialog.osm-dlg.ancho{max-width:600px}
       el("thead", {}, el("tr", {}, el("th", { scope: "col", textContent: "Acción" }), ...bd.datos.modos.map(thModo))),
       el("tbody", {}, ...bd.datos.acciones.map((a) => {
         const thId = "osm-bd-a-" + a.id;
-        const tr = el("tr", {},
-          el("th", { scope: "row", id: thId, title: a.sql || "" }, a.nombre, el("small", { textContent: ACC_DESC[a.id] || a.sql })),
+        const cab = el("th", { scope: "row", id: thId, title: a.sql || "" }, a.nombre, el("small", { textContent: ACC_DESC[a.id] || a.sql }));
+        if (ESCRITURA.includes(a.id)) {
+          const td = el("td", { className: "osm-perm-script" }, el("span", { textContent: "Claude entrega el script" }));
+          td.colSpan = bd.datos.modos.length;
+          td.setAttribute("aria-describedby", "osm-bd-nota-esc");
+          return el("tr", {}, cab, td);
+        }
+        const tr = el("tr", { role: "radiogroup" }, cab,
           ...bd.datos.modos.map((m) => {
-            const proxima = ESCRITURA.includes(a.id) && m === "automatico";
-            const r = el("input", { type: "radio", name: "osm-bd-" + a.id, value: m, checked: perm[a.id] === m, disabled: proxima,
+            const r = el("input", { type: "radio", name: "osm-bd-" + a.id, value: m, checked: perm[a.id] === m,
               ariaLabel: `${a.nombre}: ${MODO_ES[m]}` });
-            if (proxima) r.setAttribute("aria-describedby", "osm-bd-nota-esc");
             r.addEventListener("change", async () => {
               if (m === "automatico" && sel.has("produccion")
                 && !(await confirmar("Lectura automática en producción", "Claude consultaría esta base de producción sin preguntarte. ¿Lo dejas así?"))) {
@@ -1313,22 +1317,20 @@ dialog.osm-dlg.ancho{max-width:600px}
               }
               perm[a.id] = m; tocadoSensible = true; marcar();
             });
-            const lab = el("label", { className: proxima ? "no" : "", title: proxima ? "Automático en escrituras llega en la próxima versión" : "" }, r);
-            return el("td", {}, lab);
+            return el("td", {}, el("label", {}, r));
           }));
+        tr.setAttribute("aria-labelledby", thId);
         return tr;   // los radios de la fila comparten name: el navegador ya los agrupa
       })));
-    const notaTabla = notaI("En las escrituras, «Automático» llega en la próxima versión: hoy Claude te sigue pidiendo OK antes de escribir. Leer en automático ya funciona.");
+    const notaTabla = notaI("Las escrituras no las ejecuta Claude en ninguna base: te entrega el script de publicación con su rollback para que lo corras tú.");
     notaTabla.querySelector("span").id = "osm-bd-nota-esc";
-    const notaNueva = nueva ? notaI("Por defecto: Leer te pregunta y todo lo demás queda bloqueado.") : "";
-    const avisoHeredado = heredado.length ? el("div", { className: "osm-aviso-c amb", role: "note" }, svg("aviso"),
-      el("span", { textContent: `Esta conexión tenía en automático: ${heredado.map((x) => (bd.datos.acciones.find((a) => a.id === x) || { nombre: x }).nombre.toLowerCase()).join(", ")}. Se conserva así, pero hoy no surte efecto y no se puede volver a elegir hasta la próxima versión.` })) : "";
+    const notaNueva = nueva ? notaI("Por defecto, Leer te pregunta cada vez.") : "";
+    const avisoHeredado = "";
     const aviso = el("div", { className: "osm-aviso-c", role: "note", hidden: true });
     const avisoProd = () => {
-      const lee = perm.leer === "automatico", esc = ESCRITURA.filter((x) => perm[x] === "automatico");
-      aviso.hidden = !(sel.has("produccion") && (lee || esc.length));
-      aviso.replaceChildren(svg("alerta"), el("span", { textContent: "Ojo: esta conexión está etiquetada como producción. "
-        + (lee ? "Claude lee en ella sin preguntarte. " : "") + (esc.length ? "Tiene escrituras guardadas en automático: hoy no surten efecto, pero revísalas. " : "") + "Se permite; revísalo antes de guardar." }));
+      const lee = perm.leer === "automatico";
+      aviso.hidden = !(sel.has("produccion") && lee);
+      aviso.replaceChildren(svg("alerta"), el("span", { textContent: "Ojo: esta conexión está etiquetada como producción y Claude lee en ella sin preguntarte. Se permite, salvo que las reglas de tu organización lo bloqueen; revísalo antes de guardar." }));
     };
     avisoProd();
     for (const i of [iNombre, iServ, iUsu, iCat]) i.addEventListener("input", marcar);
