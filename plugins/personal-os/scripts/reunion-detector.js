@@ -15,6 +15,7 @@
  *   timesheet.claveSinIssue           la marca "sin issue" que usa la bitácora (SIN-ISSUE por defecto)
  *
  * Regla de oro, igual que prompt-logger: pase lo que pase, nunca romper el prompt (exit 0).
+ * Desde la 4.2.1 lo corre `prompt-hook.js` en proceso con `aviso(evento)`.
  */
 'use strict';
 
@@ -22,19 +23,20 @@
  * (un acta, un correo) habla de reuniones sin que el usuario esté declarando haber estado en una. */
 const RE_REUNION = /\b(reuni[oó]n(es)?|llamadas?|dailys?|comit[eé]s?|planning|refinamiento|retro(spectiva)?|capacitaci[oó]n|mesa de trabajo|sesi[oó]n con|me reun[ií]|nos reunimos|estuve con|videollamada|meet|teams con)\b/i;
 
-try {
-  const C = require('./lib/comun.js');
-  if (!C.activo()) process.exit(0);
+const C = require('./lib/comun.js');
+
+/** Devuelve el recordatorio a inyectar ('' si no aplica). `--ambito`/cwd salen del evento del hook. */
+function aviso(data) {
+  if (!C.activo()) return '';
   const ts = C.config().timesheet || {};
   const desde = ts.reunionesExigenIssueDesde;
   const hoy = C.hoyISO();
-  if (!desde || hoy < desde) process.exit(0);
+  if (!desde || hoy < desde) return '';
 
-  if (C.sesionPersonal()) process.exit(0);   // reuniones con issue = regla de la empresa
-  const data = C.eventoHook();
+  if (C.sesionPersonal()) return '';   // reuniones con issue = regla de la empresa
   const prompt = (data.prompt != null ? data.prompt : (data.user_prompt != null ? data.user_prompt : '')).toString();
   const cabeza = prompt.replace(/<pasted_content[\s\S]*?<\/pasted_content[^>]*>/gi, ' ').slice(0, 1500);
-  if (!RE_REUNION.test(cabeza)) process.exit(0);
+  if (!RE_REUNION.test(cabeza)) return '';
 
   const sinIssue = String(ts.claveSinIssue || 'SIN-ISSUE').toUpperCase();
   const recurrente = ts.reunionIssueRecurrente
@@ -42,7 +44,7 @@ try {
     : 'la issue de reuniones recurrentes del periodo';
   const nueva = ts.reunionIssueNueva ? String(ts.reunionIssueNueva) : 'una issue de reunión nueva';
 
-  process.stdout.write(
+  return (
     `📅 REUNIÓN MENCIONADA: si es laboral, toda reunión lleva su issue, sin ${sinIssue}. ` +
     'Antes de registrar el tramo, resuélvela en este orden: ' +
     '(1) la issue del proyecto que se trató; ' +
@@ -51,5 +53,11 @@ try {
     'inicio = vencimiento = el día, cliente, estimación = la duración agendada en el calendario) y créala solo con su OK. ' +
     'Si es personal o solo se está hablando de reuniones en general, ignora este aviso.\n'
   );
-} catch (e) { /* nunca romper el prompt */ }
-process.exit(0);
+}
+
+module.exports = { aviso };
+
+if (require.main === module) {
+  try { const t = aviso(C.eventoHook()); if (t) process.stdout.write(t); } catch (e) { /* nunca romper el prompt */ }
+  process.exit(0);
+}

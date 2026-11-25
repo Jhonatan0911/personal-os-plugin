@@ -1,5 +1,13 @@
 # Changelog
 
+## 4.2.1 · Un solo hook por prompt: se acabaron los «hook timed out»
+
+- **`prompt-hook.js` reemplaza a los cuatro hooks de `UserPromptSubmit`.** Antes, la bitácora, el correo, las reuniones y los hitos arrancaban cada uno su propio node en cada prompt. Claude Code los lanza en paralelo junto con los hooks de otros plugins y, con el antivirus revisando cada arranque, se pasaban de sus 3-5 s: el aviso se perdía y, si el caído era la bitácora, el prompt quedaba sin registrar sin que nadie lo notara. Lo reportaron varias personas que prueban el plugin. Ahora un solo node lee el evento una vez y corre todo en proceso: primero la bitácora, después correo, reunión e hitos. Con datos reales tarda unos 0,6 s y el timeout queda en 15 s.
+- **Testigo de la bitácora.** Si el registro del prompt falla, el hook lo dice en contexto («este prompt NO quedó registrado») para que se anexe a mano, en vez de dejar el hueco en silencio.
+- **Cada paso aislado.** Un paso que falla no tumba a los demás ni al prompt. Los opcionales no arrancan si se agota el presupuesto (6 s). Con `--medir` se ve cuánto tardó cada uno.
+- **Los scripts siguen funcionando solos.** `prompt-logger.js`, `reunion-detector.js`, `correo-scan.js --prompt` y `alcances-scan.js --hitos` exportan su función y conservan su línea de comandos. Se comprobó contra la versión anterior con el mismo evento y una copia del estado, incluido un control negativo: misma salida, misma línea de bitácora y los mismos modos de arranque (`--json`, `--marcar`).
+- **Instalación suelta:** en `settings.json` cambia los cuatro comandos de `UserPromptSubmit` por `node "<carpeta>/prompt-hook.js"` con `timeout: 15`.
+
 ## 4.2.0 · ⚙ Config se ordena: agentes, skills y permisos de base de datos
 
 - **⚙ Config con pestañas reales: Agentes · Skills · Bases de datos.** Cada pestaña es una lista con ficha al lado (en celular, la lista primero y la ficha con «‹ volver»), con enlaces directos como `#config&skills/<skill>`, `#config&bd/<id>` o `#config&agentes/<nombre>`. Barras de desplazamiento con el tema, escala de espaciado y tipografía en tokens, y el menú de vistas queda centrado igual que en las demás pestañas.

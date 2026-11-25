@@ -6,25 +6,23 @@
  * Es SOLO efecto lateral: sale con 0 y sin stdout → no inyecta contexto ni bloquea el prompt.
  * Respeta el toggle del OS: si state.flag != "active", no registra nada.
  * Regla de oro: pase lo que pase, nunca romper el envío del prompt (todo en try/catch, exit 0).
+ *
+ * Desde la 4.2.1 lo corre `prompt-hook.js` en proceso (un solo node por prompt) a través de
+ * `registrar(evento)`; llamado directo sigue funcionando igual.
  */
 'use strict';
 const fs = require('fs');
 const path = require('path');
+const C = require('./lib/comun.js');
 
-try {
-  const C = require('./lib/comun.js');
-  if (!C.activo()) process.exit(0);
+/** Escribe el prompt en la bitácora del día. Devuelve true si escribió, false si no tocaba.
+ *  Lanza si falla la escritura: quien lo llama decide si avisa (el despachador sí avisa). */
+function registrar(data) {
+  if (!C.activo()) return false;
   const stateDir = C.stateDir();
-  if (!stateDir || !fs.existsSync(stateDir)) process.exit(0);
-
-  // Payload del hook por stdin (el nombre del campo puede variar: prompt | user_prompt)
-  let raw = '';
-  try { raw = fs.readFileSync(0, 'utf8'); } catch (e) {}
-  if (raw.charCodeAt(0) === 0xFEFF) raw = raw.slice(1);
-  let data = {};
-  try { data = JSON.parse(raw); } catch (e) {}
+  if (!stateDir || !fs.existsSync(stateDir)) return false;
   const prompt = (data.prompt != null ? data.prompt : (data.user_prompt != null ? data.user_prompt : '')).toString();
-  if (!prompt.trim()) process.exit(0);
+  if (!prompt.trim()) return false;
 
   const { ymd, hm } = C.ahora();
   const dir = path.join(stateDir, 'bitacora');
@@ -37,5 +35,12 @@ try {
   const clip = prompt.length > 2000 ? prompt.slice(0, 2000) + ' …[recortado]' : prompt;
   const oneLine = clip.replace(/\r?\n+/g, ' ').trim();
   fs.appendFileSync(file, `## ${hm}\n- **Tú:** ${oneLine}\n`, 'utf8');
-} catch (e) { /* nunca romper el prompt */ }
-process.exit(0);
+  return true;
+}
+
+module.exports = { registrar };
+
+if (require.main === module) {
+  try { registrar(C.eventoHook()); } catch (e) { /* nunca romper el prompt */ }
+  process.exit(0);
+}

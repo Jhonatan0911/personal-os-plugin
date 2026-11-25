@@ -14,9 +14,9 @@ prioridades, horas trazables) sobre Jira/Outlook/Teams. Documentación completa 
   `config/fuentes.yaml`). Nunca dentro del plugin, nunca compartido.
 
 ## Hooks
-`SessionStart` → `session-init.js` + `alcances-scan.js` · `UserPromptSubmit` → `prompt-logger.js` +
-`alcances-scan.js --hitos` + `reunion-detector.js` (solo si `timesheet.reunionesExigenIssueDesde` tiene
-fecha) · `Stop` → `verificar-ausencia.js`. Todos con `node` portable, respetan `/os-off` y nunca rompen
+`SessionStart` → `session-init.js` + `alcances-scan.js` · `UserPromptSubmit` → `prompt-hook.js`, que corre en un
+solo proceso `prompt-logger.js`, `correo-scan.js`, `reunion-detector.js` (solo si
+`timesheet.reunionesExigenIssueDesde` tiene fecha) y `alcances-scan.js --hitos` · `Stop` → `verificar-ausencia.js`. Todos con `node` portable, respetan `/os-off` y nunca rompen
 la sesión. Los scripts también funcionan copiados sueltos a `~/.claude/personal-os/` (con su `lib/`).
 
 ## Probar los scripts sin tocar tu instalación

@@ -216,6 +216,7 @@ const TIENE_FECHA = [
 const HITOS = [];   // hitos con el cliente de hoy/mañana/vencidos, para --hitos y --json
 
 function analizar(base, hoy) {
+  HITOS.length = 0;   // en proceso (prompt-hook.js) se puede llamar más de una vez
   const hallazgos = [];   // {sev: 'CRITICO'|'ALERTA'|'OK', alcance, titulo, detalle, accion}
   const dirAlcances = path.join(base, 'alcances');
   // Frontera por ámbito (config → ambitos): una sesión personal solo ve sus alcances personales
@@ -757,26 +758,38 @@ function render(r, hoy, base) {
   return { texto: L.join('\n'), criticos: criticos.length };
 }
 
+// ───────────────────────────────────────────────────────────── hitos (hook de cada prompt)
+
+/** Bloque «⏰ HITOS CON FECHA» para el hook de cada prompt ('' si no hay). Lo usa prompt-hook.js en proceso. */
+function hitosTexto() {
+  const base = stateDir();
+  if (!base || !fs.existsSync(base) || !C.activo()) return '';
+  const r = analizar(base, hoyISO());
+  if (!r.hitos.length) return '';
+  const L = ['⏰ HITOS CON FECHA (vigía, cada prompt): lo de hoy va en «Mi recomendación para hoy» por encima de lo interno, salvo que ya esté hecho con evidencia.'];
+  for (const h of r.hitos) {
+    const extra = h.compromiso ? ' (compromiso)' : h.extra ? ` (${h.extra})` : '';
+    L.push(`- ${h.cuando} · ${h.id} · ${h.que}${extra}`);
+  }
+  return L.join('\n') + '\n';
+}
+
+module.exports = { analizar, hitosTexto };
+
 // ───────────────────────────────────────────────────────────── main
 
-try {
+if (require.main === module) try {
   const base = stateDir();
   const hoy = hoyISO();
   if (!base || !fs.existsSync(base)) process.exit(0);
   // En los hooks se respeta la pausa (/os-off). A mano (--json, --estado) siempre corre.
   if (!FLAG_JSON && !arg('--estado', null) && !C.activo()) process.exit(0);
-  const r = analizar(base, hoy);
   if (FLAG_HITOS) {
-    if (r.hitos.length) {
-      const L = ['⏰ HITOS CON FECHA (vigía, cada prompt): lo de hoy va en «Mi recomendación para hoy» por encima de lo interno, salvo que ya esté hecho con evidencia.'];
-      for (const h of r.hitos) {
-        const extra = h.compromiso ? ' (compromiso)' : h.extra ? ` (${h.extra})` : '';
-        L.push(`- ${h.cuando} · ${h.id} · ${h.que}${extra}`);
-      }
-      process.stdout.write(L.join('\n') + '\n');
-    }
+    const t = hitosTexto();
+    if (t) process.stdout.write(t);
     process.exit(0);   // en UserPromptSubmit un código 2 BLOQUEA el prompt: nunca
   }
+  const r = analizar(base, hoy);
   if (FLAG_JSON) {
     process.stdout.write(JSON.stringify({ hoy, base, ...r }, null, 2));
     process.exit(0);

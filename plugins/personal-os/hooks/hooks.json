@@ -44,23 +44,8 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node \"${CLAUDE_PLUGIN_ROOT}/scripts/prompt-logger.js\"",
-            "timeout": 3
-          },
-          {
-            "type": "command",
-            "command": "node \"${CLAUDE_PLUGIN_ROOT}/scripts/alcances-scan.js\" --hitos",
-            "timeout": 5
-          },
-          {
-            "type": "command",
-            "command": "node \"${CLAUDE_PLUGIN_ROOT}/scripts/reunion-detector.js\"",
-            "timeout": 3
-          },
-          {
-            "type": "command",
-            "command": "node \"${CLAUDE_PLUGIN_ROOT}/scripts/correo-scan.js\" --prompt",
-            "timeout": 3
+            "command": "node \"${CLAUDE_PLUGIN_ROOT}/scripts/prompt-hook.js\"",
+            "timeout": 15
           }
         ]
       }

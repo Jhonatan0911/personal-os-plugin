@@ -168,8 +168,7 @@ Contrato: `skills/planear-sprint/references/niveles.md`.
 |---|---|---|
 | `SessionStart` | `session-init.js` | Inyecta el preámbulo, la ruta de tu estado y el nivel de exigencia (si el OS está activo). |
 | `SessionStart` | `alcances-scan.js` | Deja el bloque `⚠️ VIGÍA DE COMPROMISOS`. |
-| `UserPromptSubmit` | `prompt-logger.js` | Registra tu prompt con su hora en `bitacora/AAAA-MM-DD.md`. |
-| `UserPromptSubmit` | `alcances-scan.js --hitos` | Recuerda los hitos de hoy, mañana o vencidos (no imprime nada si no hay). |
+| `UserPromptSubmit` | `prompt-hook.js` | Un solo proceso por prompt: registra tu prompt en `bitacora/AAAA-MM-DD.md` (y avisa si no pudo), recuerda el correo sin barrer, las reuniones sin issue y los hitos de hoy, mañana o vencidos. |
 | `Stop` | `verificar-ausencia.js` | Bloquea una vez la respuesta que afirma «no está escrito» sin haber corrido `os-buscar.js`. |
 
 Una línea `TS` por tramo laboral, validada al escribir contra tu configuración:

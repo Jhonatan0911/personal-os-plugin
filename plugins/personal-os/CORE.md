@@ -165,7 +165,7 @@ si avisa en fin de semana) y el tono que se inyecta al arrancar. En `cuartel`, l
 se atienden antes que la petición del usuario, salvo que él decida posponerlos explícitamente.
 
 ## 12. Bitácora de sesión (memoria reciente)
-Un hook (`prompt-logger.js`, evento `UserPromptSubmit`) registra automáticamente CADA prompt del usuario
+Un hook (`prompt-hook.js` → `prompt-logger.js`, evento `UserPromptSubmit`) registra automáticamente CADA prompt del usuario
 con su hora local (zona de `config.json → zonaHoraria`) en `stateDir/bitacora/AAAA-MM-DD.md`. Eso no
 depende de ti. Tu deber: **al cerrar CADA turno de trabajo**, anexa un resumen de 1–2 líneas de tu
 respuesta con `node "<raíz del plugin>/scripts/bitacora-append.js" "<resumen>"`. El resumen es breve y
