@@ -1,5 +1,13 @@
 # Changelog
 
+## 4.3.1 · Permisos de base de datos completos: también los lectores obedecen la consola
+
+- **`dbread.ps1` y `mongoread.py` leen ⚙ Config · Bases de datos.** Si el servidor y la base están registrados, manda su permiso de Leer: bloqueado no se consulta; «me pregunta» y automático se permiten, y el guardia pide el OK cuando toca. Así una base de staging registrada ya se puede leer, aunque su nombre no diga «test». Si no está registrada, sigue la regla de siempre (solo una base con «test» o «prueba»). Un servidor de producción de las reglas de la organización se bloquea siempre: gana la más estricta. La misma base en otro servidor no hereda el permiso.
+- **EXEC ya no se abre con `-AllowExec`.** Un procedimiento puede escribir, así que se entrega como script, como cualquier escritura. `mongoread.py` hace las validaciones y el `--DryRun` sin necesitar pymongo instalado.
+- **El guardia reconoce `sqltest`.** `sqltest.py write` se niega siempre, aunque el SQL venga en un archivo, y `sqltest.py read` respeta el permiso de la conexión.
+- **Pruebas:** `pruebas/wrappers-bd.prueba.js` (15 controles, siempre en modo de simulación y con datos ficticios) y 21 controles en la del guardia.
+- Las mesas creadas antes conservan su `dbread.ps1` viejo, que es más estricto (solo TEST): siguen seguras y toman el nuevo al copiar el de `mesa-nueva/assets`.
+
 ## 4.3.0 · La consola y las propuestas se abren solas, y los permisos de base de datos se cumplen
 
 - **`/consola` ya no depende del modelo para abrir la app.** En la 4.2.2 abrir la app era un paso aparte que el modelo podía saltarse, y en equipos nuevos se seguía abriendo el HTML suelto. Ahora `build-consola.js --abrir` hace todo: arma la consola, arranca el servidor (o lo pone al día) y abre la app. Solo abre el HTML si el servidor no arranca, y entonces imprime el motivo.
@@ -10,7 +18,6 @@
 - **auditar-ux-ui entrega un informe visual** en HTML (veredicto, los tres %, capturas, brecha por severidad), no un texto en el chat, y sabe auditar un **archivo de Figma** por su conector oficial: frames como capturas, variables como marca y propuestas como página nueva, sin tocar los frames originales.
 - **Permisos de base de datos, fase 2: el guardia hace cumplir la consola.** Reconoce la conexión por su servidor o por su base, también cuando se usa `dbread.ps1` o `mongoread.py`, que antes no veía. Leer bloqueado se niega, «me pregunta» pide OK y automático pasa. Gana siempre la regla más estricta entre la consola y las reglas de la organización: una réplica o un servidor de producción del registro siguen preguntando o bloqueados aunque la consola diga automático. Lo cubren 18 controles en `pruebas/guardia.prueba.js`, incluidos controles negativos.
 - **Claude nunca ejecuta escrituras, tampoco en test.** Crear, actualizar, borrar, estructura y ejecutar (con `EXEC` y `SELECT … INTO`) se niegan en todas las bases y se entregan como script de publicación y rollback. En ⚙ Config esas acciones ya no tienen modo: quedan en «Claude entrega el script». Leer conserva sus tres modos. La ayuda «?» lo explica.
-- **Queda para la próxima:** los wrappers `dbread` y `mongoread` todavía exigen que la base diga «test». Es más estricto que la consola, así que una base de staging en automático aún no se puede leer con ellos.
 
 ## 4.2.2 · /consola abre la app también en equipos nuevos
 

@@ -5,8 +5,15 @@
 .DESCRIPTION
   Lee la cadena de conexion ACTIVA (no comentada con //) del appsettings.json indicado,
   la decodifica de Base64 y ejecuta la consulta con sqlcmd, imponiendo guardas de solo lectura.
-  NUNCA imprime la contrasena. Bloquea escrituras/DDL, exige TOP(N) en SELECT, bloquea EXEC,
-  usa READ UNCOMMITTED y timeouts cortos. Ver las "Reglas de acceso a la base de datos" en el CLAUDE.md.
+  NUNCA imprime la contrasena. Bloquea escrituras/DDL y EXEC (Claude no ejecuta escrituras: las
+  entrega como script), exige TOP(N) en SELECT, usa READ UNCOMMITTED y timeouts cortos.
+
+  Permisos (D-072): si el servidor y el catalogo estan registrados en Config > Bases de datos del
+  Personal OS (<OS_HOME>/conexiones-bd.json), manda su permiso de Leer: bloqueado = no se consulta;
+  me pregunta / automatico = se permite (el guardia de Claude Code pide el OK cuando toca). Si no
+  estan registrados, solo se permite un catalogo que contenga 'test' o 'prueba'. Un servidor de
+  produccion de las reglas de la organizacion (guardia-empresa.json -> servidores_deny) se bloquea
+  siempre: gana la regla mas estricta.
 
   Regla de uso (politica global del usuario): antes de CADA consulta se muestra el destino con
   -DryRun y se espera OK explicito. Una aprobacion no cubre la siguiente.
@@ -61,16 +68,53 @@ $catalog = Get-CsPart $cs @('initial catalog', 'database')
 $user    = Get-CsPart $cs @('user id', 'uid')
 $pass    = Get-CsPart $cs @('password', 'pwd')
 
-# ---- 2) Validaciones de DESTINO ----
+# ---- 2) Validaciones de DESTINO: reglas de la organizacion y permisos de la consola (D-072) ----
 if (-not $catalog) { throw "No se pudo leer el catalogo de la cadena activa." }
-if ($catalog -notmatch '(?i)(test|prueba)') { throw "BLOQUEADO: el catalogo activo '$catalog' no contiene 'test' ni 'prueba'. Solo se permite TEST." }
+function Get-HostPart([string]$s) {
+  $h = ([string]$s).Trim().ToLower()
+  if ($h.StartsWith('tcp:')) { $h = $h.Substring(4) }
+  return ($h -split '[,\\:]')[0].Trim()
+}
+function Read-JsonFile([string]$ruta) {
+  if (-not $ruta -or -not (Test-Path $ruta)) { return $null }
+  try { return (Get-Content $ruta -Raw -Encoding UTF8 | ConvertFrom-Json) } catch { return $null }
+}
+$osHome = if ($env:PERSONAL_OS_HOME) { $env:PERSONAL_OS_HOME } else { Join-Path $HOME '.claude\personal-os' }
+$hostDestino = Get-HostPart $server
+$reglasOrg = Read-JsonFile (Join-Path $osHome 'guardia-empresa.json')
+if ($reglasOrg) {
+  foreach ($h in @($reglasOrg.servidores_deny)) {
+    if ($h -and (Get-HostPart $h) -eq $hostDestino) { throw "BLOQUEADO: $hostDestino es un servidor de produccion segun las reglas de la organizacion." }
+  }
+}
+$conexion = $null; $modoLeer = $null
+$registro = Read-JsonFile (Join-Path $osHome 'conexiones-bd.json')
+if ($registro) {
+  foreach ($c in @($registro.conexiones)) {
+    $d = Read-JsonFile $c.archivo
+    if (-not $d) { continue }
+    if ((Get-HostPart $d.servidor) -ne $hostDestino) { continue }
+    if (@($d.catalogos) -notcontains $catalog) { continue }
+    $conexion = if ($c.nombre) { $c.nombre } else { $c.id }
+    if ($d.permisos -and @('bloqueado', 'preguntar', 'automatico') -contains $d.permisos.leer) { $modoLeer = $d.permisos.leer }
+    elseif ($d.modo_lectura -eq 'automatico') { $modoLeer = 'automatico' }
+    else { $modoLeer = 'preguntar' }
+    break
+  }
+}
+if ($conexion) {
+  if ($modoLeer -eq 'bloqueado') { throw "BLOQUEADO: leer en la conexion '$conexion' esta bloqueado en Config > Bases de datos." }
+} elseif ($catalog -notmatch '(?i)(test|prueba)') {
+  throw "BLOQUEADO: el catalogo '$catalog' no esta registrado en Config > Bases de datos y no contiene 'test' ni 'prueba'."
+}
 if ($ConfirmDb -ne $catalog) { throw "BLOQUEADO: -ConfirmDb '$ConfirmDb' no coincide con el catalogo activo '$catalog'." }
 
 # ---- 3) Validaciones de la CONSULTA (solo lectura) ----
 $forbidden = '(?i)\b(INSERT|UPDATE|DELETE|MERGE|TRUNCATE|DROP|ALTER|CREATE|GRANT|REVOKE|BACKUP|RESTORE|xp_cmdshell|OPENROWSET|OPENQUERY|BULK)\b'
 if ($Query -match $forbidden) { throw "BLOQUEADO: la consulta contiene una operacion de escritura/DDL no permitida (solo lectura)." }
 if ($Query -match '(?i)\bSELECT\b[\s\S]*\bINTO\b') { throw "BLOQUEADO: 'SELECT ... INTO' no permitido." }
-if (($Query -match '(?i)\bEXEC(UTE)?\b') -and -not $AllowExec) { throw "BLOQUEADO: EXEC deshabilitado. Para ver un SP usa OBJECT_DEFINITION; EXEC solo con -AllowExec y permiso explicito." }
+if ($AllowExec) { throw "BLOQUEADO: -AllowExec ya no existe (D-072). Claude no ejecuta procedimientos: se entregan como script para que el usuario los corra." }
+if ($Query -match '(?i)\bEXEC(UTE)?\b') { throw "BLOQUEADO: EXEC no se ejecuta (puede escribir). Para ver un SP usa OBJECT_DEFINITION; para correrlo, entregalo como script." }
 if (($Query -match '(?i)\bSELECT\b') -and ($Query -notmatch '(?i)\bTOP\s*\(') -and -not $AllowNoTop) { throw "BLOQUEADO: todo SELECT debe usar TOP(N). Usa -AllowNoTop solo si el usuario lo pide para esa consulta." }
 
 # ---- 4) Mostrar DESTINO (sin password) ----
@@ -78,6 +122,8 @@ Write-Host "==================== dbread (SOLO LECTURA) ===================="
 Write-Host ("Servidor : {0}" -f $server)
 Write-Host ("Catalogo : {0}" -f $catalog)
 Write-Host ("Usuario  : {0}" -f $user)
+if ($conexion) { Write-Host ("Permiso  : conexion '{0}' - leer {1}" -f $conexion, $modoLeer) }
+else { Write-Host "Permiso  : no registrada en la consola - solo TEST" }
 Write-Host ("Aisl.    : READ UNCOMMITTED | login {0}s | query {1}s" -f $LoginTimeout, $QueryTimeout)
 Write-Host "--------------------------------------------------------------"
 Write-Host $Query

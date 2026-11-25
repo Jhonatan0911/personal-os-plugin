@@ -7,7 +7,7 @@
 //   · comandos que conectan a un servidor de `servidores_deny` (deny) o de `servidores_ask` (ask)
 //   · git push a ramas protegidas o a ramas que no cumplen `patron_rama`, solo en repos cuyo remoto
 //     coincide con `remotos_org` (sin `remotos_org`, en todos)
-//   · escrituras SQL/Mongo por cliente de línea de comandos: deny SIEMPRE (D-071 F2: Claude no ejecuta escrituras,
+//   · escrituras SQL/Mongo por cliente de línea de comandos: deny SIEMPRE (D-072 F2: Claude no ejecuta escrituras,
 //     las entrega como script de publicación + rollback)
 //   · lecturas contra una conexión de ⚙ Config · Bases de datos (<OS_HOME>/conexiones-bd.json): bloqueado → deny,
 //     me pregunta → ask, automático → sin intervenir. Gana siempre la regla más estricta con las de la organización.
@@ -146,20 +146,23 @@ function revisarSql(cmd, cfg) {
     ? palabras.find((p) => cmd.includes(p))
     : palabras.find((p) => new RegExp(`\\b${esc(p)}\\b`, 'i').test(cmd));
   if (!hallada) return null;
-  // D-071 F2 (25/11/2026): ni en test. Claude redacta el script; lo ejecuta el usuario por sus canales.
+  // D-072 F2 (25/11/2026): ni en test. Claude redacta el script; lo ejecuta el usuario por sus canales.
   return ['deny', `Escritura (${hallada.replace(/[.(]/g, '')}) con ${cliente}. Claude no ejecuta escrituras en ninguna base: entrégala como script idempotente de publicación + rollback para que el usuario la corra.`];
 }
 
-// ── Conexiones de ⚙ Config · Bases de datos (D-071 F2) ─────────────────────────────────
+// ── Conexiones de ⚙ Config · Bases de datos (D-072 F2) ─────────────────────────────────
 // Reconoce la conexión por su host o por una de sus bases (con dbread el comando solo trae -ConfirmDb <base>) y
 // la acción por las palabras de la sentencia. Escrituras: deny. Lectura: el modo de la consola, combinado con las
 // reglas de la organización aplicadas al servidor de ESA conexión (así un dbread hacia una réplica también pregunta).
 // Los wrappers se invocan con extensión (scripts\dbread.ps1): «contiene» no los ve porque el punto corta la palabra.
-const WRAPPERS = /(^|[\\/\s"'])(dbread|mongoread)(\.ps1|\.py)?(\s|"|'|$)/i;
+const WRAPPERS = /(^|[\\/\s"'])(dbread|mongoread|sqltest)(\.ps1|\.py)?(\s|"|'|$)/i;
+// Lectores con subcomando de escritura (sqltest.py write …, a veces con el SQL en un archivo): se niegan siempre.
+const ESCRITURA_WRAPPER = /(^|[\\/\s"'])sqltest(\.py)?["']?\s+(write|escribir|exec|ejecutar)\b/i;
 const conecta = (cmd) => CONECTORES.some((c) => contiene(cmd, c)) || DRIVERS.test(cmd) || WRAPPERS.test(cmd);
 
 function revisarBd(cmd, cfg) {
   if (!conecta(cmd)) return null;
+  if (ESCRITURA_WRAPPER.test(cmd)) return ['deny', 'Escritura con sqltest: Claude no ejecuta escrituras en ninguna base (D-072). Entrégala como script de publicación + rollback para que el usuario la corra.'];
   const halladas = BD.conexionesEn(cmd, BD.conexiones(C.OS_HOME));
   if (!halladas.length) return null;
   const nombres = halladas.map((c) => `«${c.nombre}»`).join(', ');

@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// Pruebas del guardia (guardia-empresa.js) con los permisos de ⚙ Config · Bases de datos (D-071 F2).
+// Pruebas del guardia (guardia-empresa.js) con los permisos de ⚙ Config · Bases de datos (D-072 F2).
 // Corre contra un OS_HOME temporal: nunca lee las conexiones ni las reglas reales.
 //   node scripts/pruebas/guardia.prueba.js
 'use strict';
@@ -54,6 +54,9 @@ const casos = [
   ['mongo deleteMany se niega', 'mongosh "mongodb://192.0.2.10/db_auto" --eval "db.c.deleteMany({})"', 'deny'],
   ['sin reglas de la org, igual rigen los permisos', `scripts\\dbread.ps1 -ConfirmDb db_bloq ${S}`, 'deny', false],
   ['sin reglas de la org, escrituras igual se niegan', 'sqlcmd -S 192.0.2.10 -Q "DELETE FROM t"', 'deny', false],
+  ['sqltest write se niega siempre (aunque el SQL venga en un archivo)', 'python scripts\\sqltest.py write --file publicar.sql', 'deny'],
+  ['sqltest read en base bloqueada se niega', 'python scripts/sqltest.py read --db db_bloq "SELECT TOP(5) * FROM t"', 'deny'],
+  ['sqltest read en base automática pasa', 'python scripts/sqltest.py read --db db_auto "SELECT TOP(5) * FROM t"', 'pasa'],
   // controles negativos: nada que ver con una base registrada
   ['nombrar la base en una nota no es conectar', 'Get-Content notas.md | Select-String db_bloq', 'pasa'],
   ['base no registrada en lectura no se toca', `scripts\\dbread.ps1 -ConfirmDb db_otra ${S}`, 'pasa'],

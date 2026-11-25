@@ -1,6 +1,6 @@
 'use strict';
 /*
- * Permisos de base de datos (D-071, fase 2 · 25/11/2026). Lo comparten la consola (os-servidor.js, que los edita)
+ * Permisos de base de datos (D-072, fase 2 · 25/11/2026). Lo comparten la consola (os-servidor.js, que los edita)
  * y el guardia (guardia-empresa.js, que los hace cumplir). Los wrappers de lectura (dbread.ps1, mongoread.py)
  * aplican la misma tabla con su propio código.
  *

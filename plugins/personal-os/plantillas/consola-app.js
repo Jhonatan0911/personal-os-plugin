@@ -1290,7 +1290,7 @@ dialog.osm-dlg.ancho{max-width:600px}
     };
     bEtq.addEventListener("click", crearEtq);
     iEtq.addEventListener("keydown", (ev) => { if (ev.key === "Enter") { ev.preventDefault(); crearEtq(); } if (ev.key === "Escape") { cajaNueva.hidden = true; bMas.setAttribute("aria-expanded", "false"); bMas.focus(); } });
-    // permisos (D-071 F2): Leer es un radiogroup; las escrituras no tienen modo, Claude entrega el script
+    // permisos (D-072 F2): Leer es un radiogroup; las escrituras no tienen modo, Claude entrega el script
     const perm = { leer: (c.permisos && c.permisos.leer) || "preguntar" };
     const CORTO = { bloqueado: "Bloq.", preguntar: "Pregunta", automatico: "Auto" };
     const thModo = (m) => { const th = el("th", { scope: "col" }, el("span", { className: "lg", textContent: MODO_ES[m] }), el("abbr", { className: "sh", title: MODO_ES[m], textContent: CORTO[m] }));

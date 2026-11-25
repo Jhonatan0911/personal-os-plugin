@@ -7,8 +7,13 @@ Espeja las reglas de scripts/dbread.ps1 (SQL) pero para Mongo:
     (key MongoServerConnectionString o ConnectionMongo), la decodifica de Base64 si aplica.
   - NUNCA imprime la cadena de conexion ni la contrasena (solo host + BD).
   - Solo lectura: unicamente ejecuta find(); no hay ningun path de escritura.
-  - --ConfirmDb OBLIGATORIO y debe coincidir con la BD activa; ademas bloquea cualquier
-    BD que no contenga 'test' ni 'prueba'.
+  - --ConfirmDb OBLIGATORIO y debe coincidir con la BD activa.
+  - Permisos de Config > Bases de datos del Personal OS (D-072): si el host y la BD estan
+    registrados, manda su permiso de Leer (bloqueado = no se consulta; me pregunta / automatico =
+    se permite, el guardia de Claude Code pide el OK cuando toca). Si no estan registrados, solo
+    se permite una BD que contenga 'test' o 'prueba'. Un servidor de produccion de las reglas de
+    la organizacion (guardia-empresa.json -> servidores_deny) se bloquea siempre: gana la regla
+    mas estricta.
   - --Limit OBLIGATORIO en toda consulta (analogo al TOP(N) de SQL); sin proyeccion se
     rechaza salvo --AllowNoProject (para no volcar datos sensibles de pacientes).
   - --DryRun muestra el destino sin ejecutar.
@@ -29,12 +34,9 @@ import argparse, base64, json, os, re, sys
 from urllib.parse import urlsplit
 
 try:
-    from pymongo import MongoClient
     from bson import ObjectId
-    from bson.json_util import default as bson_default
-except Exception as e:
-    print("Falta pymongo. Instala con: python -m pip install pymongo", file=sys.stderr)
-    raise
+except Exception:   # sin pymongo igual funcionan las validaciones y --DryRun
+    ObjectId = None
 
 MESA_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 DEFAULT_APPSETTINGS = os.path.join(MESA_ROOT, "__APPSETTINGS_DEFAULT_MONGO__")
@@ -64,8 +66,47 @@ def _decodificar(conn):
         return conn
 
 
+def _host(servidor):
+    h = str(servidor or "").strip().lower()
+    if h.startswith("tcp:"):
+        h = h[4:]
+    return re.split(r"[,\\:]", h)[0].strip()
+
+
+def _leer_json(ruta):
+    try:
+        with open(ruta, encoding="utf-8-sig") as fh:
+            return json.load(fh)
+    except Exception:
+        return None
+
+
+def _os_home():
+    return os.environ.get("PERSONAL_OS_HOME") or os.path.join(os.path.expanduser("~"), ".claude", "personal-os")
+
+
+def _permiso_destino(host, dbname):
+    """(nombre de la conexion, modo de leer) si el destino esta registrado en la consola; (None, None) si no."""
+    reg = _leer_json(os.path.join(_os_home(), "conexiones-bd.json")) or {}
+    for c in reg.get("conexiones") or []:
+        d = _leer_json(c.get("archivo") or "") or {}
+        if _host(d.get("servidor")) != host.lower():
+            continue
+        if dbname.lower() not in [str(x).lower() for x in (d.get("catalogos") or [])]:
+            continue
+        p = (d.get("permisos") or {}).get("leer")
+        modo = p if p in ("bloqueado", "preguntar", "automatico") else ("automatico" if d.get("modo_lectura") == "automatico" else "preguntar")
+        return c.get("nombre") or c.get("id"), modo
+    return None, None
+
+
+def _produccion_de_la_org(host):
+    g = _leer_json(os.path.join(_os_home(), "guardia-empresa.json")) or {}
+    return any(_host(h) == host.lower() for h in (g.get("servidores_deny") or []))
+
+
 def _obj_hook(d):
-    if "$oid" in d and len(d) == 1:
+    if "$oid" in d and len(d) == 1 and ObjectId is not None:
         return ObjectId(d["$oid"])
     return d
 
@@ -108,8 +149,14 @@ def main():
     # ---- Validaciones de DESTINO ----
     if not dbname:
         raise SystemExit("BLOQUEADO: la cadena activa no especifica base de datos en la URI.")
-    if not re.search(r"(?i)(test|prueba)", dbname):
-        raise SystemExit(f"BLOQUEADO: la BD activa '{dbname}' no contiene 'test' ni 'prueba'. Solo TEST.")
+    if _produccion_de_la_org(host):
+        raise SystemExit(f"BLOQUEADO: {host} es un servidor de produccion segun las reglas de la organizacion.")
+    conexion, modo = _permiso_destino(host, dbname)
+    if conexion:
+        if modo == "bloqueado":
+            raise SystemExit(f"BLOQUEADO: leer en la conexion '{conexion}' esta bloqueado en Config > Bases de datos.")
+    elif not re.search(r"(?i)(test|prueba)", dbname):
+        raise SystemExit(f"BLOQUEADO: '{dbname}' no esta registrada en Config > Bases de datos y no contiene 'test' ni 'prueba'.")
     if args.ConfirmDb != dbname:
         raise SystemExit(f"BLOQUEADO: --ConfirmDb '{args.ConfirmDb}' no coincide con la BD activa '{dbname}'.")
 
@@ -120,11 +167,17 @@ def main():
     print(f"Filtro     : {args.Filter}")
     print(f"Proyeccion : {args.Project or '(completo - AllowNoProject)'}")
     print(f"Limit      : {args.Limit}")
+    print(f"Permiso    : {('conexion ' + repr(conexion) + ' · leer ' + modo) if conexion else 'no registrada en la consola: solo TEST'}")
     print("-----------------------------------------------------------------")
     if args.DryRun:
         print("[DryRun] No se ejecuto nada. Confirma el destino antes de ejecutar.")
         return
 
+    try:
+        from pymongo import MongoClient
+        from bson.json_util import default as bson_default
+    except Exception:
+        raise SystemExit("Falta pymongo. Instala con: python -m pip install pymongo")
     client = MongoClient(conn, serverSelectionTimeoutMS=5000)
     col = client.get_default_database()[args.Collection]
     n = 0

@@ -807,7 +807,7 @@ function guardarPasoProduccion(b) {
  * la consola edita esos mismos archivos sin moverlos ni quitarles campos. El registro `<BD_HOME>/conexiones-bd.json`
  * guarda nombre, motor y etiquetas; si no existe se siembra descubriendo `~/.claude/<carpeta>/bd-*.json`.
  * Los permisos por acción viven en `permisos` del archivo de la conexión y los hacen cumplir el guardia y los wrappers
- * (D-071 F2). Leer tiene modo (bloqueado · preguntar · automatico); las escrituras valen siempre «script»: Claude
+ * (D-072 F2). Leer tiene modo (bloqueado · preguntar · automatico); las escrituras valen siempre «script»: Claude
  * nunca las ejecuta, las entrega como script de publicación + rollback. La contraseña nunca sale por GET ni por logs: solo por POST /revelar con token.
  * Pruebas: --bd-dir <carpeta> (registro y conexiones nuevas) y --bd-descubrir <carpeta> (en vez de ~/.claude).
  */

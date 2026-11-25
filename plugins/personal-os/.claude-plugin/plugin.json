@@ -1,7 +1,7 @@
 {
   "name": "personal-os",
   "displayName": "Personal OS — Chief of Staff",
-  "version": "4.3.0",
+  "version": "4.3.1",
   "description": "Personal OS: 24 skills para Claude Code enfocadas en productividad, trabajo y rendimiento, con memoria persistente que aprende contigo (bitácora, corteza de lecciones y sueño semanal). Brief diario, compromisos punto por punto, sprints, PRs, horas trazables y status del equipo sobre Jira, Outlook y Teams.",
   "author": {
     "name": "Jhonatan Piña"
