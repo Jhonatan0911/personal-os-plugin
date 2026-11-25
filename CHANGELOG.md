@@ -1,5 +1,19 @@
 # Changelog
 
+## 4.2.0 · ⚙ Config se ordena: agentes, skills y permisos de base de datos
+
+- **⚙ Config con pestañas reales: Agentes · Skills · Bases de datos.** Cada pestaña es una lista con ficha al lado (en celular, la lista primero y la ficha con «‹ volver»), con enlaces directos como `#config&skills/<skill>`, `#config&bd/<id>` o `#config&agentes/<nombre>`. Barras de desplazamiento con el tema, escala de espaciado y tipografía en tokens, y el menú de vistas queda centrado igual que en las demás pestañas.
+- **Skills.** Lista todas las skills del Personal OS con su nombre y qué hace (`GET /api/config/skills`). Las que tienen ajustes se abren para configurarse: `paso-a-produccion` muestra una casilla por entregable con su etiqueta corta (`corto` en `fuentes.yaml`). Se guarda sola al marcar, con «guardado a las · Deshacer».
+- **Permisos de base de datos, fase 1.** Cada conexión tiene una ficha con servidor, base, usuario y contraseña (oculta; se muestra con el botón de ojo y nunca viaja en la lista), etiquetas libres (producción, staging, qa y develop de base, más las que crees) y una tabla de permisos por acción: leer, crear, actualizar, borrar, estructura y ejecutar, cada una en bloqueado, me pregunta o automático. Las conexiones se agregan y se quitan desde la consola, con Guardar/Descartar explícitos y copia de respaldo. La ayuda «?» explica por qué pueden salir alertas. En esta fase lo automático de escritura queda deshabilitado hasta que el guardia lo haga cumplir (fase 2).
+- **auditar-ux-ui, reescrita.** Ahora la skill da primero un veredicto de dirección: pulir, reestructurar o rediseñar, incluso pasar de tarjetas a dashboard, tabla o gráfica. Siempre mide contra la marca y evalúa con capturas reales a 390, 768, 1024 y 1440 px. Cierra la brecha completa en una ronda, sin repartirla en un Top 5 por vuelta. Las varas fijas viven en `varas.md` y los antipatrones en `antipatrones.md`. Ante un cambio grande arma primero maquetas HTML/CSS con alternativas A/B/C para que elijas.
+- **Pruebas:** `os-servidor.prueba.js` llega a 63 controles (skills, permisos, etiquetas, revelar, guardar y quitar conexiones).
+
+## 4.1.1 · Las capturas esperan el estado, no el reloj
+
+- **`capturas.py` espera estados.** `{"accion": "esperar", "selector": ...}` espera a que algo aparezca (o, con `"estado": "hidden"`, a que desaparezca un spinner), y `"espera"` en un `clic` espera su resultado. Nació en la primera prueba real de la nueva `auditar-ux-ui` (25/11/2026): una captura de «no existe» salió con el botón todavía cargando.
+- **La sede por nombre ya no rompe el guion.** Si la sede pedida ya no está en la lista del usuario, `capturas.py` avisa y toma la primera en vez de quedarse bloqueado detrás del diálogo.
+- **`auditar-ux-ui`** pide en el paso 2 que cada captura espere su estado y que, dentro de un shell con sede o cuenta, el guion entre solo con la cuenta de TEST del perfil.
+
 ## 4.1.0 · El paquete completo, a la medida de cada quien
 
 - **paso-a-produccion genera el paquete completo por defecto.** `config-ejemplo.yaml` trae los 16 entregables (funcional, técnica, impacto, diagramas, pruebas unitarias, ruta crítica, funcionales, QA, plan, apertura, manual, guía de soporte, guía de datos, comunicado y video) y tres aprobaciones. La revisión ya no mira solo el nombre del archivo: `requiere` exige PDF, N capturas, textos con regex, evidencia en `evidencias/` o un MP4 medido con ffprobe, y los marcadores de borrador dejan el entregable 🟡. Dentro de una mesa, el paquete vive en `<mesa>/final/`.

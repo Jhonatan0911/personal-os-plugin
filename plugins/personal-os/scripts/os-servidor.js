@@ -235,6 +235,82 @@ function leerAgente(ruta) {
     objetivo: fm.objetivo || '', meta: fm.meta || '', limites: lista(fm.limites), accesorio: fm.accesorio || '' };
 }
 
+/**
+ * Skills del Personal OS para ⚙ Config: nombre, qué hace, cuándo usarla y qué no es (partidos de su `description`).
+ * Las que tienen ajustes propios los declaran en AJUSTES_SKILL: la consola abre su panel en la ficha.
+ * Origen: las carpetas de `<PLUGIN_ROOT>/skills` (instalación como plugin) o la lista `skills` de plugin-version.json
+ * (instalación suelta, la escribe sync.py); el SKILL.md se lee del plugin o de ~/.claude/skills/<nombre>.
+ */
+const AJUSTES_SKILL = { 'paso-a-produccion': { panel: 'paso-produccion', titulo: 'Qué se genera' } };
+/**
+ * Cómo se muestra cada skill en ⚙ Config (un solo lugar): grupo de uso, nombre en lenguaje normal y qué hace en una
+ * línea. El orden de GRUPOS_SKILL y el de cada grupo es el de la lista. Una skill que no está aquí cae en «Otras»,
+ * con el nombre armado desde su slug y la primera frase de su descripción.
+ */
+const GRUPOS_SKILL = ['Diario', 'Requerimientos', 'Equipo', 'Sistema', 'Otras'];
+const META_SKILL = {
+  'brief-diario': ['Diario', 'Brief del día', 'Cruza tu estado con Jira, Outlook y Teams y arma el brief del día.'],
+  'tablero-diario': ['Diario', 'Tablero del día', 'Regenera el tablero visual del día desde tu estado.'],
+  retomar: ['Diario', 'Retomar', 'Reconstruye en qué quedó un proyecto o un frente.'],
+  checkpoint: ['Diario', 'Checkpoint', 'Deja un tramo de trabajo listo para retomarlo.'],
+  'cerrar-tarea': ['Diario', 'Cerrar con evidencia', 'Cierra tareas, compromisos o riesgos solo con evidencia.'],
+  reconciliar: ['Diario', 'Reconciliar', 'Contrasta tu estado con las fuentes en vivo.'],
+  timesheet: ['Diario', 'Timesheet', 'Arma y valida el registro de horas de la semana.'],
+  'consola-neuronal': ['Diario', 'Consola', 'Regenera esta consola desde tus notas.'],
+  'paso-a-produccion': ['Requerimientos', 'Paso a producción', 'Arma y verifica el paquete antes de desplegar a producción.'],
+  'planear-sprint': ['Requerimientos', 'Planear sprint', 'Planea y estima un requerimiento de punta a punta.'],
+  'certificar-funcional': ['Requerimientos', 'Certificar funcional', 'Certifica que un requerimiento funciona antes de cerrarlo.'],
+  'revisar-pr': ['Requerimientos', 'Revisar PR', 'Revisa un pull request contra sus criterios de aceptación.'],
+  'regresion-guiada': ['Requerimientos', 'Regresión guiada', 'Conduce la regresión de un sistema antes de publicar.'],
+  'mapa-criticidad': ['Requerimientos', 'Mapa de criticidad', 'Califica qué tan crítico es cada módulo en cinco ejes.'],
+  'informe-desarrollo': ['Requerimientos', 'Informe de desarrollo', 'Explica un sistema ya construido, de punta a punta.'],
+  'mesa-nueva': ['Requerimientos', 'Mesa nueva', 'Monta una mesa de trabajo multi-repo desde un requerimiento.'],
+  'migrar-ramas': ['Requerimientos', 'Migrar ramas', 'Depura y migra repositorios entre proyectos.'],
+  'status-celula': ['Equipo', 'Status de la célula', 'Publica el tablero de planeación del equipo.'],
+  personas: ['Equipo', 'Personas', 'Quién sabe de qué y quién está libre en tu equipo.'],
+  'worklist-lider': ['Equipo', 'Worklist del líder', 'Publica y mantiene tu lista de trabajo.'],
+  redactar: ['Equipo', 'Redactar', 'Escribe en tu voz lo que sale a tu nombre.'],
+  'auditar-ux-ui': ['Sistema', 'Auditar UX/UI', 'Audita y rediseña la UX y la UI contra su marca.'],
+  'maestro-skills': ['Sistema', 'Maestro de skills', 'Crea, audita y publica skills de Claude Code.'],
+  'reglas-organizacion': ['Sistema', 'Reglas de la organización', 'Mantiene las políticas de tu organización y las hace cumplir.'],
+};
+const ORDEN_SKILL = Object.keys(META_SKILL);
+function humanoDeSlug(n) { const t = String(n).replace(/-/g, ' '); return t.charAt(0).toUpperCase() + t.slice(1); }
+function primeraFrase(t) { const m = String(t || '').match(/^(.+?[.!?])(\s|$)/); return (m ? m[1] : String(t || '')).replace(/\s—.*$/, '').trim(); }
+function metaSkill(n, queHace) {
+  const m = META_SKILL[n];
+  return m ? { grupo: m[0], titulo: m[1], corto: m[2] } : { grupo: 'Otras', titulo: humanoDeSlug(n), corto: primeraFrase(queHace) };
+}
+function skillsDelOs() {
+  const s = new Set();
+  try { for (const d of fs.readdirSync(path.join(C.PLUGIN_ROOT, 'skills'), { withFileTypes: true })) if (d.isDirectory()) s.add(d.name); } catch (_) { /* instalación suelta */ }
+  for (const n of (C.leerJson(path.join(C.OS_HOME, 'plugin-version.json'), {}) || {}).skills || []) s.add(n);
+  return [...s].filter((n) => /^[a-z0-9][a-z0-9-]{1,60}$/.test(n)).sort();
+}
+function partirDescripcion(d) {
+  const t = String(d || '').replace(/\s+/g, ' ').trim();
+  const iU = t.search(/\s(?:Úsal[ao]|Usal[ao]|Use (?:this|it|when|proactively)|Spawned by|Invoked by)\b/i), iN = t.search(/\sNo es (?:para|un|una)\b/);
+  const fin = (a, ...bs) => Math.min(...bs.filter((b) => b > a).concat(t.length));
+  return { que_hace: t.slice(0, iU > 0 ? iU : (iN > 0 ? iN : t.length)).replace(/\s—\s*$/, '').trim(),
+    cuando: iU > 0 ? t.slice(iU, fin(iU, iN)).trim() : '', no_es: iN > 0 ? t.slice(iN, fin(iN, iU)).trim() : '' };
+}
+function listarSkills() {
+  const home = require('os').homedir();
+  const lista = [];
+  for (const n of skillsDelOs()) {
+    // plugin · skill de usuario · skill interna de la instalación suelta (<OS_HOME>/skills/<n>.md, la leen los comandos)
+    const ruta = [path.join(C.PLUGIN_ROOT, 'skills', n, 'SKILL.md'), path.join(home, '.claude', 'skills', n, 'SKILL.md'),
+      path.join(C.OS_HOME, 'skills', `${n}.md`)].find((r) => fs.existsSync(r));
+    const a = ruta ? leerAgente(ruta) : null;
+    if (!a) { lista.push(Object.assign({ nombre: n, que_hace: '', cuando: '', no_es: '', error: ruta ? 'frontmatter ilegible' : 'no está instalada', ajustes: AJUSTES_SKILL[n] || null }, metaSkill(n, ''))); continue; }
+    const d = partirDescripcion(a.descripcion);
+    lista.push(Object.assign({ nombre: a.nombre || n }, d, { ajustes: AJUSTES_SKILL[n] || null }, metaSkill(n, d.que_hace)));
+  }
+  const pos = (s) => { const i = ORDEN_SKILL.indexOf(s.nombre); return i < 0 ? 999 : i; };
+  lista.sort((x, y) => GRUPOS_SKILL.indexOf(x.grupo) - GRUPOS_SKILL.indexOf(y.grupo) || pos(x) - pos(y) || x.titulo.localeCompare(y.titulo));
+  return { skills: lista, grupos: GRUPOS_SKILL };
+}
+
 function listarAgentes() {
   const propios = propiosDelOs();
   const lista = [];
@@ -260,6 +336,8 @@ function listarAgentes() {
     const a = leerAgente(path.join(C.PLUGIN_ROOT, 'agents', `${n}.md`));
     if (a) lista.push(Object.assign(a, { grupo: 'propios', candado: true }));
   }
+  // Igual que en las skills: «qué hace» en una línea y «cuándo se usa» aparte, partidos de la descripción.
+  for (const a of lista) Object.assign(a, partirDescripcion(a.descripcion));
   return { agentes: lista, grupos_herramientas: GRUPOS_HERR, modelos: MODELOS, colores: COLORES, accesorios: ACCESORIOS.filter(Boolean),
     carpeta: DIR_AGENTES, actividad: actividad() };
 }
@@ -572,7 +650,8 @@ function leerPasoProduccion(texto) {
   };
   return {
     ini, fin, lineas, lineaOmitir, omitir, sangriaBloque: sangriaBloque ?? 2,
-    entregables: entregables.map((e) => ({ id: e.id, nombre: campo(e.texto, 'nombre') || e.id, con: campo(e.texto, 'con') || null })),
+    // `corto` (opcional): la etiqueta breve que muestra la consola; el `nombre` largo queda como detalle
+    entregables: entregables.map((e) => ({ id: e.id, nombre: campo(e.texto, 'nombre') || e.id, corto: campo(e.texto, 'corto') || null, con: campo(e.texto, 'con') || null })),
   };
 }
 
@@ -581,8 +660,9 @@ function pasoProduccion() {
   if (!ruta || !fs.existsSync(ruta)) return { ruta_existe: false, seccion: false, entregables: [] };
   const p = leerPasoProduccion(fs.readFileSync(ruta, 'utf8'));
   const om = new Set(p.omitir);
+  let actualizado = null; try { actualizado = fs.statSync(ruta).mtime.toISOString(); } catch (_) { /* sin fecha */ }
   return {
-    ruta_existe: true, seccion: p.ini > -1,
+    ruta_existe: true, seccion: p.ini > -1, actualizado,
     entregables: p.entregables.map((e) => ({ ...e, omitido: om.has(e.id), efectivo_omitido: om.has(e.id) || (!!e.con && om.has(e.con)) })),
   };
 }
@@ -616,6 +696,200 @@ function guardarPasoProduccion(b) {
   fs.writeFileSync(tmp, bom + lineas.join(eol), 'utf8');
   fs.renameSync(tmp, ruta);
   return { ok: true, mensaje: lista.length ? `no se generan: ${lista.join(', ')}` : 'se genera todo', omitir: lista };
+}
+
+// ------------------------------------------------------------------ permisos · bases de datos (F1)
+
+/**
+ * Conexiones de base de datos que Claude usa en las sesiones. Cada conexión es un JSON propio (servidor, usuario,
+ * password, catalogos, modo_lectura, modo_escritura y lo que traiga) que leen los wrappers de los proyectos y /bd-test:
+ * la consola edita esos mismos archivos sin moverlos ni quitarles campos. El registro `<BD_HOME>/conexiones-bd.json`
+ * guarda nombre, motor y etiquetas; si no existe se siembra descubriendo `~/.claude/<carpeta>/bd-*.json`.
+ * Los permisos por acción viven en `permisos` del archivo de la conexión. F1: la consola los GUARDA; hacerlos cumplir
+ * (guardia y wrappers) es la F2. La contraseña nunca sale por GET ni por logs: solo por POST /revelar con token.
+ * Pruebas: --bd-dir <carpeta> (registro y conexiones nuevas) y --bd-descubrir <carpeta> (en vez de ~/.claude).
+ */
+const BD_HOME = path.resolve(C.arg('--bd-dir', null) || C.OS_HOME);
+const BD_DESCUBRIR = path.resolve(C.arg('--bd-descubrir', null) || path.join(require('os').homedir(), '.claude'));
+const BD_REGISTRO = path.join(BD_HOME, 'conexiones-bd.json');
+const BD_ACCIONES = [
+  { id: 'leer', nombre: 'Leer', sql: 'SELECT' }, { id: 'crear', nombre: 'Crear', sql: 'INSERT' },
+  { id: 'actualizar', nombre: 'Actualizar', sql: 'UPDATE / MERGE' }, { id: 'borrar', nombre: 'Borrar', sql: 'DELETE / TRUNCATE' },
+  { id: 'estructura', nombre: 'Estructura', sql: 'CREATE / ALTER / DROP' }, { id: 'ejecutar', nombre: 'Ejecutar', sql: 'EXEC / procedimientos' },
+];
+const BD_MODOS = ['bloqueado', 'preguntar', 'automatico'];
+const BD_PERMISOS_DEFECTO = { leer: 'preguntar', crear: 'bloqueado', actualizar: 'bloqueado', borrar: 'bloqueado', estructura: 'bloqueado', ejecutar: 'bloqueado' };
+const BD_ETIQUETAS = ['produccion', 'staging', 'qa', 'develop', 'test'];
+const BD_MOTORES = ['sqlserver', 'postgresql', 'mysql', 'oracle', 'mongodb', 'otro'];
+const slug = (s) => /^[a-z0-9][a-z0-9-]{0,40}$/.test(String(s || ''));
+const etiquetaValida = (s) => /^[a-z0-9][a-z0-9 _-]{0,29}$/.test(String(s || ''));
+
+/** Lee un JSON conservando su forma de escribirse (BOM y fin de línea). null si no se puede leer. */
+function bdLeerArchivo(ruta) {
+  let crudo;
+  try { crudo = fs.readFileSync(ruta, 'utf8'); } catch (_) { return null; }
+  try { return { datos: JSON.parse(crudo.replace(/^﻿/, '')), bom: crudo.startsWith('﻿'), eol: crudo.includes('\r\n') ? '\r\n' : '\n' }; }
+  catch (_) { return { datos: null, error: 'JSON ilegible', bom: false, eol: '\n' }; }
+}
+/** Escritura atómica con respaldo `.antes-consola` la primera vez; respeta BOM y fin de línea del original. */
+function bdEscribir(ruta, datos, forma) {
+  fs.mkdirSync(path.dirname(ruta), { recursive: true });
+  if (fs.existsSync(ruta) && !fs.existsSync(ruta + '.antes-consola')) fs.copyFileSync(ruta, ruta + '.antes-consola');
+  const f = forma || { bom: false, eol: '\n' };
+  const tmp = ruta + '.tmp-consola';
+  fs.writeFileSync(tmp, (f.bom ? '﻿' : '') + JSON.stringify(datos, null, 2).replace(/\n/g, f.eol) + f.eol, 'utf8');
+  fs.renameSync(tmp, ruta);
+}
+/** Solo se tocan archivos de conexión: los descubiertos (`<descubrir>/<carpeta>/bd-*.json`) o los nuevos (`<BD_HOME>/conexiones/*.json`). */
+function bdRutaPermitida(r) {
+  const a = path.resolve(String(r || ''));
+  const enDesc = path.dirname(path.dirname(a)) === BD_DESCUBRIR && /^bd-[\w.-]+\.json$/i.test(path.basename(a));
+  const enNuevas = path.dirname(a) === path.join(BD_HOME, 'conexiones') && /^[a-z0-9-]+\.json$/.test(path.basename(a));
+  return enDesc || enNuevas;
+}
+function bdDescubrir() {
+  const out = [];
+  let dirs = [];
+  try { dirs = fs.readdirSync(BD_DESCUBRIR, { withFileTypes: true }).filter((d) => d.isDirectory()); } catch (_) { return out; }
+  for (const d of dirs) {
+    let fs2 = [];
+    try { fs2 = fs.readdirSync(path.join(BD_DESCUBRIR, d.name)).filter((f) => /^bd-[\w.-]+\.json$/i.test(f)); } catch (_) { continue; }
+    for (const f of fs2) {
+      const ruta = path.join(BD_DESCUBRIR, d.name, f);
+      const a = bdLeerArchivo(ruta);
+      if (a && a.datos && a.datos.servidor) out.push(ruta);
+    }
+  }
+  return out.sort();
+}
+function bdRegistro() {
+  const r = C.leerJson(BD_REGISTRO, null);
+  if (r && Array.isArray(r.conexiones)) { r.etiquetas_propias = Array.isArray(r.etiquetas_propias) ? r.etiquetas_propias : []; return r; }
+  // Siembra: cada archivo descubierto entra con el nombre de su archivo; las etiquetas las pone el usuario.
+  const usados = new Set();
+  const conexiones = bdDescubrir().map((ruta) => {
+    let id = path.basename(ruta, '.json').toLowerCase().replace(/[^a-z0-9-]/g, '-').slice(0, 40);
+    while (usados.has(id)) id += '-2';
+    usados.add(id);
+    return { id, nombre: path.basename(ruta, '.json'), archivo: ruta, motor: 'sqlserver', etiquetas: [] };
+  });
+  const nuevo = { conexiones, etiquetas_propias: [] };
+  bdEscribir(BD_REGISTRO, nuevo);
+  return nuevo;
+}
+/** El permiso efectivo de cada acción (con los de por defecto) y los campos heredados que leen /bd-test y los wrappers. */
+function bdPermisos(d) {
+  const p = Object.assign({}, BD_PERMISOS_DEFECTO);
+  for (const a of BD_ACCIONES) if (d && d.permisos && BD_MODOS.includes(d.permisos[a.id])) p[a.id] = d.permisos[a.id];
+  // Sin `permisos` todavía: la lectura toma el modo heredado (automatico | supervisado).
+  if (d && !d.permisos && d.modo_lectura === 'automatico') p.leer = 'automatico';
+  return p;
+}
+function bdCompatibles(p) {
+  // /bd-test solo entiende lecturas automatico|supervisado y escrituras supervisado (siempre piden OK por huella).
+  // Hasta la F2 los wrappers no leen `permisos`: el campo heredado de escritura queda en supervisado.
+  return { modo_lectura: p.leer === 'automatico' ? 'automatico' : 'supervisado', modo_escritura: 'supervisado' };
+}
+function bdListar() {
+  const reg = bdRegistro();
+  const conexiones = reg.conexiones.map((c) => {
+    const a = bdPermitidaYLeida(c);
+    const d = (a && a.datos) || {};
+    let actualizado = null;
+    try { actualizado = fs.statSync(c.archivo).mtime.toISOString(); } catch (_) { /* sin archivo */ }
+    return { id: c.id, nombre: c.nombre || c.id, motor: c.motor || 'sqlserver', etiquetas: c.etiquetas || [],
+      archivo: c.archivo, existe: !!(a && a.datos), error: a ? a.error || null : 'archivo fuera de las carpetas de conexiones',
+      servidor: d.servidor || '', usuario: d.usuario || '', catalogos: Array.isArray(d.catalogos) ? d.catalogos : [],
+      password_guardada: typeof d.password === 'string' && d.password.length > 0, actualizado, permisos: bdPermisos(d) };
+  });
+  return { conexiones, acciones: BD_ACCIONES, modos: BD_MODOS, motores: BD_MOTORES,
+    etiquetas_estandar: BD_ETIQUETAS, etiquetas_propias: reg.etiquetas_propias, registro: BD_REGISTRO };
+}
+function bdPermitidaYLeida(c) {
+  if (!c || !bdRutaPermitida(c.archivo)) return null;
+  return bdLeerArchivo(c.archivo) || { datos: null, error: 'no existe el archivo' };
+}
+function bdGuardar(b) {
+  const reg = bdRegistro();
+  const nuevo = !b.id || !reg.conexiones.some((c) => c.id === b.id);
+  const nombre = String(b.nombre || '').trim();
+  if (!nombre || nombre.length > 60) return { ok: false, mensaje: 'el nombre es obligatorio (máx. 60)' };
+  const motor = b.motor || 'sqlserver';
+  if (!BD_MOTORES.includes(motor)) return { ok: false, mensaje: `motor desconocido: ${motor}` };
+  for (const k of ['servidor', 'usuario']) if (b[k] !== undefined && (typeof b[k] !== 'string' || b[k].length > 200)) return { ok: false, mensaje: `${k} inválido` };
+  if (b.catalogos !== undefined && (!Array.isArray(b.catalogos) || b.catalogos.length > 50 || !b.catalogos.every((x) => typeof x === 'string' && x.length && x.length <= 128))) return { ok: false, mensaje: 'catalogos debe ser una lista de nombres' };
+  const etiquetas = b.etiquetas === undefined ? null : b.etiquetas;
+  const validasEtq = new Set([...BD_ETIQUETAS, ...reg.etiquetas_propias]);
+  if (etiquetas && (!Array.isArray(etiquetas) || !etiquetas.every((e) => validasEtq.has(e)))) return { ok: false, mensaje: 'etiqueta desconocida: créala primero' };
+  if (b.permisos !== undefined) {
+    if (!b.permisos || typeof b.permisos !== 'object' || Array.isArray(b.permisos)) return { ok: false, mensaje: 'permisos inválidos' };
+    for (const [k, v] of Object.entries(b.permisos)) {
+      if (!BD_ACCIONES.some((a) => a.id === k)) return { ok: false, mensaje: `acción desconocida: ${k}` };
+      if (!BD_MODOS.includes(v)) return { ok: false, mensaje: `modo desconocido para ${k}: ${v}` };
+    }
+  }
+  if (b.password !== undefined && (typeof b.password !== 'string' || b.password.length > 500)) return { ok: false, mensaje: 'contraseña inválida' };
+
+  let ent;
+  if (nuevo) {
+    let id = b.id || nombre.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 40) || 'conexion';
+    if (!slug(id)) return { ok: false, mensaje: 'id inválido' };
+    while (reg.conexiones.some((c) => c.id === id)) id = (id + '-2').slice(0, 40);
+    ent = { id, nombre, archivo: path.join(BD_HOME, 'conexiones', `${id}.json`), motor, etiquetas: etiquetas || [] };
+    reg.conexiones.push(ent);
+  } else {
+    ent = reg.conexiones.find((c) => c.id === b.id);
+    if (!bdRutaPermitida(ent.archivo)) return { ok: false, mensaje: 'el archivo de esta conexión está fuera de las carpetas permitidas' };
+    Object.assign(ent, { nombre, motor }, etiquetas ? { etiquetas } : {});
+  }
+  const a = (fs.existsSync(ent.archivo) ? bdLeerArchivo(ent.archivo) : null) || { datos: {}, bom: false, eol: '\n' };
+  if (!a.datos) return { ok: false, mensaje: 'el archivo de la conexión no es JSON válido: no lo toco' };
+  const d = a.datos;                                                   // campos desconocidos intactos
+  if (b.servidor !== undefined) d.servidor = b.servidor;
+  if (b.usuario !== undefined) d.usuario = b.usuario;
+  if (b.catalogos !== undefined) d.catalogos = b.catalogos;
+  if (typeof b.password === 'string' && b.password.length) d.password = b.password; // vacía = conservar
+  const p = Object.assign(bdPermisos(d), b.permisos || {});
+  d.permisos = p;
+  Object.assign(d, bdCompatibles(p));
+  bdEscribir(ent.archivo, d, a);
+  bdEscribir(BD_REGISTRO, reg, bdLeerArchivo(BD_REGISTRO) || undefined);
+  return { ok: true, mensaje: nuevo ? 'conexión creada' : 'guardado', id: ent.id };
+}
+function bdQuitar(b) {
+  const reg = bdRegistro();
+  const i = reg.conexiones.findIndex((c) => c.id === b.id);
+  if (i < 0) return { ok: false, mensaje: 'no existe esa conexión' };
+  const c = reg.conexiones[i];
+  const pap = path.join(BD_HOME, '_papelera-conexiones');
+  fs.mkdirSync(pap, { recursive: true });
+  const sello = new Date().toISOString().replace(/[:.]/g, '-');
+  if (bdRutaPermitida(c.archivo) && fs.existsSync(c.archivo)) {
+    fs.copyFileSync(c.archivo, path.join(pap, `${c.id}-${sello}.json`));
+    // Solo las creadas por la consola se borran; las descubiertas (de otras herramientas) se quedan donde están.
+    if (path.dirname(path.resolve(c.archivo)) === path.join(BD_HOME, 'conexiones')) fs.unlinkSync(c.archivo);
+  }
+  fs.writeFileSync(path.join(pap, `${c.id}-${sello}.registro.json`), JSON.stringify(c, null, 2), 'utf8');
+  reg.conexiones.splice(i, 1);
+  bdEscribir(BD_REGISTRO, reg, bdLeerArchivo(BD_REGISTRO) || undefined);
+  return { ok: true, mensaje: 'quitada del registro (respaldo en la papelera de conexiones)' };
+}
+function bdRevelar(b) {
+  const c = bdRegistro().conexiones.find((x) => x.id === b.id);
+  const a = bdPermitidaYLeida(c);
+  if (!a || !a.datos) return { ok: false, mensaje: 'no se puede leer esa conexión' };
+  return { ok: true, password: typeof a.datos.password === 'string' ? a.datos.password : '' };
+}
+function bdEtiqueta(b) {
+  const e = String(b.etiqueta || '').trim().toLowerCase();
+  if (!etiquetaValida(e)) return { ok: false, mensaje: 'etiqueta inválida (minúsculas, números, espacio, - o _; máx. 30)' };
+  const reg = bdRegistro();
+  if (!BD_ETIQUETAS.includes(e) && !reg.etiquetas_propias.includes(e)) {
+    if (reg.etiquetas_propias.length >= 50) return { ok: false, mensaje: 'demasiadas etiquetas propias' };
+    reg.etiquetas_propias.push(e);
+    bdEscribir(BD_REGISTRO, reg, bdLeerArchivo(BD_REGISTRO) || undefined);
+  }
+  return { ok: true, etiqueta: e, etiquetas_propias: reg.etiquetas_propias };
 }
 
 // ------------------------------------------------------------------ acciones (lista cerrada)
@@ -760,6 +1034,12 @@ const servidor = http.createServer((req, res) => {
     if (ruta === '/api/config/agentes') {
       try { return json(200, listarAgentes()); } catch (e) { return json(500, { error: String(e && e.message) }); }
     }
+    if (ruta === '/api/config/bd') {
+      try { return json(200, bdListar()); } catch (e) { return json(500, { error: String(e && e.message) }); }
+    }
+    if (ruta === '/api/config/skills') {
+      try { return json(200, listarSkills()); } catch (e) { return json(500, { error: String(e && e.message) }); }
+    }
     if (ruta === '/api/config/paso-produccion') {
       try { return json(200, pasoProduccion()); } catch (e) { return json(500, { error: String(e && e.message) }); }
     }
@@ -802,6 +1082,13 @@ const servidor = http.createServer((req, res) => {
     if (ruta === '/api/log') {
       try { fs.mkdirSync(path.join(STATE, '_runtime'), { recursive: true }); fs.appendFileSync(path.join(STATE, '_runtime', 'app-errores.log'), `${new Date().toISOString()} ${crudo.slice(0, 2000)}\n`); } catch (_) { /* nunca tumbar el servidor por un log */ }
       return enviar(204, 'text/plain', '');
+    }
+    const mBd = ruta.match(/^\/api\/config\/bd\/(guardar|quitar|revelar|etiqueta)$/);
+    if (mBd) {
+      // Nada de esto pasa por /api/log ni se escribe en ningún registro: el cuerpo puede traer una contraseña.
+      const f = { guardar: bdGuardar, quitar: bdQuitar, revelar: bdRevelar, etiqueta: bdEtiqueta }[mBd[1]];
+      try { const r = f(cuerpo || {}); return json(r.ok ? 200 : 400, r); }
+      catch (e) { return json(500, { ok: false, mensaje: 'no se pudo completar (' + String(e && e.code || 'error') + ')' }); }
     }
     if (ruta === '/api/config/paso-produccion') {
       try { const r = guardarPasoProduccion(cuerpo); return json(r.ok ? 200 : 400, r); }

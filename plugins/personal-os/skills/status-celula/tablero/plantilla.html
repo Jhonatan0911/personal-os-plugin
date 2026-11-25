@@ -2518,7 +2518,7 @@ function claveTarjetas(nProb){
     ${it("","background:var(--warn-bg);border:1px solid var(--warn)","↺ Redefinida","Jira la cuenta como cerrada pero no es un cierre")}
     <button type="button" class="ck ckb" data-prob="1" ${nProb?"":"disabled"} title="Repetidas (mismo título en dos issues) o con fechas al revés en Jira. Clic para ver la lista."><i class="ckm" style="background:var(--card);border:2px solid var(--crit)"></i>⚠ Revisar origen${nProb?" ("+nProb+")":""}</button>
   </div>`; }
-// Avisos fijos (toasts) que se ven en cualquier pestaña: quién está por quedarse sin tareas y quién está sobrecargado hoy.
+// Avisos fijos (toasts) que se ven en cualquier pestaña: solo quién está sin tareas o por quedarse sin ellas.
 // No se van solos; la × los oculta hasta mañana (solo en este navegador).
 var ULTIMA={}; // por dev: su última tarea por hacer (se muestra al pasar el mouse por su «Hoy x / y h»)
 var TOAST_OFF={}; try{ TOAST_OFF=JSON.parse(localStorage.getItem("planeacion-toasts")||"{}")||{}; }catch(e){}
@@ -2537,7 +2537,7 @@ function alertasToast(loads,t,all){
     if(ult<0) av.push({id:"libre-"+id+"-"+TODAY, tipo:"warn", lane:id, sum:`${nm} está sin tareas`, txt:"No tiene tareas planeadas desde hoy."});
     else if(hab<=2) av.push({id:"fin-"+id+"-"+DAYS[ult], tipo:"warn", lane:id, sum:`${nm} se queda sin tareas`, txt:`Lo último que tiene planeado termina el ${dia(DAYS[ult])}${sig<AFTER?`; queda libre desde el ${dia(DAYS[sig])}`:""}.`});
   });
-  const j=jornada(t); LANES.forEach(l=>{ const v=loads[l.id][t]; if(j&&v>j*1.05) av.push({id:"over-"+l.id+"-"+TODAY, tipo:"crit", lane:l.id, sum:`${(NOMBRE[l.id]||l.nm).split(" ")[0]} está sobrecargado hoy`, txt:`${h(v)} h planeadas de ${h(j)} h de jornada (+${h(v-j)} h).`}); });
+  // (20/11/2026, Jhonatan) Sin avisos de sobrecarga: los avisos fijos son solo para quien se queda sin tareas.
   const vis=av.filter(a=>TOAST_OFF[a.id]!==TODAY);
   box.innerHTML=vis.map(a=>`<div class="ptoast ${a.tipo}" role="status"><span class="ti" aria-hidden="true">!</span><button type="button" class="tx" data-irlane="${a.lane}" title="Ir a su carril"><b>${esc(a.sum)}</b><span>${esc(a.txt)}</span></button><button type="button" class="tcl" data-toff="${esc(a.id)}" aria-label="Ocultar este aviso hasta mañana" title="Ocultar hasta mañana">×</button></div>`).join("");
   box.querySelectorAll("[data-toff]").forEach(b=>b.onclick=ev=>{ ev.stopPropagation(); TOAST_OFF[b.dataset.toff]=TODAY; try{ localStorage.setItem("planeacion-toasts",JSON.stringify(TOAST_OFF)); }catch(e){} b.closest(".ptoast").remove(); });

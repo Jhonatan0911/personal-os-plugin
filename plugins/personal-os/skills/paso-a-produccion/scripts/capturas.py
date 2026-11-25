@@ -15,8 +15,12 @@ Pasos (todos con "selector" CSS salvo donde se indica):
   {"accion": "lista", "selector": "p-dropdown[...]", "opcion": "OPCIÓN", "exacta": true}  (PrimeNG dropdown)
   {"accion": "multiple", "selector": "p-multiselect[...]", "opciones": ["OPCIÓN A", "OPCIÓN B"]}
   {"accion": "esperar", "ms": 1500}
+  {"accion": "esperar", "selector": "h3:has-text('Nuevo paciente')"}   espera un ESTADO (visible; "estado": "hidden"
+                                                                        para que desaparezca un spinner). Preferible al tiempo fijo
+  {"accion": "clic", "selector": "...", "espera": "p-card:has-text('Paciente encontrado')"}  clic + espera su resultado
   {"accion": "captura", "nombre": "01-inicio.png"}
   {"accion": "sede"}                                  elige la primera sede del diálogo «Seleccione la sede actual»
+  {"accion": "sede", "nombre": "SEDE X"}              elige esa sede; si ya no está en la lista, avisa y toma la primera
   {"accion": "menu", "opcion": "Nombre de la opción"} abre la opción del menú lateral (expande grupos si hace falta)
 
 Un microfrontend se captura DENTRO del menú. Para entrar sin pedirle nada al líder, el guion trae:
@@ -56,10 +60,12 @@ def correr(guion, salida, permitir_escritura):
                     pg.locator(".p-dialog .p-dropdown").first.click()
                     items = pg.locator(".p-dropdown-items li")
                     items.first.wait_for(state="visible", timeout=10000)
-                    if paso.get("nombre"):
-                        items.filter(has_text=paso["nombre"]).first.click()
-                    else:
-                        items.first.click()
+                    elegida = items.filter(has_text=paso["nombre"]) if paso.get("nombre") else items
+                    if paso.get("nombre") and not elegida.count():
+                        # La sede pedida ya no está en la lista del usuario: se toma la primera y se avisa.
+                        print(f"aviso: la sede «{paso['nombre']}» no está en la lista; se usa la primera")
+                        elegida = items
+                    elegida.first.click()
                     pg.locator(".p-dialog button:has-text('Guardar')").first.click()
                     pg.locator(".p-dialog").first.wait_for(state="hidden", timeout=15000)
                     pg.wait_for_load_state("networkidle"); pg.wait_for_timeout(1500)
@@ -89,6 +95,8 @@ def correr(guion, salida, permitir_escritura):
             elif a == "clic":
                 pg.locator(sel).first.click()
                 pg.wait_for_load_state("networkidle")
+                if paso.get("espera"):     # selector que debe aparecer tras el clic (p. ej. el resultado)
+                    pg.locator(paso["espera"]).first.wait_for(state="visible", timeout=20000)
             elif a == "llenar":
                 pg.locator(sel).first.fill(paso["valor"])
             elif a == "teclear":
@@ -106,7 +114,11 @@ def correr(guion, salida, permitir_escritura):
                     pg.locator(".p-multiselect-items li:visible").filter(has_text=o).first.click()
                 pg.keyboard.press("Escape")
             elif a == "esperar":
-                pg.wait_for_timeout(int(paso.get("ms", 1000)))
+                if paso.get("selector"):   # espera el ESTADO, no un tiempo fijo
+                    pg.locator(paso["selector"]).first.wait_for(
+                        state=paso.get("estado", "visible"), timeout=int(paso.get("ms", 20000)))
+                else:
+                    pg.wait_for_timeout(int(paso.get("ms", 1000)))
             elif a == "captura":
                 pg.wait_for_timeout(800)
                 pg.screenshot(path=str(salida / paso["nombre"]), full_page=True)

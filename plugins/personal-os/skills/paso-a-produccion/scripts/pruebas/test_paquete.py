@@ -160,6 +160,13 @@ class PaqueteTest(unittest.TestCase):
         rc, res = self._cfg_omitir(["video"], extra=[{"id": "guia", "nombre": "Guía", "genera": False}])
         self.assertEqual((rc, res["faltan"]), (0, []))
 
+    def test_corto_es_solo_para_la_consola(self):
+        # `corto` (etiqueta breve de la consola, 25/11/2026) no cambia lo que se exige
+        rc, res = self._cfg_omitir([], extra=[{"id": "guia", "nombre": "Guía larga", "corto": "Guía"}])
+        self.assertIn("guia", res["faltan"])
+        fila = next(f for f in res["filas"] if f["id"] == "guia")
+        self.assertEqual(fila["nombre"], "Guía larga")
+
     def test_omitir_id_inexistente_se_denuncia(self):
         cfg = json.loads(json.dumps(CONFIG))
         cfg["paso_produccion"]["omitir"] = ["no-existe"]

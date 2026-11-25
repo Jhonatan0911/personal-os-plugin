@@ -7,6 +7,10 @@
  * Sale con código 1 si algún control falla.
  */
 'use strict';
+// El total del cierre se cuenta de lo que de verdad se imprimió (antes era una suma fija que se quedaba atrás).
+let totalControles = 0;
+const logOriginal = console.log;
+console.log = (...a) => { if (typeof a[0] === 'string' && /^(OK {3}|FALLO)/.test(a[0])) totalControles++; logOriginal(...a); };
 const http = require('http');
 const fs = require('fs');
 const os = require('os');
@@ -41,7 +45,7 @@ const SINTETICA = [
   '  entregables:',
   '    # un comentario dentro de la lista',
   '    - { id: funcional, nombre: "Especificación funcional: con dos puntos", archivos: ["funcional.*"], responsable: "líder" }',
-  '    - { id: comunicado, nombre: "Comunicado de una página", archivos: ["comunicado.*"] }',
+  '    - { id: comunicado, nombre: "Comunicado de una página con diseño, con: coma", corto: "Comunicado", archivos: ["comunicado.*"] }',
   '    - { id: video, nombre: "Video tutorial", archivos: ["video*.mp4"], con: comunicado }',
   '    - id: manual',
   '      nombre: "Manual de usuario"',
@@ -64,8 +68,18 @@ function sinOmitir(buf) {
   }).join(eol);
 }
 
+// Conexiones de BD de prueba: un descubierto con BOM, CRLF y un campo ajeno. Nunca los archivos reales.
+const BD_DIR = path.join(TMP, 'bd-home');
+const BD_DESC = path.join(TMP, 'descubrir');
+const CLAVE = 'CLAVE-PRUEBA-' + Math.random().toString(36).slice(2, 10);
+const BD_ARCH = path.join(BD_DESC, 'org', 'bd-uno.json');
+fs.mkdirSync(path.dirname(BD_ARCH), { recursive: true });
+fs.writeFileSync(BD_ARCH, '﻿' + JSON.stringify({ _comentario: 'ejemplo', ambiente: 'pruebas', servidor: 'servidor-ejemplo', usuario: 'lector',
+  password: CLAVE, catalogos: ['BaseA'], modo_lectura: 'supervisado', modo_escritura: 'supervisado' }, null, 2).replace(/\n/g, '\r\n') + '\r\n');
+fs.writeFileSync(path.join(BD_DESC, 'org', 'bd-sin-servidor.json'), '{"nada": true}');  // control: no se siembra
+
 (async () => {
-  const srv = spawn(process.execPath, [SRV, '--puerto', String(P), '--fuentes', FUENTES], { stdio: ['ignore', 'pipe', 'pipe'] });
+  const srv = spawn(process.execPath, [SRV, '--puerto', String(P), '--fuentes', FUENTES, '--bd-dir', BD_DIR, '--bd-descubrir', BD_DESC], { stdio: ['ignore', 'pipe', 'pipe'] });
   srv.stderr.on('data', (d) => process.stderr.write('[srv] ' + d));
   await new Promise((r) => setTimeout(r, 900));
   const pag = await pedir({ ruta: '/estado/consola.html' });
@@ -105,6 +119,77 @@ function sinOmitir(buf) {
     if (!ok) fallos++;
     console.log(`${ok ? 'OK   ' : 'FALLO'} ${nombre}: esperado ${espera}, obtenido ${obtenido}`);
   }
+  // ---- skills del Personal OS (⚙ Config · Skills, 25/11/2026)
+  {
+    const r = await pedir({ ruta: '/api/config/skills' });
+    let s = []; try { s = JSON.parse(r.d).skills || []; } catch (_) { /* queda vacío y falla abajo */ }
+    const pap = s.find((x) => x.nombre === 'paso-a-produccion');
+    const okLista = r.codigo === 200 && s.length >= 5 && s.every((x) => /^[a-z0-9-]+$/.test(x.nombre));
+    if (!okLista) fallos++;
+    console.log(`${okLista ? 'OK   ' : 'FALLO'} skills: lista las del Personal OS (${s.length})`);
+    const okAj = !!(pap && pap.ajustes && pap.ajustes.panel === 'paso-produccion' && pap.que_hace && pap.cuando)
+      && s.filter((x) => x.ajustes).length === 1; // control: solo la que declara ajustes
+    if (!okAj) fallos++;
+    console.log(`${okAj ? 'OK   ' : 'FALLO'} skills: paso-a-produccion trae ajustes, qué hace y cuándo; las demás no`);
+    // mapa de presentación (propuesta A, 25/11/2026): grupo de uso, título humano y una línea, en orden de grupo
+    let grupos = []; try { grupos = JSON.parse(r.d).grupos || []; } catch (_) { /* falla abajo */ }
+    const okMeta = !!pap && pap.grupo === 'Requerimientos' && pap.titulo === 'Paso a producción' && !!pap.corto
+      && s.every((x) => grupos.includes(x.grupo) && x.titulo && typeof x.corto === 'string')
+      && s.every((x, i) => i === 0 || grupos.indexOf(s[i - 1].grupo) <= grupos.indexOf(x.grupo));
+    if (!okMeta) fallos++;
+    console.log(`${okMeta ? 'OK   ' : 'FALLO'} skills: cada una trae grupo, título y línea, ordenadas por grupo`);
+    // control negativo: una skill que no está en el mapa cae en «Otras» con el título desde su slug
+    const desconocidas = s.filter((x) => x.grupo === 'Otras');
+    const okOtras = desconocidas.every((x) => x.titulo.toLowerCase() === x.nombre.replace(/-/g, ' '));
+    if (!okOtras) fallos++;
+    console.log(`${okOtras ? 'OK   ' : 'FALLO'} skills: las que no están en el mapa van a «Otras» con su slug legible (${desconocidas.length})`);
+    // agentes: la descripción también llega partida (qué hace / cuándo)
+    const ra = await pedir({ ruta: '/api/config/agentes' });
+    let ags = []; try { ags = JSON.parse(ra.d).agentes || []; } catch (_) { /* falla abajo */ }
+    const okAg = ra.codigo === 200 && ags.length > 0 && ags.every((x) => typeof x.que_hace === 'string' && typeof x.cuando === 'string')
+      && ags.every((x) => !/\s(?:Úsal[ao]|Use this)\b/i.test(x.que_hace));
+    if (!okAg) fallos++;
+    console.log(`${okAg ? 'OK   ' : 'FALLO'} agentes: «qué hace» sin la cola de «Úsalo…» y «cuándo» aparte (${ags.length})`);
+  }
+  // ---- permisos · bases de datos (25/11/2026; escribe SOLO en carpetas temporales)
+  {
+    const v = (nombre, ok, det) => { if (!ok) fallos++; console.log(`${ok ? 'OK   ' : 'FALLO'} bd: ${nombre}${det ? ` (${det})` : ''}`); };
+    const post = (acc, obj, cab) => pedir({ metodo: 'POST', ruta: `/api/config/bd/${acc}`, cab: cab || T(), cuerpo: JSON.stringify(obj) });
+    const g = await pedir({ ruta: '/api/config/bd' });
+    const d = JSON.parse(g.d);
+    const c = d.conexiones[0] || {};
+    v('siembra solo los archivos con servidor', d.conexiones.length === 1 && c.nombre === 'bd-uno' && c.password_guardada === true, String(d.conexiones.length));
+    v('GET nunca trae la contraseña', !g.d.includes(CLAVE) && !('password' in c));
+    v('permisos por defecto (leer=preguntar, resto bloqueado)', c.permisos && c.permisos.leer === 'preguntar' && c.permisos.borrar === 'bloqueado');
+    v('revelar sin token: 403', (await post('revelar', { id: c.id }, Object.assign({ Origin: O }, J))).codigo === 403);
+    const rv = JSON.parse((await post('revelar', { id: c.id })).d);
+    v('revelar con token trae la contraseña', rv.ok && rv.password === CLAVE);
+    v('acción desconocida: 400', (await post('guardar', { id: c.id, nombre: 'x', permisos: { dropear: 'automatico' } })).codigo === 400);
+    v('modo desconocido: 400', (await post('guardar', { id: c.id, nombre: 'x', permisos: { leer: 'siempre' } })).codigo === 400);
+    v('etiqueta inexistente: 400', (await post('guardar', { id: c.id, nombre: 'x', etiquetas: ['inventada'] })).codigo === 400);
+    v('crear etiqueta propia', JSON.parse((await post('etiqueta', { etiqueta: 'reportes' })).d).ok === true);
+    const r1 = await post('guardar', { id: c.id, nombre: 'Base de ejemplo', motor: 'sqlserver', etiquetas: ['test', 'reportes'], password: '',
+      permisos: { leer: 'automatico', crear: 'preguntar', actualizar: 'automatico' } });
+    const f1 = JSON.parse(fs.readFileSync(BD_ARCH, 'utf8').replace(/^﻿/, ''));
+    v('guardar sin contraseña conserva la existente', r1.codigo === 200 && f1.password === CLAVE);
+    v('campos ajenos intactos', f1.ambiente === 'pruebas' && f1._comentario === 'ejemplo');
+    v('sincroniza los campos heredados', f1.modo_lectura === 'automatico' && f1.modo_escritura === 'supervisado' && f1.permisos.actualizar === 'automatico');
+    const crudo = fs.readFileSync(BD_ARCH, 'utf8');
+    v('conserva BOM y CRLF', crudo.startsWith('﻿') && crudo.includes('\r\n') && !/[^\r]\n/.test(crudo));
+    v('respaldo .antes-consola', fs.existsSync(BD_ARCH + '.antes-consola'));
+    await post('guardar', { id: c.id, nombre: 'Base de ejemplo', password: 'NUEVA-' + CLAVE });
+    v('guardar con contraseña la reemplaza', JSON.parse(fs.readFileSync(BD_ARCH, 'utf8').replace(/^﻿/, '')).password === 'NUEVA-' + CLAVE);
+    const g2 = await pedir({ ruta: '/api/config/bd' });
+    v('GET sigue sin contraseñas tras guardar', !g2.d.includes(CLAVE));
+    const rn = JSON.parse((await post('guardar', { nombre: 'Nueva Conexión', motor: 'postgresql', servidor: 's', usuario: 'u', password: 'p1', catalogos: ['c'] })).d);
+    const nueva = path.join(BD_DIR, 'conexiones', `${rn.id}.json`);
+    v('crea una conexión nueva en su carpeta', rn.ok && fs.existsSync(nueva), rn.id);
+    v('quitar: respalda y saca del registro', JSON.parse((await post('quitar', { id: rn.id })).d).ok && !fs.existsSync(nueva)
+      && fs.readdirSync(path.join(BD_DIR, '_papelera-conexiones')).some((f) => f.startsWith(rn.id)));
+    await post('quitar', { id: c.id });
+    v('quitar una descubierta no borra su archivo', fs.existsSync(BD_ARCH));
+    v('revelar de algo ya quitado: 400', (await post('revelar', { id: c.id })).codigo === 400);
+  }
   // ---- paso a producción: qué se genera (escribe SOLO en la copia temporal)
   const PP = '/api/config/paso-produccion';
   const leerPP = async () => JSON.parse((await pedir({ ruta: PP })).d);
@@ -116,6 +201,11 @@ function sinOmitir(buf) {
   const hijo = g0.entregables.find((e) => e.con && ids.includes(e.con));
   const libre = g0.entregables.find((e) => !e.con && (!hijo || e.id !== hijo.con)) || g0.entregables[0];
   ver('pp: lee los entregables del bloque', g0.seccion && ids.length > 0 && !ids.includes('no-es-de-paso') && !ids.includes('cliente'), ids.join(','));
+  if (jF < 0) {   // solo con el yaml sintético: `corto` opcional (positivo y negativo) y el «con:» dentro del nombre no cuenta
+    const com = g0.entregables.find((e) => e.id === 'comunicado'), fun = g0.entregables.find((e) => e.id === 'funcional');
+    n++; ver('pp: lee `corto` y lo deja null si falta', !!com && com.corto === 'Comunicado' && com.con === null && !!fun && fun.corto === null, JSON.stringify(com));
+    n++; ver('pp: trae la fecha del archivo', typeof g0.actualizado === 'string' && !isNaN(Date.parse(g0.actualizado)));
+  }
   n++; ver('pp: POST sin token', (await postPP([libre.id], Object.assign({ Origin: O }, J))).codigo === 403);
   n++; ver('pp: POST con Origin ajeno', (await postPP([libre.id], T({ Origin: 'https://evil.example' }))).codigo === 403);
   n++; ver('pp: id desconocido rechazado', (await postPP(['rm-rf'])).codigo === 400 && fs.readFileSync(FUENTES).equals(ORIGINAL));
@@ -142,6 +232,6 @@ function sinOmitir(buf) {
   srv.kill();
   try { fs.unlinkSync(path.join(OS_HOME, `_servidor-${P}.json`)); } catch (_) { /* ya no estaba */ }
   try { fs.rmSync(TMP, { recursive: true, force: true }); } catch (_) { /* temporal */ }
-  console.log(fallos ? `\n${fallos} FALLO(S)` : `\nLos ${casos.length + n} controles pasan.`);
+  console.log(fallos ? `\n${fallos} FALLO(S)` : `\nLos ${totalControles} controles pasan.`);
   process.exit(fallos ? 1 : 0);
 })();

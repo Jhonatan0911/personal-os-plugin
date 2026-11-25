@@ -328,6 +328,14 @@
   .stamp-btn{text-transform:none}
   @media (max-width:680px){ .cx-ctl li button{min-height:44px} }
   .orden{flex:1 1 100%;order:3;font-size:12px;color:var(--muted)}
+  /* aviso de datos viejos en el pie: una línea, sin mayúsculas espaciadas, ámbar sobrio */
+  #stamp .stamp-viejo{color:var(--r1);font-weight:500;text-transform:none;letter-spacing:.01em}
+  #stamp .stamp-viejo .cmd{color:var(--muted-2);font-weight:400}
+  @media (max-width:900px){ #stamp .stamp-viejo .cmd{display:none} }
+  @media (max-width:600px){ footer{flex-wrap:nowrap;white-space:nowrap} #stamp{min-width:0;overflow:hidden;text-overflow:ellipsis} }
+
+  /* pie en una sola línea con lo esencial (25/11/2026): sin la frase de «vista local» hasta 1100 px; el sello se recorta */
+  @media (max-width:1100px){ footer{flex-wrap:nowrap;white-space:nowrap;overflow:hidden;align-items:center} footer .live{display:none} footer #stamp{min-width:0;overflow:hidden;text-overflow:ellipsis;margin-left:auto} }
 </style>
 </head>
 <body>
@@ -1084,7 +1092,7 @@
   }else av.hidden=true;
   document.getElementById('stamp').innerHTML=
     (E.fecha!==hoy
-      ? '<b style="color:#ff9a52">⚠ DATOS DEL '+esc(E.fecha)+', NO DE HOY ('+hoy+') — corre '+esc(CMD)+'</b>'
+      ? '<b class="stamp-viejo" title="Para ponerlos al día corre: '+esc(CMD)+'">⚠ Datos del '+esc(E.fecha)+', no de hoy<span class="cmd"> · corre '+esc(CMD)+'</span></b>'
       : '<span class="larga">hoy<span class="f"> · '+esc(E.fecha)+'</span> · </span>'+(E.generado?'a las '+new Date(E.generado).toLocaleTimeString('es',{hour:'2-digit',minute:'2-digit'}):''))
     + hito
     + (avisos.length ? ' · <button type="button" class="stamp-btn" id="stamp-av">'+avisos.length+(avisos.length===1?' aviso':' avisos')+'</button>' : '');
