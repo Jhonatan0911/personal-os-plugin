@@ -513,6 +513,111 @@ function borrarAgente(b) {
   return { ok: true, mensaje: `«${nombre}» movido a la papelera (${PAPELERA.replace(/\\/g, '/')})` };
 }
 
+// ------------------------------------------------------------------ paso a producción: qué se genera
+
+/**
+ * fuentes.yaml del usuario: --fuentes <ruta> (pruebas) > el --config-dir de servidor.consola_args (instalación
+ * suelta) > <stateDir>/config. Nunca una ruta fija.
+ */
+function rutaFuentes() {
+  const forzado = C.arg('--fuentes', null);
+  if (forzado) return path.resolve(forzado);
+  const a = (C.config().servidor || {}).consola_args || [];
+  const i = a.indexOf('--config-dir');
+  const dir = i > -1 && a[i + 1] ? a[i + 1] : (STATE ? path.join(STATE, 'config') : null);
+  return dir ? path.join(path.resolve(dir), 'fuentes.yaml') : null;
+}
+
+const sangria = (l) => (l.match(/^[ \t]*/) || [''])[0].length;
+const esVacia = (l) => /^\s*(#.*)?$/.test(l);
+
+/**
+ * Lee el bloque `paso_produccion:` sin parser YAML (Node puro): entregables (id, nombre, con) y la línea `omitir:`.
+ * Acepta entradas en flujo de una línea (`- { id: x, nombre: "…", con: y }`) o en bloque (`- id: x` + claves debajo).
+ */
+function leerPasoProduccion(texto) {
+  const lineas = texto.replace(/^﻿/, '').split(/\r?\n/);
+  const ini = lineas.findIndex((l) => /^paso_produccion:\s*(#.*)?$/.test(l));
+  if (ini < 0) return { ini: -1, lineas, entregables: [], omitir: [], lineaOmitir: -1, sangriaBloque: 2 };
+  let fin = lineas.length;
+  for (let k = ini + 1; k < lineas.length; k++) if (lineas[k] !== '' && /^\S/.test(lineas[k])) { fin = k; break; }
+  let sangriaBloque = null, lineaOmitir = -1, omitir = [], iEnt = -1;
+  for (let k = ini + 1; k < fin; k++) {
+    if (esVacia(lineas[k])) continue;
+    if (sangriaBloque === null) sangriaBloque = sangria(lineas[k]);
+    if (sangria(lineas[k]) !== sangriaBloque) continue;
+    const mo = lineas[k].match(/^\s+omitir:\s*\[(.*)\]\s*(#.*)?$/);
+    if (mo) { lineaOmitir = k; omitir = [...mo[1].matchAll(/"([^"]*)"|'([^']*)'|([\w.-]+)/g)].map((x) => x[1] ?? x[2] ?? x[3]).filter(Boolean); }
+    if (/^\s+entregables:\s*(#.*)?$/.test(lineas[k])) iEnt = k;
+  }
+  const entregables = [];
+  if (iEnt > -1) {
+    const base = sangria(lineas[iEnt]);
+    let actual = null;
+    for (let k = iEnt + 1; k < fin; k++) {
+      const l = lineas[k];
+      if (esVacia(l)) continue;
+      if (sangria(l) <= base && !/^\s*-/.test(l)) break;              // siguiente clave del bloque (aprobaciones…)
+      const md = l.match(/^\s*-\s+(?:\{\s*)?id:\s*["']?([\w.-]+)/);
+      if (md) { actual = { id: md[1], texto: l }; entregables.push(actual); }
+      else if (actual && /^\s*-/.test(l) && sangria(l) <= base + 2) actual = null;
+      else if (actual) actual.texto += '\n' + l;
+    }
+  }
+  const campo = (t, c) => {
+    // Un «con:» dentro del texto de otra clave (p. ej. el nombre) no cuenta: se vacían los textos ajenos.
+    if (c !== 'nombre') t = t.replace(new RegExp(`(\\b(?!${c}\\b)[\\w-]+:\\s*)"(?:[^"\\\\]|\\\\.)*"`, 'g'), '$1""');
+    const m = t.match(new RegExp(`(?:^|[\\s{,])${c}:\\s*(?:"((?:[^"\\\\]|\\\\.)*)"|'([^']*)'|([^,}\\n#]+))`));
+    return m ? (m[1] ?? m[2] ?? m[3] ?? '').trim() : null;
+  };
+  return {
+    ini, fin, lineas, lineaOmitir, omitir, sangriaBloque: sangriaBloque ?? 2,
+    entregables: entregables.map((e) => ({ id: e.id, nombre: campo(e.texto, 'nombre') || e.id, con: campo(e.texto, 'con') || null })),
+  };
+}
+
+function pasoProduccion() {
+  const ruta = rutaFuentes();
+  if (!ruta || !fs.existsSync(ruta)) return { ruta_existe: false, seccion: false, entregables: [] };
+  const p = leerPasoProduccion(fs.readFileSync(ruta, 'utf8'));
+  const om = new Set(p.omitir);
+  return {
+    ruta_existe: true, seccion: p.ini > -1,
+    entregables: p.entregables.map((e) => ({ ...e, omitido: om.has(e.id), efectivo_omitido: om.has(e.id) || (!!e.con && om.has(e.con)) })),
+  };
+}
+
+/** Reescribe SOLO la línea `omitir:` del bloque (o la crea tras `paso_produccion:`). Lista cerrada: ids existentes. */
+function guardarPasoProduccion(b) {
+  const ruta = rutaFuentes();
+  if (!ruta || !fs.existsSync(ruta)) return { ok: false, mensaje: 'no encuentro fuentes.yaml' };
+  if (!Array.isArray(b.omitir) || b.omitir.length > 100 || !b.omitir.every((x) => typeof x === 'string')) return { ok: false, mensaje: 'omitir debe ser una lista de ids' };
+  const crudo = fs.readFileSync(ruta, 'utf8');
+  const p = leerPasoProduccion(crudo);
+  if (p.ini < 0) return { ok: false, mensaje: 'fuentes.yaml no tiene la sección paso_produccion' };
+  const ids = p.entregables.map((e) => e.id);
+  const malos = b.omitir.filter((x) => !ids.includes(x));
+  if (malos.length) return { ok: false, mensaje: `entregable desconocido: ${malos.join(', ')}` };
+  const lista = ids.filter((x) => b.omitir.includes(x));                 // orden de la configuración, sin duplicados
+  const eol = crudo.includes('\r\n') ? '\r\n' : '\n';
+  const bom = crudo.startsWith('﻿') ? '﻿' : '';
+  const lineas = p.lineas.slice();
+  const valor = `omitir: [${lista.map((x) => JSON.stringify(x)).join(', ')}]`;
+  if (p.lineaOmitir > -1) {
+    const vieja = lineas[p.lineaOmitir];
+    const coment = (vieja.match(/\]\s*(#.*)$/) || [])[1];
+    lineas[p.lineaOmitir] = vieja.match(/^\s*/)[0] + valor + (coment ? '   ' + coment : '');
+  } else {
+    lineas.splice(p.ini + 1, 0, ' '.repeat(p.sangriaBloque) + valor + '   # entregables que no se generan (⚙ Config de la consola)');
+  }
+  const respaldo = ruta + '.antes-omitir';
+  if (!fs.existsSync(respaldo)) fs.copyFileSync(ruta, respaldo);
+  const tmp = ruta + '.tmp-omitir';
+  fs.writeFileSync(tmp, bom + lineas.join(eol), 'utf8');
+  fs.renameSync(tmp, ruta);
+  return { ok: true, mensaje: lista.length ? `no se generan: ${lista.join(', ')}` : 'se genera todo', omitir: lista };
+}
+
 // ------------------------------------------------------------------ acciones (lista cerrada)
 
 /** Las del usuario: `config.json → servidor.acciones`. {id: {etiqueta, ayuda, confirmar, cmd: [...], esperar}} */
@@ -655,6 +760,9 @@ const servidor = http.createServer((req, res) => {
     if (ruta === '/api/config/agentes') {
       try { return json(200, listarAgentes()); } catch (e) { return json(500, { error: String(e && e.message) }); }
     }
+    if (ruta === '/api/config/paso-produccion') {
+      try { return json(200, pasoProduccion()); } catch (e) { return json(500, { error: String(e && e.message) }); }
+    }
     if (ruta === '/api/indicadores') {
       indicadores().then((d) => json(200, d), (e) => json(500, { error: String(e && e.message) }));
       return;
@@ -694,6 +802,10 @@ const servidor = http.createServer((req, res) => {
     if (ruta === '/api/log') {
       try { fs.mkdirSync(path.join(STATE, '_runtime'), { recursive: true }); fs.appendFileSync(path.join(STATE, '_runtime', 'app-errores.log'), `${new Date().toISOString()} ${crudo.slice(0, 2000)}\n`); } catch (_) { /* nunca tumbar el servidor por un log */ }
       return enviar(204, 'text/plain', '');
+    }
+    if (ruta === '/api/config/paso-produccion') {
+      try { const r = guardarPasoProduccion(cuerpo); return json(r.ok ? 200 : 400, r); }
+      catch (e) { return json(500, { ok: false, mensaje: String(e && e.message).slice(0, 300) }); }
     }
     const m = ruta.match(/^\/api\/accion\/([a-z0-9-]{2,40})$/);
     if (!m) return json(404, { ok: false, mensaje: 'ruta desconocida' });

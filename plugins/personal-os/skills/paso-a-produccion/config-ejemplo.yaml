@@ -1,39 +1,41 @@
 # Sección `paso_produccion` para <stateDir>/config/fuentes.yaml.
-# Cada entregable está listo si alguno de sus `campos` del expediente tiene contenido o si en la carpeta
-# del paquete hay un archivo que coincide con alguno de sus `archivos` (globs). Las aprobaciones se
-# prueban con un archivo de evidencia en <carpeta>/aprobaciones/.
+#
+# Por defecto se GENERA y se EXIGE TODO lo de esta lista: es el paquete completo. Cada persona puede producir
+# menos poniendo ids en `omitir` (o marcando casillas en ⚙ Config de la consola, que escribe esa misma línea).
+# Un entregable con `con: <id>` se omite solo si su padre está omitido (el video va con el comunicado).
+#
+# Un entregable está listo si alguno de sus `campos` del expediente tiene contenido o si en la carpeta del
+# paquete hay un archivo que coincide con sus `archivos` (globs) y cumple su `requiere`:
+#   pdf: true · imagenes: N · contiene: [regex] · evidencia: [globs en evidencias/] · sin_marcadores: true
+#   video: {min_s, max_s, ancho, alto, audio}
+# Las aprobaciones se prueban con un archivo de evidencia en <carpeta>/aprobaciones/ y no se pueden omitir.
 paso_produccion:
   normativa: "<código o nombre de la política que lo exige>"
   aprobador: "<rol o persona a quien se pide la aprobación final>"
-  carpeta: null                       # por defecto <carpeta del expediente>/paso-produccion/
+  carpeta: null                       # por defecto <carpeta del expediente>/paso-produccion/ (en una mesa, <mesa>/final/)
+  omitir: []                          # p. ej. ["video", "guia-datos"]
+  marca: { logo: "<ruta al logo en blanco (PNG)>", color: "#1F2B53", subtitulo: "<Organización> · paso a producción" }
+  marcadores_borrador: ["[Captura", "por definir", "TODO", "PARCIAL", "POR CONFIRMAR", "pendiente:"]
+  # video: lo que no se muestra de cada captura (menú lateral a la izquierda, cabecera arriba) y videos anteriores de referencia
+  video: { recorte: { x: 0, y: 0 }, min_s: 20, max_s: 90, ejemplos: [] }
   entregables:
-    - id: funcional
-      nombre: "Historias de usuario o especificación funcional"
-      campos: [historias]
-      archivos: ["funcional.*"]
-      responsable: "líder técnico"
-    - id: tecnica
-      nombre: "Especificación técnica"
-      campos: [documentacion.tecnica]
-      archivos: ["tecnica.*"]
-      responsable: "líder técnico"
-    - id: impacto
-      nombre: "Análisis de impacto (componentes modificados)"
-      archivos: ["impacto.*"]
-      responsable: "líder técnico"
-    - id: pruebas-funcionales
-      nombre: "Matrices y resultados de pruebas funcionales"
-      campos: [matriz_pruebas]
-      archivos: ["pruebas-funcionales.*"]
-      responsable: "QA o analista"
-    - id: plan-despliegue
-      nombre: "Planificación del despliegue (fecha, hora y asistentes)"
-      archivos: ["plan-despliegue.*"]
-      responsable: "líder técnico"
+    - { id: funcional,           nombre: "Historias de usuario o especificación funcional", campos: [historias, documentacion.funcional], archivos: ["funcional.*"], responsable: "líder técnico", requiere: { pdf: true } }
+    - { id: tecnica,             nombre: "Especificación técnica", campos: [documentacion.tecnica], archivos: ["tecnica.*"], responsable: "líder técnico", requiere: { pdf: true } }
+    - { id: impacto,             nombre: "Análisis de impacto (componentes modificados)", archivos: ["impacto.*"], responsable: "líder técnico", requiere: { pdf: true } }
+    - { id: diagrama-clases,     nombre: "Diagrama de clases", archivos: ["diagrama-clases.*"], responsable: "líder técnico", requiere: { pdf: true } }
+    - { id: modelo-er,           nombre: "Modelo entidad-relación", campos: [documentacion.bd], archivos: ["modelo-er.*"], responsable: "líder técnico", requiere: { pdf: true } }
+    - { id: pruebas-unitarias,   nombre: "Evidencia de pruebas unitarias", archivos: ["pruebas-unitarias.*"], responsable: "desarrollador", requiere: { evidencia: ["pruebas-unitarias-*"] } }
+    - { id: ruta-critica,        nombre: "Matriz y evidencia de pruebas de ruta crítica (lo que rodea al cambio)", archivos: ["ruta-critica.*"], responsable: "desarrollador", requiere: { evidencia: ["ruta-critica-*"] } }
+    - { id: pruebas-funcionales, nombre: "Matrices y resultados de pruebas funcionales", campos: [matriz_pruebas], archivos: ["pruebas-funcionales.*"], responsable: "desarrollador y líder técnico", requiere: { evidencia: ["pruebas-funcionales-*"] } }
+    - { id: qa,                  nombre: "Evidencia de pruebas funcionales de QA", archivos: ["qa.*"], responsable: "QA", requiere: { sin_marcadores: true } }
+    - { id: plan-despliegue,     nombre: "Planificación del despliegue (fecha, hora y asistentes)", archivos: ["plan-despliegue.*"], responsable: "líder técnico", requiere: { pdf: true, contiene: ['\|\s*Fecha\s*\|\s*\**\d{2}/\d{2}/\d{4}', '\|\s*Hora\s*\|\s*\**\d{1,2}:\d{2}', '\|\s*Asistentes\s*\|\s*\**[A-ZÁÉÍÓÚÑa-z]'] } }
+    - { id: apertura,            nombre: "Responsable(s) de la apertura posterior al despliegue", archivos: ["apertura.*", "plan-despliegue.*"], responsable: "líder técnico", requiere: { contiene: ['\|\s*Responsable de la apertura\s*\|\s*\**[A-ZÁÉÍÓÚÑa-z]'] } }
+    - { id: manual-usuario,      nombre: "Manual de usuario final con la marca: qué hay nuevo y cómo se usa", archivos: ["manual-usuario.*"], responsable: "líder técnico", requiere: { pdf: true, imagenes: 3 } }
+    - { id: guia-soporte,        nombre: "Guía para soporte: qué hacer ante cada falla posible del desarrollo nuevo", archivos: ["guia-soporte.*"], responsable: "líder técnico", requiere: { pdf: true } }
+    - { id: guia-datos,          nombre: "Documentación para el equipo de datos: tablas, campos y estados nuevos o cambiados", archivos: ["guia-datos.*"], responsable: "líder técnico", requiere: { pdf: true } }
+    - { id: comunicado,          nombre: "Comunicado de una página con diseño que anuncia la novedad", archivos: ["comunicado.*"], responsable: "líder técnico", requiere: { pdf: true, imagenes: 1 } }
+    - { id: video,               nombre: "Video tutorial con motion graphics (HyperFrames) que acompaña al comunicado", con: comunicado, archivos: ["video-tutorial*.mp4"], responsable: "líder técnico", requiere: { video: { min_s: 20, max_s: 90, ancho: 1920, alto: 1080, audio: true } } }
   aprobaciones:
-    - id: certificacion
-      nombre: "Certificación de que la necesidad quedó cubierta"
-      responsable: "analista o QA"
-    - id: cliente
-      nombre: "Aprobación del cliente"
-      responsable: "analista"
+    - { id: certificacion, nombre: "Certificación de que la necesidad quedó cubierta", responsable: "analista o QA" }
+    - { id: cliente,       nombre: "Aprobación del cliente", responsable: "analista" }
+    - { id: arquitectura,  nombre: "Aprobación de Arquitectura", responsable: "líder técnico" }

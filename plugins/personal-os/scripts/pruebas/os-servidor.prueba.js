@@ -29,8 +29,43 @@ function pedir({ metodo = 'GET', ruta = '/', host = `127.0.0.1:${P}`, cab = {}, 
   });
 }
 
+// fuentes.yaml de prueba: copia temporal (de --fuentes <ruta> si se da, o una sintética). Nunca el real.
+const jF = process.argv.indexOf('--fuentes');
+const TMP = fs.mkdtempSync(path.join(os.tmpdir(), 'os-srv-prueba-'));
+const FUENTES = path.join(TMP, 'fuentes.yaml');
+const SINTETICA = [
+  'proyectos: []',
+  'paso_produccion:',
+  '  normativa: "N-0 · ejemplo"   # comentario',
+  '  carpeta: null',
+  '  entregables:',
+  '    # un comentario dentro de la lista',
+  '    - { id: funcional, nombre: "Especificación funcional: con dos puntos", archivos: ["funcional.*"], responsable: "líder" }',
+  '    - { id: comunicado, nombre: "Comunicado de una página", archivos: ["comunicado.*"] }',
+  '    - { id: video, nombre: "Video tutorial", archivos: ["video*.mp4"], con: comunicado }',
+  '    - id: manual',
+  '      nombre: "Manual de usuario"',
+  '      archivos: ["manual.*"]',
+  '  aprobaciones:',
+  '    - { id: cliente, nombre: "Aprobación del cliente" }',
+  'otra_seccion:',
+  '  omitir: ["no-es-de-paso"]',
+  '',
+].join('\r\n');
+fs.writeFileSync(FUENTES, jF > -1 ? fs.readFileSync(process.argv[jF + 1]) : '﻿' + SINTETICA);
+const ORIGINAL = fs.readFileSync(FUENTES);
+/** El archivo sin las líneas `omitir:` del bloque paso_produccion (la única que el servidor puede tocar). */
+function sinOmitir(buf) {
+  const t = buf.toString('utf8'), eol = t.includes('\r\n') ? '\r\n' : '\n';
+  let dentro = false;
+  return t.split(eol).filter((l) => {
+    if (/^paso_produccion:/.test(l)) dentro = true; else if (/^\S/.test(l)) dentro = false;
+    return !(dentro && /^\s+omitir:\s*\[/.test(l));
+  }).join(eol);
+}
+
 (async () => {
-  const srv = spawn(process.execPath, [SRV, '--puerto', String(P)], { stdio: ['ignore', 'pipe', 'pipe'] });
+  const srv = spawn(process.execPath, [SRV, '--puerto', String(P), '--fuentes', FUENTES], { stdio: ['ignore', 'pipe', 'pipe'] });
   srv.stderr.on('data', (d) => process.stderr.write('[srv] ' + d));
   await new Promise((r) => setTimeout(r, 900));
   const pag = await pedir({ ruta: '/estado/consola.html' });
@@ -70,8 +105,43 @@ function pedir({ metodo = 'GET', ruta = '/', host = `127.0.0.1:${P}`, cab = {}, 
     if (!ok) fallos++;
     console.log(`${ok ? 'OK   ' : 'FALLO'} ${nombre}: esperado ${espera}, obtenido ${obtenido}`);
   }
+  // ---- paso a producción: qué se genera (escribe SOLO en la copia temporal)
+  const PP = '/api/config/paso-produccion';
+  const leerPP = async () => JSON.parse((await pedir({ ruta: PP })).d);
+  const postPP = (omitir, cab) => pedir({ metodo: 'POST', ruta: PP, cab: cab || T(), cuerpo: JSON.stringify({ omitir }) });
+  const ver = (nombre, ok, detalle) => { if (!ok) fallos++; console.log(`${ok ? 'OK   ' : 'FALLO'} ${nombre}${detalle ? ` (${detalle})` : ''}`); return ok; };
+  let n = 0;
+  const g0 = await leerPP(); n++;
+  const ids = g0.entregables.map((e) => e.id);
+  const hijo = g0.entregables.find((e) => e.con && ids.includes(e.con));
+  const libre = g0.entregables.find((e) => !e.con && (!hijo || e.id !== hijo.con)) || g0.entregables[0];
+  ver('pp: lee los entregables del bloque', g0.seccion && ids.length > 0 && !ids.includes('no-es-de-paso') && !ids.includes('cliente'), ids.join(','));
+  n++; ver('pp: POST sin token', (await postPP([libre.id], Object.assign({ Origin: O }, J))).codigo === 403);
+  n++; ver('pp: POST con Origin ajeno', (await postPP([libre.id], T({ Origin: 'https://evil.example' }))).codigo === 403);
+  n++; ver('pp: id desconocido rechazado', (await postPP(['rm-rf'])).codigo === 400 && fs.readFileSync(FUENTES).equals(ORIGINAL));
+  n++; ver('pp: omitir que no es lista', (await postPP('x')).codigo === 400 && fs.readFileSync(FUENTES).equals(ORIGINAL));
+  n++; ver('pp: id de otra sección no cuenta', (await postPP(['no-es-de-paso'])).codigo === 400);
+  n++; const r1 = await postPP([libre.id, libre.id]);
+  ver('pp: crear omitir', r1.codigo === 200 && JSON.parse(r1.d).omitir.join() === libre.id);
+  n++; ver('pp: el resto del archivo intacto byte a byte', sinOmitir(fs.readFileSync(FUENTES)) === sinOmitir(ORIGINAL));
+  n++; ver('pp: respaldo .antes-omitir igual al original', fs.existsSync(FUENTES + '.antes-omitir') && fs.readFileSync(FUENTES + '.antes-omitir').equals(ORIGINAL));
+  n++; ver('pp: GET refleja lo omitido', (await leerPP()).entregables.find((e) => e.id === libre.id).omitido === true);
+  if (hijo) {
+    n++; await postPP([hijo.con]);
+    const e = (await leerPP()).entregables.find((x) => x.id === hijo.id);
+    ver(`pp: «${hijo.id}» se omite con su padre «${hijo.con}»`, e.omitido === false && e.efectivo_omitido === true);
+  }
+  n++; const r2 = await postPP([]);
+  ver('pp: quitar (se genera todo)', r2.codigo === 200 && (await leerPP()).entregables.every((e) => !e.omitido));
+  n++; ver('pp: tras quitar, el resto sigue intacto', sinOmitir(fs.readFileSync(FUENTES)) === sinOmitir(ORIGINAL));
+  n++; const bom = ORIGINAL.subarray(0, 3).equals(Buffer.from([0xef, 0xbb, 0xbf]));
+  const ahora = fs.readFileSync(FUENTES);
+  ver('pp: conserva BOM y fin de línea', ahora.subarray(0, 3).equals(Buffer.from([0xef, 0xbb, 0xbf])) === bom
+    && ahora.toString('utf8').includes('\r\n') === ORIGINAL.toString('utf8').includes('\r\n'));
+
   srv.kill();
   try { fs.unlinkSync(path.join(OS_HOME, `_servidor-${P}.json`)); } catch (_) { /* ya no estaba */ }
-  console.log(fallos ? `\n${fallos} FALLO(S)` : `\nLos ${casos.length} controles pasan.`);
+  try { fs.rmSync(TMP, { recursive: true, force: true }); } catch (_) { /* temporal */ }
+  console.log(fallos ? `\n${fallos} FALLO(S)` : `\nLos ${casos.length + n} controles pasan.`);
   process.exit(fallos ? 1 : 0);
 })();

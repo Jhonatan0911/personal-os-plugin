@@ -1,0 +1,11 @@
+{
+  "gancho": ["Llega una *solicitud* nueva", "¿Ya está en el *sistema*?"],
+  "pasos": [
+    {"titulo": ["Búscala por", "*número*"], "captura": "capturas/01-inicio.png",
+     "foco": [700, 340, 1.4], "foco_fin": [1000, 340, 1.4], "clic": [1000, 340], "segundos": 6},
+    {"titulo": ["Créala con", "lo *mínimo*"], "captura": "capturas/02-formulario.png",
+     "foco": [800, 450, 1.2], "segundos": 6}
+  ],
+  "beneficios": ["Busca", "Crea", "Envía"],
+  "cierre": {"producto": "Nombre del módulo", "ruta": "Menú › Opción"}
+}

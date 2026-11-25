@@ -69,6 +69,17 @@
 dialog.osm-dlg{background:var(--panel);color:var(--ink);border:1px solid var(--line-strong);border-radius:16px;padding:20px;max-width:440px}
 dialog.osm-dlg::backdrop{background:rgba(3,6,12,.72)}dialog.osm-dlg h2{margin:0 0 8px;font-size:16px}dialog.osm-dlg p{margin:0 0 16px;color:var(--muted-2);font-size:13.5px}
 @media (max-width:800px){.osm-ag{grid-template-columns:1fr}}
+#view-config .osm-col>*{flex-shrink:0}
+.osm-pp{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,300px),1fr));gap:6px 18px}
+.osm-pp-g{display:flex;flex-direction:column;gap:2px}
+.osm-pp label{display:flex;align-items:flex-start;gap:9px;padding:7px 9px;border-radius:9px;border:1px solid transparent;font-size:13px;line-height:1.35;color:var(--ink);cursor:pointer}
+.osm-pp label:hover{border-color:var(--line)}
+.osm-pp input{accent-color:var(--synapse);width:16px;height:16px;margin:1px 0 0;flex:0 0 auto}
+.osm-pp input:focus-visible{outline:2px solid var(--ink);outline-offset:2px}
+.osm-pp small{display:block;font:11px var(--mono);color:var(--muted);margin-top:2px}
+.osm-pp .hijo{margin-left:22px;border-left:1px solid var(--line-strong);border-radius:0 9px 9px 0}
+.osm-pp label.off{color:var(--muted-2)}.osm-pp label.bloq{opacity:.5;cursor:not-allowed}
+.osm-pp-est{font:12px var(--mono)}.osm-pp-est.ok{color:#3ee08f}.osm-pp-est.error{color:var(--r3)}
 ` }));
 
   // ------------------------------------------------------------ pestañas y vistas (las maneja la consola)
@@ -362,6 +373,70 @@ details.osm-crudo>summary{cursor:pointer;font-family:var(--mono);font-size:10.5p
     el("p", { className: "osm-nota", style: "margin:0", textContent: "Cada agente tiene su ficha (oficio, objetivo, meta y límites), su mascota con el estado real y su memoria de conocimiento y experiencia. Los tuyos se editan aquí; los del Personal OS y los de terceros tienen candado. Claude Code toma los cambios en segundos." }),
     el("div", { className: "osm-ag" }, agLista, agDet)));
   const vacioDet = () => agDet.replaceChildren(el("p", { className: "osm-vacio", textContent: "Elige un agente o crea uno nuevo." }));
+
+  // ------------------------------------------------------------ CONFIG · paso a producción: qué se genera
+  // Una casilla por entregable de `paso_produccion` (fuentes.yaml). Desmarcar = su id entra en `omitir`; por
+  // defecto se genera todo. Un entregable con `con: <padre>` se omite solo con su padre. Guarda al marcar.
+  const pp = { datos: null, reloj: null };
+  const ppCuerpo = el("div", { className: "osm-pp" }, el("p", { className: "osm-vacio", textContent: "Cargando…" }));
+  const ppEst = el("span", { className: "osm-pp-est", role: "status" });
+  ppEst.setAttribute("aria-live", "polite");
+  const ppTit = el("h2", { className: "osm-k", id: "osm-pp-tit", textContent: "Paso a producción · qué se genera", style: "margin:0;font-weight:500" });
+  vConfig.querySelector(".osm-col").append(el("div", { className: "osm-panel", id: "osm-pp-panel", role: "group" },
+    el("div", { className: "osm-pie-f", style: "margin:0 0 6px" }, ppTit, el("span", { className: "esp" }), ppEst),
+    el("p", { className: "osm-nota", style: "margin:0 0 12px", textContent: "Los entregables que arma la skill paso-a-produccion. Por defecto se genera todo; desmarca lo que tú no quieras producir y deja de exigirse en el paquete. Se guarda al marcar." }),
+    ppCuerpo));
+  $("#osm-pp-panel").setAttribute("aria-labelledby", "osm-pp-tit");
+
+  function ppAviso(t, tono) {
+    ppEst.textContent = t; ppEst.className = "osm-pp-est " + (tono || "");
+    clearTimeout(pp.reloj); if (tono === "ok") pp.reloj = setTimeout(() => { ppEst.textContent = ""; }, 2500);
+  }
+  async function ppCargar() {
+    try { pp.datos = await fetch("/api/config/paso-produccion").then((r) => r.json()); }
+    catch (e) { ppCuerpo.replaceChildren(el("p", { className: "osm-err", textContent: "No pude leer la configuración: " + e.message })); return; }
+    ppPintar();
+  }
+  function ppPintar() {
+    const d = pp.datos;
+    if (!d.ruta_existe || !d.seccion || !d.entregables.length) {
+      ppCuerpo.replaceChildren(el("p", { className: "osm-vacio", textContent: !d.ruta_existe ? "No encuentro fuentes.yaml en tu carpeta de configuración." : "fuentes.yaml no tiene la sección paso_produccion con entregables: la skill paso-a-produccion la crea la primera vez que la usas." }));
+      return;
+    }
+    const ids = new Set(d.entregables.map((e) => e.id));
+    const omit = new Set(d.entregables.filter((e) => e.omitido).map((e) => e.id));
+    const casilla = (e, hijo) => {
+      const padreOff = hijo && omit.has(e.con);
+      const inp = el("input", { type: "checkbox", id: "osm-pp-" + e.id, checked: !omit.has(e.id) && !padreOff, disabled: !!padreOff });
+      inp.dataset.id = e.id;
+      const lab = el("label", { htmlFor: inp.id, className: [hijo ? "hijo" : "", padreOff ? "bloq" : "", omit.has(e.id) ? "off" : ""].join(" ").trim() },
+        inp, el("span", {}, e.nombre, el("small", { textContent: padreOff ? `${e.id} · se omite con ${e.con}` : hijo ? `${e.id} · va con ${e.con}` : e.id })));
+      if (padreOff) lab.title = `Se genera junto con «${e.con}»: márcalo para poder elegir este.`;
+      return lab;
+    };
+    const grupos = d.entregables.filter((e) => !e.con || !ids.has(e.con)).map((p) =>
+      el("div", { className: "osm-pp-g" }, casilla(p, false), ...d.entregables.filter((h) => h.con === p.id).map((h) => casilla(h, true))));
+    ppCuerpo.replaceChildren(...grupos);
+  }
+  ppCuerpo.addEventListener("change", async (ev) => {
+    const inp = ev.target.closest("input[data-id]"); if (!inp || !pp.datos) return;
+    const antes = pp.datos.entregables.filter((e) => e.omitido).map((e) => e.id);
+    const omitir = inp.checked ? antes.filter((x) => x !== inp.dataset.id) : [...antes, inp.dataset.id];
+    ppCuerpo.setAttribute("aria-busy", "true"); ppAviso("Guardando…");
+    try {
+      const r = await fetch("/api/config/paso-produccion", { method: "POST", headers: { "Content-Type": "application/json", "X-OS-Token": TOKEN }, body: JSON.stringify({ omitir }) });
+      let j; try { j = await r.json(); } catch (_) { j = { ok: false, mensaje: `respuesta ${r.status}` }; }
+      if (r.status === 403) j.mensaje = "el servidor se reinició: recarga la página (Ctrl+R)";
+      if (!j.ok) throw new Error(j.mensaje || "no se pudo guardar");
+      const set = new Set(j.omitir);
+      for (const e of pp.datos.entregables) e.omitido = set.has(e.id);
+      ppPintar(); ppAviso("Guardado", "ok");
+      const vuelta = $("#osm-pp-" + inp.dataset.id); if (vuelta) vuelta.focus();
+    } catch (e) { inp.checked = !inp.checked; ppAviso(e.message, "error"); }
+    finally { ppCuerpo.removeAttribute("aria-busy"); }
+  });
+  new MutationObserver(() => { if (vConfig.classList.contains("active") && !pp.datos) ppCargar(); }).observe(vConfig, { attributes: true, attributeFilter: ["class"] });
+  if (vConfig.classList.contains("active")) setTimeout(() => { if (!pp.datos) ppCargar(); }, 0);
 
   async function agCargar(sel) {
     try { ag.datos = await fetch("/api/config/agentes").then((r) => r.json()); }

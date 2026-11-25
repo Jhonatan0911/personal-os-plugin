@@ -1,5 +1,18 @@
 # Changelog
 
+## 4.1.0 · El paquete completo, a la medida de cada quien
+
+- **paso-a-produccion genera el paquete completo por defecto.** `config-ejemplo.yaml` trae los 16 entregables (funcional, técnica, impacto, diagramas, pruebas unitarias, ruta crítica, funcionales, QA, plan, apertura, manual, guía de soporte, guía de datos, comunicado y video) y tres aprobaciones. La revisión ya no mira solo el nombre del archivo: `requiere` exige PDF, N capturas, textos con regex, evidencia en `evidencias/` o un MP4 medido con ffprobe, y los marcadores de borrador dejan el entregable 🟡. Dentro de una mesa, el paquete vive en `<mesa>/final/`.
+- **Cada quien elige qué genera.** `paso_produccion.omitir: [ids]` (o `genera: false`) deja un entregable en «⚪ no se genera», sin exigirlo. `con: <id>` lo ata a otro: el video se omite con el comunicado. Un id desconocido en `omitir` se denuncia y no se ignora. Las aprobaciones no se omiten.
+- **⚙ Config · Paso a producción.** Es un panel nuevo en la consola con una casilla por entregable (el video va anidado bajo el comunicado). Guarda al marcar. `GET/POST /api/config/paso-produccion` reescribe solo la línea `omitir:` de `fuentes.yaml`: deja una copia `.antes-omitir`, escribe de forma atómica y conserva el BOM y el CRLF. Lo cubren 14 pruebas nuevas en `os-servidor.prueba.js`.
+- **Comunicado, manual y video con material real.** Hay cinco scripts nuevos:
+  - `capturas.py`: Playwright con un guion; hace login con credenciales de TEST fuera del repo, selecciona sede y menú, y no escribe en la base sin `--permitir-escritura`.
+  - `pdf.py`: PDF con la marca, con Mermaid.
+  - `comunicado.py`: boletín de una página en HTML, PNG y PDF.
+  - `verificar_pdf.py`: revisa páginas, franjas blancas y desborde.
+  - `musica.py`: MusicGen local.
+- **`video.py`: el video tutorial sale de un guion JSON.** El guion lleva gancho, un paso por captura con foco de cámara y clic, beneficios y cierre con logo. El script valida antes de escribir que ningún foco deje ver lo que `video.recorte` oculta (el menú, o la cabecera con el usuario) ni se salga de la captura, que las capturas existan y que dure entre 20 y 90 s. La plantilla `plantillas/video-tutorial/` es neutral (sonidos, package.json y `guion-ejemplo.json`). Los videos anteriores se declaran como referencia en `video.ejemplos`.
+
 ## 4.0.1
 
 - **Vigía de compromisos · alcances traspasados:** un alcance con `estado: traspasado` (más `traspasado_a` y `traspasado_el`) deja de vigilarse como propio (entrega, fuente viva y puntos sin dueño) cuando otro líder lo hereda. Solo siguen sonando, como «HITO TUYO EN UN ALCANCE TRASPASADO», los hitos con fecha que nombran al usuario (`nombreCorto()`), hasta que los cierre o los reasigne en la nota. El resumen cuenta los traspasados aparte. Los expedientes de requerimiento aceptan `traspasado_a` con la misma regla: sus compromisos con el cliente pasan al nuevo líder y de sus cortes solo suenan los que nombran al usuario como responsable.
