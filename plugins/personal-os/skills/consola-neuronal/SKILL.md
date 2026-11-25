@@ -87,11 +87,14 @@ El conmutador **Ambas / Laboral / Personal** filtra grafo, signos vitales, tarje
 4. **Lee los avisos del build y trátalos como trabajo, no como ruido:** cada uno señala un dato que
    falta en la fuente (una nota sin frontmatter, un proyecto que no está en el layout, la bitácora sin
    líneas OS, el layout de ejemplo en uso). Propón la corrección en la nota o en el layout.
-5. **Ábrela en el navegador por defecto** (es local; abrir no es publicar). Si el servidor de la consola
-   unificada responde (`node "<raíz del plugin>/scripts/os-servidor.js" --salud` sale con 0), abre la app,
-   que trae la consola con sus mandos y configuración; si no responde, abre el archivo como siempre:
-   - Windows (PowerShell): `Start-Process "http://127.0.0.1:<puerto>/"` · sin servidor: `Start-Process "<stateDir>\consola.html"`
-   - macOS: `open` · Linux: `xdg-open`, con la misma URL o el mismo archivo.
+5. **Ábrela en el navegador por defecto** (es local; abrir no es publicar) con
+   `node "<raíz del plugin>/scripts/os-servidor.js" --asegurar --abrir`: arranca el servidor de la consola
+   si no corre (o lo reinicia si quedó en una versión vieja del plugin) y abre la app, que trae la consola
+   con Oficina, mandos y ⚙ Config. **Si sale bien, nunca abras el HTML suelto.** Solo si sale con error,
+   abre el archivo y di por qué no arrancó:
+   - Windows (PowerShell): `Start-Process "<stateDir>\consola.html"` · macOS: `open` · Linux: `xdg-open`.
+   Si la salida dice «Arranque al iniciar Windows: NO instalado», ofrece una vez en el modal
+   `os-servidor.js --instalar-tarea` (deja un lanzador en la carpeta del OS que sobrevive a las actualizaciones).
    El puerto sale de `config.json → servidor.puerto` (7318 por defecto). La app se abre como una pestaña más
    del navegador, nunca como ventana aparte.
 6. **Cierra en 2–3 líneas** con qué cambió (ítems nuevos o cerrados, cambio de #1, sinapsis nuevas) y

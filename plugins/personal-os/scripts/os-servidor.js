@@ -65,6 +65,57 @@ function salud(cb) {
   req.on('error', (e) => cb(false, e.code || e.message));
 }
 
+/** -1, 0 o 1 al comparar «4.2.1» con «4.10.0» número a número. */
+function compararVersion(a, b) {
+  const x = String(a).split('.').map((n) => parseInt(n, 10) || 0); const y = String(b).split('.').map((n) => parseInt(n, 10) || 0);
+  for (let i = 0; i < Math.max(x.length, y.length); i++) { if ((x[i] || 0) !== (y[i] || 0)) return (x[i] || 0) < (y[i] || 0) ? -1 : 1; }
+  return 0;
+}
+const LNK_INICIO = path.join(process.env.APPDATA || '', 'Microsoft', 'Windows', 'Start Menu', 'Programs', 'Startup', `${TAREA}.lnk`);
+function abrirNavegador(url) {
+  if (process.platform === 'win32') execFile('cmd', ['/c', 'start', '', url], { windowsHide: true }, () => {});
+  else execFile(process.platform === 'darwin' ? 'open' : 'xdg-open', [url], () => {});
+}
+
+// --asegurar (4.2.2): lo que usa /consola. Deja el servidor corriendo con ESTA versión y, con --abrir, abre la app.
+// Antes /consola solo miraba si respondía y, si no, abría el HTML suelto: quien instalaba el plugin nunca veía
+// la Oficina ni ⚙ Config, porque nadie arrancaba el servidor (en el equipo del autor lo arrancaba Inicio).
+//   · no corre → lo lanza en segundo plano (desacoplado, sin ventana) y espera a que responda;
+//   · corre una versión MÁS VIEJA (se actualizó el plugin) → lo detiene y lanza esta;
+//   · corre esta o una más nueva → no lo toca.
+// Sale con 0 si al final responde; con 1 si no (y /consola abre el HTML suelto diciendo por qué).
+if (process.argv.includes('--asegurar')) {
+  const url = `http://127.0.0.1:${PUERTO}/`;
+  const lanzar = () => {
+    const p = spawn(NODE, [__filename, '--puerto', String(PUERTO)], { cwd: path.dirname(__filename), detached: true, stdio: 'ignore', windowsHide: true });
+    p.unref();
+  };
+  const esperar = (vivo, n, cb) => salud((ok, d) => (ok === vivo || n <= 0 ? cb(ok, d) : setTimeout(() => esperar(vivo, n - 1, cb), 250)));
+  const terminar = (ok, d, que) => {
+    let info = {}; try { info = JSON.parse(d); } catch (_) { /* texto de error */ }
+    if (ok) {
+      console.log(`${que}: Personal OS ${info.version || '?'} en ${url}`);
+      if (process.platform === 'win32') console.log(`Arranque al iniciar Windows: ${fs.existsSync(LNK_INICIO) ? 'instalado' : 'NO instalado (node os-servidor.js --instalar-tarea)'}`);
+      if (process.argv.includes('--abrir')) abrirNavegador(url);
+      setTimeout(() => process.exit(0), 300);
+    } else {
+      console.error(`✖ El servidor no respondió en ${url} (${d}). Si el puerto ${PUERTO} lo usa otro programa, cambia config.json → servidor.puerto.`);
+      process.exit(1);
+    }
+  };
+  salud((ok, d) => {
+    let vivo = null; try { vivo = JSON.parse(d); } catch (_) { /* no es el nuestro o no responde */ }
+    if (ok && vivo && vivo.version && VERSION !== '?' && compararVersion(vivo.version, VERSION) < 0 && vivo.pid) {
+      try { process.kill(vivo.pid); } catch (_) { /* ya no estaba */ }
+      return esperar(false, 20, () => { lanzar(); esperar(true, 40, (ok2, d2) => terminar(ok2, d2, `Actualizado de ${vivo.version} a ${VERSION}`)); });
+    }
+    if (ok) return terminar(true, d, 'Ya corría');
+    lanzar();
+    esperar(true, 40, (ok2, d2) => terminar(ok2, d2, 'Arrancado'));
+  });
+  return;
+}
+
 if (process.argv.includes('--salud')) {
   salud((ok, d) => { console.log(ok ? `vivo en ${PUERTO}: ${d}` : `no responde en ${PUERTO} (${d})`); process.exit(ok ? 0 : 1); });
   return;
@@ -101,10 +152,36 @@ if (process.argv.includes('--instalar-tarea') || process.argv.includes('--quitar
     return;
   }
   const q = (s) => String(s).replace(/'/g, "''");
+  // El acceso apunta a un lanzador estable en <OS_HOME>, no a esta carpeta: instalado como plugin, cada versión
+  // vive en su propia carpeta de la caché y al actualizar la vieja puede desaparecer (el servidor dejaría de
+  // arrancar en silencio). El lanzador busca en cada arranque la versión instalada en installed_plugins.json.
+  const lanzador = path.join(C.OS_HOME, 'arrancar-servidor.js');
+  const enCache = /[\\/]plugins[\\/]cache[\\/]/i.test(__filename);
+  const js = [
+    '// Generado por os-servidor.js --instalar-tarea. Arranca el servidor de la consola del Personal OS.',
+    "'use strict';",
+    "const fs = require('fs'); const path = require('path'); const os = require('os');",
+    `let destino = ${JSON.stringify(__filename)};`,
+    enCache ? [
+      'try {',
+      "  const d = JSON.parse(fs.readFileSync(path.join(os.homedir(), '.claude', 'plugins', 'installed_plugins.json'), 'utf8').replace(/^\\uFEFF/, ''));",
+      "  const k = Object.keys(d.plugins || {}).find((x) => x.startsWith('personal-os@'));",
+      "  const filas = (k && d.plugins[k]) || [];",
+      "  const e = filas.find((x) => x.scope === 'user') || filas[0];",
+      "  const c = e && path.join(e.installPath, 'scripts', 'os-servidor.js');",
+      '  if (c && fs.existsSync(c)) destino = c;',
+      '} catch (_) { /* sin registro: la ruta de cuando se instaló */ }',
+    ].join('\n') : '// Instalación suelta: la ruta es fija.',
+    "process.chdir(path.dirname(destino));",
+    'require(destino);',
+    '',
+  ].join('\n');
+  try { fs.mkdirSync(C.OS_HOME, { recursive: true }); fs.writeFileSync(lanzador, js, 'utf8'); }
+  catch (e) { console.error(`✖ no se pudo escribir el lanzador ${lanzador}: ${e.message}`); process.exit(1); }
   const ps = `$s=(New-Object -ComObject WScript.Shell).CreateShortcut('${q(lnk)}');`
     + `$s.TargetPath='${q(path.join(process.env.SystemRoot || 'C:\\Windows', 'System32', 'conhost.exe'))}';`
-    + `$s.Arguments='--headless "${q(NODE)}" "${q(__filename)}" --puerto ${PUERTO}';`
-    + `$s.WorkingDirectory='${q(path.dirname(__filename))}';$s.WindowStyle=7;$s.Description='Personal OS: servidor de la consola (solo 127.0.0.1)';$s.Save()`;
+    + `$s.Arguments='--headless "${q(NODE)}" "${q(lanzador)}" --puerto ${PUERTO}';`
+    + `$s.WorkingDirectory='${q(C.OS_HOME)}';$s.WindowStyle=7;$s.Description='Personal OS: servidor de la consola (solo 127.0.0.1)';$s.Save()`;
   execFile('powershell', ['-NoProfile', '-NonInteractive', '-Command', ps], { windowsHide: true }, (e, out, err) => {
     if (e || !fs.existsSync(lnk)) { console.error(`✖ no se pudo crear el arranque: ${(err || (e && e.message) || 'el acceso directo no quedó').trim()}`); process.exit(1); }
     console.log(`Arranque instalado: ${lnk} (oculto al iniciar sesión, puerto ${PUERTO}).`);

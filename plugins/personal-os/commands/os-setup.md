@@ -37,12 +37,18 @@ recomendada primero; si es abierta, el usuario escribe en «Other»). Nada se pi
 6. **Búsqueda en todas las fuentes** (opcional): pregunta si tiene una carpeta de documentos del
    equipo (acuerdos, actas, políticas) o una carpeta sincronizada con PDF/Office; regístrala en
    `config.json → busqueda.fuentes` / `busqueda.binarios` para que `os-buscar.js` la barra.
-7. **(Opcional · solo Windows) Recordatorios automáticos.** Pregunta si quiere recordatorios L–V:
+7. **Servidor de la consola** (sin él, `/consola` es solo un HTML suelto, sin Oficina ni ⚙ Config). Corre
+   `node "<raíz del plugin>/scripts/os-servidor.js" --asegurar` y comprueba que diga «Arrancado» o «Ya corría».
+   En Windows, pregunta en el modal si quiere que arranque solo al iniciar sesión y, si acepta, corre
+   `node "<raíz del plugin>/scripts/os-servidor.js" --instalar-tarea` (un acceso en la carpeta Inicio, sin
+   administrador, que sobrevive a las actualizaciones del plugin; se quita con `--quitar-tarea`). Escucha solo en
+   127.0.0.1. En macOS/Linux, `/consola` lo arranca cuando se necesita.
+8. **(Opcional · solo Windows) Recordatorios automáticos.** Pregunta si quiere recordatorios L–V:
    8:00 (brief matutino que lanza Claude, regenera el tablero y lo abre) y 17:00 (recordatorio de
    cierre). Si acepta: `python "<raíz del plugin>/scripts/reminders/setup_reminders.py"`
    (`--uninstall` para quitarlos, `--status` para verlos). Límites: corre solo con la sesión de
    Windows iniciada; lanzar Claude consume tokens; la entrega es local. En macOS/Linux aún no está
    soportado: sugiere un recordatorio recurrente manual.
-8. Cierra en 3 líneas: que conecte los MCP de Atlassian y Microsoft 365 si no lo ha hecho, que su
+9. Cierra en 3 líneas: que conecte los MCP de Atlassian y Microsoft 365 si no lo ha hecho, que su
    estado es privado (no se comparte ni viaja con el plugin) y que arranque con **"brief"**. NO
    siembres datos de clientes: cada quien los trae de su propio Jira.

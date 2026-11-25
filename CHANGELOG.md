@@ -1,5 +1,11 @@
 # Changelog
 
+## 4.2.2 · /consola abre la app también en equipos nuevos
+
+- **`/consola` arranca el servidor si no corre.** Hasta ahora `/consola` solo abría la app si el servidor de la consola ya estaba vivo; si no, abría el `consola.html` suelto, sin Oficina ni ⚙ Config. En el equipo del autor el servidor arrancaba con Windows, pero nadie lo instalaba en los demás, así que quien instalaba el plugin solo veía el HTML. Lo reportaron las primeras personas que lo probaron. Ahora `/consola` corre `os-servidor.js --asegurar --abrir`: si el servidor no corre, lo lanza en segundo plano y espera a que responda; si corre una versión más vieja del plugin, lo reinicia con la nueva, y si corre la misma o una más nueva, no lo toca. Después abre la app en una pestaña. El HTML suelto queda solo como respaldo si el servidor no arranca, y se dice por qué.
+- **El arranque con Windows sobrevive a las actualizaciones.** `--instalar-tarea` ya no apunta a la carpeta de la versión instalada, que al actualizar puede desaparecer y dejar el servidor sin arrancar en silencio. Ahora apunta a un lanzador estable, `<OS_HOME>/arrancar-servidor.js`, que en cada arranque busca en `installed_plugins.json` la versión instalada. Se probó en una caché simulada: con la carpeta original borrada, el lanzador levantó la versión nueva. También se probó que una copia más vieja no reemplaza a la que corre y una más nueva sí.
+- **`/os-setup` deja el servidor listo.** Un paso nuevo lo arranca y, en Windows, ofrece instalar el arranque al iniciar sesión.
+
 ## 4.2.1 · Un solo hook por prompt: se acabaron los «hook timed out»
 
 - **`prompt-hook.js` reemplaza a los cuatro hooks de `UserPromptSubmit`.** Antes, la bitácora, el correo, las reuniones y los hitos arrancaban cada uno su propio node en cada prompt. Claude Code los lanza en paralelo junto con los hooks de otros plugins y, con el antivirus revisando cada arranque, se pasaban de sus 3-5 s: el aviso se perdía y, si el caído era la bitácora, el prompt quedaba sin registrar sin que nadie lo notara. Lo reportaron varias personas que prueban el plugin. Ahora un solo node lee el evento una vez y corre todo en proceso: primero la bitácora, después correo, reunión e hitos. Con datos reales tarda unos 0,6 s y el timeout queda en 15 s.
