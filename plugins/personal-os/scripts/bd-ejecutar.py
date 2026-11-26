@@ -30,6 +30,9 @@ if hasattr(sys.stdout, "reconfigure"):
     sys.stdout.reconfigure(encoding="utf-8", errors="replace")
     sys.stderr.reconfigure(encoding="utf-8", errors="replace")
 
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), "lib"))
+import credenciales  # noqa: E402  (almacén de credenciales del sistema)
+
 OS_HOME = os.path.abspath(os.environ.get("PERSONAL_OS_HOME") or os.path.join(os.path.expanduser("~"), ".claude", "personal-os"))
 MODOS = ("bloqueado", "preguntar", "automatico")
 ESCRITURA = ("crear", "actualizar", "borrar", "estructura", "ejecutar")
@@ -203,8 +206,14 @@ def conectar(p):
     driver = next((x for x in ("ODBC Driver 18 for SQL Server", "ODBC Driver 17 for SQL Server", "SQL Server") if x in disponibles), None)
     if not driver:
         raise Alto("no hay driver ODBC de SQL Server instalado")
+    try:
+        clave = credenciales.password_de(p["ent"].get("id"), p["con"])
+    except credenciales.NoExiste:
+        raise Alto(f"la contraseña de «{p['ent'].get('nombre')}» no está en el almacén de credenciales: guárdala en ⚙ Config · Bases de datos")
+    except OSError:
+        raise Alto("no se pudo leer el almacén de credenciales del sistema")
     partes = [f"DRIVER={{{driver}}}", f"SERVER={p['con'].get('servidor')}", f"DATABASE={p['base']}",
-              f"UID={p['con'].get('usuario') or ''}", f"PWD={{{(p['con'].get('password') or '').replace('}', '}}')}}}",
+              f"UID={p['con'].get('usuario') or ''}", f"PWD={{{clave.replace('}', '}}')}}}",
               "APP=Personal OS bd-ejecutar"]
     if driver != "SQL Server":
         partes += ["Encrypt=yes", "TrustServerCertificate=yes"]

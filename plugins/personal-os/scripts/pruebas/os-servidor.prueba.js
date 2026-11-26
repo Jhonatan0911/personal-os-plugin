@@ -79,7 +79,15 @@ fs.writeFileSync(BD_ARCH, '﻿' + JSON.stringify({ _comentario: 'ejemplo', ambie
 fs.writeFileSync(path.join(BD_DESC, 'org', 'bd-sin-servidor.json'), '{"nada": true}');  // control: no se siembra
 
 (async () => {
-  const srv = spawn(process.execPath, [SRV, '--puerto', String(P), '--fuentes', FUENTES, '--bd-dir', BD_DIR, '--bd-descubrir', BD_DESC], { stdio: ['ignore', 'pipe', 'pipe'] });
+  // Las contraseñas van al almacén de credenciales del sistema: las pruebas usan su propio espacio de nombres.
+const CRED_SERV = 'personal-os-bd-prueba-' + Math.random().toString(36).slice(2, 8);
+const srv = spawn(process.execPath, [SRV, '--puerto', String(P), '--fuentes', FUENTES, '--bd-dir', BD_DIR, '--bd-descubrir', BD_DESC],
+  { stdio: ['ignore', 'pipe', 'pipe'], env: Object.assign({}, process.env, { PERSONAL_OS_CRED_SERVICIO: CRED_SERV }) });
+const CRED_PY = path.join(__dirname, '..', 'lib', 'credenciales.py');
+const credLeer = (cuenta) => require('child_process').spawnSync(process.platform === 'win32' ? 'python' : 'python3', [CRED_PY, 'leer', cuenta],
+  { encoding: 'utf8', env: Object.assign({}, process.env, { PERSONAL_OS_CRED_SERVICIO: CRED_SERV }) });
+const credBorrar = (cuenta) => require('child_process').spawnSync(process.platform === 'win32' ? 'python' : 'python3', [CRED_PY, 'borrar', cuenta],
+  { env: Object.assign({}, process.env, { PERSONAL_OS_CRED_SERVICIO: CRED_SERV }) });
   srv.stderr.on('data', (d) => process.stderr.write('[srv] ' + d));
   await new Promise((r) => setTimeout(r, 900));
   const pag = await pedir({ ruta: '/estado/consola.html' });
@@ -173,21 +181,26 @@ fs.writeFileSync(path.join(BD_DESC, 'org', 'bd-sin-servidor.json'), '{"nada": tr
     const r1 = await post('guardar', { id: c.id, nombre: 'Base de ejemplo', motor: 'sqlserver', etiquetas: ['test', 'reportes'], password: '',
       permisos: { leer: 'automatico', crear: 'automatico', actualizar: 'preguntar' } });
     const f1 = JSON.parse(fs.readFileSync(BD_ARCH, 'utf8').replace(/^﻿/, ''));
-    v('guardar sin contraseña conserva la existente', r1.codigo === 200 && f1.password === CLAVE);
+    v('guardar pasa la contraseña vieja en claro al almacén', r1.codigo === 200 && !('password' in f1) && f1.password_en === 'almacen' && credLeer(c.id).stdout === CLAVE);
+    v('el archivo ya no trae la contraseña', !fs.readFileSync(BD_ARCH, 'utf8').includes(CLAVE));
+    v('revelar la lee del almacén', JSON.parse((await post('revelar', { id: c.id })).d).password === CLAVE);
     v('campos ajenos intactos', f1.ambiente === 'pruebas' && f1._comentario === 'ejemplo');
     v('sincroniza los campos heredados', f1.modo_lectura === 'automatico' && f1.modo_escritura === 'supervisado' && f1.permisos.actualizar === 'preguntar' && f1.permisos.crear === 'automatico' && f1.permisos.borrar === 'bloqueado');
     const crudo = fs.readFileSync(BD_ARCH, 'utf8');
     v('conserva BOM y CRLF', crudo.startsWith('﻿') && crudo.includes('\r\n') && !/[^\r]\n/.test(crudo));
     v('respaldo .antes-consola', fs.existsSync(BD_ARCH + '.antes-consola'));
     await post('guardar', { id: c.id, nombre: 'Base de ejemplo', password: 'NUEVA-' + CLAVE });
-    v('guardar con contraseña la reemplaza', JSON.parse(fs.readFileSync(BD_ARCH, 'utf8').replace(/^﻿/, '')).password === 'NUEVA-' + CLAVE);
+    v('guardar con contraseña la reemplaza en el almacén', credLeer(c.id).stdout === 'NUEVA-' + CLAVE && !fs.readFileSync(BD_ARCH, 'utf8').includes('NUEVA-'));
     const g2 = await pedir({ ruta: '/api/config/bd' });
     v('GET sigue sin contraseñas tras guardar', !g2.d.includes(CLAVE));
     const rn = JSON.parse((await post('guardar', { nombre: 'Nueva Conexión', motor: 'postgresql', servidor: 's', usuario: 'u', password: 'p1', catalogos: ['c'] })).d);
     const nueva = path.join(BD_DIR, 'conexiones', `${rn.id}.json`);
     v('crea una conexión nueva en su carpeta', rn.ok && fs.existsSync(nueva), rn.id);
+    v('la conexión nueva guarda su contraseña en el almacén', credLeer(rn.id).stdout === 'p1' && !fs.readFileSync(nueva, 'utf8').includes('"password"'));
     v('quitar: respalda y saca del registro', JSON.parse((await post('quitar', { id: rn.id })).d).ok && !fs.existsSync(nueva)
       && fs.readdirSync(path.join(BD_DIR, '_papelera-conexiones')).some((f) => f.startsWith(rn.id)));
+    v('quitar una creada por la consola borra su credencial', credLeer(rn.id).status === 4);
+    credBorrar(c.id);
     await post('quitar', { id: c.id });
     v('quitar una descubierta no borra su archivo', fs.existsSync(BD_ARCH));
     v('revelar de algo ya quitado: 400', (await post('revelar', { id: c.id })).codigo === 400);

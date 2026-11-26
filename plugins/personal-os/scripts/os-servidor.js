@@ -104,8 +104,23 @@ function abrirNavegador(url) {
 // la Oficina ni ⚙ Config, porque nadie arrancaba el servidor (en el equipo del autor lo arrancaba Inicio).
 //   · no corre → lo lanza en segundo plano (desacoplado, sin ventana) y espera a que responda;
 //   · corre una versión MÁS VIEJA (se actualizó el plugin) → lo detiene y lanza esta;
-//   · corre esta o una más nueva → no lo toca.
+//   · corre la misma versión pero con OTRO código (un sync o una edición sin subir la versión) → lo reinicia;
+//     la huella son los archivos que carga el servidor (él mismo, lib/ y las plantillas de la consola);
+//   · corre esta o una más nueva con el mismo código → no lo toca. --reiniciar lo reinicia siempre.
 // Sale con 0 si al final responde; con 1 si no (y /consola abre el HTML suelto diciendo por qué).
+/** Huella del código que sirve este proceso: si cambia en disco, el que corre quedó viejo. */
+function huellaCodigo() {
+  const h = require('crypto').createHash('sha256');
+  const dir = path.dirname(__filename);
+  const archivos = [__filename];
+  for (const sub of ['lib', path.join('..', 'plantillas'), 'plantillas']) {
+    try { for (const f of fs.readdirSync(path.join(dir, sub)).sort()) if (/\.(js|py|html|css)$/.test(f)) archivos.push(path.join(dir, sub, f)); } catch (_) { /* no existe en esta instalación */ }
+  }
+  for (const f of archivos) { try { h.update(f.slice(dir.length)); h.update(fs.readFileSync(f)); } catch (_) { /* ilegible: no cuenta */ } }
+  return h.digest('hex').slice(0, 16);
+}
+const HUELLA = huellaCodigo();
+
 if (process.argv.includes('--asegurar')) {
   const url = `http://127.0.0.1:${PUERTO}/`;
   const lanzar = () => {
@@ -149,9 +164,14 @@ if (process.argv.includes('--asegurar')) {
   };
   salud((ok, d) => {
     let vivo = null; try { vivo = JSON.parse(d); } catch (_) { /* no es el nuestro o no responde */ }
-    if (ok && vivo && vivo.version && VERSION !== '?' && compararVersion(vivo.version, VERSION) < 0 && vivo.pid) {
+    const masViejo = ok && vivo && vivo.version && VERSION !== '?' && compararVersion(vivo.version, VERSION) < 0;
+    const mismaVersion = ok && vivo && vivo.version === VERSION;
+    const otroCodigo = mismaVersion && vivo.huella !== HUELLA;   // sin huella = servidor anterior a esta regla
+    const forzar = ok && process.argv.includes('--reiniciar');
+    if ((masViejo || otroCodigo || forzar) && vivo && vivo.pid) {
       try { process.kill(vivo.pid); } catch (_) { /* ya no estaba */ }
-      return esperar(false, 20, () => { lanzar(); esperar(true, 40, (ok2, d2) => terminar(ok2, d2, `Actualizado de ${vivo.version} a ${VERSION}`)); });
+      const que = masViejo ? `Actualizado de ${vivo.version} a ${VERSION}` : otroCodigo ? 'Reiniciado: el código cambió en disco' : 'Reiniciado';
+      return esperar(false, 20, () => { lanzar(); esperar(true, 40, (ok2, d2) => terminar(ok2, d2, que)); });
     }
     if (ok) return terminar(true, d, 'Ya corría');
     lanzar();
@@ -828,7 +848,9 @@ function guardarPasoProduccion(b) {
  * guarda nombre, motor y etiquetas; si no existe se siembra descubriendo `~/.claude/<carpeta>/bd-*.json`.
  * Los permisos por acción viven en `permisos` del archivo de la conexión y los hacen cumplir el guardia y los wrappers
  * (D-073). Las seis acciones tienen modo (bloqueado · preguntar · automatico); lo corre bd-ejecutar.py y el guardia
- * aplica el modo. Una escritura sin modo guardado vale «bloqueado». La contraseña nunca sale por GET ni por logs: solo por POST /revelar con token.
+ * aplica el modo. Una escritura sin modo guardado vale «bloqueado». La contraseña vive en el almacén de credenciales del
+ * sistema (lib/credenciales.py; el JSON solo lleva "password_en": "almacen") y nunca sale por GET ni por logs: solo
+ * por POST /revelar con token. Un JSON viejo con `password` en claro se sigue leyendo y pasa al almacén al guardar.
  * Pruebas: --bd-dir <carpeta> (registro y conexiones nuevas) y --bd-descubrir <carpeta> (en vez de ~/.claude).
  */
 const BD_HOME = path.resolve(C.arg('--bd-dir', null) || C.OS_HOME);
@@ -900,6 +922,17 @@ function bdRegistro() {
   return nuevo;
 }
 /** El permiso efectivo de cada acción (con los de por defecto) y los campos heredados que leen /bd-test y los wrappers. */
+// Almacén de credenciales: el secreto viaja por stdin/stdout del helper, nunca en argumentos ni en el entorno.
+const CRED = path.join(__dirname, 'lib', 'credenciales.py');
+function credencial(accion, cuenta, secreto) {
+  const py = process.platform === 'win32' ? 'python' : 'python3';
+  const r = require('child_process').spawnSync(py, ['-I', CRED, accion, cuenta], { input: secreto || '', encoding: 'utf8', windowsHide: true, timeout: 15000 });
+  if (r.error) return { ok: false, mensaje: 'no se encontró Python para el almacén de credenciales' };
+  if (r.status === 4) return { ok: false, noExiste: true, mensaje: 'no hay contraseña guardada en el almacén' };
+  if (r.status !== 0) return { ok: false, mensaje: 'el almacén de credenciales no respondió' };
+  return { ok: true, valor: r.stdout };
+}
+const enAlmacen = (d) => d && d.password_en === 'almacen';
 function bdPermisos(d) {
   return BDP.permisos(d);   // leer con su modo (o el heredado de /bd-test); escritura sin modo = bloqueado
 }
@@ -918,7 +951,8 @@ function bdListar() {
     return { id: c.id, nombre: c.nombre || c.id, motor: c.motor || 'sqlserver', etiquetas: c.etiquetas || [],
       archivo: c.archivo, existe: !!(a && a.datos), error: a ? a.error || null : 'archivo fuera de las carpetas de conexiones',
       servidor: d.servidor || '', usuario: d.usuario || '', catalogos: Array.isArray(d.catalogos) ? d.catalogos : [],
-      password_guardada: typeof d.password === 'string' && d.password.length > 0, actualizado, permisos: bdPermisos(d) };
+      password_guardada: enAlmacen(d) || (typeof d.password === 'string' && d.password.length > 0),
+      password_en_claro: typeof d.password === 'string' && d.password.length > 0, actualizado, permisos: bdPermisos(d) };
   });
   return { conexiones, acciones: BD_ACCIONES, modos: BD_MODOS, motores: BD_MOTORES,
     etiquetas_estandar: BD_ETIQUETAS, etiquetas_propias: reg.etiquetas_propias, registro: BD_REGISTRO };
@@ -966,7 +1000,14 @@ function bdGuardar(b) {
   if (b.servidor !== undefined) d.servidor = b.servidor;
   if (b.usuario !== undefined) d.usuario = b.usuario;
   if (b.catalogos !== undefined) d.catalogos = b.catalogos;
-  if (typeof b.password === 'string' && b.password.length) d.password = b.password; // vacía = conservar
+  // Contraseña nueva, o una vieja en claro: va al almacén y sale del archivo. Vacía = conservar la que hay.
+  const nuevaClave = typeof b.password === 'string' && b.password.length ? b.password : (typeof d.password === 'string' && d.password.length ? d.password : null);
+  if (nuevaClave !== null) {
+    const g = credencial('guardar', ent.id, nuevaClave);
+    if (!g.ok) return { ok: false, mensaje: `no se guardó: ${g.mensaje}` };
+    delete d.password;
+    d.password_en = 'almacen';
+  }
   const p = Object.assign(bdPermisos(d), b.permisos || {});
   d.permisos = p;
   Object.assign(d, bdCompatibles(p));
@@ -985,7 +1026,10 @@ function bdQuitar(b) {
   if (bdRutaPermitida(c.archivo) && fs.existsSync(c.archivo)) {
     fs.copyFileSync(c.archivo, path.join(pap, `${c.id}-${sello}.json`));
     // Solo las creadas por la consola se borran; las descubiertas (de otras herramientas) se quedan donde están.
-    if (path.dirname(path.resolve(c.archivo)) === path.join(BD_HOME, 'conexiones')) fs.unlinkSync(c.archivo);
+    if (path.dirname(path.resolve(c.archivo)) === path.join(BD_HOME, 'conexiones')) {
+      fs.unlinkSync(c.archivo);
+      credencial('borrar', c.id);   // la conexión desaparece del todo; las descubiertas conservan la suya
+    }
   }
   fs.writeFileSync(path.join(pap, `${c.id}-${sello}.registro.json`), JSON.stringify(c, null, 2), 'utf8');
   reg.conexiones.splice(i, 1);
@@ -996,6 +1040,11 @@ function bdRevelar(b) {
   const c = bdRegistro().conexiones.find((x) => x.id === b.id);
   const a = bdPermitidaYLeida(c);
   if (!a || !a.datos) return { ok: false, mensaje: 'no se puede leer esa conexión' };
+  if (enAlmacen(a.datos)) {
+    const r = credencial('leer', c.id);
+    if (!r.ok) return r.noExiste ? { ok: true, password: '' } : { ok: false, mensaje: r.mensaje };
+    return { ok: true, password: r.valor };
+  }
   return { ok: true, password: typeof a.datos.password === 'string' ? a.datos.password : '' };
 }
 function bdEtiqueta(b) {
@@ -1131,7 +1180,7 @@ const servidor = http.createServer((req, res) => {
   const ruta = decodeURIComponent(url.pathname);
 
   if (req.method === 'GET') {
-    if (ruta === '/salud') return json(200, { ok: true, version: VERSION, pid: process.pid, desde: INICIO });
+    if (ruta === '/salud') return json(200, { ok: true, version: VERSION, huella: HUELLA, pid: process.pid, desde: INICIO });
     if (ruta === '/' || ruta === '/app') return enviar(302, 'text/plain', 'a la consola', { Location: '/estado/consola.html' + (url.search || '') });
     if (ruta === '/estado/consola.html' && STATE) {
       const r = estatico(STATE, '/consola.html');
