@@ -356,7 +356,8 @@ Cada uno costó una consolidación completa en una mesa real:
 - **Mover repos entre mesas** o consolidar mesas existentes: es cirugía, se hace con respaldo previo
   (`git bundle` de cada repo) y no la hace esta skill.
 - **Migrar repos entre proyectos u organizaciones** de Azure DevOps: eso es `migrar-ramas`.
-- **Ejecutar escrituras de BD**: se redactan como entregable en `<mesa>/scripts/sql/` y las ejecuta el usuario/DBA.
+- **Ejecutar escrituras de BD**: van por `bd-ejecutar.py` del Personal OS con el permiso de ⚙ Config · Bases de
+  datos; el script de publicación y su rollback se guardan además en `<mesa>/scripts/sql/` para el paquete.
 - **Rotar o crear PATs**: eso lo hace el líder en Azure DevOps.
 
 ## Archivos

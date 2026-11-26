@@ -1,5 +1,15 @@
 # Changelog
 
+## 4.4.0 · Permisos de base de datos por acción: el ejecutor corre lo que la consola deja
+
+- **Las seis acciones tienen tres modos.** En ⚙ Config · Bases de datos, leer, crear, actualizar, borrar, estructura y ejecutar se pueden dejar bloqueadas, en «me pregunta» o en automático, por conexión. Una escritura sin modo guardado queda bloqueada. Reemplaza lo de la 4.3.x, donde las escrituras quedaban fijas en «Claude entrega el script».
+- **Claude no conecta a la base: lo hace el ejecutor.** Claude deja un plan en `<OS_HOME>/bd-planes/<id>/` (`plan.json` con conexión, base y explicación; `consulta.sql`; `rollback.sql` si escribe) y lo corre `scripts/bd-ejecutar.py <id>`. Lecturas en READ UNCOMMITTED y con límite de filas; escrituras en una transacción (si un lote falla, se deshace todo) y nunca sin su rollback. `--rollback` corre el rollback del plan con su propio permiso; `--simular` valida sin conectar. Deja `resultado.json` en el plan y una línea en `bd-ejecutor.log`, sin contraseñas. Por ahora, SQL Server.
+- **Un diálogo de confirmación que se entiende.** En «me pregunta», el diálogo de Claude Code muestra la base de datos destino, el servidor y su IP, el usuario, qué hace, el **impacto** (tablas que modifica, tablas que lee, estructura y procedimientos que toca, aviso de SQL dinámico), si corre en transacción y el SQL (15 líneas como máximo). Nada de rutas ni de Python.
+- **El permiso no se puede saltar cambiando el plan.** El guardia deja un pase de un solo uso atado a la huella del plan; si el SQL cambia después del OK, el ejecutor no corre. Un comentario o un texto con `DELETE` no cuenta como borrar.
+- **La consola manda.** Para una conexión registrada vale lo de la consola, también sobre las listas de servidores de la organización; un servidor de producción que no se registre sigue bloqueado. La consola pide confirmar cuando una conexión con etiqueta de producción queda con alguna acción en automático.
+- Las escrituras por cualquier otro camino (sqlcmd, `dbread`, `sqltest write`) se siguen negando y remiten al ejecutor. `mesa-nueva` documenta el ejecutor y trae `mesa-clonar.ps1` con rama de trabajo por repo.
+- **Pruebas:** guardia 51 controles (17 del ejecutor), `bd-impacto.prueba.js` 11, servidor 65, lectores 16.
+
 ## 4.3.2 · /consola abre el navegador también cuando el servidor ya corría
 
 - **La app se abre de verdad y la salida lo dice.** Con el servidor ya encendido, `os-servidor.js --asegurar --abrir` lanzaba `cmd start` en segundo plano y salía a los 300 ms. En equipos donde la herramienta cierra el árbol del comando al terminar, la ventana nunca se abría y la salida no lo decía. Ahora el navegador se lanza de forma síncrona y, en Windows, por WMI, fuera del árbol, igual que el servidor. Si WMI falla, usa `cmd start`. La salida imprime «Navegador: abierto (WMI)» o «✖ Navegador: no se pudo abrir (motivo)» con la URL para abrirla a mano.

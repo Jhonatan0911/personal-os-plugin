@@ -55,10 +55,12 @@ Montada el <YYYY-MM-DD> a partir de `<requerimiento>`.
    `git remote -v` en correos, tickets ni documentos.
 3. **No commitear configuración local.** `appsettings*.json`, `environment*.ts`, `Web.config` re-apuntados
    a TEST aparecen sucios de forma permanente y así deben quedarse. <Archivos que NUNCA se commitean.>
-4. **BD: solo lectura, solo TEST, confirmando cada consulta.** Únicas vías `scripts/dbread.ps1` y
-   `scripts/mongoread.py` (con `-DryRun`/`--DryRun` para mostrar el destino y pedir OK). Las escrituras
-   se **redactan** como `publicacion_req_<id>.sql` + `rollback_req_<id>.sql` en `scripts/sql/`; las
-   ejecuta el usuario/DBA.
+4. **BD: según ⚙ Config · Bases de datos del Personal OS.** Cada conexión registrada dice, por acción (leer,
+   crear, actualizar, borrar, estructura, ejecutar), si está bloqueada, si pregunta o si es automática. Claude no
+   conecta: deja el plan en `<OS_HOME>/bd-planes/<id>/` (`plan.json` con conexión, base y explicación,
+   `consulta.sql` y, si escribe, `rollback.sql`) y lo corre con `bd-ejecutar.py <id>`. Las lecturas rápidas de la
+   mesa siguen con `scripts/dbread.ps1` y `scripts/mongoread.py` (solo leen). Las escrituras del requerimiento
+   se guardan además como `publicacion_req_<id>.sql` + `rollback_req_<id>.sql` en `scripts/sql/` para el paquete.
 5. **Español** en dominio, código, ramas y mensajes.
 6. **Los contratos se editan en `CONTRATOS/`** y se sincronizan a los `docs/` de los repos involucrados
    en el mismo PR.

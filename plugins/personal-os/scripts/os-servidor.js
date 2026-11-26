@@ -827,8 +827,8 @@ function guardarPasoProduccion(b) {
  * la consola edita esos mismos archivos sin moverlos ni quitarles campos. El registro `<BD_HOME>/conexiones-bd.json`
  * guarda nombre, motor y etiquetas; si no existe se siembra descubriendo `~/.claude/<carpeta>/bd-*.json`.
  * Los permisos por acción viven en `permisos` del archivo de la conexión y los hacen cumplir el guardia y los wrappers
- * (D-072 F2). Leer tiene modo (bloqueado · preguntar · automatico); las escrituras valen siempre «script»: Claude
- * nunca las ejecuta, las entrega como script de publicación + rollback. La contraseña nunca sale por GET ni por logs: solo por POST /revelar con token.
+ * (D-073). Las seis acciones tienen modo (bloqueado · preguntar · automatico); lo corre bd-ejecutar.py y el guardia
+ * aplica el modo. Una escritura sin modo guardado vale «bloqueado». La contraseña nunca sale por GET ni por logs: solo por POST /revelar con token.
  * Pruebas: --bd-dir <carpeta> (registro y conexiones nuevas) y --bd-descubrir <carpeta> (en vez de ~/.claude).
  */
 const BD_HOME = path.resolve(C.arg('--bd-dir', null) || C.OS_HOME);
@@ -840,7 +840,7 @@ const BD_ACCIONES = [
   { id: 'estructura', nombre: 'Estructura', sql: 'CREATE / ALTER / DROP' }, { id: 'ejecutar', nombre: 'Ejecutar', sql: 'EXEC / procedimientos' },
 ];
 const BDP = require('./lib/bd-permisos.js');
-const BD_MODOS = BDP.MODOS_LECTURA;   // solo para Leer; las escrituras valen siempre BDP.MODO_ESCRITURA ('script')
+const BD_MODOS = BDP.MODOS;   // las seis acciones (D-073)
 const BD_ETIQUETAS = ['produccion', 'staging', 'qa', 'develop', 'test'];
 const BD_MOTORES = ['sqlserver', 'postgresql', 'mysql', 'oracle', 'mongodb', 'otro'];
 const slug = (s) => /^[a-z0-9][a-z0-9-]{0,40}$/.test(String(s || ''));
@@ -901,11 +901,12 @@ function bdRegistro() {
 }
 /** El permiso efectivo de cada acción (con los de por defecto) y los campos heredados que leen /bd-test y los wrappers. */
 function bdPermisos(d) {
-  return BDP.permisos(d);   // leer con su modo (o el heredado de /bd-test); escrituras siempre 'script'
+  return BDP.permisos(d);   // leer con su modo (o el heredado de /bd-test); escritura sin modo = bloqueado
 }
 function bdCompatibles(p) {
-  // /bd-test solo entiende lecturas automatico|supervisado; la escritura queda en supervisado (Claude entrega el script).
-  return { modo_lectura: p.leer === 'automatico' ? 'automatico' : 'supervisado', modo_escritura: 'supervisado' };
+  // /bd-test solo entiende automatico|supervisado: la escritura es automática solo si las cinco lo son.
+  const escAuto = BDP.ESCRITURA.every((a) => p[a] === 'automatico');
+  return { modo_lectura: p.leer === 'automatico' ? 'automatico' : 'supervisado', modo_escritura: escAuto ? 'automatico' : 'supervisado' };
 }
 function bdListar() {
   const reg = bdRegistro();
@@ -919,7 +920,7 @@ function bdListar() {
       servidor: d.servidor || '', usuario: d.usuario || '', catalogos: Array.isArray(d.catalogos) ? d.catalogos : [],
       password_guardada: typeof d.password === 'string' && d.password.length > 0, actualizado, permisos: bdPermisos(d) };
   });
-  return { conexiones, acciones: BD_ACCIONES, modos: BD_MODOS, modo_escritura: BDP.MODO_ESCRITURA, motores: BD_MOTORES,
+  return { conexiones, acciones: BD_ACCIONES, modos: BD_MODOS, motores: BD_MOTORES,
     etiquetas_estandar: BD_ETIQUETAS, etiquetas_propias: reg.etiquetas_propias, registro: BD_REGISTRO };
 }
 function bdPermitidaYLeida(c) {
@@ -942,7 +943,7 @@ function bdGuardar(b) {
     if (!b.permisos || typeof b.permisos !== 'object' || Array.isArray(b.permisos)) return { ok: false, mensaje: 'permisos inválidos' };
     for (const [k, v] of Object.entries(b.permisos)) {
       if (!BD_ACCIONES.some((a) => a.id === k)) return { ok: false, mensaje: `acción desconocida: ${k}` };
-      if (k === 'leer' ? !BD_MODOS.includes(v) : v !== BDP.MODO_ESCRITURA) return { ok: false, mensaje: k === 'leer' ? `modo desconocido para leer: ${v}` : `${k}: Claude no ejecuta escrituras; su único valor es «script»` };
+      if (!BD_MODOS.includes(v)) return { ok: false, mensaje: `modo desconocido para ${k}: ${v}` };
     }
   }
   if (b.password !== undefined && (typeof b.password !== 'string' || b.password.length > 500)) return { ok: false, mensaje: 'contraseña inválida' };
@@ -966,7 +967,7 @@ function bdGuardar(b) {
   if (b.usuario !== undefined) d.usuario = b.usuario;
   if (b.catalogos !== undefined) d.catalogos = b.catalogos;
   if (typeof b.password === 'string' && b.password.length) d.password = b.password; // vacía = conservar
-  const p = Object.assign(bdPermisos(d), b.permisos && b.permisos.leer ? { leer: b.permisos.leer } : {});
+  const p = Object.assign(bdPermisos(d), b.permisos || {});
   d.permisos = p;
   Object.assign(d, bdCompatibles(p));
   bdEscribir(ent.archivo, d, a);

@@ -160,7 +160,7 @@ fs.writeFileSync(path.join(BD_DESC, 'org', 'bd-sin-servidor.json'), '{"nada": tr
     const c = d.conexiones[0] || {};
     v('siembra solo los archivos con servidor', d.conexiones.length === 1 && c.nombre === 'bd-uno' && c.password_guardada === true, String(d.conexiones.length));
     v('GET nunca trae la contraseña', !g.d.includes(CLAVE) && !('password' in c));
-    v('permisos por defecto (leer=preguntar, escrituras=script)', c.permisos && c.permisos.leer === 'preguntar' && c.permisos.borrar === 'script');
+    v('permisos por defecto (leer=preguntar, escrituras=bloqueado)', c.permisos && c.permisos.leer === 'preguntar' && c.permisos.borrar === 'bloqueado');
     v('revelar sin token: 403', (await post('revelar', { id: c.id }, Object.assign({ Origin: O }, J))).codigo === 403);
     const rv = JSON.parse((await post('revelar', { id: c.id })).d);
     v('revelar con token trae la contraseña', rv.ok && rv.password === CLAVE);
@@ -168,14 +168,14 @@ fs.writeFileSync(path.join(BD_DESC, 'org', 'bd-sin-servidor.json'), '{"nada": tr
     v('modo desconocido: 400', (await post('guardar', { id: c.id, nombre: 'x', permisos: { leer: 'siempre' } })).codigo === 400);
     v('etiqueta inexistente: 400', (await post('guardar', { id: c.id, nombre: 'x', etiquetas: ['inventada'] })).codigo === 400);
     v('crear etiqueta propia', JSON.parse((await post('etiqueta', { etiqueta: 'reportes' })).d).ok === true);
-    v('escritura en automático: 400 (Claude no escribe)', (await post('guardar', { id: c.id, nombre: 'x', permisos: { actualizar: 'automatico' } })).codigo === 400);
-    v('escritura en «me pregunta»: 400 (Claude no escribe)', (await post('guardar', { id: c.id, nombre: 'x', permisos: { crear: 'preguntar' } })).codigo === 400);
+    v('modo desconocido en una escritura: 400', (await post('guardar', { id: c.id, nombre: 'x', permisos: { actualizar: 'script' } })).codigo === 400);
+    v('acción desconocida: 400', (await post('guardar', { id: c.id, nombre: 'x', permisos: { volar: 'automatico' } })).codigo === 400);
     const r1 = await post('guardar', { id: c.id, nombre: 'Base de ejemplo', motor: 'sqlserver', etiquetas: ['test', 'reportes'], password: '',
-      permisos: { leer: 'automatico', crear: 'script', actualizar: 'script' } });
+      permisos: { leer: 'automatico', crear: 'automatico', actualizar: 'preguntar' } });
     const f1 = JSON.parse(fs.readFileSync(BD_ARCH, 'utf8').replace(/^﻿/, ''));
     v('guardar sin contraseña conserva la existente', r1.codigo === 200 && f1.password === CLAVE);
     v('campos ajenos intactos', f1.ambiente === 'pruebas' && f1._comentario === 'ejemplo');
-    v('sincroniza los campos heredados', f1.modo_lectura === 'automatico' && f1.modo_escritura === 'supervisado' && f1.permisos.actualizar === 'script');
+    v('sincroniza los campos heredados', f1.modo_lectura === 'automatico' && f1.modo_escritura === 'supervisado' && f1.permisos.actualizar === 'preguntar' && f1.permisos.crear === 'automatico' && f1.permisos.borrar === 'bloqueado');
     const crudo = fs.readFileSync(BD_ARCH, 'utf8');
     v('conserva BOM y CRLF', crudo.startsWith('﻿') && crudo.includes('\r\n') && !/[^\r]\n/.test(crudo));
     v('respaldo .antes-consola', fs.existsSync(BD_ARCH + '.antes-consola'));

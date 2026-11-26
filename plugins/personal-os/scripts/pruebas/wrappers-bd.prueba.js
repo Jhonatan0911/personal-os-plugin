@@ -23,7 +23,7 @@ J(path.join(HOME, 'conexiones-bd.json'), { conexiones: [
   con('mongo-auto', '192.0.2.40', ['mg_staging'], { permisos: { leer: 'automatico' } }),
   con('mongo-bloq', '192.0.2.41', ['mg_cerrada'], { permisos: { leer: 'bloqueado' } }),
 ] });
-J(path.join(HOME, 'guardia-empresa.json'), { servidores_deny: ['198.51.100.9'] });
+J(path.join(HOME, 'guardia-empresa.json'), { servidores_deny: ['198.51.100.9', '198.51.100.20'] });
 const env = Object.assign({}, process.env, { PERSONAL_OS_HOME: HOME });
 
 function appsettings(nombre, clave, cadena) {
@@ -49,7 +49,8 @@ const casos = [
   ['dbread · staging registrada en automático se lee (antes se bloqueaba por no decir «test»)', () => dbread('192.0.2.30,1433', 'db_staging', S), true],
   ['dbread · staging con lectura bloqueada no se lee', () => dbread('192.0.2.31', 'db_cerrada', S), false],
   ['dbread · conexión heredada (supervisado) se lee', () => dbread('192.0.2.32', 'db_vieja', S), true],
-  ['dbread · producción de la org gana a automático', () => dbread('198.51.100.9', 'db_prod', S), false],
+  ['dbread · D-073: producción registrada en automático, manda la consola', () => dbread('198.51.100.9', 'db_prod', S), true],
+  ['dbread · producción de la org NO registrada se bloquea', () => dbread('198.51.100.20', 'db_prod_test', S), false],
   ['dbread · no registrada y sin «test» se bloquea', () => dbread('192.0.2.99', 'db_otra', S), false],
   ['dbread · no registrada con «test» se lee (regla de siempre)', () => dbread('192.0.2.99', 'db_otra_test', S), true],
   ['dbread · misma base en otro servidor no hereda el permiso', () => dbread('192.0.2.98', 'db_staging', S), false],
@@ -58,7 +59,7 @@ const casos = [
   ['dbread · -AllowExec ya no abre la puerta', () => dbread('192.0.2.30', 'db_staging', 'EXEC dbo.p', ['-AllowExec']), false],
   ['mongoread · staging registrada en automático se lee', () => mongoread('192.0.2.40', 'mg_staging'), true],
   ['mongoread · lectura bloqueada no se lee', () => mongoread('192.0.2.41', 'mg_cerrada'), false],
-  ['mongoread · producción de la org se bloquea', () => mongoread('198.51.100.9', 'db_prod'), false],
+  ['mongoread · producción de la org NO registrada se bloquea', () => mongoread('198.51.100.20', 'mg_prueba'), false],
   ['mongoread · no registrada y sin «test» se bloquea', () => mongoread('192.0.2.99', 'mg_otra'), false],
   ['mongoread · no registrada con «prueba» se lee', () => mongoread('192.0.2.99', 'mg_prueba'), true],
 ];

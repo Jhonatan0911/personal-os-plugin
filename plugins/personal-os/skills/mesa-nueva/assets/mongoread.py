@@ -149,9 +149,10 @@ def main():
     # ---- Validaciones de DESTINO ----
     if not dbname:
         raise SystemExit("BLOQUEADO: la cadena activa no especifica base de datos en la URI.")
-    if _produccion_de_la_org(host):
-        raise SystemExit(f"BLOQUEADO: {host} es un servidor de produccion segun las reglas de la organizacion.")
     conexion, modo = _permiso_destino(host, dbname)
+    # D-073: una conexion registrada en la consola la gobierna la consola; las de produccion sin registrar, la organizacion.
+    if not conexion and _produccion_de_la_org(host):
+        raise SystemExit(f"BLOQUEADO: {host} es un servidor de produccion segun las reglas de la organizacion (no esta registrado en Config > Bases de datos).")
     if conexion:
         if modo == "bloqueado":
             raise SystemExit(f"BLOQUEADO: leer en la conexion '{conexion}' esta bloqueado en Config > Bases de datos.")

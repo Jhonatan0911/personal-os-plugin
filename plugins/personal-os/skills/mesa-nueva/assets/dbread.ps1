@@ -5,8 +5,8 @@
 .DESCRIPTION
   Lee la cadena de conexion ACTIVA (no comentada con //) del appsettings.json indicado,
   la decodifica de Base64 y ejecuta la consulta con sqlcmd, imponiendo guardas de solo lectura.
-  NUNCA imprime la contrasena. Bloquea escrituras/DDL y EXEC (Claude no ejecuta escrituras: las
-  entrega como script), exige TOP(N) en SELECT, usa READ UNCOMMITTED y timeouts cortos.
+  NUNCA imprime la contrasena. Bloquea escrituras/DDL y EXEC (las escrituras van por
+  bd-ejecutar.py), exige TOP(N) en SELECT, usa READ UNCOMMITTED y timeouts cortos.
 
   Permisos (D-072): si el servidor y el catalogo estan registrados en Config > Bases de datos del
   Personal OS (<OS_HOME>/conexiones-bd.json), manda su permiso de Leer: bloqueado = no se consulta;
@@ -81,12 +81,6 @@ function Read-JsonFile([string]$ruta) {
 }
 $osHome = if ($env:PERSONAL_OS_HOME) { $env:PERSONAL_OS_HOME } else { Join-Path $HOME '.claude\personal-os' }
 $hostDestino = Get-HostPart $server
-$reglasOrg = Read-JsonFile (Join-Path $osHome 'guardia-empresa.json')
-if ($reglasOrg) {
-  foreach ($h in @($reglasOrg.servidores_deny)) {
-    if ($h -and (Get-HostPart $h) -eq $hostDestino) { throw "BLOQUEADO: $hostDestino es un servidor de produccion segun las reglas de la organizacion." }
-  }
-}
 $conexion = $null; $modoLeer = $null
 $registro = Read-JsonFile (Join-Path $osHome 'conexiones-bd.json')
 if ($registro) {
@@ -102,6 +96,13 @@ if ($registro) {
     break
   }
 }
+# D-073: una conexion registrada la gobierna la consola; un servidor de produccion sin registrar, la organizacion.
+$reglasOrg = Read-JsonFile (Join-Path $osHome 'guardia-empresa.json')
+if (-not $conexion -and $reglasOrg) {
+  foreach ($h in @($reglasOrg.servidores_deny)) {
+    if ($h -and (Get-HostPart $h) -eq $hostDestino) { throw "BLOQUEADO: $hostDestino es un servidor de produccion segun las reglas de la organizacion (no esta registrado en Config > Bases de datos)." }
+  }
+}
 if ($conexion) {
   if ($modoLeer -eq 'bloqueado') { throw "BLOQUEADO: leer en la conexion '$conexion' esta bloqueado en Config > Bases de datos." }
 } elseif ($catalog -notmatch '(?i)(test|prueba)') {
@@ -111,10 +112,10 @@ if ($ConfirmDb -ne $catalog) { throw "BLOQUEADO: -ConfirmDb '$ConfirmDb' no coin
 
 # ---- 3) Validaciones de la CONSULTA (solo lectura) ----
 $forbidden = '(?i)\b(INSERT|UPDATE|DELETE|MERGE|TRUNCATE|DROP|ALTER|CREATE|GRANT|REVOKE|BACKUP|RESTORE|xp_cmdshell|OPENROWSET|OPENQUERY|BULK)\b'
-if ($Query -match $forbidden) { throw "BLOQUEADO: la consulta contiene una operacion de escritura/DDL no permitida (solo lectura)." }
+if ($Query -match $forbidden) { throw "BLOQUEADO: dbread solo lee. Para escribir, deja el plan y correlo con bd-ejecutar.py (permiso de la consola, transaccion y rollback)." }
 if ($Query -match '(?i)\bSELECT\b[\s\S]*\bINTO\b') { throw "BLOQUEADO: 'SELECT ... INTO' no permitido." }
-if ($AllowExec) { throw "BLOQUEADO: -AllowExec ya no existe (D-072). Claude no ejecuta procedimientos: se entregan como script para que el usuario los corra." }
-if ($Query -match '(?i)\bEXEC(UTE)?\b') { throw "BLOQUEADO: EXEC no se ejecuta (puede escribir). Para ver un SP usa OBJECT_DEFINITION; para correrlo, entregalo como script." }
+if ($AllowExec) { throw "BLOQUEADO: -AllowExec ya no existe. Los procedimientos se corren con bd-ejecutar.py (accion Ejecutar de la consola)." }
+if ($Query -match '(?i)\bEXEC(UTE)?\b') { throw "BLOQUEADO: dbread no corre EXEC (puede escribir). Para ver un SP usa OBJECT_DEFINITION; para correrlo, bd-ejecutar.py." }
 if (($Query -match '(?i)\bSELECT\b') -and ($Query -notmatch '(?i)\bTOP\s*\(') -and -not $AllowNoTop) { throw "BLOQUEADO: todo SELECT debe usar TOP(N). Usa -AllowNoTop solo si el usuario lo pide para esa consulta." }
 
 # ---- 4) Mostrar DESTINO (sin password) ----

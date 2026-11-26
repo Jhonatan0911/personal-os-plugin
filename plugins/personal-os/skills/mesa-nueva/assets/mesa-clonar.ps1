@@ -217,8 +217,10 @@ if ($Fase -eq 'clonar') {
 }
 
 # ============================ FASE: rama ============================
-$rama = $mesa.ramaTrabajo
-if (-not $rama) { throw "El manifiesto no declara ramaTrabajo." }
+# ramaTrabajo por repo (opcional) gana a la global: sirve para trabajar directo sobre
+# ramas existentes que se llaman distinto en cada repo (mesas de revision/integracion).
+$sinRama = @($lista | Where-Object { -not $_.ramaTrabajo -and -not $mesa.ramaTrabajo })
+if ($sinRama.Count -gt 0) { throw "El manifiesto no declara ramaTrabajo (ni global ni por repo)." }
 
 $sinBase = @($lista | Where-Object { -not $_.ramaBase })
 if ($sinBase.Count -gt 0) {
@@ -231,6 +233,7 @@ if ($sinBase.Count -gt 0) {
 $resumen = @()
 foreach ($r in $lista) {
   $d = Join-Path $reposDir $r.carpeta
+  $rama = if ($r.ramaTrabajo) { $r.ramaTrabajo } else { $mesa.ramaTrabajo }
   Write-Host ""
   Write-Host ("### {0} - base: {1}" -f $r.carpeta, $r.ramaBase) -ForegroundColor Yellow
   if (-not (EsRepo $d)) {
@@ -303,6 +306,6 @@ $resumen | Format-Table -AutoSize
 Write-Host "Siguiente: .\scripts\mesa-status.ps1"
 Write-Host ""
 Write-Host "Empuja la rama de trabajo el mismo dia que la creas:" -ForegroundColor Yellow
-Write-Host ("  git -C repos\<repo> push -u origin {0}" -f $mesa.ramaTrabajo)
+Write-Host ("  git -C repos\<repo> push -u origin {0}" -f $(if ($mesa.ramaTrabajo) { $mesa.ramaTrabajo } else { '<ramaTrabajo del repo>' }))
 Write-Host "RECORDATORIO: los appsettings/environment recien clonados NO apuntan a TEST." -ForegroundColor Yellow
 Write-Host "Re-apuntalos a mano antes de levantar nada. Esos sucios permanentes no se commitean."
