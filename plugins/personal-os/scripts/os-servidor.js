@@ -77,9 +77,26 @@ function anotarLog(linea) {
   try { fs.mkdirSync(C.OS_HOME, { recursive: true }); fs.appendFileSync(LOG_SRV, `${new Date().toISOString()} [${process.pid}] ${linea}\n`); } catch (_) { /* sin log */ }
 }
 const LNK_INICIO = path.join(process.env.APPDATA || '', 'Microsoft', 'Windows', 'Start Menu', 'Programs', 'Startup', `${TAREA}.lnk`);
+// Abre la app en el navegador por defecto y devuelve si lo logró (4.3.2). Antes era un execFile asíncrono y el
+// proceso salía a los 300 ms: en equipos donde la herramienta cierra el árbol del comando al terminar, el
+// `cmd start` moría antes de abrir la ventana y la salida no decía nada (26/11/2026). Ahora es síncrono y, en
+// Windows, el navegador nace por WMI, fuera del árbol, igual que el servidor; si WMI falla, `cmd start` síncrono.
 function abrirNavegador(url) {
-  if (process.platform === 'win32') execFile('cmd', ['/c', 'start', '', url], { windowsHide: true }, () => {});
-  else execFile(process.platform === 'darwin' ? 'open' : 'xdg-open', [url], () => {});
+  const cp = require('child_process');
+  if (process.platform === 'win32') {
+    const q = (s) => String(s).replace(/'/g, "''");
+    const linea = `rundll32.exe url.dll,FileProtocolHandler ${url}`;
+    const ps = `$r = Invoke-CimMethod -ClassName Win32_Process -MethodName Create -Arguments @{ CommandLine = '${q(linea)}' }; $r.ReturnValue`;
+    try {
+      const out = cp.execFileSync('powershell', ['-NoProfile', '-NonInteractive', '-Command', ps], { encoding: 'utf8', windowsHide: true, timeout: 15000 });
+      if (String(out).trim() === '0') return { ok: true, via: 'WMI' };
+      anotarLog(`WMI no abrió el navegador (ReturnValue ${String(out).trim()}); se usa cmd start`);
+    } catch (e) { anotarLog(`WMI no abrió el navegador (${e.message.split('\n')[0]}); se usa cmd start`); }
+    try { cp.execFileSync('cmd', ['/c', 'start', '', url], { windowsHide: true, timeout: 15000 }); return { ok: true, via: 'cmd start' }; }
+    catch (e) { return { ok: false, motivo: e.message.split('\n')[0] }; }
+  }
+  try { cp.execFileSync(process.platform === 'darwin' ? 'open' : 'xdg-open', [url], { timeout: 15000 }); return { ok: true, via: 'open' }; }
+  catch (e) { return { ok: false, motivo: e.message.split('\n')[0] }; }
 }
 
 // --asegurar (4.2.2): lo que usa /consola. Deja el servidor corriendo con ESTA versión y, con --abrir, abre la app.
@@ -116,7 +133,10 @@ if (process.argv.includes('--asegurar')) {
     if (ok) {
       console.log(`${que}: Personal OS ${info.version || '?'} en ${url}`);
       if (process.platform === 'win32') console.log(`Arranque al iniciar Windows: ${fs.existsSync(LNK_INICIO) ? 'instalado' : 'NO instalado (node os-servidor.js --instalar-tarea)'}`);
-      if (process.argv.includes('--abrir')) abrirNavegador(url);
+      if (process.argv.includes('--abrir')) {
+        const n = abrirNavegador(url);
+        console.log(n.ok ? `Navegador: abierto (${n.via})` : `✖ Navegador: no se pudo abrir (${n.motivo}). Ábrela a mano: ${url}`);
+      }
       setTimeout(() => process.exit(0), 300);
     } else {
       console.error(`✖ El servidor no respondió en ${url} (${d}). Si el puerto ${PUERTO} lo usa otro programa, cambia config.json → servidor.puerto.`);

@@ -1,5 +1,9 @@
 # Changelog
 
+## 4.3.2 · /consola abre el navegador también cuando el servidor ya corría
+
+- **La app se abre de verdad y la salida lo dice.** Con el servidor ya encendido, `os-servidor.js --asegurar --abrir` lanzaba `cmd start` en segundo plano y salía a los 300 ms. En equipos donde la herramienta cierra el árbol del comando al terminar, la ventana nunca se abría y la salida no lo decía. Ahora el navegador se lanza de forma síncrona y, en Windows, por WMI, fuera del árbol, igual que el servidor. Si WMI falla, usa `cmd start`. La salida imprime «Navegador: abierto (WMI)» o «✖ Navegador: no se pudo abrir (motivo)» con la URL para abrirla a mano.
+
 ## 4.3.1 · Permisos de base de datos completos: también los lectores obedecen la consola
 
 - **`dbread.ps1` y `mongoread.py` leen ⚙ Config · Bases de datos.** Si el servidor y la base están registrados, manda su permiso de Leer: bloqueado no se consulta; «me pregunta» y automático se permiten, y el guardia pide el OK cuando toca. Así una base de staging registrada ya se puede leer, aunque su nombre no diga «test». Si no está registrada, sigue la regla de siempre (solo una base con «test» o «prueba»). Un servidor de producción de las reglas de la organización se bloquea siempre: gana la más estricta. La misma base en otro servidor no hereda el permiso.
