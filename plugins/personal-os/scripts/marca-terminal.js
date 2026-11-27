@@ -332,6 +332,7 @@ function main() {
     const marcas = Object.entries(datos.marcas || {}).map(([id, x]) => ({
       id, nombre: x.nombre || id, corto: x.corto || x.nombre || id, lema: x.lema || '', colores: x.colores || {},
       con_marca_agua: !!x.marca_agua_imagen, con_icono: !!x.icono,
+      marca_agua_opacidad: Number(x.marca_agua_opacidad ?? 0.18), marca_agua_posicion: x.marca_agua_posicion || 'center',
     }));
     const wt = estadoWT();
     console.log(JSON.stringify({

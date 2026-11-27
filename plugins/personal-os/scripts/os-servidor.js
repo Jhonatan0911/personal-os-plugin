@@ -767,6 +767,98 @@ async function terminalGuardar(cuerpo) {
   return Object.assign(await terminalEstado(), { ok: true, plan });
 }
 
+const TM_COLORES = ['principal', 'acento', 'acento_vivo', 'claro', 'fondo', 'fondo_suave', 'texto', 'gris', 'gris_suave', 'ok', 'error', 'alerta'];
+const TM_POS = ['center', 'top', 'bottom', 'left', 'right', 'topLeft', 'topRight', 'bottomLeft', 'bottomRight'];
+const TM_IMG_MAX = 2 * 1024 * 1024;
+
+/** Imagen de una marca (marca de agua o ícono) para la previsualización: solo dentro de la carpeta de marcas. */
+async function terminalImagen(marca, tipo) {
+  const est = await terminalEstado();
+  if (!est.existe || !['agua', 'icono'].includes(tipo)) return null;
+  const datos = JSON.parse(fs.readFileSync(est.ruta, 'utf8').replace(/^﻿/, ''));
+  const m = (datos.marcas || {})[marca];
+  const rel = m && (tipo === 'agua' ? m.marca_agua_imagen : m.icono);
+  if (!rel) return null;
+  const base = path.dirname(est.ruta);
+  const archivo = path.resolve(base, rel);
+  if (!archivo.startsWith(base + path.sep) || !/\.png$/i.test(archivo) || !fs.existsSync(archivo)) return null;
+  return fs.readFileSync(archivo);
+}
+
+/**
+ * Crear, editar o quitar una marca. { accion: 'guardar', id?, marca: {nombre, corto, lema, colores,
+ * marca_agua_opacidad, marca_agua_posicion}, imagenes?: { agua?: base64 PNG | null, icono?: base64 PNG | null } }
+ * o { accion: 'quitar', id }. La marca activa no se quita. Si se edita la activa con el tema prendido, se reaplica.
+ */
+async function terminalMarca(cuerpo) {
+  const est = await terminalEstado();
+  if (!est.existe) return { ok: false, mensaje: est.mensaje || 'no hay marcas configuradas' };
+  const datos = JSON.parse(fs.readFileSync(est.ruta, 'utf8').replace(/^﻿/, ''));
+  datos.marcas = datos.marcas || {};
+  const base = path.dirname(est.ruta);
+  const dirImg = path.join(base, 'terminal');
+  const texto = (v, max) => String(v == null ? '' : v).replace(/[\u0000-\u001f]/g, '').trim().slice(0, max);
+
+  if (cuerpo.accion === 'quitar') {
+    const id = String(cuerpo.id || '');
+    if (!Object.prototype.hasOwnProperty.call(datos.marcas, id)) return { ok: false, mensaje: 'esa marca no existe' };
+    if (id === datos.activa) return { ok: false, mensaje: 'es la marca activa: elige otra antes de quitarla' };
+    delete datos.marcas[id];
+    fs.writeFileSync(est.ruta, JSON.stringify(datos, null, 2) + '\n');
+    return Object.assign(await terminalEstado(), { ok: true, mensaje: 'marca quitada' });
+  }
+  if (cuerpo.accion !== 'guardar') return { ok: false, mensaje: 'acción desconocida' };
+
+  const e = cuerpo.marca || {};
+  const nombre = texto(e.nombre, 60);
+  if (!nombre) return { ok: false, mensaje: 'la marca necesita un nombre' };
+  const colores = {};
+  for (const k of TM_COLORES) {
+    const v = String((e.colores || {})[k] || '');
+    if (!/^#[0-9A-Fa-f]{6}$/.test(v)) return { ok: false, mensaje: `el color «${k}» no es válido (#RRGGBB)` };
+    colores[k] = v.toUpperCase();
+  }
+  const opacidad = Number(e.marca_agua_opacidad);
+  if (!(opacidad >= 0 && opacidad <= 1)) return { ok: false, mensaje: 'la opacidad va de 0 a 1' };
+  const posicion = TM_POS.includes(e.marca_agua_posicion) ? e.marca_agua_posicion : 'center';
+
+  let id = String(cuerpo.id || '');
+  const nueva = !id;
+  if (nueva) {
+    const raiz = C.sinTildes(nombre).replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 30) || 'marca';
+    id = raiz; for (let n = 2; Object.prototype.hasOwnProperty.call(datos.marcas, id); n++) id = `${raiz}-${n}`;
+  } else if (!Object.prototype.hasOwnProperty.call(datos.marcas, id)) return { ok: false, mensaje: 'esa marca no existe' };
+
+  const previa = datos.marcas[id] || {};
+  const m = Object.assign({}, previa, {
+    nombre, corto: texto(e.corto, 24) || nombre, lema: texto(e.lema, 90), colores,
+    marca_agua_opacidad: Math.round(opacidad * 100) / 100, marca_agua_posicion: posicion,
+  });
+  // Imágenes: base64 de un PNG (se verifica la firma), null para quitarla, ausente para dejarla como está.
+  for (const [tipo, clave, sufijo] of [['agua', 'marca_agua_imagen', 'marca-agua'], ['icono', 'icono', 'icono']]) {
+    const img = (cuerpo.imagenes || {})[tipo];
+    if (img === undefined) continue;
+    if (img === null) { m[clave] = null; continue; }
+    const buf = Buffer.from(String(img).replace(/^data:image\/png;base64,/, ''), 'base64');
+    if (buf.length > TM_IMG_MAX) return { ok: false, mensaje: `la imagen (${tipo === 'agua' ? 'marca de agua' : 'ícono'}) pasa de 2 MB` };
+    if (buf.length < 8 || buf.readUInt32BE(0) !== 0x89504e47) return { ok: false, mensaje: `la imagen (${tipo === 'agua' ? 'marca de agua' : 'ícono'}) debe ser PNG` };
+    fs.mkdirSync(dirImg, { recursive: true });
+    const nombreArch = `${id}-${sufijo}.png`;
+    fs.writeFileSync(path.join(dirImg, nombreArch), buf);
+    m[clave] = `terminal/${nombreArch}`;
+  }
+  datos.marcas[id] = m;
+  const antes = fs.readFileSync(est.ruta);
+  fs.writeFileSync(est.ruta, JSON.stringify(datos, null, 2) + '\n');
+  let plan = null;
+  if (id === datos.activa && datos.encendido !== false) {
+    const r = await marcaTerminal(['--aplicar'], 120000);
+    if (!r.ok) { fs.writeFileSync(est.ruta, antes); return { ok: false, mensaje: 'no se aplicó: ' + (r.err.replace(/^ERROR:\s*/, '') || 'error').slice(0, 300) }; }
+    plan = r.out.split(/\r?\n/).filter((l) => l.startsWith('  - ')).map((l) => l.slice(4));
+  }
+  return Object.assign(await terminalEstado(), { ok: true, id, nueva, plan, mensaje: nueva ? 'marca creada' : 'marca guardada' });
+}
+
 // ------------------------------------------------------------------ paso a producción: qué se genera
 
 /**
@@ -1249,6 +1341,11 @@ const servidor = http.createServer((req, res) => {
       terminalEstado().then((d) => json(200, d), (e) => json(500, { error: String(e && e.message) }));
       return;
     }
+    if (ruta === '/api/config/terminal/imagen') {
+      terminalImagen(String(url.searchParams.get('marca') || ''), String(url.searchParams.get('tipo') || ''))
+        .then((b) => (b ? enviar(200, 'image/png', b) : enviar(404, 'text/plain', 'sin imagen')), () => enviar(500, 'text/plain', 'error'));
+      return;
+    }
     if (ruta === '/api/indicadores') {
       indicadores().then((d) => json(200, d), (e) => json(500, { error: String(e && e.message) }));
       return;
@@ -1280,7 +1377,9 @@ const servidor = http.createServer((req, res) => {
   }
 
   let crudo = '';
-  req.on('data', (d) => { crudo += d; if (crudo.length > 20000) req.destroy(); });
+  // 20 KB por petición; solo guardar una marca de la terminal puede traer sus dos PNG en base64.
+  const limite = ruta === '/api/config/terminal/marca' ? 6 * 1024 * 1024 : 20000;
+  req.on('data', (d) => { crudo += d; if (crudo.length > limite) req.destroy(); });
   req.on('end', async () => {
     let cuerpo = {};
     try { cuerpo = crudo ? JSON.parse(crudo) : {}; } catch (_) { return json(400, { ok: false, mensaje: 'JSON inválido' }); }
@@ -1295,6 +1394,10 @@ const servidor = http.createServer((req, res) => {
       const f = { guardar: bdGuardar, quitar: bdQuitar, revelar: bdRevelar, etiqueta: bdEtiqueta }[mBd[1]];
       try { const r = f(cuerpo || {}); return json(r.ok ? 200 : 400, r); }
       catch (e) { return json(500, { ok: false, mensaje: 'no se pudo completar (' + String(e && e.code || 'error') + ')' }); }
+    }
+    if (ruta === '/api/config/terminal/marca') {
+      try { const r = await terminalMarca(cuerpo || {}); return json(r.ok ? 200 : 400, r); }
+      catch (e) { return json(500, { ok: false, mensaje: String(e && e.message).slice(0, 300) }); }
     }
     if (ruta === '/api/config/terminal') {
       try { const r = await terminalGuardar(cuerpo || {}); return json(r.ok ? 200 : 400, r); }
