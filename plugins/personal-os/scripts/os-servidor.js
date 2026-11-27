@@ -732,6 +732,41 @@ function borrarAgente(b) {
   return { ok: true, mensaje: `«${nombre}» movido a la papelera (${PAPELERA.replace(/\\/g, '/')})` };
 }
 
+// ------------------------------------------------------------------ terminal: tema de la marca (marca-terminal.js)
+
+/** Corre marca-terminal.js con los argumentos dados y devuelve su salida (el script valida la marca y los colores). */
+function marcaTerminal(args, timeout) {
+  return new Promise((resolve) => {
+    execFile(process.execPath, [path.join(__dirname, 'marca-terminal.js'), ...args], { windowsHide: true, timeout: timeout || 30000, cwd: STATE || C.OS_HOME },
+      (e, out, err) => resolve({ ok: !e, out: String(out || ''), err: String(err || '').trim() }));
+  });
+}
+
+async function terminalEstado() {
+  const r = await marcaTerminal(['--estado']);
+  if (!r.ok) {
+    const sinArchivo = /no existe .*terminal\.json/.test(r.err);
+    return { ok: true, existe: false, mensaje: sinArchivo ? 'Todavía no hay marcas configuradas.' : r.err.replace(/^ERROR:\s*/, '').slice(0, 300) };
+  }
+  return Object.assign({ existe: true }, JSON.parse(r.out.trim().split(/\r?\n/).pop()));
+}
+
+/** Guarda los interruptores y la marca activa en terminal.json y aplica. Solo esas tres claves se aceptan. */
+async function terminalGuardar(cuerpo) {
+  const est = await terminalEstado();
+  if (!est.existe) return { ok: false, mensaje: est.mensaje || 'no hay marcas configuradas' };
+  const datos = JSON.parse(fs.readFileSync(est.ruta, 'utf8').replace(/^﻿/, ''));
+  if ('encendido' in cuerpo) { if (typeof cuerpo.encendido !== 'boolean') return { ok: false, mensaje: 'encendido debe ser sí o no' }; datos.encendido = cuerpo.encendido; }
+  if ('restaurar_pestanas' in cuerpo) { if (typeof cuerpo.restaurar_pestanas !== 'boolean') return { ok: false, mensaje: 'restaurar_pestanas debe ser sí o no' }; datos.restaurar_pestanas = cuerpo.restaurar_pestanas; }
+  if ('activa' in cuerpo) { if (!Object.prototype.hasOwnProperty.call(datos.marcas || {}, cuerpo.activa)) return { ok: false, mensaje: 'esa marca no existe' }; datos.activa = cuerpo.activa; }
+  const antes = fs.readFileSync(est.ruta);
+  fs.writeFileSync(est.ruta, JSON.stringify(datos, null, 2) + '\n');
+  const r = await marcaTerminal(['--aplicar'], 120000);
+  if (!r.ok) { fs.writeFileSync(est.ruta, antes); return { ok: false, mensaje: 'no se aplicó: ' + (r.err.replace(/^ERROR:\s*/, '') || 'error').slice(0, 300) }; }
+  const plan = r.out.split(/\r?\n/).filter((l) => l.startsWith('  - ')).map((l) => l.slice(4));
+  return Object.assign(await terminalEstado(), { ok: true, plan });
+}
+
 // ------------------------------------------------------------------ paso a producción: qué se genera
 
 /**
@@ -1210,6 +1245,10 @@ const servidor = http.createServer((req, res) => {
     if (ruta === '/api/config/paso-produccion') {
       try { return json(200, pasoProduccion()); } catch (e) { return json(500, { error: String(e && e.message) }); }
     }
+    if (ruta === '/api/config/terminal') {
+      terminalEstado().then((d) => json(200, d), (e) => json(500, { error: String(e && e.message) }));
+      return;
+    }
     if (ruta === '/api/indicadores') {
       indicadores().then((d) => json(200, d), (e) => json(500, { error: String(e && e.message) }));
       return;
@@ -1256,6 +1295,10 @@ const servidor = http.createServer((req, res) => {
       const f = { guardar: bdGuardar, quitar: bdQuitar, revelar: bdRevelar, etiqueta: bdEtiqueta }[mBd[1]];
       try { const r = f(cuerpo || {}); return json(r.ok ? 200 : 400, r); }
       catch (e) { return json(500, { ok: false, mensaje: 'no se pudo completar (' + String(e && e.code || 'error') + ')' }); }
+    }
+    if (ruta === '/api/config/terminal') {
+      try { const r = await terminalGuardar(cuerpo || {}); return json(r.ok ? 200 : 400, r); }
+      catch (e) { return json(500, { ok: false, mensaje: String(e && e.message).slice(0, 300) }); }
     }
     if (ruta === '/api/config/paso-produccion') {
       try { const r = guardarPasoProduccion(cuerpo); return json(r.ok ? 200 : 400, r); }

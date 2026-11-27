@@ -249,6 +249,33 @@ table.osm-perm{width:100%;border-collapse:collapse}
 .osm-err-caja b{color:var(--ink);font-size:var(--fs-md)}
 .osm-err-caja details summary{cursor:pointer;color:var(--muted-2)}.osm-err-caja code{font:var(--fs-xs) var(--mono);color:var(--muted-2);word-break:break-word}
 .osm-err{color:var(--r3);font-size:var(--fs-sm);margin:0 0 var(--sp-3)}
+/* Config · Terminal: interruptores, selector de marca y previsualización (prefijo osm-tm-) */
+.osm-tm{display:grid;gap:var(--sp-5);max-width:1100px}
+.osm-tm-ctl{display:grid;gap:var(--sp-1);max-width:70ch}
+.osm-tm-ctl select{font:var(--fs-md) var(--sans);min-height:40px;padding:0 var(--sp-3);border-radius:10px;border:1px solid var(--borde);background:var(--panel-2);color:var(--ink);max-width:360px}
+.osm-tm-ctl .osm-f-l{font-size:var(--fs-sm);color:var(--muted-2);margin:var(--sp-2) 0 var(--sp-1)}
+.osm-tm-sw{display:flex;gap:var(--sp-3);align-items:flex-start;padding:10px 0;min-height:44px;cursor:pointer;color:var(--ink);font-size:var(--fs-md);line-height:1.4}
+#view-config .osm-tm-sw input[type=checkbox]{appearance:none;display:block;flex:none;width:42px;height:24px;border:0;border-radius:12px;background:var(--line-strong);position:relative;cursor:pointer;margin-top:1px;transition:background .15s}
+#view-config .osm-tm-sw input[type=checkbox]::after{content:"";position:absolute;top:3px;left:3px;width:18px;height:18px;border:0;border-radius:50%;background:#fff;opacity:1;transform:none;transition:transform .15s}
+#view-config .osm-tm-sw input[type=checkbox]:checked{background:var(--synapse)}
+#view-config .osm-tm-sw input[type=checkbox]:checked::after{transform:translateX(18px)}
+#view-config .osm-tm-sw input[type=checkbox]:focus-visible{outline:2px solid var(--synapse);outline-offset:2px}
+.osm-tm-sw small{display:block;font-size:var(--fs-sm);color:var(--muted-2);margin-top:2px}
+.osm-tm-prev-h{display:flex;align-items:baseline;gap:var(--sp-3);flex-wrap:wrap;margin:0 0 var(--sp-3)}
+.osm-tm-prev-h b{font-size:var(--fs-md);color:var(--ink)}.osm-tm-prev-h span{font-size:var(--fs-sm);color:var(--muted-2)}
+.osm-tm-par{display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:var(--sp-4)}
+.osm-tm-win{border-radius:10px;overflow:hidden;box-shadow:0 10px 28px rgba(0,0,0,.35);border:1px solid rgba(255,255,255,.06)}
+.osm-tm-tabs{display:flex;align-items:flex-end;gap:2px;height:34px;padding:0 6px;font:12px var(--sans)}
+.osm-tm-tab{padding:7px 12px;border-radius:7px 7px 0 0;display:flex;gap:6px;align-items:center;white-space:nowrap}
+.osm-tm-tab.on{font-weight:600}
+.osm-tm-ico{width:10px;height:10px;border-radius:50%;flex:none}
+.osm-tm-body{position:relative;padding:10px 12px 12px;font:12px/1.55 "Cascadia Code",Consolas,var(--mono);white-space:pre-wrap;min-height:250px;overflow:hidden}
+.osm-tm-agua{position:absolute;inset:0;display:grid;place-items:center;font:700 26px var(--sans);letter-spacing:.02em;pointer-events:none}
+.osm-tm-bar{display:flex;gap:8px;margin:6px 0}.osm-tm-bar i{flex:none;width:3px;border-radius:2px}
+.osm-tm-bar div{flex:1;min-width:0}
+.osm-tm-blk{padding:0 5px;font-weight:700}.osm-tm-st{margin-top:10px;padding-top:6px;font-weight:700}
+.osm-tm-nota{display:flex;gap:var(--sp-2);align-items:center;margin-top:var(--sp-3);font-size:var(--fs-sm);color:var(--muted-2)}
+.osm-tm-plan{margin:var(--sp-3) 0 0;padding-left:1.2em;font-size:var(--fs-sm);color:var(--muted-2);line-height:1.6}
 /* ayuda «?» */
 .osm-ayuda{appearance:none;position:relative;display:inline-grid;place-items:center;width:28px;height:28px;border-radius:50%;border:1px solid var(--borde);background:transparent;color:var(--ink-2);font:600 var(--fs-sm) var(--sans);cursor:pointer}
 .osm-ayuda::after{content:"";position:absolute;inset:-8px}
@@ -575,7 +602,7 @@ dialog.osm-dlg.ancho{max-width:600px}
 
   // ---- página: título, pestañas y paneles
   const cfg = el("div", { className: "osm-col osm-cfg" });
-  const TABS = [["agentes", "Agentes"], ["skills", "Skills"], ["bd", "Bases de datos"]];
+  const TABS = [["agentes", "Agentes"], ["skills", "Skills"], ["bd", "Bases de datos"], ["terminal", "Terminal"]];
   const tabBar = el("div", { className: "osm-tabs", role: "tablist", ariaLabel: "Secciones de configuración" });
   const paneles = {}, cuentas = {}, splits = {};
   for (const [id, t] of TABS) {
@@ -587,7 +614,7 @@ dialog.osm-dlg.ancho{max-width:600px}
     paneles[id].setAttribute("aria-labelledby", b.id);
   }
   cfg.append(el("h2", { className: "osm-cfg-h", textContent: "Configuración" }),
-    el("p", { className: "osm-lede", textContent: "Ajusta tus agentes, lo que generan tus skills y qué puede hacer Claude en cada base de datos." }),
+    el("p", { className: "osm-lede", textContent: "Ajusta tus agentes, lo que generan tus skills, qué puede hacer Claude en cada base de datos y cómo se ve tu terminal." }),
     tabBar, ...TABS.map(([id]) => paneles[id]));
   vConfig.append(cfg);
   // Alto visible de Config: tope de la ficha fija en escritorio
@@ -608,7 +635,7 @@ dialog.osm-dlg.ancho{max-width:600px}
     tabBar.querySelectorAll("[role=tab]").forEach((b) => { const s = b.dataset.tab === id; b.setAttribute("aria-selected", String(s)); b.tabIndex = s ? 0 : -1; if (s && foco) b.focus(); });
     for (const [k] of TABS) paneles[k].hidden = k !== id;
     recordar("tab", id);
-    const sel = id === "agentes" ? ag.actual && ag.actual.nombre : id === "skills" ? sk.actual : bd.actual;
+    const sel = id === "agentes" ? ag.actual && ag.actual.nombre : id === "skills" ? sk.actual : id === "bd" ? bd.actual : null;
     escribirEnlace(id === "agentes" ? "agentes" : id, sel || null);
     cfg.scrollTop = 0;
     cargarTab(id);
@@ -1391,11 +1418,109 @@ dialog.osm-dlg.ancho{max-width:600px}
   }
   bdNueva.addEventListener("click", () => bdVer(null));
 
+  // ==================================================================== CONFIG · terminal (tema de la marca)
+  // Interruptores y marca activa de config/marca/terminal.json; los aplica scripts/marca-terminal.js. Son
+  // decisiones con efecto en el equipo: la previsualización sigue al borrador y nada se aplica hasta Guardar (CO-045).
+  const tm = { datos: null, borrador: null, sucio: false };
+  const tmCaja = el("div", { className: "osm-tm" });
+  paneles.terminal.append(el("div", { className: "osm-tp-h" }, el("p", { textContent: "El tema de tu marca en Windows Terminal, Claude Code, PowerShell y CMD, y qué pasa con tus pestañas si la ventana se cierra sin querer. Mira la previsualización antes de guardar." })), tmCaja);
+
+  async function tmCargar() {
+    conEsqueleto(tmCaja, 3);
+    try { const r = await fetch("/api/config/terminal"); if (!r.ok) throw new Error("respuesta " + r.status); tm.datos = await r.json(); }
+    catch (e) { errorCarga(tmCaja, "la configuración de tu terminal", e, tmCargar); return; }
+    tmCaja.removeAttribute("aria-busy");
+    tm.borrador = tm.datos.existe ? { encendido: tm.datos.encendido, restaurar_pestanas: tm.datos.restaurar_pestanas, activa: tm.datos.activa } : null;
+    tm.sucio = false; tmPintar();
+  }
+
+  // Ventana simulada de Windows Terminal con los colores de la marca (o la de fábrica si el tema está apagado).
+  function tmVentana(m, on, cual) {
+    const c = on && m ? m.colores : { principal: "#202020", acento: "#3A96DD", claro: "#264F78", fondo: "#0C0C0C", fondo_suave: "#1E1E1E", texto: "#CCCCCC", gris: "#767676", gris_suave: "#767676", ok: "#13A10E", error: "#C50F1F", alerta: "#C19C00", acento_vivo: "#3B78FF" };
+    const est = (o) => Object.entries(o).map(([k, v]) => `${k}:${v}`).join(";");
+    const sp = (t, o) => el("span", { textContent: t, style: est(o || {}) });
+    const tab = (t, activa) => el("span", { className: "osm-tm-tab" + (activa ? " on" : ""), style: est(activa ? { background: c.fondo, color: on ? c.principal : "#fff" } : { color: on ? c.claro : "#9a9a9a" }) },
+      el("span", { className: "osm-tm-ico", style: est({ background: on ? c.acento_vivo : "#9a9a9a" }) }), t);
+    const tabs = el("div", { className: "osm-tm-tabs", style: est({ background: on ? c.principal : "#2b2b2b" }) },
+      tab("Claude Code", cual === "claude"), tab("PowerShell", cual === "ps"), tab("Símbolo del sistema", false));
+    const cuerpo = el("div", { className: "osm-tm-body", style: est({ background: c.fondo, color: c.texto }) });
+    if (on && m && m.con_marca_agua) cuerpo.append(el("div", { className: "osm-tm-agua", textContent: m.nombre, style: est({ color: c.principal, opacity: ".06" }) }));
+    const barra = (color, ...hijos) => el("div", { className: "osm-tm-bar" }, el("i", { style: est({ background: color }) }), el("div", {}, ...hijos));
+    if (cual === "claude") {
+      if (on && m) cuerpo.append(el("div", {}, sp("▲ " + m.nombre, { color: c.principal, "font-weight": "700" })), m.lema ? el("div", {}, sp("  " + m.lema, { color: c.gris })) : "");
+      cuerpo.append(el("div", { style: "height:6px" }));
+      const tuyo = on ? barra(c.gris_suave, sp("revisa el servicio de citas", { "font-weight": "700" })) : el("div", { style: est({ background: "#2a2a2a", padding: "2px 6px", margin: "6px 0" }) }, sp("> revisa el servicio de citas"));
+      cuerpo.append(tuyo,
+        barra(on ? c.principal : "transparent", sp("● ", {}), sp("La validación de la fecha falta en "), sp("citas.service.ts:58", { color: c.acento, "font-weight": "700" })),
+        el("div", {}, sp("● ", { color: c.ok }), sp("Update", { "font-weight": "700" }), sp("(citas.service.ts)", { color: c.gris })),
+        el("div", { style: est({ background: on ? "#FBE9E7" : "#4b1818", color: on ? c.error : "#ffb4b4" }) }, sp("- console.log('agendando', fecha)")),
+        el("div", { style: est({ background: on ? "#E6F4EA" : "#183b1f", color: on ? c.ok : "#b4f0be" }) }, sp("+ if (fecha <= ahora) throw new Error('Fecha pasada')")),
+        el("div", { className: "osm-tm-st", style: est({ "border-top": `1px solid ${on ? "#E2E8F0" : "#333"}` }) },
+          on ? sp(` ▲ ${m.corto} `, { background: c.principal, color: "#fff" }) : "", sp(on ? "  develop · Opus" : "develop · Opus", { color: on ? c.principal : c.gris, "font-weight": on ? "700" : "400" })));
+    } else {
+      const prompt = () => on && m
+        ? el("span", {}, sp(" ▲ PS ", { background: c.principal, color: "#fff", "font-weight": "700" }), sp(" C:\\proyectos\\citas ", { background: c.claro, color: c.acento }), sp(" ⎇ develop ", { background: c.fondo_suave, color: c.gris }), sp(" "))
+        : sp("PS C:\\proyectos\\citas> ");
+      cuerpo.append(el("div", {}, prompt(), sp("git status")), el("div", {}, sp("On branch develop")), el("div", {}, sp("\tmodified:   src/citas.service.ts", { color: c.error })),
+        el("div", {}, sp("\tnew file:   src/fecha.spec.ts", { color: c.ok })), el("div", { style: "height:8px" }),
+        el("div", {}, prompt(), sp("dotnet build")), el("div", {}, sp("warning CS8618: propiedad sin valor", { color: c.alerta })), el("div", {}, sp("Build succeeded.", { color: c.ok })),
+        el("div", { style: "height:8px" }), el("div", {}, prompt(), sp("▌", { color: c.acento })));
+    }
+    return el("div", { className: "osm-tm-win", role: "img", ariaLabel: (cual === "claude" ? "Claude Code" : "PowerShell") + (on ? " con el tema de " + m.nombre : " como viene de fábrica") }, tabs, cuerpo);
+  }
+
+  function tmPintar() {
+    const d = tm.datos; if (!d) return;
+    if (!d.existe) {
+      tmCaja.replaceChildren(vacio("Todavía no hay marcas", (d.mensaje ? d.mensaje + " " : "") + "Pídele a Claude «/marca-terminal»: crea el archivo de marcas, te pregunta los colores y el logo, y aquí podrás prender, apagar y previsualizar el tema."));
+      return;
+    }
+    const b = tm.borrador;
+    const m = d.marcas.find((x) => x.id === b.activa) || d.marcas[0];
+    const sw = (id, on, titulo, ayuda, cambio) => {
+      const i = el("input", { type: "checkbox", id, checked: on, role: "switch" });
+      i.addEventListener("change", () => { cambio(i.checked); tm.sucio = true; tmPintar(); tmPie.sucio(); const v = $("#" + id); if (v) v.focus(); });
+      return el("label", { className: "osm-tm-sw", htmlFor: id }, i, el("span", {}, titulo, el("small", { textContent: ayuda })));
+    };
+    const sel = el("select", { id: "osm-tm-marca", ariaLabel: "Marca activa", disabled: !b.encendido },
+      ...d.marcas.map((x) => el("option", { value: x.id, textContent: `${x.nombre} (${x.colores.principal || "sin color"})`, selected: x.id === b.activa })));
+    sel.addEventListener("change", () => { b.activa = sel.value; tm.sucio = true; tmPintar(); tmPie.sucio(); const v = $("#osm-tm-marca"); if (v) v.focus(); });
+    const ctl = el("div", { className: "osm-tm-ctl" },
+      sw("osm-tm-on", b.encendido, "Tema de la marca", "Colores, ícono y marca de agua en Windows Terminal; línea de estado, barras de mensajes y bienvenida en Claude Code; prompt de PowerShell y CMD.", (v) => { b.encendido = v; }),
+      el("p", { className: "osm-f-l", textContent: "Marca activa" }), sel,
+      sw("osm-tm-rest", b.restaurar_pestanas, "Restaurar pestañas al reabrir", "Si la ventana se cierra sin querer, al abrirla vuelven las mismas pestañas, cada una en su carpeta. Cerrar varias pide confirmación. Claude no se reabre solo: en la pestaña, «claude --continue».", (v) => { b.restaurar_pestanas = v; }));
+    const prev = el("div", {},
+      el("div", { className: "osm-tm-prev-h" }, el("b", { textContent: "Previsualización" }), el("span", { textContent: tm.sucio ? "Así quedaría al guardar." : "Así está ahora." })),
+      el("div", { className: "osm-tm-par" }, tmVentana(m, b.encendido, "claude"), tmVentana(m, b.encendido, "ps")),
+      el("p", { className: "osm-tm-nota" }, svg("info"), el("span", { textContent: b.restaurar_pestanas ? "Al reabrir Windows Terminal: vuelven tus pestañas, cada una en su carpeta." : "Al reabrir Windows Terminal: arranca con una sola pestaña nueva." })));
+    const plan = tm.plan && !tm.sucio ? el("ul", { className: "osm-tm-plan" }, ...tm.plan.map((t) => el("li", { textContent: t }))) : "";
+    tmCaja.replaceChildren(ctl, prev, plan, tmPie.caja);
+  }
+
+  const tmPie = pieGuardar(null);
+  tmPie.limpio();
+  tmPie.d.addEventListener("click", () => { tm.borrador = { encendido: tm.datos.encendido, restaurar_pestanas: tm.datos.restaurar_pestanas, activa: tm.datos.activa }; tm.sucio = false; tm.plan = null; tmPintar(); tmPie.limpio(); });
+  tmPie.g.addEventListener("click", async () => {
+    if (!tm.borrador.encendido && tm.datos.encendido && !(await confirmar("Apagar el tema de la marca", "Windows Terminal vuelve a sus colores de fábrica, Claude Code deja de cargar el mod en las sesiones nuevas y PowerShell y CMD vuelven a su prompt normal. Puedes volver a prenderlo aquí cuando quieras."))) return;
+    tmPie.ocupado("Aplicando…"); tmPie.g.setAttribute("aria-busy", "true");
+    try {
+      const r = await fetch("/api/config/terminal", { method: "POST", headers: { "Content-Type": "application/json", "X-OS-Token": TOKEN }, body: JSON.stringify(tm.borrador) });
+      let j; try { j = await r.json(); } catch (_) { j = { ok: false, mensaje: `respuesta ${r.status}` }; }
+      if (r.status === 403) j.mensaje = "el servidor se reinició: recarga la página (Ctrl+R)";
+      if (!j.ok) throw new Error(j.mensaje || "no se pudo aplicar");
+      tm.datos = j; tm.plan = j.plan || null; tm.sucio = false;
+      tm.borrador = { encendido: j.encendido, restaurar_pestanas: j.restaurar_pestanas, activa: j.activa };
+      tmPintar(); tmPie.limpio("Aplicado. Abre una consola nueva para verlo");
+    } catch (e) { tmPie.error("No se aplicó: " + e.message); tmPie.g.disabled = false; }
+    finally { tmPie.g.removeAttribute("aria-busy"); }
+  });
+
   // ---- carga de cada pestaña (una vez; el refresco nunca toca un formulario, CO-096)
   function cargarTab(id) {
     if (id === "agentes" && !ag.datos) agCargar();
     if (id === "skills" && !sk.datos) skCargar();
     if (id === "bd" && !bd.datos) bdCargar();
+    if (id === "terminal" && !tm.datos) tmCargar();
   }
   // Al entrar a Config: la pestaña del enlace o la última usada; las cuentas de las otras se llenan en segundo plano.
   function entrarConfig() {
@@ -1415,7 +1540,7 @@ dialog.osm-dlg.ancho{max-width:600px}
   addEventListener("hashchange", () => { const e = leerEnlace(); if (!e || !vConfig.classList.contains("active")) return;
     if (paneles[e.tab]) { irTab(e.tab); if (e.id) { if (e.tab === "skills" && sk.datos) { const s = sk.datos.skills.find((x) => x.nombre === e.id); if (s) skVer(s); } else if (e.tab === "bd" && bd.datos) { const c = bd.datos.conexiones.find((x) => x.id === e.id); if (c) bdVer(c); } else if (e.tab === "agentes" && ag.datos) { const a = ag.datos.agentes.find((x) => x.nombre === e.id); if (a) agVer(a); } } } });
 
-  addEventListener("beforeunload", (e) => { if (ag.sucio || bd.sucio) { e.preventDefault(); e.returnValue = ""; } });
+  addEventListener("beforeunload", (e) => { if (ag.sucio || bd.sucio || tm.sucio) { e.preventDefault(); e.returnValue = ""; } });
   // Cambiar de vista de la consola con una ficha sucia en Config pregunta antes (diálogo de la casa). Va en captura,
   // antes del cambio de vista; si se acepta, se descartan los cambios y se repite el clic.
   let tabPermitida = null;

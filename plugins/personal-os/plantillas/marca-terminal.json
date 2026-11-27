@@ -1,5 +1,7 @@
 {
   "activa": "mi-marca",
+  "encendido": true,
+  "restaurar_pestanas": true,
   "marcas": {
     "mi-marca": {
       "nombre": "mi empresa",

@@ -5,8 +5,11 @@
 //   node marca-terminal.js                     muestra el plan (simulación)
 //   node marca-terminal.js --aplicar           aplica, con respaldo del día
 //   node marca-terminal.js --marca otra --aplicar
+//   node marca-terminal.js --estado            JSON con las marcas, los interruptores y lo que está aplicado
 //
-// Lee <stateDir>/config/marca/terminal.json ({ activa, marcas: { id: {...} } }) y toca:
+// Lee config/marca/terminal.json en la carpeta de configuración del Personal OS (el --config-dir de
+// servidor.consola_args, o <stateDir>/config): { activa, encendido, restaurar_pestanas, marcas: { id: {...} } }.
+// `encendido: false` quita el tema (mod, Windows Terminal, prompts); `restaurar_pestanas` es aparte. Toca:
 //   1. Imágenes (opcionales): copia la marca de agua y el ícono a <home>/.claude/marca-terminal/
 //      con un sufijo por contenido (Windows Terminal guarda en caché la imagen por ruta).
 //   2. Mod de Claude Code: copia plantillas/marca-terminal-mod/ a <home>/.claude/marca-terminal/mod/
@@ -26,6 +29,7 @@ const C = require('./lib/comun');
 
 const APLICAR = process.argv.includes('--aplicar');
 const INICIAR = process.argv.includes('--iniciar');
+const ESTADO = process.argv.includes('--estado');
 const MARCA_ARG = C.arg('--marca');
 const HOME = os.homedir();
 const SALIDA = path.join(HOME, '.claude', 'marca-terminal');
@@ -59,16 +63,24 @@ function respaldar(ruta) {
   if (APLICAR) fs.copyFileSync(ruta, copia);
 }
 
+// Carpeta de configuración: --config-dir > el de servidor.consola_args (instalación suelta) > <stateDir>/config.
 function rutaConfig() {
-  const dir = C.stateDir();
+  const forzado = C.arg('--config-dir', null);
+  const a = (C.config().servidor || {}).consola_args || [];
+  const i = a.indexOf('--config-dir');
+  const dir = forzado || (i > -1 && a[i + 1]) || (C.stateDir() ? path.join(C.stateDir(), 'config') : null);
   if (!dir) salir('no hay stateDir en la configuración del Personal OS (corre /os-setup).');
-  return path.join(dir, 'config', 'marca', 'terminal.json');
+  return path.join(path.resolve(dir), 'marca', 'terminal.json');
+}
+
+function leerDatos() {
+  const ruta = rutaConfig();
+  if (!fs.existsSync(ruta)) salir(`no existe ${ruta}. Créalo con: node marca-terminal.js --iniciar`);
+  return { ruta, datos: leerJsonSinBom(ruta) };
 }
 
 function cargar() {
-  const ruta = rutaConfig();
-  if (!fs.existsSync(ruta)) salir(`no existe ${ruta}. Créalo con: node marca-terminal.js --iniciar`);
-  const datos = leerJsonSinBom(ruta);
+  const { ruta, datos } = leerDatos();
   const id = MARCA_ARG || datos.activa;
   const m = (datos.marcas || {})[id];
   if (!m) salir(`la marca '${id}' no está en ${ruta} (hay: ${Object.keys(datos.marcas || {}).join(', ')})`);
@@ -84,6 +96,8 @@ function cargar() {
   }
   return {
     id,
+    encendido: datos.encendido !== false,
+    restaurar: datos.restaurar_pestanas !== false,
     nombre: m.nombre || id,
     corto: m.corto || m.nombre || id,
     lema: m.lema || '',
@@ -129,17 +143,22 @@ function mod(m) {
 }
 
 // 3. settings.json de Claude Code ----------------------------------------------
-function settingsClaude() {
+function settingsClaude(on) {
   const s = fs.existsSync(SETTINGS) ? leerJsonSinBom(SETTINGS) : {};
   s.env = s.env || {};
-  const rutas = String(s.env.CLAUDE_CODE_PLUGIN_DIRS || '').split(path.delimiter).filter((r) => r && !r.includes('marca-terminal'));
-  rutas.push(MOD.split(path.sep).join('/'));
+  const antes = s.env.CLAUDE_CODE_PLUGIN_DIRS;
+  const rutas = String(antes || '').split(path.delimiter).filter((r) => r && !r.includes('marca-terminal'));
+  if (on) rutas.push(MOD.split(path.sep).join('/'));
   const nuevo = rutas.join(path.delimiter);
-  if (s.env.CLAUDE_CODE_PLUGIN_DIRS === nuevo) { plan.push('settings.json de Claude Code: sin cambios'); return; }
-  plan.push(`settings.json de Claude Code: CLAUDE_CODE_PLUGIN_DIRS = ${nuevo}`);
+  if ((antes || '') === nuevo) { plan.push('settings.json de Claude Code: sin cambios'); return; }
+  plan.push(on ? `settings.json de Claude Code: carga el mod (${MOD})` : 'settings.json de Claude Code: deja de cargar el mod');
   respaldar(SETTINGS);
-  s.env.CLAUDE_CODE_PLUGIN_DIRS = nuevo;
+  if (nuevo) s.env.CLAUDE_CODE_PLUGIN_DIRS = nuevo; else delete s.env.CLAUDE_CODE_PLUGIN_DIRS;
   escribir(SETTINGS, JSON.stringify(s, null, 2) + '\n');
+}
+
+function modCargado() {
+  try { return String((leerJsonSinBom(SETTINGS).env || {}).CLAUDE_CODE_PLUGIN_DIRS || '').includes('marca-terminal'); } catch { return false; }
 }
 
 // 4. Windows Terminal ---------------------------------------------------------------
@@ -159,27 +178,52 @@ function windowsTerminal(m, agua, icono) {
     tab: { background: c.fondo + 'FF', unfocusedBackground: c.principal + 'FF', showCloseButton: 'hover' },
   };
   const s = leerJsonSinBom(WT);
-  s.schemes = (s.schemes || []).filter((x) => !String(x.name || '').startsWith('Marca ')).concat(esquema);
-  s.themes = (s.themes || []).filter((x) => !String(x.name || '').startsWith('Marca ')).concat(tema);
-  s.theme = nombre;
-  // Si la ventana se cierra sin querer, al reabrir vuelven las mismas pestañas, cada una en su
-  // carpeta (la informa el prompt con OSC 9;9) y con su texto; cerrar varias pide confirmación.
-  s.firstWindowPreference = 'persistedLayoutAndContent';
-  delete s.confirmCloseAllTabs;
-  s['warning.confirmCloseAllTabs'] = true;
+  const antes = JSON.stringify(s);
   s.profiles = s.profiles || {};
   const d = (s.profiles.defaults = s.profiles.defaults || {});
-  Object.assign(d, { colorScheme: nombre, cursorShape: 'bar', padding: '12' });
-  if (agua) {
-    Object.assign(d, {
-      backgroundImage: agua.split(path.sep).join('/'), backgroundImageOpacity: m.opacidad,
-      backgroundImageAlignment: m.posicion, backgroundImageStretchMode: 'none',
-    });
+  const deLaMarca = (v) => String(v || '').includes('marca-terminal');
+  if (m.encendido) {
+    s.schemes = (s.schemes || []).filter((x) => !String(x.name || '').startsWith('Marca ')).concat(esquema);
+    s.themes = (s.themes || []).filter((x) => !String(x.name || '').startsWith('Marca ')).concat(tema);
+    s.theme = nombre;
+    Object.assign(d, { colorScheme: nombre, cursorShape: 'bar', padding: '12' });
+    if (agua) {
+      Object.assign(d, {
+        backgroundImage: agua.split(path.sep).join('/'), backgroundImageOpacity: m.opacidad,
+        backgroundImageAlignment: m.posicion, backgroundImageStretchMode: 'none',
+      });
+    }
+    if (icono) d.icon = icono.split(path.sep).join('/');
+    plan.push(`Windows Terminal: esquema y tema '${nombre}', pestañas ${c.principal}${agua ? `, marca de agua ${m.posicion} al ${m.opacidad}` : ''}`);
+  } else {
+    // Apagar: vuelve a lo de fábrica solo lo que puso la marca; los esquemas quedan guardados para volver.
+    if (String(s.theme || '').startsWith('Marca ')) s.theme = 'system';
+    if (String(d.colorScheme || '').startsWith('Marca ')) delete d.colorScheme;
+    if (deLaMarca(d.backgroundImage)) for (const k of ['backgroundImage', 'backgroundImageOpacity', 'backgroundImageAlignment', 'backgroundImageStretchMode']) delete d[k];
+    if (deLaMarca(d.icon)) delete d.icon;
+    plan.push('Windows Terminal: sin el tema de la marca (colores, ícono y marca de agua de fábrica)');
   }
-  if (icono) d.icon = icono.split(path.sep).join('/');
-  plan.push(`Windows Terminal: esquema y tema '${nombre}', pestañas ${c.principal}${agua ? `, marca de agua ${m.posicion} al ${m.opacidad}` : ''}, restaura pestañas al reabrir y confirma antes de cerrar varias`);
+  // Si la ventana se cierra sin querer, al reabrir vuelven las mismas pestañas, cada una en su
+  // carpeta (la informa el prompt con OSC 9;9) y con su texto; cerrar varias pide confirmación.
+  delete s.confirmCloseAllTabs;
+  if (m.restaurar) {
+    s.firstWindowPreference = 'persistedLayoutAndContent';
+    s['warning.confirmCloseAllTabs'] = true;
+    plan.push('Windows Terminal: restaura pestañas y carpetas al reabrir; confirma antes de cerrar varias');
+  } else {
+    if (s.firstWindowPreference === 'persistedLayoutAndContent') s.firstWindowPreference = 'defaultProfile';
+    plan.push('Windows Terminal: no restaura las pestañas al reabrir');
+  }
+  if (JSON.stringify(s) === antes) { plan.push('Windows Terminal: sin cambios'); return; }
   respaldar(WT);
   escribir(WT, JSON.stringify(s, null, 4) + '\n');
+}
+
+function estadoWT() {
+  try {
+    const s = leerJsonSinBom(WT);
+    return { instalado: true, tema: String(s.theme || '').startsWith('Marca '), restaurar: s.firstWindowPreference === 'persistedLayoutAndContent' };
+  } catch { return { instalado: false, tema: false, restaurar: false }; }
 }
 
 // 5. Prompt de PowerShell ------------------------------------------------------------
@@ -198,7 +242,18 @@ function promptPowerShell(m) {
   if (!perfil) { plan.push('PowerShell: no se encontró $PROFILE, se omite'); return; }
   const c = m.colores;
   // Solo ASCII: PowerShell 5.1 lee el perfil sin BOM como ANSI. Los símbolos van con [char].
-  const bloque = [
+  // Tema apagado pero restaurar encendido: prompt normal que solo le informa la carpeta a Windows Terminal.
+  const minimo = [
+    INICIO_PS,
+    'function prompt {',
+    '    $e = [char]27',
+    '    $ruta = $executionContext.SessionState.Path.CurrentLocation.Path',
+    '    "$e]9;9;$ruta$e\\PS $ruta> "',
+    '}',
+    FIN_PS,
+    '',
+  ].join('\r\n');
+  const completo = [
     INICIO_PS,
     'function prompt {',
     '    $e = [char]27',
@@ -226,8 +281,10 @@ function promptPowerShell(m) {
     FIN_PS,
     '',
   ].join('\r\n');
+  const bloque = m.encendido ? completo : m.restaurar ? minimo : '';
   const actual = fs.existsSync(perfil) ? fs.readFileSync(perfil, 'utf8').replace(/^﻿/, '') : '';
-  const i = actual.indexOf(INICIO_PS);
+  // Se reconoce cualquier versión del marcador de inicio (el texto entre paréntesis ha cambiado).
+  const i = actual.indexOf('# >>> marca-terminal');
   const f = actual.indexOf(FIN_PS);
   let nuevo;
   if (i >= 0 && f > i) {
@@ -235,10 +292,10 @@ function promptPowerShell(m) {
     while (actual[fin] === '\r' || actual[fin] === '\n') fin++;
     nuevo = actual.slice(0, i) + bloque + actual.slice(fin);
   } else {
-    nuevo = (actual.trim() ? actual.replace(/\s+$/, '') + '\r\n\r\n' : '') + bloque;
+    nuevo = !bloque ? actual : (actual.trim() ? actual.replace(/\s+$/, '') + '\r\n\r\n' : '') + bloque;
   }
   if (nuevo === actual) { plan.push(`PowerShell: sin cambios (${perfil})`); return; }
-  plan.push(`PowerShell: prompt de la marca en ${perfil}`);
+  plan.push(m.encendido ? `PowerShell: prompt de la marca en ${perfil}` : m.restaurar ? `PowerShell: prompt normal que informa la carpeta (${perfil})` : `PowerShell: se quita el prompt de la marca (${perfil})`);
   respaldar(perfil);
   escribir(perfil, nuevo);
 }
@@ -248,9 +305,16 @@ function promptCmd(m) {
   if (process.platform !== 'win32') return;
   const c = m.colores;
   // $E]9;9;$P$E\ le dice a Windows Terminal la carpeta actual (restaurar pestañas en su carpeta).
-  const valor = `$E]9;9;$P$E\\$E[1;97;48;2;${sgr(c.principal)}m ▲ CMD $E[0m$E[38;2;${sgr(c.acento)};48;2;${sgr(c.claro)}m $P $E[0m `;
-  plan.push('CMD: variable de usuario PROMPT con los colores de la marca');
-  if (APLICAR) execFileSync('reg', ['add', 'HKCU\\Environment', '/v', 'PROMPT', '/t', 'REG_SZ', '/d', valor, '/f'], { stdio: 'ignore' });
+  const valor = m.encendido
+    ? `$E]9;9;$P$E\\$E[1;97;48;2;${sgr(c.principal)}m ▲ CMD $E[0m$E[38;2;${sgr(c.acento)};48;2;${sgr(c.claro)}m $P $E[0m `
+    : m.restaurar ? '$E]9;9;$P$E\\$P$G' : null;
+  if (valor) {
+    plan.push(m.encendido ? 'CMD: variable de usuario PROMPT con los colores de la marca' : 'CMD: prompt normal que informa la carpeta');
+    if (APLICAR) execFileSync('reg', ['add', 'HKCU\\Environment', '/v', 'PROMPT', '/t', 'REG_SZ', '/d', valor, '/f'], { stdio: 'ignore' });
+  } else {
+    plan.push('CMD: se quita la variable PROMPT (vuelve el prompt de fábrica)');
+    if (APLICAR) { try { execFileSync('reg', ['delete', 'HKCU\\Environment', '/v', 'PROMPT', '/f'], { stdio: 'ignore' }); } catch { /* no estaba */ } }
+  }
 }
 
 function main() {
@@ -262,12 +326,26 @@ function main() {
     console.log(`Creado ${destino}. Edita colores y logos y corre: node marca-terminal.js --aplicar`);
     return;
   }
+  if (ESTADO) {
+    // Para ⚙ Config · Terminal: las marcas con sus colores (la previsualización) y qué está aplicado.
+    const { ruta, datos } = leerDatos();
+    const marcas = Object.entries(datos.marcas || {}).map(([id, x]) => ({
+      id, nombre: x.nombre || id, corto: x.corto || x.nombre || id, lema: x.lema || '', colores: x.colores || {},
+      con_marca_agua: !!x.marca_agua_imagen, con_icono: !!x.icono,
+    }));
+    const wt = estadoWT();
+    console.log(JSON.stringify({
+      ok: true, ruta, activa: datos.activa, encendido: datos.encendido !== false, restaurar_pestanas: datos.restaurar_pestanas !== false,
+      marcas, aplicado: { mod: modCargado(), windows_terminal: wt.instalado, tema_wt: wt.tema, restaurar: wt.restaurar },
+    }));
+    return;
+  }
   const m = cargar();
-  plan.push(`marca: ${m.id} (${m.nombre}), color principal ${m.colores.principal}`);
-  const agua = copiarImagen(m.id, 'marca-agua', m.agua);
-  const icono = copiarImagen(m.id, 'icono', m.icono);
-  mod(m);
-  settingsClaude();
+  plan.push(`marca: ${m.id} (${m.nombre}), color principal ${m.colores.principal}; tema ${m.encendido ? 'encendido' : 'apagado'}, restaurar pestañas ${m.restaurar ? 'sí' : 'no'}`);
+  const agua = m.encendido ? copiarImagen(m.id, 'marca-agua', m.agua) : null;
+  const icono = m.encendido ? copiarImagen(m.id, 'icono', m.icono) : null;
+  if (m.encendido) mod(m);
+  settingsClaude(m.encendido);
   windowsTerminal(m, agua, icono);
   promptPowerShell(m);
   promptCmd(m);
