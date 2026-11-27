@@ -162,6 +162,11 @@ function windowsTerminal(m, agua, icono) {
   s.schemes = (s.schemes || []).filter((x) => !String(x.name || '').startsWith('Marca ')).concat(esquema);
   s.themes = (s.themes || []).filter((x) => !String(x.name || '').startsWith('Marca ')).concat(tema);
   s.theme = nombre;
+  // Si la ventana se cierra sin querer, al reabrir vuelven las mismas pestañas, cada una en su
+  // carpeta (la informa el prompt con OSC 9;9) y con su texto; cerrar varias pide confirmación.
+  s.firstWindowPreference = 'persistedLayoutAndContent';
+  delete s.confirmCloseAllTabs;
+  s['warning.confirmCloseAllTabs'] = true;
   s.profiles = s.profiles || {};
   const d = (s.profiles.defaults = s.profiles.defaults || {});
   Object.assign(d, { colorScheme: nombre, cursorShape: 'bar', padding: '12' });
@@ -172,7 +177,7 @@ function windowsTerminal(m, agua, icono) {
     });
   }
   if (icono) d.icon = icono.split(path.sep).join('/');
-  plan.push(`Windows Terminal: esquema y tema '${nombre}', pestañas ${c.principal}${agua ? `, marca de agua ${m.posicion} al ${m.opacidad}` : ''}`);
+  plan.push(`Windows Terminal: esquema y tema '${nombre}', pestañas ${c.principal}${agua ? `, marca de agua ${m.posicion} al ${m.opacidad}` : ''}, restaura pestañas al reabrir y confirma antes de cerrar varias`);
   respaldar(WT);
   escribir(WT, JSON.stringify(s, null, 4) + '\n');
 }
@@ -215,7 +220,8 @@ function promptPowerShell(m) {
     `    $carpeta = "$e[38;2;${sgr(c.acento)};48;2;${sgr(c.claro)}m $ruta $e[0m"`,
     "    $git = ''",
     `    if ($rama) { $git = "$e[38;2;${sgr(c.gris)};48;2;${sgr(c.fondo_suave)}m $ram $rama $e[0m" }`,
-    '    "$bloque$carpeta$git "',
+    '    $osc = "$e]9;9;$ruta$e\\"',
+    '    "$osc$bloque$carpeta$git "',
     '}',
     FIN_PS,
     '',
@@ -241,7 +247,8 @@ function promptPowerShell(m) {
 function promptCmd(m) {
   if (process.platform !== 'win32') return;
   const c = m.colores;
-  const valor = `$E[1;97;48;2;${sgr(c.principal)}m ▲ CMD $E[0m$E[38;2;${sgr(c.acento)};48;2;${sgr(c.claro)}m $P $E[0m `;
+  // $E]9;9;$P$E\ le dice a Windows Terminal la carpeta actual (restaurar pestañas en su carpeta).
+  const valor = `$E]9;9;$P$E\\$E[1;97;48;2;${sgr(c.principal)}m ▲ CMD $E[0m$E[38;2;${sgr(c.acento)};48;2;${sgr(c.claro)}m $P $E[0m `;
   plan.push('CMD: variable de usuario PROMPT con los colores de la marca');
   if (APLICAR) execFileSync('reg', ['add', 'HKCU\\Environment', '/v', 'PROMPT', '/t', 'REG_SZ', '/d', valor, '/f'], { stdio: 'ignore' });
 }
