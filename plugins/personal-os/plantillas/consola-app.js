@@ -303,6 +303,9 @@ table.osm-perm{width:100%;border-collapse:collapse}
 .osm-tm-st{margin-top:10px;padding-top:6px;font-weight:700}
 .osm-tm-nota{display:flex;gap:var(--sp-2);align-items:center;margin:0;font-size:var(--fs-sm);color:var(--muted-2)}
 .osm-tm-plan{margin:var(--sp-2) 0 0;padding-left:1.2em;font-size:var(--fs-sm);color:var(--muted-2);line-height:1.6}
+.osm-tm-cod{display:flex;gap:var(--sp-2);flex-wrap:wrap;align-items:center}
+.osm-tm-cod input{font:var(--fs-md) var(--sans);min-height:40px;padding:0 var(--sp-3);border-radius:10px;border:1px solid var(--borde);background:var(--panel-2);color:var(--ink);flex:1 1 200px;max-width:300px}
+.osm-tm-mc:disabled{opacity:.6;cursor:progress}
 /* ayuda «?» */
 .osm-ayuda{appearance:none;position:relative;display:inline-grid;place-items:center;width:28px;height:28px;border-radius:50%;border:1px solid var(--borde);background:transparent;color:var(--ink-2);font:600 var(--fs-sm) var(--sans);cursor:pointer}
 .osm-ayuda::after{content:"";position:absolute;inset:-8px}
@@ -1547,10 +1550,50 @@ dialog.osm-dlg.ancho{max-width:600px}
       el("p", { className: "osm-tm-nota" }, svg("info"), el("span", { textContent: b.restaurar_pestanas ? "Al reabrir Windows Terminal: vuelven tus pestañas, cada una en su carpeta." : "Al reabrir Windows Terminal: arranca con una sola pestaña nueva." })));
   }
 
+  // Agregar una marca: desde una referencia o con un código de acceso (marca protegida que viene con el plugin).
+  async function tmAgregar(cuerpo, aviso) {
+    try {
+      const r = await fetch("/api/config/terminal/agregar", { method: "POST", headers: { "Content-Type": "application/json", "X-OS-Token": TOKEN }, body: JSON.stringify(cuerpo) });
+      let j; try { j = await r.json(); } catch (_) { j = { ok: false, mensaje: `respuesta ${r.status}` }; }
+      if (r.status === 403) j.mensaje = "el servidor se reinició: recarga la página (Ctrl+R)";
+      if (!j.ok) throw new Error(j.mensaje || "no se pudo");
+      const primera = !tm.datos.existe;
+      tm.datos = j; tm.ver = Date.now(); tm.ed = null;
+      // Queda elegida como marca activa en el borrador: se ve a la derecha y se aplica con Guardar.
+      tm.borrador = Object.assign(tmDesdeDatos(), { activa: j.id, encendido: true });
+      tm.sucio = primera || j.id !== j.activa || !j.encendido;
+      tmPintar(); if (tm.sucio) tmPie.sucio();
+      tmPie.est.textContent = `${j.mensaje[0].toUpperCase()}${j.mensaje.slice(1)}. Revisa la previsualización y dale Guardar para aplicarla.`;
+      return true;
+    } catch (e) { if (aviso) { aviso.textContent = e.message; aviso.hidden = false; } return false; }
+  }
+  function tmFormCodigo() {
+    const id = "osm-tm-cod";
+    const i = el("input", { type: "password", id, autocomplete: "off", maxLength: 100, placeholder: "Código de acceso", spellcheck: false });
+    const aviso = el("p", { className: "osm-err", role: "alert", hidden: true });
+    const b = el("button", { type: "button", className: "osm-btn", textContent: "Desbloquear" });
+    const ir = async () => { aviso.hidden = true; if (!i.value.trim()) { aviso.textContent = "Escribe el código."; aviso.hidden = false; return; }
+      b.disabled = true; b.textContent = "Probando…"; const ok = await tmAgregar({ codigo: i.value }, aviso); i.value = ""; if (!ok) { b.disabled = false; b.textContent = "Desbloquear"; } };
+    b.addEventListener("click", ir); i.addEventListener("keydown", (ev) => { if (ev.key === "Enter") { ev.preventDefault(); ir(); } });
+    return el("div", { className: "osm-tm-sec" },
+      el("label", { className: "osm-tm-l", htmlFor: id, textContent: "¿Tienes un código de acceso? Abre una marca que tu organización ya preparó, con sus colores y su logo." }),
+      el("div", { className: "osm-tm-cod" }, i, b), aviso);
+  }
+  const tmSwatch = (cols) => el("span", { className: "osm-tm-sws", ariaHidden: "true" }, ...["principal", "acento", "fondo", "texto"].map((k) => el("i", { style: `background:${cols[k] || "#888"}` })));
+
   function tmPintar() {
     const d = tm.datos; if (!d) return;
     if (!d.existe) {
-      tmCaja.replaceChildren(vacio("Todavía no hay marcas", (d.mensaje ? d.mensaje + " " : "") + "Pídele a Claude «/marca-terminal»: crea el archivo de marcas, te pregunta los colores y el logo, y aquí podrás prender, apagar, editar y previsualizar el tema."));
+      const refs = (d.referencias || []).map((r) => {
+        const btn = el("button", { type: "button", className: "osm-tm-mc" }, tmSwatch(r.colores), el("span", { className: "n" }, r.nombre, el("small", { textContent: `${r.colores.principal} · sin logo: lo subes después` })));
+        btn.addEventListener("click", () => { btn.disabled = true; tmAgregar({ referencia: r.id }); });
+        return el("li", {}, btn);
+      });
+      tmCaja.replaceChildren(el("div", { className: "osm-tm-izq" },
+        el("section", { className: "osm-tm-sec" }, el("h3", { textContent: "Crea tu marca" }),
+          el("p", { className: "osm-tm-l", textContent: "Elige una paleta de referencia para empezar; después cambias colores, nombre y logo en el editor." }),
+          el("ul", { className: "osm-tm-marcas" }, ...refs)),
+        tmFormCodigo()));
       return;
     }
     const b = tm.borrador;
@@ -1583,6 +1626,7 @@ dialog.osm-dlg.ancho{max-width:600px}
         return el("li", {}, btn);
       })),
       el("div", {}, nueva));
+    marcas.append(tmFormCodigo());
     tmCaja.replaceChildren(el("div", { className: "osm-tm-izq" }, activacion, marcas, tm.ed ? tmEditor() : ""), tmPrevia());
   }
 
@@ -1636,8 +1680,21 @@ dialog.osm-dlg.ancho{max-width:600px}
     pos.addEventListener("change", () => { mk.marca_agua_posicion = pos.value; tmEdSucio(); const d = tmCaja.querySelector(".osm-tm-der"); if (d) d.replaceWith(tmPrevia()); });
     const cerrar = el("button", { type: "button", className: "osm-btn", textContent: "Cerrar" });
     cerrar.addEventListener("click", async () => { if (e.sucio && !(await confirmar("Cambios sin guardar", "Si cierras el editor se pierden los cambios de esta marca. ¿Los descartas?"))) return; tm.ed = null; tmPintar(); });
+    // Marca nueva: partir de la marca activa o de una paleta de referencia (solo copia los colores).
+    let partir = "";
+    if (!e.id && (tm.datos.referencias || []).length) {
+      const ps = el("select", { id: "osm-tm-partir" }, el("option", { value: "", textContent: "Los colores de la marca activa" }),
+        ...tm.datos.referencias.map((r) => el("option", { value: r.id, textContent: `Referencia: ${r.nombre}`, selected: e.desde === r.id })));
+      ps.addEventListener("change", () => {
+        const r = tm.datos.referencias.find((x) => x.id === ps.value);
+        const act = tm.datos.marcas.find((y) => y.id === tm.datos.activa) || tm.datos.marcas[0];
+        e.desde = ps.value; mk.colores = Object.assign({}, r ? r.colores : act.colores); tmEdSucio(); tmPintar(); tmFoco("osm-tm-partir");
+      });
+      partir = el("div", {}, el("label", { className: "osm-tm-l", htmlFor: "osm-tm-partir", textContent: "Partir de" }), ps);
+    }
     return el("section", { className: "osm-tm-ed", ariaLabel: "Editar marca" },
       el("div", { style: "display:flex;align-items:center;gap:8px;justify-content:space-between" }, el("h3", { textContent: e.id ? `Editar «${mk.nombre}»` : "Nueva marca" }), cerrar),
+      partir,
       ...campo("osm-tm-nombre", "Nombre", mk.nombre, 60, "sale sobre la bienvenida de Claude Code", (v) => { mk.nombre = v; }),
       ...campo("osm-tm-corto", "Nombre corto", mk.corto, 24, "la franja de la línea de estado", (v) => { mk.corto = v; }),
       ...campo("osm-tm-lema", "Lema", mk.lema, 90, "opcional, debajo del nombre", (v) => { mk.lema = v; }),

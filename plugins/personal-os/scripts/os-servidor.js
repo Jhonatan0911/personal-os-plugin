@@ -735,20 +735,46 @@ function borrarAgente(b) {
 // ------------------------------------------------------------------ terminal: tema de la marca (marca-terminal.js)
 
 /** Corre marca-terminal.js con los argumentos dados y devuelve su salida (el script valida la marca y los colores). */
-function marcaTerminal(args, timeout) {
+function marcaTerminal(args, timeout, entrada) {
   return new Promise((resolve) => {
-    execFile(process.execPath, [path.join(__dirname, 'marca-terminal.js'), ...args], { windowsHide: true, timeout: timeout || 30000, cwd: STATE || C.OS_HOME },
+    const h = execFile(process.execPath, [path.join(__dirname, 'marca-terminal.js'), ...args], { windowsHide: true, timeout: timeout || 30000, cwd: STATE || C.OS_HOME },
       (e, out, err) => resolve({ ok: !e, out: String(out || ''), err: String(err || '').trim() }));
+    // El código de acceso va por stdin: nunca en la línea de comandos ni en un log.
+    if (h.stdin) h.stdin.end(entrada || '');
   });
 }
 
+async function terminalReferencias() {
+  const r = await marcaTerminal(['--referencias']);
+  try { return JSON.parse(r.out.trim().split(/\r?\n/).pop()).referencias || []; } catch (_) { return []; }
+}
+
 async function terminalEstado() {
-  const r = await marcaTerminal(['--estado']);
+  const [r, referencias] = await Promise.all([marcaTerminal(['--estado']), terminalReferencias()]);
   if (!r.ok) {
     const sinArchivo = /no existe .*terminal\.json/.test(r.err);
-    return { ok: true, existe: false, mensaje: sinArchivo ? 'Todavía no hay marcas configuradas.' : r.err.replace(/^ERROR:\s*/, '').slice(0, 300) };
+    return { ok: true, existe: false, referencias, mensaje: sinArchivo ? 'Todavía no hay marcas configuradas.' : r.err.replace(/^ERROR:\s*/, '').slice(0, 300) };
   }
-  return Object.assign({ existe: true }, JSON.parse(r.out.trim().split(/\r?\n/).pop()));
+  return Object.assign({ existe: true, referencias }, JSON.parse(r.out.trim().split(/\r?\n/).pop()));
+}
+
+/** Desbloquea una marca protegida con su código ({ codigo }) o crea la primera desde una referencia ({ referencia }). */
+async function terminalAgregar(cuerpo) {
+  if (typeof cuerpo.codigo === 'string') {
+    const codigo = cuerpo.codigo.slice(0, 100);
+    if (!codigo.trim()) return { ok: false, mensaje: 'escribe el código de acceso' };
+    const r = await marcaTerminal(['--desbloquear'], 60000, codigo + '\n');
+    if (!r.ok) return { ok: false, mensaje: /no abre/.test(r.err) ? 'ese código no abre ninguna marca' : r.err.replace(/^ERROR:\s*/, '').slice(0, 300) };
+    const j = JSON.parse(r.out.trim().split(/\r?\n/).pop());
+    return Object.assign(await terminalEstado(), { ok: true, id: j.id, mensaje: `marca «${j.nombre}» desbloqueada` });
+  }
+  if (typeof cuerpo.referencia === 'string' && /^[a-z0-9-]{2,40}$/.test(cuerpo.referencia)) {
+    const r = await marcaTerminal(['--iniciar', '--referencia', cuerpo.referencia]);
+    if (!r.ok) return { ok: false, mensaje: r.err.replace(/^ERROR:\s*/, '').slice(0, 300) };
+    const j = JSON.parse(r.out.trim().split(/\r?\n/).pop());
+    return Object.assign(await terminalEstado(), { ok: true, id: j.id, mensaje: `marca «${j.nombre}» creada` });
+  }
+  return { ok: false, mensaje: 'falta el código o la referencia' };
 }
 
 /** Guarda los interruptores y la marca activa en terminal.json y aplica. Solo esas tres claves se aceptan. */
@@ -1394,6 +1420,11 @@ const servidor = http.createServer((req, res) => {
       const f = { guardar: bdGuardar, quitar: bdQuitar, revelar: bdRevelar, etiqueta: bdEtiqueta }[mBd[1]];
       try { const r = f(cuerpo || {}); return json(r.ok ? 200 : 400, r); }
       catch (e) { return json(500, { ok: false, mensaje: 'no se pudo completar (' + String(e && e.code || 'error') + ')' }); }
+    }
+    if (ruta === '/api/config/terminal/agregar') {
+      // El cuerpo puede traer un código de acceso: no pasa por /api/log ni se escribe en ningún registro.
+      try { const r = await terminalAgregar(cuerpo || {}); return json(r.ok ? 200 : 400, r); }
+      catch (e) { return json(500, { ok: false, mensaje: 'no se pudo completar' }); }
     }
     if (ruta === '/api/config/terminal/marca') {
       try { const r = await terminalMarca(cuerpo || {}); return json(r.ok ? 200 : 400, r); }

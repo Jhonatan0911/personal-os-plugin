@@ -6,6 +6,12 @@
 //   node marca-terminal.js --aplicar           aplica, con respaldo del día
 //   node marca-terminal.js --marca otra --aplicar
 //   node marca-terminal.js --estado            JSON con las marcas, los interruptores y lo que está aplicado
+//   node marca-terminal.js --referencias       JSON con las paletas de referencia (plantillas/marca-terminal-referencias.json)
+//   node marca-terminal.js --iniciar --referencia <id>   crea el archivo de marcas con esa paleta
+//   node marca-terminal.js --desbloquear       lee un código de acceso (stdin, o lo pide en la terminal) y agrega
+//                                              la marca protegida que abra (plantillas/marcas-protegidas/*.marca)
+//   node marca-terminal.js --empaquetar <id> --salida <archivo.marca>   cifra una marca propia con un código
+//                                              (stdin) para repartirla: solo quien tenga el código la abre
 //
 // Lee config/marca/terminal.json en la carpeta de configuración del Personal OS (el --config-dir de
 // servidor.consola_args, o <stateDir>/config): { activa, encendido, restaurar_pestanas, marcas: { id: {...} } }.
@@ -317,7 +323,129 @@ function promptCmd(m) {
   }
 }
 
+// 7. Referencias y marcas protegidas -----------------------------------------------------------
+const REFERENCIAS = path.join(C.PLUGIN_ROOT, 'plantillas', 'marca-terminal-referencias.json');
+const PROTEGIDAS = path.join(C.PLUGIN_ROOT, 'plantillas', 'marcas-protegidas');
+// El código se normaliza: sin tildes, mayúsculas, espacios ni signos («Mi Marca-2026» = «mimarca2026»).
+const normalizarCodigo = (s) => C.sinTildes(String(s || '')).replace(/[^a-z0-9]/g, '');
+const KDF = { N: 2 ** 15, r: 8, p: 1, maxmem: 64 * 1024 * 1024 };
+const claveDe = (codigo, sal, k) => crypto.scryptSync(normalizarCodigo(codigo), sal, 32, { N: k.N, r: k.r, p: k.p, maxmem: KDF.maxmem });
+
+function leerCodigo() {
+  if (!process.stdin.isTTY) {
+    try { return fs.readFileSync(0, 'utf8').split(/\r?\n/)[0]; } catch { return ''; }
+  }
+  // En una terminal: se pide sin mostrarlo en pantalla.
+  process.stdout.write('Código de acceso: ');
+  const buf = Buffer.alloc(200); let s = '';
+  try { process.stdin.setRawMode(true); } catch { /* sin modo crudo: se verá */ }
+  for (;;) {
+    let n = 0; try { n = fs.readSync(0, buf, 0, 1, null); } catch { break; }
+    if (!n) break;
+    const ch = buf.toString('utf8', 0, n);
+    if (ch === '\r' || ch === '\n') break;
+    if (ch === '\u0003') { process.stdout.write('\n'); process.exit(1); }
+    if (ch === '\u007f' || ch === '\b') s = s.slice(0, -1); else s += ch;
+  }
+  try { process.stdin.setRawMode(false); } catch { /* nada */ }
+  process.stdout.write('\n');
+  return s;
+}
+
+function datosOPlantilla(ruta) {
+  if (fs.existsSync(ruta)) return leerJsonSinBom(ruta);
+  return leerJsonSinBom(PLANTILLA_CFG);
+}
+// La plantilla trae una marca de ejemplo («mi-marca»): si sigue intacta, la marca nueva la reemplaza.
+function sinEjemplo(datos) {
+  const ej = leerJsonSinBom(PLANTILLA_CFG);
+  for (const [id, m] of Object.entries(ej.marcas || {})) {
+    if (datos.marcas && JSON.stringify(datos.marcas[id]) === JSON.stringify(m)) delete datos.marcas[id];
+  }
+  return datos;
+}
+
+function referencias() {
+  return fs.existsSync(REFERENCIAS) ? (leerJsonSinBom(REFERENCIAS).referencias || []) : [];
+}
+
+function iniciarConReferencia(refId) {
+  const ruta = rutaConfig();
+  const ref = referencias().find((r) => r.id === refId);
+  if (!ref) salir(`no hay una referencia '${refId}' (hay: ${referencias().map((r) => r.id).join(', ')})`);
+  const datos = sinEjemplo(datosOPlantilla(ruta));
+  datos.marcas = datos.marcas || {};
+  let id = ref.id; for (let n = 2; datos.marcas[id]; n++) id = `${ref.id}-${n}`;
+  datos.marcas[id] = { nombre: ref.nombre, corto: ref.corto || ref.nombre, lema: '', colores: ref.colores,
+    marca_agua_imagen: null, marca_agua_opacidad: 0.18, marca_agua_posicion: 'center', icono: null };
+  if (!datos.activa || !datos.marcas[datos.activa]) datos.activa = id;
+  fs.mkdirSync(path.dirname(ruta), { recursive: true });
+  fs.writeFileSync(ruta, JSON.stringify(datos, null, 2) + '\n');
+  console.log(JSON.stringify({ ok: true, id, nombre: ref.nombre, ruta }));
+}
+
+function desbloquear() {
+  const codigo = leerCodigo();
+  if (!normalizarCodigo(codigo)) salir('no se recibió ningún código');
+  const archivos = fs.existsSync(PROTEGIDAS) ? fs.readdirSync(PROTEGIDAS).filter((f) => f.endsWith('.marca')) : [];
+  for (const f of archivos) {
+    let paquete;
+    try { paquete = leerJsonSinBom(path.join(PROTEGIDAS, f)); } catch { continue; }
+    try {
+      const k = paquete.kdf;
+      const clave = claveDe(codigo, Buffer.from(k.sal, 'base64'), k);
+      const d = crypto.createDecipheriv('aes-256-gcm', clave, Buffer.from(paquete.iv, 'base64'));
+      d.setAuthTag(Buffer.from(paquete.tag, 'base64'));
+      const plano = JSON.parse(Buffer.concat([d.update(Buffer.from(paquete.datos, 'base64')), d.final()]).toString('utf8'));
+      // Abrió: se guardan sus imágenes junto al archivo de marcas y se agrega (o actualiza) la marca.
+      const ruta = rutaConfig();
+      const dirImg = path.join(path.dirname(ruta), 'terminal');
+      fs.mkdirSync(dirImg, { recursive: true });
+      const m = Object.assign({}, plano.marca, { marca_agua_imagen: null, icono: null });
+      for (const [tipo, clave2, suf] of [['agua', 'marca_agua_imagen', 'marca-agua'], ['icono', 'icono', 'icono']]) {
+        const b64 = (plano.imagenes || {})[tipo];
+        if (!b64) continue;
+        fs.writeFileSync(path.join(dirImg, `${plano.id}-${suf}.png`), Buffer.from(b64, 'base64'));
+        m[clave2] = `terminal/${plano.id}-${suf}.png`;
+      }
+      const datos = sinEjemplo(datosOPlantilla(ruta));
+      datos.marcas = datos.marcas || {};
+      datos.marcas[plano.id] = m;
+      if (!datos.activa || !datos.marcas[datos.activa]) datos.activa = plano.id;
+      fs.writeFileSync(ruta, JSON.stringify(datos, null, 2) + '\n');
+      console.log(JSON.stringify({ ok: true, id: plano.id, nombre: m.nombre }));
+      return;
+    } catch { /* este paquete no abre con ese código: se prueba el siguiente */ }
+  }
+  salir('el código no abre ninguna marca');
+}
+
+function empaquetar(id, salida) {
+  if (!id || !salida) salir('uso: --empaquetar <id> --salida <archivo.marca> (el código por stdin)');
+  const { ruta, datos } = leerDatos();
+  const m = (datos.marcas || {})[id];
+  if (!m) salir(`la marca '${id}' no está en ${ruta}`);
+  const codigo = leerCodigo();
+  if (normalizarCodigo(codigo).length < 6) salir('el código debe tener al menos 6 letras o números');
+  const base = path.dirname(ruta);
+  const img = (rel) => (rel && fs.existsSync(path.resolve(base, rel)) ? fs.readFileSync(path.resolve(base, rel)).toString('base64') : null);
+  const marca = Object.assign({}, m); delete marca.marca_agua_imagen; delete marca.icono;
+  const plano = Buffer.from(JSON.stringify({ id, marca, imagenes: { agua: img(m.marca_agua_imagen), icono: img(m.icono) } }));
+  const sal = crypto.randomBytes(16), iv = crypto.randomBytes(12);
+  const c = crypto.createCipheriv('aes-256-gcm', claveDe(codigo, sal, KDF), iv);
+  const cifrado = Buffer.concat([c.update(plano), c.final()]);
+  const paquete = { formato: 'marca-protegida', version: 1, kdf: { alg: 'scrypt', N: KDF.N, r: KDF.r, p: KDF.p, sal: sal.toString('base64') },
+    cifrado: 'aes-256-gcm', iv: iv.toString('base64'), tag: c.getAuthTag().toString('base64'), datos: cifrado.toString('base64') };
+  fs.mkdirSync(path.dirname(path.resolve(salida)), { recursive: true });
+  fs.writeFileSync(salida, JSON.stringify(paquete) + '\n');
+  console.log(`Empaquetada '${id}' en ${path.resolve(salida)} (${Math.round(fs.statSync(salida).size / 1024)} KB). El código no se guarda en ninguna parte.`);
+}
+
 function main() {
+  if (process.argv.includes('--referencias')) { console.log(JSON.stringify({ ok: true, referencias: referencias() })); return; }
+  if (process.argv.includes('--desbloquear')) { desbloquear(); return; }
+  if (process.argv.includes('--empaquetar')) { empaquetar(C.arg('--empaquetar'), C.arg('--salida')); return; }
+  if (INICIAR && C.arg('--referencia')) { iniciarConReferencia(C.arg('--referencia')); return; }
   if (INICIAR) {
     const destino = rutaConfig();
     if (fs.existsSync(destino)) { console.log(`Ya existe ${destino}; no se toca.`); return; }

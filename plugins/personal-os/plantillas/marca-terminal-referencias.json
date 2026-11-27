@@ -1,0 +1,35 @@
+{
+  "_que_es": "Paletas de referencia para crear una marca de terminal desde cero. Fondo claro y un color principal fuerte; sin logos: la marca de agua y el ícono los sube cada quien.",
+  "referencias": [
+    {
+      "id": "azul-corporativo",
+      "nombre": "Azul corporativo",
+      "corto": "Azul",
+      "colores": { "principal": "#0B2E6B", "acento": "#1D4ED8", "acento_vivo": "#60A5FA", "claro": "#DBEAFE", "fondo": "#FFFFFF", "fondo_suave": "#F1F5F9", "texto": "#1A1A1A", "gris": "#5A6275", "gris_suave": "#9CA3AF", "ok": "#2A6349", "error": "#A8322D", "alerta": "#B26B00" }
+    },
+    {
+      "id": "verde-salud",
+      "nombre": "Verde salud",
+      "corto": "Verde",
+      "colores": { "principal": "#0F5132", "acento": "#15803D", "acento_vivo": "#4ADE80", "claro": "#DCFCE7", "fondo": "#FFFFFF", "fondo_suave": "#F0FDF4", "texto": "#1A1A1A", "gris": "#55625B", "gris_suave": "#9CA3AF", "ok": "#15803D", "error": "#A8322D", "alerta": "#B26B00" }
+    },
+    {
+      "id": "grafito",
+      "nombre": "Grafito",
+      "corto": "Grafito",
+      "colores": { "principal": "#1F2937", "acento": "#374151", "acento_vivo": "#9CA3AF", "claro": "#E5E7EB", "fondo": "#FFFFFF", "fondo_suave": "#F3F4F6", "texto": "#111827", "gris": "#6B7280", "gris_suave": "#9CA3AF", "ok": "#2A6349", "error": "#A8322D", "alerta": "#B26B00" }
+    },
+    {
+      "id": "vino",
+      "nombre": "Vino",
+      "corto": "Vino",
+      "colores": { "principal": "#5B1A3A", "acento": "#9D2257", "acento_vivo": "#F472B6", "claro": "#FCE7F3", "fondo": "#FFFFFF", "fondo_suave": "#FDF2F8", "texto": "#1A1A1A", "gris": "#6B5B63", "gris_suave": "#A3929B", "ok": "#2A6349", "error": "#B42318", "alerta": "#B26B00" }
+    },
+    {
+      "id": "naranja-energia",
+      "nombre": "Naranja energía",
+      "corto": "Naranja",
+      "colores": { "principal": "#7C2D12", "acento": "#C2410C", "acento_vivo": "#FB923C", "claro": "#FFEDD5", "fondo": "#FFFFFF", "fondo_suave": "#FFF7ED", "texto": "#1A1A1A", "gris": "#6B5E57", "gris_suave": "#A8A29E", "ok": "#2A6349", "error": "#A8322D", "alerta": "#A16207" }
+    }
+  ]
+}
