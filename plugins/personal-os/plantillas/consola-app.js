@@ -283,7 +283,7 @@ table.osm-perm{width:100%;border-collapse:collapse}
 .osm-tm-ed details{margin-top:var(--sp-2)}.osm-tm-ed summary{cursor:pointer;color:var(--ink-2);font-size:var(--fs-sm);padding:6px 0}
 .osm-tm-img{display:flex;align-items:center;gap:var(--sp-3);flex-wrap:wrap;min-height:44px}
 .osm-tm-img .pv{width:120px;height:44px;border:1px dashed var(--borde);border-radius:8px;display:grid;place-items:center;background:#fff;overflow:hidden;color:#888;font-size:var(--fs-xs)}
-.osm-tm-img .pv img{max-width:100%;max-height:100%}
+.osm-tm-img .pv img{max-width:112px;max-height:40px;width:auto;height:auto;object-fit:contain}.osm-tm-img.ico .pv img{max-width:40px}
 .osm-tm-img.ico .pv{width:44px}
 .osm-tm-rango{display:flex;align-items:center;gap:var(--sp-3)}.osm-tm-rango input{flex:1;max-width:260px}
 .osm-tm-prev-h{display:flex;align-items:baseline;gap:var(--sp-3);flex-wrap:wrap;margin:0}
@@ -306,6 +306,19 @@ table.osm-perm{width:100%;border-collapse:collapse}
 .osm-tm-cod{display:flex;gap:var(--sp-2);flex-wrap:wrap;align-items:center}
 .osm-tm-cod input{font:var(--fs-md) var(--sans);min-height:40px;padding:0 var(--sp-3);border-radius:10px;border:1px solid var(--borde);background:var(--panel-2);color:var(--ink);flex:1 1 200px;max-width:300px}
 .osm-tm-mc:disabled{opacity:.6;cursor:progress}
+/* Config · Marcas: documento de ejemplo con la marca (prefijo osm-mc-) */
+.osm-mc-doc{border-radius:10px;padding:18px 20px 14px;box-shadow:0 10px 28px rgba(0,0,0,.35);font:13px/1.5 var(--sans)}
+.osm-mc-cab{display:flex;align-items:center;justify-content:space-between;gap:12px;padding-bottom:10px;margin-bottom:12px}
+.osm-mc-logo{max-height:34px;max-width:170px;object-fit:contain}
+.osm-mc-kick{margin:0;font:600 10.5px var(--mono);letter-spacing:.12em}
+.osm-mc-doc h4{margin:2px 0 4px;font:700 17px/1.3 var(--sans)}
+.osm-mc-doc p{margin:0 0 10px}
+.osm-mc-tab{width:100%;border-collapse:collapse;font-size:12px}
+.osm-mc-tab th,.osm-mc-tab td{text-align:left;padding:6px 8px}
+.osm-mc-pie{margin:12px 0 0!important;padding-top:8px;font-size:11px}
+.osm-mc-ok{margin:0;padding:10px 14px;border-radius:10px;background:rgba(53,224,208,.12);color:var(--ink);font-size:var(--fs-sm)}
+.osm-tm-tag.sec{background:rgba(120,150,200,.18);color:var(--ink-2)}
+.osm-mc-chk{margin-top:var(--sp-2)}
 /* ayuda «?» */
 .osm-ayuda{appearance:none;position:relative;display:inline-grid;place-items:center;width:28px;height:28px;border-radius:50%;border:1px solid var(--borde);background:transparent;color:var(--ink-2);font:600 var(--fs-sm) var(--sans);cursor:pointer}
 .osm-ayuda::after{content:"";position:absolute;inset:-8px}
@@ -632,7 +645,7 @@ dialog.osm-dlg.ancho{max-width:600px}
 
   // ---- página: título, pestañas y paneles
   const cfg = el("div", { className: "osm-col osm-cfg" });
-  const TABS = [["agentes", "Agentes"], ["skills", "Skills"], ["bd", "Bases de datos"], ["terminal", "Terminal"]];
+  const TABS = [["agentes", "Agentes"], ["skills", "Skills"], ["bd", "Bases de datos"], ["marcas", "Marcas"], ["terminal", "Terminal"]];
   const tabBar = el("div", { className: "osm-tabs", role: "tablist", ariaLabel: "Secciones de configuración" });
   const paneles = {}, cuentas = {}, splits = {};
   for (const [id, t] of TABS) {
@@ -644,7 +657,7 @@ dialog.osm-dlg.ancho{max-width:600px}
     paneles[id].setAttribute("aria-labelledby", b.id);
   }
   cfg.append(el("h2", { className: "osm-cfg-h", textContent: "Configuración" }),
-    el("p", { className: "osm-lede", textContent: "Ajusta tus agentes, lo que generan tus skills, qué puede hacer Claude en cada base de datos y cómo se ve tu terminal." }),
+    el("p", { className: "osm-lede", textContent: "Ajusta tus agentes, lo que generan tus skills, qué puede hacer Claude en cada base de datos, tus marcas y cómo se ve tu terminal." }),
     tabBar, ...TABS.map(([id]) => paneles[id]));
   vConfig.append(cfg);
   // Alto visible de Config: tope de la ficha fija en escritorio
@@ -1448,72 +1461,107 @@ dialog.osm-dlg.ancho{max-width:600px}
   }
   bdNueva.addEventListener("click", () => bdVer(null));
 
-  // ==================================================================== CONFIG · terminal (tema de la marca)
-  // config/marca/terminal.json: interruptores, marca activa y las marcas (colores, marca de agua, ícono). Lo aplica
-  // scripts/marca-terminal.js. Dos formularios con efecto, cada uno con su Guardar (CO-045): la activación y el
-  // editor de una marca. La previsualización (columna derecha) sigue al borrador del editor si hay uno abierto;
-  // si no, a la activación.
+  // ==================================================================== CONFIG · marcas y terminal
+  // Marcas: registro transversal (documentos, artefactos, terminal) en marca/marcas.json, con su ámbito (laboral o
+  // personal) y la predeterminada de cada ámbito. Terminal: interruptores y cuál marca usa (marca/terminal.json).
+  // Cada formulario con efecto tiene su Guardar (CO-045); las previsualizaciones siguen al borrador.
   const TM_COLS = [
-    ["principal", "Principal", "pestañas, línea de estado, barra de respuestas"], ["acento", "Acento", "prompt, rutas, enlaces"],
-    ["fondo", "Fondo", "fondo de la consola"], ["texto", "Texto", "texto principal"],
-    ["acento_vivo", "Resaltado", "ícono, cursor"], ["claro", "Claro", "selección y carpeta del prompt"],
-    ["fondo_suave", "Fondo suave", "rama de git del prompt"], ["gris", "Gris", "texto secundario"],
-    ["gris_suave", "Gris suave", "barra de tus mensajes"], ["ok", "Éxito", "lo que salió bien"],
-    ["error", "Error", "fallos y líneas quitadas"], ["alerta", "Advertencia", "avisos"],
+    ["principal", "Principal", "títulos, encabezados, pestañas, línea de estado"], ["acento", "Acento", "énfasis, enlaces, prompt"],
+    ["fondo", "Fondo", "fondo de páginas y consola"], ["texto", "Texto", "texto principal"],
+    ["acento_vivo", "Resaltado", "ícono, cursor, detalles"], ["claro", "Claro", "selección y zonas suaves"],
+    ["fondo_suave", "Fondo suave", "tarjetas y filas alternas"], ["gris", "Gris", "texto secundario"],
+    ["gris_suave", "Gris suave", "bordes y metadatos"], ["ok", "Éxito", "estado cumplido"],
+    ["error", "Error", "estado crítico"], ["alerta", "Advertencia", "estado pendiente"],
   ];
   const TM_POS = [["center", "Centro"], ["top", "Arriba"], ["bottom", "Abajo"], ["left", "Izquierda"], ["right", "Derecha"],
     ["topLeft", "Arriba a la izquierda"], ["topRight", "Arriba a la derecha"], ["bottomLeft", "Abajo a la izquierda"], ["bottomRight", "Abajo a la derecha"]];
-  const tm = { datos: null, borrador: null, sucio: false, plan: null, ed: null, ver: Date.now() };
+  const AMB = { laboral: "Laboral", personal: "Personal" };
+  const mc = { datos: null, ed: null, ver: Date.now(), pedido: null };
+  const tm = { datos: null, borrador: null, sucio: false, plan: null };
+  const mcCaja = el("div", { className: "osm-tm" });
   const tmCaja = el("div", { className: "osm-tm" });
-  paneles.terminal.append(el("div", { className: "osm-tp-h" }, el("p", { textContent: "El tema de tu marca en Windows Terminal, Claude Code, PowerShell y CMD, tus marcas y qué pasa con tus pestañas si la ventana se cierra sin querer. A la derecha ves cómo quedaría antes de guardar." })), tmCaja);
+  paneles.marcas.append(el("div", { className: "osm-tp-h" }, el("p", { textContent: "Tus marcas para todo lo que genera el Personal OS: documentos, presentaciones, artefactos y la terminal. Cada una es laboral o personal; al generar algo se te pregunta cuál usar, con la del ámbito ya marcada." })), mcCaja);
+  paneles.terminal.append(el("div", { className: "osm-tp-h" }, el("p", { textContent: "Prende o apaga el tema de una de tus marcas en Windows Terminal, Claude Code, PowerShell y CMD, y decide qué pasa con tus pestañas si la ventana se cierra sin querer. A la derecha ves cómo quedaría." })), tmCaja);
   const tmPie = pieGuardar(null);
-  const tmEdPie = pieGuardar("Quitar marca");
+  const mcPie = pieGuardar("Quitar marca");
   tmPie.limpio();
 
   const tmFoco = (id) => { const v = $("#" + id); if (v) v.focus(); };
-  const tmImgUrl = (id, tipo) => `/api/config/terminal/imagen?marca=${encodeURIComponent(id)}&tipo=${tipo}&v=${tm.ver}`;
+  const mcImg = (id, tipo) => `/api/config/marcas/imagen?marca=${encodeURIComponent(id)}&tipo=${tipo}&v=${mc.ver}`;
   const tmDesdeDatos = () => ({ encendido: tm.datos.encendido, restaurar_pestanas: tm.datos.restaurar_pestanas, activa: tm.datos.activa });
+  const tmSwatch = (cols) => el("span", { className: "osm-tm-sws", ariaHidden: "true" }, ...["principal", "acento", "fondo", "texto"].map((k) => el("i", { style: `background:${(cols || {})[k] || "#888"}` })));
+  const estilo = (o) => Object.entries(o).map(([k, v]) => `${k}:${v}`).join(";");
 
-  async function tmCargar() {
-    conEsqueleto(tmCaja, 3);
-    try { const r = await fetch("/api/config/terminal"); if (!r.ok) throw new Error("respuesta " + r.status); tm.datos = await r.json(); }
-    catch (e) { errorCarga(tmCaja, "la configuración de tu terminal", e, tmCargar); return; }
-    tmCaja.removeAttribute("aria-busy");
-    tm.borrador = tm.datos.existe ? tmDesdeDatos() : null;
-    tm.sucio = false; tm.ver = Date.now(); tmPintar();
-    // Enlace directo #config&terminal/<marca> (o /nueva): abre el editor de esa marca
-    const p = tm.pedido; tm.pedido = null;
-    if (tm.datos.existe && p) { const x = tm.datos.marcas.find((y) => y.id === p); if (x || p === "nueva") tmEditar(x || null); }
+  // ---- carga: las dos pestañas comparten datos; se piden juntos una vez
+  let mcCargando = null;
+  function mcCargar() { if (!mcCargando) mcCargando = mcCargarYa().finally(() => { mcCargando = null; }); return mcCargando; }
+  async function mcCargarYa() {
+    conEsqueleto(mcCaja, 3); conEsqueleto(tmCaja, 3);
+    try {
+      const [a, b] = await Promise.all([fetch("/api/config/marcas"), fetch("/api/config/terminal")]);
+      if (!a.ok) throw new Error("respuesta " + a.status); if (!b.ok) throw new Error("respuesta " + b.status);
+      mc.datos = await a.json(); tm.datos = await b.json();
+    } catch (e) { errorCarga(mcCaja, "tus marcas", e, mcCargar); errorCarga(tmCaja, "la configuración de tu terminal", e, mcCargar); return; }
+    mcCaja.removeAttribute("aria-busy"); tmCaja.removeAttribute("aria-busy");
+    tm.borrador = tmDesdeDatos(); tm.sucio = false; mc.ver = Date.now();
+    mcPintar(); tmPintar();
+    const p = mc.pedido; mc.pedido = null;   // enlace directo #config&marcas/<marca> (o /nueva)
+    if (p) { const x = mc.datos.marcas.find((y) => y.id === p); if (x || p === "nueva") mcEditar(x || null); }
   }
 
-  // Ventana simulada de Windows Terminal. m: { nombre, corto, lema, colores, aguaUrl, iconoUrl, opacidad, posicion }.
+  // ---- previsualizaciones. m: { nombre, corto, lema, colores, logoUrl, aguaUrl, iconoUrl, opacidad, posicion }
+  const mcVista = (x) => x && { nombre: x.nombre, corto: x.corto, lema: x.lema, ambito: x.ambito, colores: x.colores, opacidad: x.marca_agua_opacidad, posicion: x.marca_agua_posicion,
+    logoUrl: x.con_logo ? mcImg(x.id, "logo") : null, aguaUrl: x.con_marca_agua ? mcImg(x.id, "agua") : null, iconoUrl: x.con_icono ? mcImg(x.id, "icono") : null };
+  function mcVistaEd() {
+    const e = mc.ed, b = e.marca, x = e.id ? mc.datos.marcas.find((y) => y.id === e.id) : null;
+    const url = (tipo, con) => e.imgs[tipo] === null ? null : e.imgs[tipo] ? e.imgs[tipo] : (x && con ? mcImg(x.id, tipo) : null);
+    return { nombre: b.nombre, corto: b.corto, lema: b.lema, ambito: b.ambito, colores: b.colores, opacidad: b.marca_agua_opacidad, posicion: b.marca_agua_posicion,
+      logoUrl: url("logo", x && x.con_logo), aguaUrl: url("agua", x && x.con_marca_agua), iconoUrl: url("icono", x && x.con_icono) };
+  }
+
+  // Página de documento de ejemplo con la marca (encabezado, título, tabla y estados)
+  function mcDocumento(m) {
+    const c = m.colores, sp = (t, o) => el("span", { textContent: t, style: estilo(o || {}) });
+    const marca = m.logoUrl ? el("img", { src: m.logoUrl, alt: "Logo de " + (m.nombre || "la marca"), className: "osm-mc-logo" }) : sp(m.nombre || "Tu marca", { color: c.principal, "font-weight": "700", "font-size": "15px" });
+    const fila = (a, b, est, color) => el("tr", {}, el("td", { textContent: a }), el("td", { textContent: b }), el("td", {}, sp(est, { color: "#fff", background: color, padding: "1px 8px", "border-radius": "999px", "font-size": "11px" })));
+    return el("div", { className: "osm-mc-doc", role: "img", ariaLabel: "Documento de ejemplo con la marca " + (m.nombre || ""), style: estilo({ background: c.fondo, color: c.texto }) },
+      el("div", { className: "osm-mc-cab", style: estilo({ "border-bottom": `3px solid ${c.principal}` }) }, marca, sp("Informe de avance · " + new Date().toLocaleDateString("es-CO"), { color: c.gris, "font-size": "11px" })),
+      el("p", { className: "osm-mc-kick", style: estilo({ color: c.acento }) }, "01 · ESTADO"),
+      el("h4", { textContent: "El alcance va en tiempo; dos puntos dependen del cliente", style: estilo({ color: c.principal }) }),
+      el("p", { textContent: "Así se ven títulos, texto y tablas de un documento o presentación generado con esta marca.", style: estilo({ color: c.gris }) }),
+      el("table", { className: "osm-mc-tab" },
+        el("thead", {}, el("tr", { style: estilo({ background: c.principal, color: "#fff" }) }, el("th", { textContent: "Punto" }), el("th", { textContent: "Responsable" }), el("th", { textContent: "Estado" }))),
+        el("tbody", {}, fila("Validación de fechas", "Equipo A", "Cumplido", c.ok), (() => { const r = fila("Envío de autorizaciones", "Equipo B", "Pendiente", c.alerta); r.style.background = c.fondo_suave; return r; })(), fila("Datos del cliente", "Cliente", "Bloqueado", c.error))),
+      m.lema ? el("p", { className: "osm-mc-pie", textContent: m.lema, style: estilo({ color: c.gris, "border-top": `1px solid ${c.gris_suave}` }) }) : "");
+  }
+
+  // Ventana simulada de Windows Terminal (o la de fábrica si on es false)
   function tmVentana(m, on, cual) {
     const c = on && m ? m.colores : { principal: "#202020", acento: "#3A96DD", claro: "#264F78", fondo: "#0C0C0C", fondo_suave: "#1E1E1E", texto: "#CCCCCC", gris: "#767676", gris_suave: "#767676", ok: "#13A10E", error: "#C50F1F", alerta: "#C19C00", acento_vivo: "#3B78FF" };
-    const est = (o) => Object.entries(o).map(([k, v]) => `${k}:${v}`).join(";");
-    const sp = (t, o) => el("span", { textContent: t, style: est(o || {}) });
-    const ico = () => on && m && m.iconoUrl ? el("img", { className: "osm-tm-ico", src: m.iconoUrl, alt: "" }) : el("span", { className: "osm-tm-ico", style: est({ background: on ? c.acento_vivo : "#9a9a9a" }) });
-    const tab = (t, activa) => el("span", { className: "osm-tm-tab" + (activa ? " on" : ""), style: est(activa ? { background: c.fondo, color: on ? c.principal : "#fff" } : { color: on ? c.claro : "#9a9a9a" }) }, ico(), t);
-    const tabs = el("div", { className: "osm-tm-tabs", style: est({ background: on ? c.principal : "#2b2b2b" }) },
+    const sp = (t, o) => el("span", { textContent: t, style: estilo(o || {}) });
+    const ico = () => on && m && m.iconoUrl ? el("img", { className: "osm-tm-ico", src: m.iconoUrl, alt: "" }) : el("span", { className: "osm-tm-ico", style: estilo({ background: on ? c.acento_vivo : "#9a9a9a" }) });
+    const tab = (t, activa) => el("span", { className: "osm-tm-tab" + (activa ? " on" : ""), style: estilo(activa ? { background: c.fondo, color: on ? c.principal : "#fff" } : { color: on ? c.claro : "#9a9a9a" }) }, ico(), t);
+    const tabs = el("div", { className: "osm-tm-tabs", style: estilo({ background: on ? c.principal : "#2b2b2b" }) },
       tab("Claude Code", cual === "claude"), tab("PowerShell", cual === "ps"), tab("Símbolo del sistema", false));
-    const cuerpo = el("div", { className: "osm-tm-body", style: est({ background: c.fondo, color: c.texto }) });
+    const cuerpo = el("div", { className: "osm-tm-body", style: estilo({ background: c.fondo, color: c.texto }) });
     if (on && m && m.aguaUrl) {
       const p = m.posicion || "center";
       const v = /^top/i.test(p) ? "flex-start" : /^bottom/i.test(p) ? "flex-end" : "center";
       const h = /left$/i.test(p) ? "flex-start" : /right$/i.test(p) ? "flex-end" : "center";
-      cuerpo.append(el("div", { className: "osm-tm-agua", style: est({ "align-items": v, "justify-content": h, opacity: String(m.opacidad ?? 0.18) }) }, el("img", { src: m.aguaUrl, alt: "" })));
+      cuerpo.append(el("div", { className: "osm-tm-agua", style: estilo({ "align-items": v, "justify-content": h, opacity: String(m.opacidad ?? 0.18) }) }, el("img", { src: m.aguaUrl, alt: "" })));
     }
     const txt = el("div", { className: "osm-tm-txt" });
-    const barra = (color, ...hijos) => el("div", { className: "osm-tm-bar" }, el("i", { style: est({ background: color }) }), el("div", {}, ...hijos));
+    const barra = (color, ...hijos) => el("div", { className: "osm-tm-bar" }, el("i", { style: estilo({ background: color }) }), el("div", {}, ...hijos));
     if (cual === "claude") {
       if (on && m) txt.append(el("div", {}, sp("▲ " + (m.nombre || "tu marca"), { color: c.principal, "font-weight": "700" })), m.lema ? el("div", {}, sp("  " + m.lema, { color: c.gris })) : "");
       txt.append(el("div", { style: "height:6px" }));
-      const tuyo = on ? barra(c.gris_suave, sp("revisa el servicio de citas", { "font-weight": "700" })) : el("div", { style: est({ background: "#2a2a2a", padding: "2px 6px", margin: "6px 0" }) }, sp("> revisa el servicio de citas"));
+      const tuyo = on ? barra(c.gris_suave, sp("revisa el servicio de citas", { "font-weight": "700" })) : el("div", { style: estilo({ background: "#2a2a2a", padding: "2px 6px", margin: "6px 0" }) }, sp("> revisa el servicio de citas"));
       txt.append(tuyo,
         barra(on ? c.principal : "transparent", sp("● "), sp("La validación de la fecha falta en "), sp("citas.service.ts:58", { color: c.acento, "font-weight": "700" })),
         el("div", {}, sp("● ", { color: c.ok }), sp("Update", { "font-weight": "700" }), sp("(citas.service.ts)", { color: c.gris })),
-        el("div", { style: est({ background: on ? "#FBE9E7" : "#4b1818", color: on ? c.error : "#ffb4b4" }) }, sp("- console.log('agendando', fecha)")),
-        el("div", { style: est({ background: on ? "#E6F4EA" : "#183b1f", color: on ? c.ok : "#b4f0be" }) }, sp("+ if (fecha <= ahora) throw new Error('Fecha pasada')")),
-        el("div", { className: "osm-tm-st", style: est({ "border-top": `1px solid ${on ? c.fondo_suave : "#333"}` }) },
+        el("div", { style: estilo({ background: on ? "#FBE9E7" : "#4b1818", color: on ? c.error : "#ffb4b4" }) }, sp("- console.log('agendando', fecha)")),
+        el("div", { style: estilo({ background: on ? "#E6F4EA" : "#183b1f", color: on ? c.ok : "#b4f0be" }) }, sp("+ if (fecha <= ahora) throw new Error('Fecha pasada')")),
+        el("div", { className: "osm-tm-st", style: estilo({ "border-top": `1px solid ${on ? c.fondo_suave : "#333"}` }) },
           on ? sp(` ▲ ${m.corto || m.nombre || "Marca"} `, { background: c.principal, color: "#fff" }) : "", sp(on ? "  develop · Opus" : "develop · Opus", { color: on ? c.principal : c.gris, "font-weight": on ? "700" : "400" })));
     } else {
       const prompt = () => on && m
@@ -1528,72 +1576,195 @@ dialog.osm-dlg.ancho{max-width:600px}
     return el("div", { className: "osm-tm-win", role: "img", ariaLabel: (cual === "claude" ? "Claude Code" : "PowerShell") + (on ? " con el tema de " + (m.nombre || "la marca") : " como viene de fábrica") }, tabs, cuerpo);
   }
 
-  // Marca guardada → la forma que dibuja la previsualización
-  const tmVista = (x) => x && { nombre: x.nombre, corto: x.corto, lema: x.lema, colores: x.colores, opacidad: x.marca_agua_opacidad, posicion: x.marca_agua_posicion,
-    aguaUrl: x.con_marca_agua ? tmImgUrl(x.id, "agua") : null, iconoUrl: x.con_icono ? tmImgUrl(x.id, "icono") : null };
-  // Borrador del editor → la misma forma (con las imágenes nuevas si las subió)
-  function tmVistaEd() {
-    const e = tm.ed, b = e.marca, x = e.id ? tm.datos.marcas.find((y) => y.id === e.id) : null;
-    const url = (tipo, con) => e.imgs[tipo] === null ? null : e.imgs[tipo] ? e.imgs[tipo] : (x && con ? tmImgUrl(x.id, tipo) : null);
-    return { nombre: b.nombre, corto: b.corto, lema: b.lema, colores: b.colores, opacidad: b.marca_agua_opacidad, posicion: b.marca_agua_posicion,
-      aguaUrl: url("agua", x && x.con_marca_agua), iconoUrl: url("icono", x && x.con_icono) };
+  // ==================================================================== pestaña MARCAS
+  async function mcEnviar(cuerpo) {
+    const r = await fetch("/api/config/marcas", { method: "POST", headers: { "Content-Type": "application/json", "X-OS-Token": TOKEN }, body: JSON.stringify(cuerpo) });
+    let j; try { j = await r.json(); } catch (_) { j = { ok: false, mensaje: `respuesta ${r.status}` }; }
+    if (r.status === 403) j.mensaje = "el servidor se reinició: recarga la página (Ctrl+R)";
+    if (!j.ok) throw new Error(j.mensaje || "no se pudo");
+    return j;
   }
+  // Tras un cambio en el registro: la pestaña Terminal relee su estado (su selector lista las marcas).
+  async function mcRefrescarTerminal() { try { const r = await fetch("/api/config/terminal"); if (r.ok) { tm.datos = await r.json(); if (!tm.sucio) tm.borrador = tmDesdeDatos(); tmPintar(); } } catch (_) { /* la pestaña avisará al entrar */ } }
 
-  function tmPrevia() {
-    const b = tm.borrador;
-    let m, on, titulo, sub;
-    if (tm.ed) { m = tmVistaEd(); on = true; titulo = "Previsualización de " + (m.nombre || "la marca nueva"); sub = tm.ed.sucio ? "Así quedaría al guardar la marca." : "Así se ve esta marca."; }
-    else { m = tmVista(tm.datos.marcas.find((x) => x.id === b.activa) || tm.datos.marcas[0]); on = b.encendido; titulo = "Previsualización"; sub = tm.sucio ? "Así quedaría al guardar." : "Así está ahora."; }
-    return el("div", { className: "osm-tm-der" },
-      el("div", { className: "osm-tm-prev-h" }, el("b", { textContent: titulo }), el("span", { textContent: sub })),
-      tmVentana(m, on, "claude"), tmVentana(m, on, "ps"),
-      el("p", { className: "osm-tm-nota" }, svg("info"), el("span", { textContent: b.restaurar_pestanas ? "Al reabrir Windows Terminal: vuelven tus pestañas, cada una en su carpeta." : "Al reabrir Windows Terminal: arranca con una sola pestaña nueva." })));
-  }
-
-  // Agregar una marca: desde una referencia o con un código de acceso (marca protegida que viene con el plugin).
-  async function tmAgregar(cuerpo, aviso) {
-    try {
-      const r = await fetch("/api/config/terminal/agregar", { method: "POST", headers: { "Content-Type": "application/json", "X-OS-Token": TOKEN }, body: JSON.stringify(cuerpo) });
-      let j; try { j = await r.json(); } catch (_) { j = { ok: false, mensaje: `respuesta ${r.status}` }; }
-      if (r.status === 403) j.mensaje = "el servidor se reinició: recarga la página (Ctrl+R)";
-      if (!j.ok) throw new Error(j.mensaje || "no se pudo");
-      const primera = !tm.datos.existe;
-      tm.datos = j; tm.ver = Date.now(); tm.ed = null;
-      // Queda elegida como marca activa en el borrador: se ve a la derecha y se aplica con Guardar.
-      tm.borrador = Object.assign(tmDesdeDatos(), { activa: j.id, encendido: true });
-      tm.sucio = primera || j.id !== j.activa || !j.encendido;
-      tmPintar(); if (tm.sucio) tmPie.sucio();
-      tmPie.est.textContent = `${j.mensaje[0].toUpperCase()}${j.mensaje.slice(1)}. Revisa la previsualización y dale Guardar para aplicarla.`;
-      return true;
-    } catch (e) { if (aviso) { aviso.textContent = e.message; aviso.hidden = false; } return false; }
-  }
-  function tmFormCodigo() {
-    const id = "osm-tm-cod";
+  function mcFormCodigo() {
+    const id = "osm-mc-cod";
     const i = el("input", { type: "password", id, autocomplete: "off", maxLength: 100, placeholder: "Código de acceso", spellcheck: false });
     const aviso = el("p", { className: "osm-err", role: "alert", hidden: true });
     const b = el("button", { type: "button", className: "osm-btn", textContent: "Desbloquear" });
-    const ir = async () => { aviso.hidden = true; if (!i.value.trim()) { aviso.textContent = "Escribe el código."; aviso.hidden = false; return; }
-      b.disabled = true; b.textContent = "Probando…"; const ok = await tmAgregar({ codigo: i.value }, aviso); i.value = ""; if (!ok) { b.disabled = false; b.textContent = "Desbloquear"; } };
+    const ir = async () => {
+      aviso.hidden = true; if (!i.value.trim()) { aviso.textContent = "Escribe el código."; aviso.hidden = false; return; }
+      b.disabled = true; b.textContent = "Probando…";
+      try { const j = await mcEnviar({ accion: "codigo", codigo: i.value }); i.value = ""; mc.datos = j; mc.ver = Date.now(); mc.aviso = `${j.mensaje[0].toUpperCase()}${j.mensaje.slice(1)}. Ya puedes usarla en tus documentos y elegirla en la pestaña Terminal.`; mcPintar(); mcRefrescarTerminal(); }
+      catch (e) { i.value = ""; aviso.textContent = e.message; aviso.hidden = false; b.disabled = false; b.textContent = "Desbloquear"; }
+    };
     b.addEventListener("click", ir); i.addEventListener("keydown", (ev) => { if (ev.key === "Enter") { ev.preventDefault(); ir(); } });
-    return el("div", { className: "osm-tm-sec" },
-      el("label", { className: "osm-tm-l", htmlFor: id, textContent: "¿Tienes un código de acceso? Abre una marca que tu organización ya preparó, con sus colores y su logo." }),
+    return el("section", { className: "osm-tm-sec" },
+      el("h3", { textContent: "¿Tienes un código de acceso?" }),
+      el("label", { className: "osm-tm-l", htmlFor: id, textContent: "Abre una marca que tu organización ya preparó, con sus colores y su logo." }),
       el("div", { className: "osm-tm-cod" }, i, b), aviso);
   }
-  const tmSwatch = (cols) => el("span", { className: "osm-tm-sws", ariaHidden: "true" }, ...["principal", "acento", "fondo", "texto"].map((k) => el("i", { style: `background:${cols[k] || "#888"}` })));
 
-  function tmPintar() {
-    const d = tm.datos; if (!d) return;
-    if (!d.existe) {
+  function mcPintar() {
+    const d = mc.datos; if (!d) return;
+    const izq = el("div", { className: "osm-tm-izq" });
+    if (mc.aviso) izq.append(el("p", { className: "osm-mc-ok", role: "status", textContent: mc.aviso }));
+    if (!d.existe || !d.marcas.length) {
+      const amb = el("select", { id: "osm-mc-ref-amb" }, el("option", { value: "laboral", textContent: "Laboral" }), el("option", { value: "personal", textContent: "Personal" }));
       const refs = (d.referencias || []).map((r) => {
         const btn = el("button", { type: "button", className: "osm-tm-mc" }, tmSwatch(r.colores), el("span", { className: "n" }, r.nombre, el("small", { textContent: `${r.colores.principal} · sin logo: lo subes después` })));
-        btn.addEventListener("click", () => { btn.disabled = true; tmAgregar({ referencia: r.id }); });
+        btn.addEventListener("click", async () => { btn.disabled = true; try { const j = await mcEnviar({ accion: "referencia", referencia: r.id, ambito: amb.value }); mc.datos = j; mc.aviso = null; mcPintar(); mcRefrescarTerminal(); mcEditar(j.marcas.find((y) => y.id === j.id)); } catch (e) { btn.disabled = false; mcPie.error(e.message); } });
         return el("li", {}, btn);
       });
-      tmCaja.replaceChildren(el("div", { className: "osm-tm-izq" },
-        el("section", { className: "osm-tm-sec" }, el("h3", { textContent: "Crea tu marca" }),
-          el("p", { className: "osm-tm-l", textContent: "Elige una paleta de referencia para empezar; después cambias colores, nombre y logo en el editor." }),
-          el("ul", { className: "osm-tm-marcas" }, ...refs)),
-        tmFormCodigo()));
+      izq.append(el("section", { className: "osm-tm-sec" }, el("h3", { textContent: "Crea tu primera marca" }),
+        el("label", { className: "osm-tm-l", htmlFor: "osm-mc-ref-amb", textContent: "¿Para qué es?" }), amb,
+        el("p", { className: "osm-tm-l", textContent: "Elige una paleta de referencia para empezar; después cambias nombre, colores y logos en el editor." }),
+        el("ul", { className: "osm-tm-marcas" }, ...refs)), mcFormCodigo());
+      mcCaja.replaceChildren(izq);
+      return;
+    }
+    const grupo = (amb) => {
+      const xs = d.marcas.filter((x) => x.ambito === amb);
+      return el("section", { className: "osm-tm-sec", ariaLabel: "Marcas " + AMB[amb].toLowerCase() + "es" },
+        el("h3", { textContent: amb === "laboral" ? "Laborales" : "Personales" }),
+        xs.length ? el("ul", { className: "osm-tm-marcas" }, ...xs.map((x) => {
+          const btn = el("button", { type: "button", className: "osm-tm-mc" }, tmSwatch(x.colores),
+            el("span", { className: "n" }, x.nombre, el("small", { textContent: [x.con_logo ? "con logo" : "sin logo", x.con_marca_agua ? "marca de agua" : "", x.con_icono ? "ícono" : ""].filter(Boolean).join(" · ") })),
+            x.predeterminada ? el("span", { className: "osm-tm-tag", textContent: "predeterminada", title: `Se propone primero en lo ${amb}` }) : "",
+            tm.datos && tm.datos.activa === x.id && tm.datos.encendido ? el("span", { className: "osm-tm-tag sec", textContent: "terminal" }) : "");
+          btn.setAttribute("aria-current", String(!!(mc.ed && mc.ed.id === x.id)));
+          btn.addEventListener("click", () => mcEditar(x));
+          return el("li", {}, btn);
+        })) : el("p", { className: "osm-tm-l", textContent: amb === "laboral" ? "Ninguna todavía." : "Ninguna todavía. Lo personal (universidad, proyectos propios) usará esta." }));
+    };
+    const nueva = el("button", { type: "button", className: "osm-btn", textContent: "+ Nueva marca" });
+    nueva.addEventListener("click", () => mcEditar(null));
+    izq.append(grupo("laboral"), grupo("personal"), el("div", {}, nueva), mc.ed ? mcEditor() : "", mcFormCodigo());
+    mcCaja.replaceChildren(izq, mcPrevia());
+  }
+
+  function mcPrevia() {
+    const ed = mc.ed;
+    const m = ed ? mcVistaEd() : mcVista(mc.datos.marcas.find((x) => x.predeterminada && x.ambito === "laboral") || mc.datos.marcas[0]);
+    if (!m) return "";
+    return el("div", { className: "osm-tm-der" },
+      el("div", { className: "osm-tm-prev-h" }, el("b", { textContent: "Previsualización de " + (m.nombre || "la marca nueva") }), el("span", { textContent: ed && ed.sucio ? "Así quedaría al guardar." : `${AMB[m.ambito] || ""}` })),
+      mcDocumento(m), tmVentana(m, true, "claude"));
+  }
+  const mcRefrescarPrevia = () => { const d = mcCaja.querySelector(".osm-tm-der"); if (d) d.replaceWith(mcPrevia()); };
+
+  async function mcEditar(x) {
+    if (mc.ed && mc.ed.sucio && !(await confirmar("Cambios sin guardar", `Tienes cambios sin guardar en «${mc.ed.marca.nombre || "la marca nueva"}». ¿Los descartas?`))) return;
+    const base = x || mc.datos.marcas.find((y) => y.predeterminada) || mc.datos.marcas[0];
+    mc.ed = { id: x ? x.id : null, sucio: false, imgs: {},
+      marca: { nombre: x ? x.nombre : "", corto: x ? x.corto : "", lema: x ? x.lema : "", ambito: x ? x.ambito : "laboral", predeterminada: x ? x.predeterminada : false,
+        colores: Object.assign({}, base ? base.colores : (mc.datos.referencias[0] || {}).colores), marca_agua_opacidad: x ? x.marca_agua_opacidad : 0.18, marca_agua_posicion: x ? x.marca_agua_posicion : "center" } };
+    mc.aviso = null;
+    mcPie.limpio(); mcPie.q.hidden = !x;
+    mcPintar(); tmFoco("osm-mc-nombre");
+    try { history.replaceState(null, "", "#config&marcas/" + (x ? encodeURIComponent(x.id) : "nueva")); } catch (_) { /* nada */ }
+  }
+  const mcSucio = () => { mc.ed.sucio = true; mcPie.sucio(); };
+
+  function mcEditor() {
+    const e = mc.ed, mk = e.marca;
+    const campo = (id, etiqueta, valor, max, ayuda, poner) => {
+      const i = el("input", { type: "text", id, value: valor || "", maxLength: max, autocomplete: "off" });
+      i.addEventListener("input", () => { poner(i.value); mcSucio(); mcRefrescarPrevia(); });
+      return [el("label", { className: "osm-tm-l", htmlFor: id, textContent: etiqueta + (ayuda ? ` · ${ayuda}` : "") }), i];
+    };
+    const color = ([k, t, ayuda]) => {
+      const ic = el("input", { type: "color", id: "osm-mc-c-" + k, value: mk.colores[k] || "#000000", ariaLabel: t });
+      const it = el("input", { type: "text", value: mk.colores[k] || "", maxLength: 7, ariaLabel: t + " en hexadecimal", spellcheck: false });
+      const poner = (v) => { mk.colores[k] = v.toUpperCase(); mcSucio(); mcRefrescarPrevia(); };
+      ic.addEventListener("input", () => { it.value = ic.value.toUpperCase(); poner(ic.value); });
+      it.addEventListener("input", () => { if (/^#[0-9A-Fa-f]{6}$/.test(it.value)) { ic.value = it.value; poner(it.value); } });
+      return el("div", { className: "osm-tm-col", title: ayuda }, ic, it, el("span", { textContent: t }));
+    };
+    const imagen = (tipo, titulo, ayuda, cuadrado) => {
+      const x = e.id ? mc.datos.marcas.find((y) => y.id === e.id) : null;
+      const tiene = x && { logo: x.con_logo, agua: x.con_marca_agua, icono: x.con_icono }[tipo];
+      const actual = e.imgs[tipo] === null ? null : e.imgs[tipo] || (tiene ? mcImg(x.id, tipo) : null);
+      const f = el("input", { type: "file", accept: "image/png", hidden: true });
+      f.addEventListener("change", () => {
+        const a = f.files && f.files[0]; if (!a) return;
+        if (a.type !== "image/png") { mcPie.error("La imagen debe ser PNG."); return; }
+        if (a.size > 2 * 1024 * 1024) { mcPie.error("La imagen pasa de 2 MB."); return; }
+        const r = new FileReader(); r.onload = () => { e.imgs[tipo] = r.result; mcSucio(); mcPintar(); }; r.readAsDataURL(a);
+      });
+      const subir = el("button", { type: "button", className: "osm-btn", textContent: actual ? "Cambiar" : "Subir PNG" }); subir.addEventListener("click", () => f.click());
+      const quitar = actual ? el("button", { type: "button", className: "osm-btn q", textContent: "Quitar" }) : "";
+      if (quitar) quitar.addEventListener("click", () => { e.imgs[tipo] = null; mcSucio(); mcPintar(); });
+      return [el("p", { className: "osm-tm-l", textContent: `${titulo} · ${ayuda}` }),
+        el("div", { className: "osm-tm-img" + (cuadrado ? " ico" : "") }, el("span", { className: "pv" }, actual ? el("img", { src: actual, alt: titulo }) : "sin imagen"), subir, quitar, f)];
+    };
+    const amb = el("select", { id: "osm-mc-amb" }, ...Object.entries(AMB).map(([v, t]) => el("option", { value: v, textContent: t, selected: v === mk.ambito })));
+    amb.addEventListener("change", () => { mk.ambito = amb.value; mcSucio(); mcPintar(); tmFoco("osm-mc-amb"); });
+    const pre = el("input", { type: "checkbox", id: "osm-mc-pre", checked: !!mk.predeterminada });
+    pre.addEventListener("change", () => { mk.predeterminada = pre.checked; mcSucio(); });
+    let partir = "";
+    if (!e.id && (mc.datos.referencias || []).length) {
+      const ps = el("select", { id: "osm-mc-partir" }, el("option", { value: "", textContent: "Los colores de tu marca predeterminada" }),
+        ...mc.datos.referencias.map((r) => el("option", { value: r.id, textContent: `Referencia: ${r.nombre}`, selected: e.desde === r.id })));
+      ps.addEventListener("change", () => {
+        const r = mc.datos.referencias.find((y) => y.id === ps.value), b = mc.datos.marcas.find((y) => y.predeterminada) || mc.datos.marcas[0];
+        e.desde = ps.value; mk.colores = Object.assign({}, r ? r.colores : b.colores); mcSucio(); mcPintar(); tmFoco("osm-mc-partir");
+      });
+      partir = el("div", {}, el("label", { className: "osm-tm-l", htmlFor: "osm-mc-partir", textContent: "Partir de" }), ps);
+    }
+    const op = el("input", { type: "range", id: "osm-mc-op", min: 0, max: 40, step: 1, value: Math.round((mk.marca_agua_opacidad ?? 0.18) * 100) });
+    const opV = el("span", { textContent: `${op.value} %` });
+    op.addEventListener("input", () => { mk.marca_agua_opacidad = op.value / 100; opV.textContent = `${op.value} %`; mcSucio(); mcRefrescarPrevia(); });
+    const pos = el("select", { id: "osm-mc-pos" }, ...TM_POS.map(([v, t]) => el("option", { value: v, textContent: t, selected: v === mk.marca_agua_posicion })));
+    pos.addEventListener("change", () => { mk.marca_agua_posicion = pos.value; mcSucio(); mcRefrescarPrevia(); });
+    const cerrar = el("button", { type: "button", className: "osm-btn", textContent: "Cerrar" });
+    cerrar.addEventListener("click", async () => { if (e.sucio && !(await confirmar("Cambios sin guardar", "Si cierras el editor se pierden los cambios de esta marca. ¿Los descartas?"))) return; mc.ed = null; mcPintar(); });
+    return el("section", { className: "osm-tm-ed", ariaLabel: "Editar marca" },
+      el("div", { style: "display:flex;align-items:center;gap:8px;justify-content:space-between" }, el("h3", { textContent: e.id ? `Editar «${mk.nombre}»` : "Nueva marca" }), cerrar),
+      partir,
+      ...campo("osm-mc-nombre", "Nombre", mk.nombre, 60, "en documentos y en la bienvenida de Claude Code", (v) => { mk.nombre = v; }),
+      ...campo("osm-mc-corto", "Nombre corto", mk.corto, 24, "franjas y etiquetas", (v) => { mk.corto = v; }),
+      ...campo("osm-mc-lema", "Lema", mk.lema, 90, "opcional, pie de documentos", (v) => { mk.lema = v; }),
+      el("label", { className: "osm-tm-l", htmlFor: "osm-mc-amb", textContent: "Ámbito · lo laboral propone primero las laborales; lo personal, las personales" }), amb,
+      el("label", { className: "osm-tm-sw osm-mc-chk", htmlFor: "osm-mc-pre" }, pre, el("span", {}, `Predeterminada para lo ${mk.ambito}`, el("small", { textContent: "Queda marcada cuando se te pregunte qué marca usar en un documento de ese ámbito." }))),
+      el("p", { className: "osm-tm-l", textContent: "Colores principales" }),
+      el("div", { className: "osm-tm-cols" }, ...TM_COLS.slice(0, 4).map(color)),
+      el("details", {}, el("summary", { textContent: "Más colores (8)" }), el("div", { className: "osm-tm-cols" }, ...TM_COLS.slice(4).map(color))),
+      ...imagen("logo", "Logo", "PNG transparente; va en documentos, presentaciones y artefactos", false),
+      ...imagen("agua", "Marca de agua de la terminal", "PNG transparente de unos 340 px de ancho; se usa tal cual", false),
+      el("label", { className: "osm-tm-l", htmlFor: "osm-mc-op", textContent: "Opacidad de la marca de agua" }), el("div", { className: "osm-tm-rango" }, op, opV),
+      el("label", { className: "osm-tm-l", htmlFor: "osm-mc-pos", textContent: "Posición de la marca de agua" }), pos,
+      ...imagen("icono", "Ícono", "PNG cuadrado de 64 a 96 px; pestañas de la terminal", true),
+      mcPie.caja);
+  }
+
+  mcPie.g.addEventListener("click", async () => {
+    const e = mc.ed; if (!e) return;
+    if (!e.marca.nombre.trim()) { mcPie.error("La marca necesita un nombre."); tmFoco("osm-mc-nombre"); return; }
+    mcPie.ocupado("Guardando…");
+    try {
+      const imagenes = {}; for (const k of ["logo", "agua", "icono"]) if (k in e.imgs) imagenes[k] = e.imgs[k];
+      const j = await mcEnviar({ accion: "guardar", id: e.id, marca: e.marca, imagenes });
+      mc.datos = j; mc.ver = Date.now(); mc.ed = null;
+      await mcEditar(j.marcas.find((y) => y.id === j.id));
+      mcPie.limpio(j.plan ? "Guardada y aplicada a la terminal" : "Guardada");
+      mcRefrescarTerminal();
+    } catch (err) { mcPie.error("No se guardó: " + err.message); mcPie.g.disabled = false; }
+  });
+  mcPie.d.addEventListener("click", () => { const e = mc.ed; if (!e) return; mc.ed = null; mcEditar(e.id ? mc.datos.marcas.find((y) => y.id === e.id) : null); });
+  mcPie.q.addEventListener("click", async () => {
+    const e = mc.ed; if (!e || !e.id) return;
+    if (!(await confirmar("Quitar marca", `Se borra «${e.marca.nombre}» de tus marcas. Sus imágenes quedan en la carpeta de marcas por si las necesitas.`))) return;
+    try { mc.datos = await mcEnviar({ accion: "quitar", id: e.id }); mc.ed = null; mc.ver = Date.now(); mc.aviso = "Marca quitada."; mcPintar(); mcRefrescarTerminal(); }
+    catch (err) { mcPie.error("No se quitó: " + err.message); }
+  });
+
+  // ==================================================================== pestaña TERMINAL
+  function tmPintar() {
+    const d = tm.datos; if (!d) return;
+    if (!d.marcas || !d.marcas.length) {
+      const ir = el("button", { type: "button", className: "osm-btn prim", textContent: "Ir a Marcas" }); ir.addEventListener("click", () => irTab("marcas", true));
+      tmCaja.replaceChildren(vacio("Primero necesitas una marca", "Crea una desde una paleta de referencia o abre la de tu organización con su código de acceso en la pestaña Marcas. Después la eliges aquí para tu terminal.", ir));
       return;
     }
     const b = tm.borrador;
@@ -1603,140 +1774,25 @@ dialog.osm-dlg.ancho{max-width:600px}
       return el("label", { className: "osm-tm-sw", htmlFor: id }, i, el("span", {}, titulo, el("small", { textContent: ayuda })));
     };
     const sel = el("select", { id: "osm-tm-marca", disabled: !b.encendido },
-      ...d.marcas.map((x) => el("option", { value: x.id, textContent: x.nombre, selected: x.id === b.activa })));
+      ...["laboral", "personal"].map((amb) => { const xs = d.marcas.filter((x) => x.ambito === amb); return xs.length ? el("optgroup", { label: amb === "laboral" ? "Laborales" : "Personales" }, ...xs.map((x) => el("option", { value: x.id, textContent: x.nombre, selected: x.id === b.activa }))) : null; }).filter(Boolean));
     sel.addEventListener("change", () => { b.activa = sel.value; tm.sucio = true; tmPintar(); tmPie.sucio(); tmFoco("osm-tm-marca"); });
-    const activacion = el("section", { className: "osm-tm-sec", ariaLabel: "Activación" },
+    const editar = el("button", { type: "button", className: "osm-btn", textContent: "Editar esta marca" });
+    editar.addEventListener("click", () => { irTab("marcas"); const x = mc.datos && mc.datos.marcas.find((y) => y.id === b.activa); if (x) mcEditar(x); });
+    const izq = el("div", { className: "osm-tm-izq" }, el("section", { className: "osm-tm-sec", ariaLabel: "Activación" },
       el("h3", { textContent: "Activación" }),
       sw("osm-tm-on", b.encendido, "Tema de la marca", "Colores, ícono y marca de agua en Windows Terminal; línea de estado, barras de mensajes y bienvenida en Claude Code; prompt de PowerShell y CMD.", (v) => { b.encendido = v; }),
-      el("label", { className: "osm-tm-l", htmlFor: "osm-tm-marca", textContent: "Marca activa" }), sel,
+      el("label", { className: "osm-tm-l", htmlFor: "osm-tm-marca", textContent: "Marca de la terminal" }), el("div", { className: "osm-tm-cod" }, sel, editar),
       sw("osm-tm-rest", b.restaurar_pestanas, "Restaurar pestañas al reabrir", "Si la ventana se cierra sin querer, al abrirla vuelven las mismas pestañas, cada una en su carpeta. Cerrar varias pide confirmación. Claude no se reabre solo: en la pestaña, «claude --continue».", (v) => { b.restaurar_pestanas = v; }),
       tm.plan && !tm.sucio ? el("ul", { className: "osm-tm-plan" }, ...tm.plan.map((t) => el("li", { textContent: t }))) : "",
-      tmPie.caja);
-    const nueva = el("button", { type: "button", className: "osm-btn", textContent: "+ Nueva marca", disabled: !!(tm.ed && tm.ed.sucio) });
-    nueva.addEventListener("click", () => tmEditar(null));
-    const marcas = el("section", { className: "osm-tm-sec", ariaLabel: "Marcas" },
-      el("h3", { textContent: "Marcas" }),
-      el("ul", { className: "osm-tm-marcas" }, ...d.marcas.map((x) => {
-        const btn = el("button", { type: "button", className: "osm-tm-mc" },
-          el("span", { className: "osm-tm-sws", ariaHidden: "true" }, ...["principal", "acento", "fondo", "texto"].map((k) => el("i", { style: `background:${x.colores[k] || "#888"}` }))),
-          el("span", { className: "n" }, x.nombre, el("small", { textContent: `${x.colores.principal || ""} · ${x.con_marca_agua ? "con" : "sin"} marca de agua · ${x.con_icono ? "con" : "sin"} ícono` })),
-          x.id === d.activa ? el("span", { className: "osm-tm-tag", textContent: "activa" }) : "");
-        btn.setAttribute("aria-current", String(!!(tm.ed && tm.ed.id === x.id)));
-        btn.addEventListener("click", () => tmEditar(x));
-        return el("li", {}, btn);
-      })),
-      el("div", {}, nueva));
-    marcas.append(tmFormCodigo());
-    tmCaja.replaceChildren(el("div", { className: "osm-tm-izq" }, activacion, marcas, tm.ed ? tmEditor() : ""), tmPrevia());
+      tmPie.caja));
+    const m = (() => { const x = d.marcas.find((y) => y.id === b.activa) || d.marcas[0]; return x && { nombre: x.nombre, corto: x.corto, lema: x.lema, colores: x.colores, opacidad: x.marca_agua_opacidad, posicion: x.marca_agua_posicion,
+      aguaUrl: x.con_marca_agua ? mcImg(x.id, "agua") : null, iconoUrl: x.con_icono ? mcImg(x.id, "icono") : null }; })();
+    const der = el("div", { className: "osm-tm-der" },
+      el("div", { className: "osm-tm-prev-h" }, el("b", { textContent: "Previsualización" }), el("span", { textContent: tm.sucio ? "Así quedaría al guardar." : "Así está ahora." })),
+      tmVentana(m, b.encendido, "claude"), tmVentana(m, b.encendido, "ps"),
+      el("p", { className: "osm-tm-nota" }, svg("info"), el("span", { textContent: b.restaurar_pestanas ? "Al reabrir Windows Terminal: vuelven tus pestañas, cada una en su carpeta." : "Al reabrir Windows Terminal: arranca con una sola pestaña nueva." })));
+    tmCaja.replaceChildren(izq, der);
   }
-
-  // ---- editor de una marca
-  async function tmEditar(x) {
-    if (tm.ed && tm.ed.sucio && !(await confirmar("Cambios sin guardar", `Tienes cambios sin guardar en «${tm.ed.marca.nombre || "la marca nueva"}». ¿Los descartas?`))) return;
-    const base = x || tm.datos.marcas.find((y) => y.id === tm.datos.activa) || tm.datos.marcas[0];
-    tm.ed = { id: x ? x.id : null, sucio: false, imgs: {},
-      marca: { nombre: x ? x.nombre : "", corto: x ? x.corto : "", lema: x ? x.lema : "", colores: Object.assign({}, base.colores),
-        marca_agua_opacidad: x ? x.marca_agua_opacidad : 0.18, marca_agua_posicion: x ? x.marca_agua_posicion : "center" } };
-    tmEdPie.limpio(); tmEdPie.q.hidden = !x || x.id === tm.datos.activa;
-    tmPintar(); tmFoco("osm-tm-nombre");
-  }
-  const tmEdSucio = () => { tm.ed.sucio = true; tmEdPie.sucio(); };
-  function tmEditor() {
-    const e = tm.ed, mk = e.marca;
-    const campo = (id, etiqueta, valor, max, ayuda, poner) => {
-      const i = el("input", { type: "text", id, value: valor || "", maxLength: max, autocomplete: "off" });
-      i.addEventListener("input", () => { poner(i.value); tmEdSucio(); const d = tmCaja.querySelector(".osm-tm-der"); if (d) d.replaceWith(tmPrevia()); });
-      return [el("label", { className: "osm-tm-l", htmlFor: id, textContent: etiqueta + (ayuda ? ` · ${ayuda}` : "") }), i];
-    };
-    const color = ([k, t, ayuda]) => {
-      const ic = el("input", { type: "color", id: "osm-tm-c-" + k, value: mk.colores[k] || "#000000", ariaLabel: t });
-      const it = el("input", { type: "text", value: mk.colores[k] || "", maxLength: 7, ariaLabel: t + " en hexadecimal", spellcheck: false });
-      const poner = (v) => { mk.colores[k] = v.toUpperCase(); tmEdSucio(); const d = tmCaja.querySelector(".osm-tm-der"); if (d) d.replaceWith(tmPrevia()); };
-      ic.addEventListener("input", () => { it.value = ic.value.toUpperCase(); poner(ic.value); });
-      it.addEventListener("input", () => { if (/^#[0-9A-Fa-f]{6}$/.test(it.value)) { ic.value = it.value; poner(it.value); } });
-      return el("div", { className: "osm-tm-col", title: ayuda }, ic, it, el("span", { textContent: t }));
-    };
-    const imagen = (tipo, titulo, ayuda) => {
-      const x = e.id ? tm.datos.marcas.find((y) => y.id === e.id) : null;
-      const actual = e.imgs[tipo] === null ? null : e.imgs[tipo] || (x && (tipo === "agua" ? x.con_marca_agua : x.con_icono) ? tmImgUrl(x.id, tipo) : null);
-      const id = "osm-tm-f-" + tipo;
-      const f = el("input", { type: "file", id, accept: "image/png", hidden: true });
-      f.addEventListener("change", () => {
-        const a = f.files && f.files[0]; if (!a) return;
-        if (a.type !== "image/png") { tmEdPie.error("La imagen debe ser PNG."); return; }
-        if (a.size > 2 * 1024 * 1024) { tmEdPie.error("La imagen pasa de 2 MB."); return; }
-        const r = new FileReader(); r.onload = () => { e.imgs[tipo] = r.result; tmEdSucio(); tmPintar(); }; r.readAsDataURL(a);
-      });
-      const subir = el("button", { type: "button", className: "osm-btn", textContent: actual ? "Cambiar" : "Subir PNG" }); subir.addEventListener("click", () => f.click());
-      const quitar = actual ? el("button", { type: "button", className: "osm-btn q", textContent: "Quitar" }) : "";
-      if (quitar) quitar.addEventListener("click", () => { e.imgs[tipo] = null; tmEdSucio(); tmPintar(); });
-      return [el("p", { className: "osm-tm-l", textContent: `${titulo} · ${ayuda}` }),
-        el("div", { className: "osm-tm-img" + (tipo === "icono" ? " ico" : "") }, el("span", { className: "pv" }, actual ? el("img", { src: actual, alt: titulo }) : "sin imagen"), subir, quitar, f)];
-    };
-    const op = el("input", { type: "range", id: "osm-tm-op", min: 0, max: 40, step: 1, value: Math.round((mk.marca_agua_opacidad ?? 0.18) * 100) });
-    const opV = el("span", { textContent: `${op.value} %` });
-    op.addEventListener("input", () => { mk.marca_agua_opacidad = op.value / 100; opV.textContent = `${op.value} %`; tmEdSucio(); const d = tmCaja.querySelector(".osm-tm-der"); if (d) d.replaceWith(tmPrevia()); });
-    const pos = el("select", { id: "osm-tm-pos" }, ...TM_POS.map(([v, t]) => el("option", { value: v, textContent: t, selected: v === mk.marca_agua_posicion })));
-    pos.addEventListener("change", () => { mk.marca_agua_posicion = pos.value; tmEdSucio(); const d = tmCaja.querySelector(".osm-tm-der"); if (d) d.replaceWith(tmPrevia()); });
-    const cerrar = el("button", { type: "button", className: "osm-btn", textContent: "Cerrar" });
-    cerrar.addEventListener("click", async () => { if (e.sucio && !(await confirmar("Cambios sin guardar", "Si cierras el editor se pierden los cambios de esta marca. ¿Los descartas?"))) return; tm.ed = null; tmPintar(); });
-    // Marca nueva: partir de la marca activa o de una paleta de referencia (solo copia los colores).
-    let partir = "";
-    if (!e.id && (tm.datos.referencias || []).length) {
-      const ps = el("select", { id: "osm-tm-partir" }, el("option", { value: "", textContent: "Los colores de la marca activa" }),
-        ...tm.datos.referencias.map((r) => el("option", { value: r.id, textContent: `Referencia: ${r.nombre}`, selected: e.desde === r.id })));
-      ps.addEventListener("change", () => {
-        const r = tm.datos.referencias.find((x) => x.id === ps.value);
-        const act = tm.datos.marcas.find((y) => y.id === tm.datos.activa) || tm.datos.marcas[0];
-        e.desde = ps.value; mk.colores = Object.assign({}, r ? r.colores : act.colores); tmEdSucio(); tmPintar(); tmFoco("osm-tm-partir");
-      });
-      partir = el("div", {}, el("label", { className: "osm-tm-l", htmlFor: "osm-tm-partir", textContent: "Partir de" }), ps);
-    }
-    return el("section", { className: "osm-tm-ed", ariaLabel: "Editar marca" },
-      el("div", { style: "display:flex;align-items:center;gap:8px;justify-content:space-between" }, el("h3", { textContent: e.id ? `Editar «${mk.nombre}»` : "Nueva marca" }), cerrar),
-      partir,
-      ...campo("osm-tm-nombre", "Nombre", mk.nombre, 60, "sale sobre la bienvenida de Claude Code", (v) => { mk.nombre = v; }),
-      ...campo("osm-tm-corto", "Nombre corto", mk.corto, 24, "la franja de la línea de estado", (v) => { mk.corto = v; }),
-      ...campo("osm-tm-lema", "Lema", mk.lema, 90, "opcional, debajo del nombre", (v) => { mk.lema = v; }),
-      el("p", { className: "osm-tm-l", textContent: "Colores principales" }),
-      el("div", { className: "osm-tm-cols" }, ...TM_COLS.slice(0, 4).map(color)),
-      el("details", {}, el("summary", { textContent: "Más colores (8)" }), el("div", { className: "osm-tm-cols" }, ...TM_COLS.slice(4).map(color))),
-      ...imagen("agua", "Marca de agua", "PNG transparente de unos 340 px de ancho; se usa tal cual"),
-      el("label", { className: "osm-tm-l", htmlFor: "osm-tm-op", textContent: "Opacidad de la marca de agua" }), el("div", { className: "osm-tm-rango" }, op, opV),
-      el("label", { className: "osm-tm-l", htmlFor: "osm-tm-pos", textContent: "Posición de la marca de agua" }), pos,
-      ...imagen("icono", "Ícono de las pestañas", "PNG cuadrado de 64 a 96 px"),
-      tmEdPie.caja);
-  }
-
-  async function tmEnviarMarca(cuerpo) {
-    const r = await fetch("/api/config/terminal/marca", { method: "POST", headers: { "Content-Type": "application/json", "X-OS-Token": TOKEN }, body: JSON.stringify(cuerpo) });
-    let j; try { j = await r.json(); } catch (_) { j = { ok: false, mensaje: `respuesta ${r.status}` }; }
-    if (r.status === 403) j.mensaje = "el servidor se reinició: recarga la página (Ctrl+R)";
-    if (!j.ok) throw new Error(j.mensaje || "no se pudo guardar");
-    return j;
-  }
-  tmEdPie.g.addEventListener("click", async () => {
-    const e = tm.ed; if (!e) return;
-    if (!e.marca.nombre.trim()) { tmEdPie.error("La marca necesita un nombre."); tmFoco("osm-tm-nombre"); return; }
-    tmEdPie.ocupado(e.id === tm.datos.activa && tm.datos.encendido ? "Guardando y aplicando…" : "Guardando…");
-    try {
-      const imagenes = {};
-      for (const k of ["agua", "icono"]) if (k in e.imgs) imagenes[k] = e.imgs[k];
-      const j = await tmEnviarMarca({ accion: "guardar", id: e.id, marca: e.marca, imagenes });
-      tm.datos = j; tm.ver = Date.now(); if (j.plan) tm.plan = j.plan;
-      if (!tm.sucio) tm.borrador = tmDesdeDatos();
-      const x = j.marcas.find((y) => y.id === j.id);
-      tm.ed = null; await tmEditar(x);
-      tmEdPie.limpio(j.plan ? "Guardada y aplicada" : "Guardada");
-    } catch (err) { tmEdPie.error("No se guardó: " + err.message); tmEdPie.g.disabled = false; }
-  });
-  tmEdPie.d.addEventListener("click", () => { const e = tm.ed; if (!e) return; tm.ed = null; tmEditar(e.id ? tm.datos.marcas.find((y) => y.id === e.id) : null); });
-  tmEdPie.q.addEventListener("click", async () => {
-    const e = tm.ed; if (!e || !e.id) return;
-    if (!(await confirmar("Quitar marca", `Se borra «${e.marca.nombre}» de tus marcas. Sus imágenes quedan en la carpeta de marcas por si las necesitas.`))) return;
-    try { tm.datos = await tmEnviarMarca({ accion: "quitar", id: e.id }); tm.ed = null; tm.ver = Date.now(); tmPintar(); tmPie.limpio("Marca quitada"); }
-    catch (err) { tmEdPie.error("No se quitó: " + err.message); }
-  });
 
   tmPie.d.addEventListener("click", () => { tm.borrador = tmDesdeDatos(); tm.sucio = false; tm.plan = null; tmPintar(); tmPie.limpio(); });
   tmPie.g.addEventListener("click", async () => {
@@ -1748,7 +1804,7 @@ dialog.osm-dlg.ancho{max-width:600px}
       if (r.status === 403) j.mensaje = "el servidor se reinició: recarga la página (Ctrl+R)";
       if (!j.ok) throw new Error(j.mensaje || "no se pudo aplicar");
       tm.datos = j; tm.plan = j.plan || null; tm.sucio = false; tm.borrador = tmDesdeDatos();
-      tmPintar(); tmPie.limpio("Aplicado. Abre una consola nueva para verlo");
+      tmPintar(); tmPie.limpio("Aplicado. Abre una consola nueva para verlo"); if (mc.datos) mcPintar();
     } catch (e) { tmPie.error("No se aplicó: " + e.message); tmPie.g.disabled = false; }
     finally { tmPie.g.removeAttribute("aria-busy"); }
   });
@@ -1758,12 +1814,12 @@ dialog.osm-dlg.ancho{max-width:600px}
     if (id === "agentes" && !ag.datos) agCargar();
     if (id === "skills" && !sk.datos) skCargar();
     if (id === "bd" && !bd.datos) bdCargar();
-    if (id === "terminal" && !tm.datos) tmCargar();
+    if ((id === "marcas" || id === "terminal") && !mc.datos) mcCargar();
   }
   // Al entrar a Config: la pestaña del enlace o la última usada; las cuentas de las otras se llenan en segundo plano.
   function entrarConfig() {
     const e = leerEnlace();
-    if (e && e.id) { if (e.tab === "skills") sk.pedido = e.id; else if (e.tab === "bd") bd.pedido = e.id; else if (e.tab === "terminal") tm.pedido = e.id; else ag.pedido = e.id; }
+    if (e && e.id) { if (e.tab === "skills") sk.pedido = e.id; else if (e.tab === "bd") bd.pedido = e.id; else if (e.tab === "marcas") mc.pedido = e.id; else ag.pedido = e.id; }
     let tab = ult.tab || "agentes";
     if (e) { if (paneles[e.tab]) tab = e.tab; else { ag.pedido = e.tab; tab = "agentes"; } }   // enlaces viejos: #config&nuevo y #config&<agente>
     irTab(paneles[tab] ? tab : "agentes");
@@ -1778,7 +1834,7 @@ dialog.osm-dlg.ancho{max-width:600px}
   addEventListener("hashchange", () => { const e = leerEnlace(); if (!e || !vConfig.classList.contains("active")) return;
     if (paneles[e.tab]) { irTab(e.tab); if (e.id) { if (e.tab === "skills" && sk.datos) { const s = sk.datos.skills.find((x) => x.nombre === e.id); if (s) skVer(s); } else if (e.tab === "bd" && bd.datos) { const c = bd.datos.conexiones.find((x) => x.id === e.id); if (c) bdVer(c); } else if (e.tab === "agentes" && ag.datos) { const a = ag.datos.agentes.find((x) => x.nombre === e.id); if (a) agVer(a); } } } });
 
-  addEventListener("beforeunload", (e) => { if (ag.sucio || bd.sucio || tm.sucio || (tm.ed && tm.ed.sucio)) { e.preventDefault(); e.returnValue = ""; } });
+  addEventListener("beforeunload", (e) => { if (ag.sucio || bd.sucio || tm.sucio || (mc.ed && mc.ed.sucio)) { e.preventDefault(); e.returnValue = ""; } });
   // Cambiar de vista de la consola con una ficha sucia en Config pregunta antes (diálogo de la casa). Va en captura,
   // antes del cambio de vista; si se acepta, se descartan los cambios y se repite el clic.
   let tabPermitida = null;

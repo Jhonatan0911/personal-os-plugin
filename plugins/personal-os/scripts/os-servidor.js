@@ -732,157 +732,102 @@ function borrarAgente(b) {
   return { ok: true, mensaje: `«${nombre}» movido a la papelera (${PAPELERA.replace(/\\/g, '/')})` };
 }
 
-// ------------------------------------------------------------------ terminal: tema de la marca (marca-terminal.js)
+// ------------------------------------------------------------------ marcas (registro general) y terminal
 
-/** Corre marca-terminal.js con los argumentos dados y devuelve su salida (el script valida la marca y los colores). */
-function marcaTerminal(args, timeout, entrada) {
+const MARCAS = require('./lib/marcas');
+
+/** Corre marca-terminal.js y devuelve su salida (el script valida la marca y los colores). */
+function marcaTerminal(args, timeout) {
   return new Promise((resolve) => {
-    const h = execFile(process.execPath, [path.join(__dirname, 'marca-terminal.js'), ...args], { windowsHide: true, timeout: timeout || 30000, cwd: STATE || C.OS_HOME },
+    execFile(process.execPath, [path.join(__dirname, 'marca-terminal.js'), ...args], { windowsHide: true, timeout: timeout || 30000, cwd: STATE || C.OS_HOME },
       (e, out, err) => resolve({ ok: !e, out: String(out || ''), err: String(err || '').trim() }));
-    // El código de acceso va por stdin: nunca en la línea de comandos ni en un log.
-    if (h.stdin) h.stdin.end(entrada || '');
   });
 }
+const ultimaLineaJson = (s) => JSON.parse(String(s).trim().split(/\r?\n/).pop());
 
-async function terminalReferencias() {
-  const r = await marcaTerminal(['--referencias']);
-  try { return JSON.parse(r.out.trim().split(/\r?\n/).pop()).referencias || []; } catch (_) { return []; }
+function marcasEstado() {
+  const d = MARCAS.leer();
+  return { ok: true, existe: !!d, predeterminadas: d ? d.predeterminadas : { laboral: null, personal: null }, marcas: MARCAS.lista(d), referencias: MARCAS.referencias() };
+}
+
+/** Imagen de una marca (logo, marca de agua o ícono) para las previsualizaciones: solo PNG de la carpeta de marcas. */
+function marcasImagen(id, tipo) {
+  const d = MARCAS.leer();
+  const a = d && ['logo', 'agua', 'icono'].includes(tipo) ? MARCAS.imagen(d.marcas[id], tipo) : null;
+  return a && /\.png$/i.test(a) ? fs.readFileSync(a) : null;
 }
 
 async function terminalEstado() {
-  const [r, referencias] = await Promise.all([marcaTerminal(['--estado']), terminalReferencias()]);
-  if (!r.ok) {
-    const sinArchivo = /no existe .*terminal\.json/.test(r.err);
-    return { ok: true, existe: false, referencias, mensaje: sinArchivo ? 'Todavía no hay marcas configuradas.' : r.err.replace(/^ERROR:\s*/, '').slice(0, 300) };
-  }
-  return Object.assign({ existe: true, referencias }, JSON.parse(r.out.trim().split(/\r?\n/).pop()));
+  const r = await marcaTerminal(['--estado']);
+  if (!r.ok) return { ok: false, mensaje: r.err.replace(/^ERROR:\s*/, '').slice(0, 300) };
+  return ultimaLineaJson(r.out);
 }
 
-/** Desbloquea una marca protegida con su código ({ codigo }) o crea la primera desde una referencia ({ referencia }). */
-async function terminalAgregar(cuerpo) {
-  if (typeof cuerpo.codigo === 'string') {
-    const codigo = cuerpo.codigo.slice(0, 100);
-    if (!codigo.trim()) return { ok: false, mensaje: 'escribe el código de acceso' };
-    const r = await marcaTerminal(['--desbloquear'], 60000, codigo + '\n');
-    if (!r.ok) return { ok: false, mensaje: /no abre/.test(r.err) ? 'ese código no abre ninguna marca' : r.err.replace(/^ERROR:\s*/, '').slice(0, 300) };
-    const j = JSON.parse(r.out.trim().split(/\r?\n/).pop());
-    return Object.assign(await terminalEstado(), { ok: true, id: j.id, mensaje: `marca «${j.nombre}» desbloqueada` });
-  }
-  if (typeof cuerpo.referencia === 'string' && /^[a-z0-9-]{2,40}$/.test(cuerpo.referencia)) {
-    const r = await marcaTerminal(['--iniciar', '--referencia', cuerpo.referencia]);
-    if (!r.ok) return { ok: false, mensaje: r.err.replace(/^ERROR:\s*/, '').slice(0, 300) };
-    const j = JSON.parse(r.out.trim().split(/\r?\n/).pop());
-    return Object.assign(await terminalEstado(), { ok: true, id: j.id, mensaje: `marca «${j.nombre}» creada` });
-  }
-  return { ok: false, mensaje: 'falta el código o la referencia' };
-}
-
-/** Guarda los interruptores y la marca activa en terminal.json y aplica. Solo esas tres claves se aceptan. */
-async function terminalGuardar(cuerpo) {
-  const est = await terminalEstado();
-  if (!est.existe) return { ok: false, mensaje: est.mensaje || 'no hay marcas configuradas' };
-  const datos = JSON.parse(fs.readFileSync(est.ruta, 'utf8').replace(/^﻿/, ''));
-  if ('encendido' in cuerpo) { if (typeof cuerpo.encendido !== 'boolean') return { ok: false, mensaje: 'encendido debe ser sí o no' }; datos.encendido = cuerpo.encendido; }
-  if ('restaurar_pestanas' in cuerpo) { if (typeof cuerpo.restaurar_pestanas !== 'boolean') return { ok: false, mensaje: 'restaurar_pestanas debe ser sí o no' }; datos.restaurar_pestanas = cuerpo.restaurar_pestanas; }
-  if ('activa' in cuerpo) { if (!Object.prototype.hasOwnProperty.call(datos.marcas || {}, cuerpo.activa)) return { ok: false, mensaje: 'esa marca no existe' }; datos.activa = cuerpo.activa; }
-  const antes = fs.readFileSync(est.ruta);
-  fs.writeFileSync(est.ruta, JSON.stringify(datos, null, 2) + '\n');
+/** Reaplica el tema de la terminal si la marca tocada es la que usa y el tema está prendido. */
+async function reaplicarSiActiva(id) {
+  const t = await terminalEstado();
+  if (!t.ok || !t.configurada || !t.encendido || t.activa !== id) return null;
   const r = await marcaTerminal(['--aplicar'], 120000);
-  if (!r.ok) { fs.writeFileSync(est.ruta, antes); return { ok: false, mensaje: 'no se aplicó: ' + (r.err.replace(/^ERROR:\s*/, '') || 'error').slice(0, 300) }; }
-  const plan = r.out.split(/\r?\n/).filter((l) => l.startsWith('  - ')).map((l) => l.slice(4));
-  return Object.assign(await terminalEstado(), { ok: true, plan });
-}
-
-const TM_COLORES = ['principal', 'acento', 'acento_vivo', 'claro', 'fondo', 'fondo_suave', 'texto', 'gris', 'gris_suave', 'ok', 'error', 'alerta'];
-const TM_POS = ['center', 'top', 'bottom', 'left', 'right', 'topLeft', 'topRight', 'bottomLeft', 'bottomRight'];
-const TM_IMG_MAX = 2 * 1024 * 1024;
-
-/** Imagen de una marca (marca de agua o ícono) para la previsualización: solo dentro de la carpeta de marcas. */
-async function terminalImagen(marca, tipo) {
-  const est = await terminalEstado();
-  if (!est.existe || !['agua', 'icono'].includes(tipo)) return null;
-  const datos = JSON.parse(fs.readFileSync(est.ruta, 'utf8').replace(/^﻿/, ''));
-  const m = (datos.marcas || {})[marca];
-  const rel = m && (tipo === 'agua' ? m.marca_agua_imagen : m.icono);
-  if (!rel) return null;
-  const base = path.dirname(est.ruta);
-  const archivo = path.resolve(base, rel);
-  if (!archivo.startsWith(base + path.sep) || !/\.png$/i.test(archivo) || !fs.existsSync(archivo)) return null;
-  return fs.readFileSync(archivo);
+  if (!r.ok) throw new Error('la marca se guardó, pero no se aplicó a la terminal: ' + r.err.replace(/^ERROR:\s*/, '').slice(0, 200));
+  return r.out.split(/\r?\n/).filter((l) => l.startsWith('  - ')).map((l) => l.slice(4));
 }
 
 /**
- * Crear, editar o quitar una marca. { accion: 'guardar', id?, marca: {nombre, corto, lema, colores,
- * marca_agua_opacidad, marca_agua_posicion}, imagenes?: { agua?: base64 PNG | null, icono?: base64 PNG | null } }
- * o { accion: 'quitar', id }. La marca activa no se quita. Si se edita la activa con el tema prendido, se reaplica.
+ * ⚙ Config · Marcas. { accion: 'guardar', id?, marca, imagenes? } · { accion: 'quitar', id } ·
+ * { accion: 'predeterminar', ambito, id } · { accion: 'codigo', codigo } · { accion: 'referencia', referencia, ambito }.
+ * Las imágenes llegan en base64 (PNG); null las quita. El código de acceso no se registra en ninguna parte.
  */
-async function terminalMarca(cuerpo) {
+async function marcasAccion(cuerpo) {
+  const a = cuerpo.accion;
+  let id = null, mensaje = '', plan = null;
+  if (a === 'guardar') {
+    const imgs = {};
+    for (const t of ['logo', 'agua', 'icono']) {
+      const v = (cuerpo.imagenes || {})[t];
+      if (v === undefined) continue;
+      imgs[t] = v === null ? null : Buffer.from(String(v).replace(/^data:image\/png;base64,/, ''), 'base64');
+    }
+    const r = MARCAS.guardarMarca(cuerpo.id || null, cuerpo.marca || {}, imgs);
+    id = r.id; mensaje = r.nueva ? 'marca creada' : 'marca guardada';
+    plan = await reaplicarSiActiva(id);
+  } else if (a === 'quitar') {
+    const t = await terminalEstado();
+    MARCAS.quitarMarca(String(cuerpo.id || ''), t.ok && t.configurada && t.activa === cuerpo.id ? 'la terminal la está usando: elige otra marca en ⚙ Config · Terminal antes de quitarla' : null);
+    mensaje = 'marca quitada';
+  } else if (a === 'predeterminar') {
+    MARCAS.predeterminar(String(cuerpo.ambito || ''), String(cuerpo.id || '')); id = cuerpo.id; mensaje = 'marca predeterminada actualizada';
+  } else if (a === 'codigo') {
+    const codigo = String(cuerpo.codigo || '').slice(0, 100);
+    if (!codigo.trim()) return { ok: false, mensaje: 'escribe el código de acceso' };
+    const r = MARCAS.desbloquear(codigo);
+    if (!r) return { ok: false, mensaje: 'ese código no abre ninguna marca' };
+    id = r.id; mensaje = `marca «${r.nombre}» desbloqueada`;
+    plan = await reaplicarSiActiva(id);
+  } else if (a === 'referencia') {
+    if (!/^[a-z0-9-]{2,40}$/.test(String(cuerpo.referencia || ''))) return { ok: false, mensaje: 'referencia inválida' };
+    const r = MARCAS.desdeReferencia(cuerpo.referencia, cuerpo.ambito);
+    id = r.id; mensaje = 'marca creada desde la referencia';
+  } else return { ok: false, mensaje: 'acción desconocida' };
+  return Object.assign(marcasEstado(), { ok: true, id, mensaje, plan });
+}
+
+/** ⚙ Config · Terminal: guarda interruptores y marca activa en terminal.json y aplica. Solo esas tres claves. */
+async function terminalGuardar(cuerpo) {
   const est = await terminalEstado();
-  if (!est.existe) return { ok: false, mensaje: est.mensaje || 'no hay marcas configuradas' };
-  const datos = JSON.parse(fs.readFileSync(est.ruta, 'utf8').replace(/^﻿/, ''));
-  datos.marcas = datos.marcas || {};
-  const base = path.dirname(est.ruta);
-  const dirImg = path.join(base, 'terminal');
-  const texto = (v, max) => String(v == null ? '' : v).replace(/[\u0000-\u001f]/g, '').trim().slice(0, max);
-
-  if (cuerpo.accion === 'quitar') {
-    const id = String(cuerpo.id || '');
-    if (!Object.prototype.hasOwnProperty.call(datos.marcas, id)) return { ok: false, mensaje: 'esa marca no existe' };
-    if (id === datos.activa) return { ok: false, mensaje: 'es la marca activa: elige otra antes de quitarla' };
-    delete datos.marcas[id];
-    fs.writeFileSync(est.ruta, JSON.stringify(datos, null, 2) + '\n');
-    return Object.assign(await terminalEstado(), { ok: true, mensaje: 'marca quitada' });
-  }
-  if (cuerpo.accion !== 'guardar') return { ok: false, mensaje: 'acción desconocida' };
-
-  const e = cuerpo.marca || {};
-  const nombre = texto(e.nombre, 60);
-  if (!nombre) return { ok: false, mensaje: 'la marca necesita un nombre' };
-  const colores = {};
-  for (const k of TM_COLORES) {
-    const v = String((e.colores || {})[k] || '');
-    if (!/^#[0-9A-Fa-f]{6}$/.test(v)) return { ok: false, mensaje: `el color «${k}» no es válido (#RRGGBB)` };
-    colores[k] = v.toUpperCase();
-  }
-  const opacidad = Number(e.marca_agua_opacidad);
-  if (!(opacidad >= 0 && opacidad <= 1)) return { ok: false, mensaje: 'la opacidad va de 0 a 1' };
-  const posicion = TM_POS.includes(e.marca_agua_posicion) ? e.marca_agua_posicion : 'center';
-
-  let id = String(cuerpo.id || '');
-  const nueva = !id;
-  if (nueva) {
-    const raiz = C.sinTildes(nombre).replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 30) || 'marca';
-    id = raiz; for (let n = 2; Object.prototype.hasOwnProperty.call(datos.marcas, id); n++) id = `${raiz}-${n}`;
-  } else if (!Object.prototype.hasOwnProperty.call(datos.marcas, id)) return { ok: false, mensaje: 'esa marca no existe' };
-
-  const previa = datos.marcas[id] || {};
-  const m = Object.assign({}, previa, {
-    nombre, corto: texto(e.corto, 24) || nombre, lema: texto(e.lema, 90), colores,
-    marca_agua_opacidad: Math.round(opacidad * 100) / 100, marca_agua_posicion: posicion,
-  });
-  // Imágenes: base64 de un PNG (se verifica la firma), null para quitarla, ausente para dejarla como está.
-  for (const [tipo, clave, sufijo] of [['agua', 'marca_agua_imagen', 'marca-agua'], ['icono', 'icono', 'icono']]) {
-    const img = (cuerpo.imagenes || {})[tipo];
-    if (img === undefined) continue;
-    if (img === null) { m[clave] = null; continue; }
-    const buf = Buffer.from(String(img).replace(/^data:image\/png;base64,/, ''), 'base64');
-    if (buf.length > TM_IMG_MAX) return { ok: false, mensaje: `la imagen (${tipo === 'agua' ? 'marca de agua' : 'ícono'}) pasa de 2 MB` };
-    if (buf.length < 8 || buf.readUInt32BE(0) !== 0x89504e47) return { ok: false, mensaje: `la imagen (${tipo === 'agua' ? 'marca de agua' : 'ícono'}) debe ser PNG` };
-    fs.mkdirSync(dirImg, { recursive: true });
-    const nombreArch = `${id}-${sufijo}.png`;
-    fs.writeFileSync(path.join(dirImg, nombreArch), buf);
-    m[clave] = `terminal/${nombreArch}`;
-  }
-  datos.marcas[id] = m;
-  const antes = fs.readFileSync(est.ruta);
-  fs.writeFileSync(est.ruta, JSON.stringify(datos, null, 2) + '\n');
-  let plan = null;
-  if (id === datos.activa && datos.encendido !== false) {
-    const r = await marcaTerminal(['--aplicar'], 120000);
-    if (!r.ok) { fs.writeFileSync(est.ruta, antes); return { ok: false, mensaje: 'no se aplicó: ' + (r.err.replace(/^ERROR:\s*/, '') || 'error').slice(0, 300) }; }
-    plan = r.out.split(/\r?\n/).filter((l) => l.startsWith('  - ')).map((l) => l.slice(4));
-  }
-  return Object.assign(await terminalEstado(), { ok: true, id, nueva, plan, mensaje: nueva ? 'marca creada' : 'marca guardada' });
+  if (!est.ok) return est;
+  const d = MARCAS.leer();
+  if (!d || !Object.keys(d.marcas).length) return { ok: false, mensaje: 'primero crea o desbloquea una marca en ⚙ Config · Marcas' };
+  const t = { activa: est.activa, encendido: est.encendido, restaurar_pestanas: est.restaurar_pestanas };
+  if ('encendido' in cuerpo) { if (typeof cuerpo.encendido !== 'boolean') return { ok: false, mensaje: 'encendido debe ser sí o no' }; t.encendido = cuerpo.encendido; }
+  if ('restaurar_pestanas' in cuerpo) { if (typeof cuerpo.restaurar_pestanas !== 'boolean') return { ok: false, mensaje: 'restaurar_pestanas debe ser sí o no' }; t.restaurar_pestanas = cuerpo.restaurar_pestanas; }
+  if ('activa' in cuerpo) { if (!Object.prototype.hasOwnProperty.call(d.marcas, cuerpo.activa)) return { ok: false, mensaje: 'esa marca no existe' }; t.activa = cuerpo.activa; }
+  const antes = fs.existsSync(est.ruta) ? fs.readFileSync(est.ruta) : null;
+  fs.mkdirSync(path.dirname(est.ruta), { recursive: true });
+  fs.writeFileSync(est.ruta, JSON.stringify(t, null, 2) + '\n');
+  const r = await marcaTerminal(['--aplicar'], 120000);
+  if (!r.ok) { if (antes) fs.writeFileSync(est.ruta, antes); else fs.unlinkSync(est.ruta); return { ok: false, mensaje: 'no se aplicó: ' + (r.err.replace(/^ERROR:\s*/, '') || 'error').slice(0, 300) }; }
+  const plan = r.out.split(/\r?\n/).filter((l) => l.startsWith('  - ')).map((l) => l.slice(4));
+  return Object.assign(await terminalEstado(), { ok: true, plan });
 }
 
 // ------------------------------------------------------------------ paso a producción: qué se genera
@@ -1367,10 +1312,14 @@ const servidor = http.createServer((req, res) => {
       terminalEstado().then((d) => json(200, d), (e) => json(500, { error: String(e && e.message) }));
       return;
     }
-    if (ruta === '/api/config/terminal/imagen') {
-      terminalImagen(String(url.searchParams.get('marca') || ''), String(url.searchParams.get('tipo') || ''))
-        .then((b) => (b ? enviar(200, 'image/png', b) : enviar(404, 'text/plain', 'sin imagen')), () => enviar(500, 'text/plain', 'error'));
-      return;
+    if (ruta === '/api/config/marcas') {
+      try { return json(200, marcasEstado()); } catch (e) { return json(500, { error: String(e && e.message) }); }
+    }
+    if (ruta === '/api/config/marcas/imagen') {
+      try {
+        const b = marcasImagen(String(url.searchParams.get('marca') || ''), String(url.searchParams.get('tipo') || ''));
+        return b ? enviar(200, 'image/png', b) : enviar(404, 'text/plain', 'sin imagen');
+      } catch (_) { return enviar(500, 'text/plain', 'error'); }
     }
     if (ruta === '/api/indicadores') {
       indicadores().then((d) => json(200, d), (e) => json(500, { error: String(e && e.message) }));
@@ -1403,8 +1352,8 @@ const servidor = http.createServer((req, res) => {
   }
 
   let crudo = '';
-  // 20 KB por petición; solo guardar una marca de la terminal puede traer sus dos PNG en base64.
-  const limite = ruta === '/api/config/terminal/marca' ? 6 * 1024 * 1024 : 20000;
+  // 20 KB por petición; solo guardar una marca puede traer sus PNG (logo, marca de agua, ícono) en base64.
+  const limite = ruta === '/api/config/marcas' ? 8 * 1024 * 1024 : 20000;
   req.on('data', (d) => { crudo += d; if (crudo.length > limite) req.destroy(); });
   req.on('end', async () => {
     let cuerpo = {};
@@ -1421,14 +1370,10 @@ const servidor = http.createServer((req, res) => {
       try { const r = f(cuerpo || {}); return json(r.ok ? 200 : 400, r); }
       catch (e) { return json(500, { ok: false, mensaje: 'no se pudo completar (' + String(e && e.code || 'error') + ')' }); }
     }
-    if (ruta === '/api/config/terminal/agregar') {
+    if (ruta === '/api/config/marcas') {
       // El cuerpo puede traer un código de acceso: no pasa por /api/log ni se escribe en ningún registro.
-      try { const r = await terminalAgregar(cuerpo || {}); return json(r.ok ? 200 : 400, r); }
-      catch (e) { return json(500, { ok: false, mensaje: 'no se pudo completar' }); }
-    }
-    if (ruta === '/api/config/terminal/marca') {
-      try { const r = await terminalMarca(cuerpo || {}); return json(r.ok ? 200 : 400, r); }
-      catch (e) { return json(500, { ok: false, mensaje: String(e && e.message).slice(0, 300) }); }
+      try { const r = await marcasAccion(cuerpo || {}); return json(r.ok ? 200 : 400, r); }
+      catch (e) { return json(400, { ok: false, mensaje: String(e && e.message).slice(0, 300) }); }
     }
     if (ruta === '/api/config/terminal') {
       try { const r = await terminalGuardar(cuerpo || {}); return json(r.ok ? 200 : 400, r); }

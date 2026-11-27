@@ -239,6 +239,23 @@ plan pasa por el agente `revisor-estimacion` (adversarial: sobreestimación, cos
 duplicados, subtareas sin criterio de aceptación y, al revés, riesgo legado subestimado). La cifra final
 la pone el usuario. Nada se escribe en Jira sin su OK.
 
+## 16-bis. Marca en lo que se genera (registro transversal)
+Las marcas del usuario viven en **⚙ Config · Marcas** (`<config>/marca/marcas.json`): cada una con nombre,
+colores, logo, marca de agua, ícono y su **ámbito, laboral o personal**, más una predeterminada por ámbito. Sirven
+para todo lo que se genera (informes, presentaciones, PDF, Word, Excel, correos con formato, tableros HTML,
+artefactos) y para la terminal (⚙ Config · Terminal elige una). No aplica a código, notas internas del estado ni
+borradores.
+
+- **Antes de generar un entregable**: `node "<raíz del plugin>/scripts/marcas.js" --elegir --ambito <laboral|personal>`
+  (laboral = la empresa y sus clientes; personal = lo propio). Si `preguntar` es true, se pregunta en el modal
+  mostrando **todas** las opciones, con la `predeterminada` primero y marcada «(Recomendada)», más «Sin marca». Si
+  no hay marcas, se ofrece crear una en ⚙ Config · Marcas o se genera sin marca. Nunca se asume la marca.
+- Con la elegida, `marcas.js --obtener <id>` da nombre, lema, los 12 colores y las rutas absolutas del logo,
+  la marca de agua y el ícono. Blanco dominante: el color es acento, no relleno.
+- Una organización puede repartir su marca cifrada con un código de acceso (`--empaquetar` → `plantillas/marcas-protegidas/`).
+  **El código nunca se pide en el chat ni va en un comando:** el usuario lo escribe en ⚙ Config · Marcas o corre
+  él mismo `marcas.js --desbloquear`.
+
 ## 17. Reglas de la organización (normativas, registro único y cumplimiento)
 Las políticas que emite la organización (lineamientos de Arquitectura, guías obligatorias, ramas,
 acceso a producción, despliegues) viven como nota en `<stateDir>/normativas/` y se parten en reglas

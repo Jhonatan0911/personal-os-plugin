@@ -1,21 +1,15 @@
 #!/usr/bin/env node
-// marca-terminal.js — tema de la terminal según la marca activa.
+// marca-terminal.js — tema de la terminal con una marca del registro general (lib/marcas.js).
 //
-//   node marca-terminal.js --iniciar           crea <stateDir>/config/marca/terminal.json desde la plantilla
 //   node marca-terminal.js                     muestra el plan (simulación)
 //   node marca-terminal.js --aplicar           aplica, con respaldo del día
 //   node marca-terminal.js --marca otra --aplicar
-//   node marca-terminal.js --estado            JSON con las marcas, los interruptores y lo que está aplicado
-//   node marca-terminal.js --referencias       JSON con las paletas de referencia (plantillas/marca-terminal-referencias.json)
-//   node marca-terminal.js --iniciar --referencia <id>   crea el archivo de marcas con esa paleta
-//   node marca-terminal.js --desbloquear       lee un código de acceso (stdin, o lo pide en la terminal) y agrega
-//                                              la marca protegida que abra (plantillas/marcas-protegidas/*.marca)
-//   node marca-terminal.js --empaquetar <id> --salida <archivo.marca>   cifra una marca propia con un código
-//                                              (stdin) para repartirla: solo quien tenga el código la abre
+//   node marca-terminal.js --estado            JSON: interruptores, marca activa, marcas y lo que está aplicado
+//   node marca-terminal.js --iniciar           crea marca/terminal.json (activa = la predeterminada laboral)
 //
-// Lee config/marca/terminal.json en la carpeta de configuración del Personal OS (el --config-dir de
-// servidor.consola_args, o <stateDir>/config): { activa, encendido, restaurar_pestanas, marcas: { id: {...} } }.
-// `encendido: false` quita el tema (mod, Windows Terminal, prompts); `restaurar_pestanas` es aparte. Toca:
+// Las marcas (colores, logo, marca de agua, ícono, ámbito) viven en marca/marcas.json y se editan en ⚙ Config ·
+// Marcas; se crean con marcas.js (referencias o código de acceso). Este script solo lee marca/terminal.json:
+// { activa, encendido, restaurar_pestanas }. `encendido: false` quita el tema; `restaurar_pestanas` es aparte. Toca:
 //   1. Imágenes (opcionales): copia la marca de agua y el ícono a <home>/.claude/marca-terminal/
 //      con un sufijo por contenido (Windows Terminal guarda en caché la imagen por ruta).
 //   2. Mod de Claude Code: copia plantillas/marca-terminal-mod/ a <home>/.claude/marca-terminal/mod/
@@ -32,6 +26,7 @@ const os = require('os');
 const crypto = require('crypto');
 const { execFileSync } = require('child_process');
 const C = require('./lib/comun');
+const M = require('./lib/marcas');
 
 const APLICAR = process.argv.includes('--aplicar');
 const INICIAR = process.argv.includes('--iniciar');
@@ -41,12 +36,10 @@ const HOME = os.homedir();
 const SALIDA = path.join(HOME, '.claude', 'marca-terminal');
 const MOD = path.join(SALIDA, 'mod');
 const PLANTILLA_MOD = path.join(C.PLUGIN_ROOT, 'plantillas', 'marca-terminal-mod');
-const PLANTILLA_CFG = path.join(C.PLUGIN_ROOT, 'plantillas', 'marca-terminal.json');
 const SETTINGS = path.join(HOME, '.claude', 'settings.json');
 const WT = path.join(process.env.LOCALAPPDATA || '', 'Packages', 'Microsoft.WindowsTerminal_8wekyb3d8bbwe', 'LocalState', 'settings.json');
 const INICIO_PS = '# >>> marca-terminal (generado por marca-terminal.js; no editar a mano)';
 const FIN_PS = '# <<< marca-terminal';
-const COLORES = ['principal', 'acento', 'acento_vivo', 'claro', 'fondo', 'fondo_suave', 'texto', 'gris', 'gris_suave', 'ok', 'error', 'alerta'];
 const HOY = C.hoyISO();
 const plan = [];
 
@@ -69,47 +62,39 @@ function respaldar(ruta) {
   if (APLICAR) fs.copyFileSync(ruta, copia);
 }
 
-// Carpeta de configuración: --config-dir > el de servidor.consola_args (instalación suelta) > <stateDir>/config.
-function rutaConfig() {
-  const forzado = C.arg('--config-dir', null);
-  const a = (C.config().servidor || {}).consola_args || [];
-  const i = a.indexOf('--config-dir');
-  const dir = forzado || (i > -1 && a[i + 1]) || (C.stateDir() ? path.join(C.stateDir(), 'config') : null);
-  if (!dir) salir('no hay stateDir en la configuración del Personal OS (corre /os-setup).');
-  return path.join(path.resolve(dir), 'marca', 'terminal.json');
+/** Interruptores de la terminal. leer() del registro migra antes el formato viejo (marcas dentro de terminal.json). */
+function leerTerminal() {
+  const reg = M.leer();
+  const ruta = M.rutas().terminal;
+  const t = fs.existsSync(ruta) ? leerJsonSinBom(ruta) : null;
+  return { reg, ruta, t };
 }
-
-function leerDatos() {
-  const ruta = rutaConfig();
-  if (!fs.existsSync(ruta)) salir(`no existe ${ruta}. Créalo con: node marca-terminal.js --iniciar`);
-  return { ruta, datos: leerJsonSinBom(ruta) };
+function terminalPorDefecto(reg) {
+  const activa = reg ? (reg.predeterminadas.laboral || reg.predeterminadas.personal || Object.keys(reg.marcas)[0] || null) : null;
+  return { activa, encendido: true, restaurar_pestanas: true };
 }
 
 function cargar() {
-  const { ruta, datos } = leerDatos();
-  const id = MARCA_ARG || datos.activa;
-  const m = (datos.marcas || {})[id];
-  if (!m) salir(`la marca '${id}' no está en ${ruta} (hay: ${Object.keys(datos.marcas || {}).join(', ')})`);
+  const { reg, t } = leerTerminal();
+  if (!reg || !Object.keys(reg.marcas).length) salir('todavía no hay marcas: créalas en ⚙ Config · Marcas o con marcas.js');
+  const cfg = Object.assign(terminalPorDefecto(reg), t || {});
+  const id = MARCA_ARG || cfg.activa;
+  const m = reg.marcas[id];
+  if (!m) salir(`la marca '${id}' no está en el registro (hay: ${Object.keys(reg.marcas).join(', ')})`);
   const col = m.colores || {};
-  const faltan = COLORES.filter((k) => !(k in col));
+  const faltan = M.COLORES.filter((k) => !(k in col));
   const malos = Object.entries(col).filter(([, v]) => !/^#[0-9A-Fa-f]{6}$/.test(String(v))).map(([k]) => k);
   if (faltan.length || malos.length) salir(`marca '${id}': faltan colores [${faltan}] / no son #RRGGBB [${malos}]`);
-  const base = path.dirname(ruta);
-  const archivo = (rel) => (rel ? path.resolve(base, rel) : null);
-  for (const clave of ['marca_agua_imagen', 'icono']) {
-    const r = archivo(m[clave]);
-    if (r && !fs.existsSync(r)) salir(`marca '${id}': no existe ${clave} = ${r}`);
-  }
   return {
     id,
-    encendido: datos.encendido !== false,
-    restaurar: datos.restaurar_pestanas !== false,
+    encendido: cfg.encendido !== false,
+    restaurar: cfg.restaurar_pestanas !== false,
     nombre: m.nombre || id,
     corto: m.corto || m.nombre || id,
     lema: m.lema || '',
     colores: col,
-    agua: archivo(m.marca_agua_imagen),
-    icono: archivo(m.icono),
+    agua: M.imagen(m, 'agua'),
+    icono: M.imagen(m, 'icono'),
     opacidad: Number(m.marca_agua_opacidad ?? 0.18),
     posicion: m.marca_agua_posicion || 'center',
   };
@@ -323,149 +308,23 @@ function promptCmd(m) {
   }
 }
 
-// 7. Referencias y marcas protegidas -----------------------------------------------------------
-const REFERENCIAS = path.join(C.PLUGIN_ROOT, 'plantillas', 'marca-terminal-referencias.json');
-const PROTEGIDAS = path.join(C.PLUGIN_ROOT, 'plantillas', 'marcas-protegidas');
-// El código se normaliza: sin tildes, mayúsculas, espacios ni signos («Mi Marca-2026» = «mimarca2026»).
-const normalizarCodigo = (s) => C.sinTildes(String(s || '')).replace(/[^a-z0-9]/g, '');
-const KDF = { N: 2 ** 15, r: 8, p: 1, maxmem: 64 * 1024 * 1024 };
-const claveDe = (codigo, sal, k) => crypto.scryptSync(normalizarCodigo(codigo), sal, 32, { N: k.N, r: k.r, p: k.p, maxmem: KDF.maxmem });
-
-function leerCodigo() {
-  if (!process.stdin.isTTY) {
-    try { return fs.readFileSync(0, 'utf8').split(/\r?\n/)[0]; } catch { return ''; }
-  }
-  // En una terminal: se pide sin mostrarlo en pantalla.
-  process.stdout.write('Código de acceso: ');
-  const buf = Buffer.alloc(200); let s = '';
-  try { process.stdin.setRawMode(true); } catch { /* sin modo crudo: se verá */ }
-  for (;;) {
-    let n = 0; try { n = fs.readSync(0, buf, 0, 1, null); } catch { break; }
-    if (!n) break;
-    const ch = buf.toString('utf8', 0, n);
-    if (ch === '\r' || ch === '\n') break;
-    if (ch === '\u0003') { process.stdout.write('\n'); process.exit(1); }
-    if (ch === '\u007f' || ch === '\b') s = s.slice(0, -1); else s += ch;
-  }
-  try { process.stdin.setRawMode(false); } catch { /* nada */ }
-  process.stdout.write('\n');
-  return s;
-}
-
-function datosOPlantilla(ruta) {
-  if (fs.existsSync(ruta)) return leerJsonSinBom(ruta);
-  return leerJsonSinBom(PLANTILLA_CFG);
-}
-// La plantilla trae una marca de ejemplo («mi-marca»): si sigue intacta, la marca nueva la reemplaza.
-function sinEjemplo(datos) {
-  const ej = leerJsonSinBom(PLANTILLA_CFG);
-  for (const [id, m] of Object.entries(ej.marcas || {})) {
-    if (datos.marcas && JSON.stringify(datos.marcas[id]) === JSON.stringify(m)) delete datos.marcas[id];
-  }
-  return datos;
-}
-
-function referencias() {
-  return fs.existsSync(REFERENCIAS) ? (leerJsonSinBom(REFERENCIAS).referencias || []) : [];
-}
-
-function iniciarConReferencia(refId) {
-  const ruta = rutaConfig();
-  const ref = referencias().find((r) => r.id === refId);
-  if (!ref) salir(`no hay una referencia '${refId}' (hay: ${referencias().map((r) => r.id).join(', ')})`);
-  const datos = sinEjemplo(datosOPlantilla(ruta));
-  datos.marcas = datos.marcas || {};
-  let id = ref.id; for (let n = 2; datos.marcas[id]; n++) id = `${ref.id}-${n}`;
-  datos.marcas[id] = { nombre: ref.nombre, corto: ref.corto || ref.nombre, lema: '', colores: ref.colores,
-    marca_agua_imagen: null, marca_agua_opacidad: 0.18, marca_agua_posicion: 'center', icono: null };
-  if (!datos.activa || !datos.marcas[datos.activa]) datos.activa = id;
-  fs.mkdirSync(path.dirname(ruta), { recursive: true });
-  fs.writeFileSync(ruta, JSON.stringify(datos, null, 2) + '\n');
-  console.log(JSON.stringify({ ok: true, id, nombre: ref.nombre, ruta }));
-}
-
-function desbloquear() {
-  const codigo = leerCodigo();
-  if (!normalizarCodigo(codigo)) salir('no se recibió ningún código');
-  const archivos = fs.existsSync(PROTEGIDAS) ? fs.readdirSync(PROTEGIDAS).filter((f) => f.endsWith('.marca')) : [];
-  for (const f of archivos) {
-    let paquete;
-    try { paquete = leerJsonSinBom(path.join(PROTEGIDAS, f)); } catch { continue; }
-    try {
-      const k = paquete.kdf;
-      const clave = claveDe(codigo, Buffer.from(k.sal, 'base64'), k);
-      const d = crypto.createDecipheriv('aes-256-gcm', clave, Buffer.from(paquete.iv, 'base64'));
-      d.setAuthTag(Buffer.from(paquete.tag, 'base64'));
-      const plano = JSON.parse(Buffer.concat([d.update(Buffer.from(paquete.datos, 'base64')), d.final()]).toString('utf8'));
-      // Abrió: se guardan sus imágenes junto al archivo de marcas y se agrega (o actualiza) la marca.
-      const ruta = rutaConfig();
-      const dirImg = path.join(path.dirname(ruta), 'terminal');
-      fs.mkdirSync(dirImg, { recursive: true });
-      const m = Object.assign({}, plano.marca, { marca_agua_imagen: null, icono: null });
-      for (const [tipo, clave2, suf] of [['agua', 'marca_agua_imagen', 'marca-agua'], ['icono', 'icono', 'icono']]) {
-        const b64 = (plano.imagenes || {})[tipo];
-        if (!b64) continue;
-        fs.writeFileSync(path.join(dirImg, `${plano.id}-${suf}.png`), Buffer.from(b64, 'base64'));
-        m[clave2] = `terminal/${plano.id}-${suf}.png`;
-      }
-      const datos = sinEjemplo(datosOPlantilla(ruta));
-      datos.marcas = datos.marcas || {};
-      datos.marcas[plano.id] = m;
-      if (!datos.activa || !datos.marcas[datos.activa]) datos.activa = plano.id;
-      fs.writeFileSync(ruta, JSON.stringify(datos, null, 2) + '\n');
-      console.log(JSON.stringify({ ok: true, id: plano.id, nombre: m.nombre }));
-      return;
-    } catch { /* este paquete no abre con ese código: se prueba el siguiente */ }
-  }
-  salir('el código no abre ninguna marca');
-}
-
-function empaquetar(id, salida) {
-  if (!id || !salida) salir('uso: --empaquetar <id> --salida <archivo.marca> (el código por stdin)');
-  const { ruta, datos } = leerDatos();
-  const m = (datos.marcas || {})[id];
-  if (!m) salir(`la marca '${id}' no está en ${ruta}`);
-  const codigo = leerCodigo();
-  if (normalizarCodigo(codigo).length < 6) salir('el código debe tener al menos 6 letras o números');
-  const base = path.dirname(ruta);
-  const img = (rel) => (rel && fs.existsSync(path.resolve(base, rel)) ? fs.readFileSync(path.resolve(base, rel)).toString('base64') : null);
-  const marca = Object.assign({}, m); delete marca.marca_agua_imagen; delete marca.icono;
-  const plano = Buffer.from(JSON.stringify({ id, marca, imagenes: { agua: img(m.marca_agua_imagen), icono: img(m.icono) } }));
-  const sal = crypto.randomBytes(16), iv = crypto.randomBytes(12);
-  const c = crypto.createCipheriv('aes-256-gcm', claveDe(codigo, sal, KDF), iv);
-  const cifrado = Buffer.concat([c.update(plano), c.final()]);
-  const paquete = { formato: 'marca-protegida', version: 1, kdf: { alg: 'scrypt', N: KDF.N, r: KDF.r, p: KDF.p, sal: sal.toString('base64') },
-    cifrado: 'aes-256-gcm', iv: iv.toString('base64'), tag: c.getAuthTag().toString('base64'), datos: cifrado.toString('base64') };
-  fs.mkdirSync(path.dirname(path.resolve(salida)), { recursive: true });
-  fs.writeFileSync(salida, JSON.stringify(paquete) + '\n');
-  console.log(`Empaquetada '${id}' en ${path.resolve(salida)} (${Math.round(fs.statSync(salida).size / 1024)} KB). El código no se guarda en ninguna parte.`);
-}
-
 function main() {
-  if (process.argv.includes('--referencias')) { console.log(JSON.stringify({ ok: true, referencias: referencias() })); return; }
-  if (process.argv.includes('--desbloquear')) { desbloquear(); return; }
-  if (process.argv.includes('--empaquetar')) { empaquetar(C.arg('--empaquetar'), C.arg('--salida')); return; }
-  if (INICIAR && C.arg('--referencia')) { iniciarConReferencia(C.arg('--referencia')); return; }
   if (INICIAR) {
-    const destino = rutaConfig();
-    if (fs.existsSync(destino)) { console.log(`Ya existe ${destino}; no se toca.`); return; }
-    fs.mkdirSync(path.dirname(destino), { recursive: true });
-    fs.copyFileSync(PLANTILLA_CFG, destino);
-    console.log(`Creado ${destino}. Edita colores y logos y corre: node marca-terminal.js --aplicar`);
+    const { reg, ruta, t } = leerTerminal();
+    if (t) { console.log(`Ya existe ${ruta}; no se toca.`); return; }
+    fs.mkdirSync(path.dirname(ruta), { recursive: true });
+    fs.writeFileSync(ruta, JSON.stringify(terminalPorDefecto(reg), null, 2) + '\n');
+    console.log(`Creado ${ruta}. Revisa el plan con: node marca-terminal.js`);
     return;
   }
   if (ESTADO) {
-    // Para ⚙ Config · Terminal: las marcas con sus colores (la previsualización) y qué está aplicado.
-    const { ruta, datos } = leerDatos();
-    const marcas = Object.entries(datos.marcas || {}).map(([id, x]) => ({
-      id, nombre: x.nombre || id, corto: x.corto || x.nombre || id, lema: x.lema || '', colores: x.colores || {},
-      con_marca_agua: !!x.marca_agua_imagen, con_icono: !!x.icono,
-      marca_agua_opacidad: Number(x.marca_agua_opacidad ?? 0.18), marca_agua_posicion: x.marca_agua_posicion || 'center',
-    }));
+    // Para ⚙ Config · Terminal: interruptores, marca activa, las marcas (para el selector y la previsualización) y qué está aplicado.
+    const { reg, ruta, t } = leerTerminal();
+    const cfg = Object.assign(terminalPorDefecto(reg), t || {});
     const wt = estadoWT();
     console.log(JSON.stringify({
-      ok: true, ruta, activa: datos.activa, encendido: datos.encendido !== false, restaurar_pestanas: datos.restaurar_pestanas !== false,
-      marcas, aplicado: { mod: modCargado(), windows_terminal: wt.instalado, tema_wt: wt.tema, restaurar: wt.restaurar },
+      ok: true, ruta, configurada: !!t, activa: cfg.activa, encendido: cfg.encendido !== false, restaurar_pestanas: cfg.restaurar_pestanas !== false,
+      marcas: M.lista(reg), aplicado: { mod: modCargado(), windows_terminal: wt.instalado, tema_wt: wt.tema, restaurar: wt.restaurar },
     }));
     return;
   }

@@ -43,19 +43,19 @@ recomendada primero; si es abierta, el usuario escribe en «Other»). Nada se pi
    `node "<raíz del plugin>/scripts/os-servidor.js" --instalar-tarea` (un acceso en la carpeta Inicio, sin
    administrador, que sobrevive a las actualizaciones del plugin; se quita con `--quitar-tarea`). Escucha solo en
    127.0.0.1. En macOS/Linux, `/consola` lo arranca cuando se necesita.
-7-bis. **Marca de la terminal** (opcional). Pregunta en el modal cómo quiere que se vea su terminal:
-   - "Crear mi marca desde una referencia" — muestra las paletas de `node "<raíz del plugin>/scripts/marca-terminal.js" --referencias`
-     (un modal con hasta 4; la que elija se crea con `--iniciar --referencia <id>`), y dile que el nombre, los colores
-     y el logo se ajustan en ⚙ Config · Terminal de la consola. (Recomendada si no tiene código)
-   - "Tengo un código de acceso" — su organización le dio un código que abre una marca ya preparada (colores y logo).
-     **Nunca le pidas el código en el chat ni lo escribas en un comando:** dile que lo escriba en ⚙ Config · Terminal
-     («¿Tienes un código de acceso?») o, si prefiere, que corra él mismo en su terminal
-     `node "<raíz del plugin>/scripts/marca-terminal.js" --desbloquear` (lo pide sin mostrarlo). Si dice que no abre, que
+7-bis. **Marcas** (opcional). La marca se usa en documentos, presentaciones, artefactos y la terminal (CORE §16-bis).
+   Pregunta en el modal:
+   - "Tengo un código de acceso" — su organización le dio un código que abre su marca ya preparada (colores, logo,
+     ámbito laboral). **Nunca le pidas el código en el chat ni lo escribas en un comando:** dile que lo escriba en
+     ⚙ Config · Marcas («¿Tienes un código de acceso?») o, si prefiere, que corra él mismo en su terminal
+     `node "<raíz del plugin>/scripts/marcas.js" --desbloquear` (lo pide sin mostrarlo). Si dice que no abre, que
      confirme el código con quien se lo dio; no hay pistas ni lista de códigos.
-   - "Ahora no" — la consola le ofrecerá lo mismo cuando entre a ⚙ Config · Terminal.
-   Con la marca creada o desbloqueada, muéstrale el plan de `marca-terminal.js` (sin `--aplicar`) y, con su OK, aplícalo
-   con `--aplicar`. Recuérdale abrir una consola nueva y, como el tema es de fondo claro, poner Claude Code en tema claro
-   con `/theme`.
+   - "Crear mi marca desde una referencia" — pregunta si es laboral o personal y muestra las paletas de
+     `node "<raíz del plugin>/scripts/marcas.js" --referencias` (un modal con hasta 4); la que elija se crea con
+     `--desde-referencia <id> --ambito <laboral|personal>`. Nombre, colores y logo se ajustan en ⚙ Config · Marcas.
+   - "Ahora no" — la consola le ofrecerá lo mismo en ⚙ Config · Marcas.
+   Con una marca lista, pregunta si quiere el tema en su terminal: si sí, sigue `/marca-terminal` (plan sin
+   `--aplicar`, y con su OK `--aplicar`), y recuérdale abrir una consola nueva y poner Claude Code en tema claro con `/theme`.
 8. **(Opcional · solo Windows) Recordatorios automáticos.** Pregunta si quiere recordatorios L–V:
    8:00 (brief matutino que lanza Claude, regenera el tablero y lo abre) y 17:00 (recordatorio de
    cierre). Si acepta: `python "<raíz del plugin>/scripts/reminders/setup_reminders.py"`
