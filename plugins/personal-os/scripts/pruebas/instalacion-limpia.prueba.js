@@ -67,10 +67,17 @@ const pedir = (ruta) => new Promise((res) => {
     v('/ lleva a la consola', raiz.codigo === 302 && /consola\.html/.test(raiz.loc || ''), raiz.codigo);
     const app = await pedir(raiz.loc || '/estado/consola.html');
     v('la app trae Oficina y ⚙ Config (consola-app.js inyectado)', app.codigo === 200 && app.d.includes('consola-app.js'), app.codigo);
-    for (const r of ['/api/estado', '/api/config/agentes', '/api/config/skills', '/api/config/bd', '/api/config/paso-produccion']) {
+    for (const r of ['/api/estado', '/api/config/agentes', '/api/config/skills', '/api/config/bd', '/api/config/paso-produccion', '/api/config/marcas', '/api/config/terminal']) {
       const x = await pedir(r);
       v(`${r} responde`, x.codigo === 200, `${x.codigo} ${x.d.slice(0, 120)}`);
     }
+    // Marcas en una instalación nueva: sin marcas, con las referencias para empezar y la Terminal pidiendo una marca
+    const mc = JSON.parse((await pedir('/api/config/marcas')).d || '{}');
+    v('Marcas: instalación nueva sin marcas y con referencias', mc.existe === false && (mc.referencias || []).length >= 3, JSON.stringify(mc).slice(0, 160));
+    const tmn = JSON.parse((await pedir('/api/config/terminal')).d || '{}');
+    v('Terminal: sin marcas no inventa una activa', tmn.ok === true && (tmn.marcas || []).length === 0 && !tmn.activa, JSON.stringify(tmn).slice(0, 160));
+    const cod = correr('marcas.js', ['--desbloquear'], 'codigo-que-no-existe\n');
+    v('un código de acceso equivocado no abre ninguna marca', cod.status !== 0 && /no abre/.test(cod.stderr), cod.stdout + cod.stderr);
     const sk = JSON.parse((await pedir('/api/config/skills')).d || '{}');
     const lista = (sk.skills || sk.grupos || []);
     v('Skills lista las skills del plugin', JSON.stringify(sk).includes('auditar-ux-ui'), JSON.stringify(sk).slice(0, 160));

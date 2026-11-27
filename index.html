@@ -522,7 +522,7 @@
       <div class="spot"></div>
     </div>
     <div class="brandmark" aria-hidden="true">🧭</div>
-    <div class="eyebrow h-seq" style="animation-delay:0.05s">Plugin para Claude Code <span class="ver">v4.3.1</span> <a class="new-pill" href="#novedades">Nuevo: permisos de base de datos en la consola →</a></div>
+    <div class="eyebrow h-seq" style="animation-delay:0.05s">Plugin para Claude Code <span class="ver">v4.5.0</span> <a class="new-pill" href="#novedades">Nuevo: tus marcas en documentos y en la terminal →</a></div>
     <h1 class="h-seq" style="animation-delay:0.17s">Personal&nbsp;OS</h1>
     <p class="lede h-seq" style="animation-delay:0.29s">Cada mañana te dice <b>qué vence, qué prometiste y qué se está cayendo</b> en Jira, Outlook y Teams; arma tu timesheet y revisa tus PR. Y <b>aprende de tus errores</b> para acompañarte en todos tus proyectos. <b>24 skills para Claude Code.</b></p>
 
@@ -534,7 +534,7 @@
     <div class="quick h-seq" style="animation-delay:0.65s" aria-label="Instalación en dos comandos">
       <div class="cmd"><span class="pr" aria-hidden="true">&gt;</span><code><span class="cm">/plugin marketplace add</span> <span class="arg">Jhonatan0911/<wbr>personal-os-plugin</span></code><button type="button" data-copy="/plugin marketplace add Jhonatan0911/personal-os-plugin" aria-label="Copiar el comando que registra el marketplace">Copiar</button></div>
       <div class="cmd"><span class="pr" aria-hidden="true">&gt;</span><code><span class="cm">/plugin install</span> <span class="arg">personal-os@<wbr>everest-personal-os</span></code><button type="button" data-copy="/plugin install personal-os@everest-personal-os" aria-label="Copiar el comando que instala el plugin">Copiar</button></div>
-      <ol class="quick-steps"><li>Escribe los dos comandos <b>dentro de Claude Code</b> (no en la terminal).</li><li><b>Reinicia Claude Code</b>: <code>/plugin</code> debe listar <b>personal-os 4.3.1</b>.</li><li>Corre <code>/os-setup</code> una vez. Después, cada mañana: <code>/brief</code>.</li></ol>
+      <ol class="quick-steps"><li>Escribe los dos comandos <b>dentro de Claude Code</b> (no en la terminal).</li><li><b>Reinicia Claude Code</b>: <code>/plugin</code> debe listar <b>personal-os 4.5.0</b>.</li><li>Corre <code>/os-setup</code> una vez. Después, cada mañana: <code>/brief</code>.</li></ol>
     </div>
   </header>
   <div class="marquee" role="region" aria-label="Las 24 skills">
@@ -954,6 +954,20 @@
     <div class="cmd"><span class="pr">&gt;</span><code><span class="cm">/exigencia</span></code><button aria-label="Copiar: /exigencia" type="button" data-copy="/exigencia">Copiar</button></div>
       </div>
     </details>
+
+    <details class="deep" id="marcas">
+      <summary><span class="t">Tus marcas, en todo lo que genera</span><span class="d">Informes, presentaciones, artefactos y la terminal salen con la marca que elijas: laboral o personal, nunca asumida.</span></summary>
+      <div class="deep-body">
+        <ul>
+          <li><b>⚙ Config · Marcas</b>: cada marca con su nombre, lema, 12 colores, logo para documentos, marca de agua e ícono, y su <b>ámbito, laboral o personal</b>. Una predeterminada por ámbito. A la derecha ves un documento de ejemplo y la terminal con esa marca mientras la editas.</li>
+          <li><b>Antes de generar</b> un informe, una presentación o un artefacto, te pregunta qué marca usar mostrando todas, con la del ámbito del documento ya marcada, y la opción «Sin marca».</li>
+          <li><b>Tu organización puede repartir su marca</b> dentro del plugin, cifrada (AES-256 con clave derivada por scrypt). Quien tenga el código la abre en ⚙ Config · Marcas con sus colores y su logo; un código equivocado no abre nada y el código no se guarda en ninguna parte. Sin código, empiezas desde 5 paletas de referencia.</li>
+          <li><b>⚙ Config · Terminal</b>: prende o apaga el tema de una de tus marcas en Windows Terminal (pestañas, colores, ícono y marca de agua), en Claude Code (línea de estado, barras en los mensajes, bienvenida) y en el prompt de PowerShell y CMD, con previsualización antes de guardar.</li>
+          <li><b>Restaurar pestañas</b>: si la ventana se cierra sin querer, al abrirla vuelven las mismas pestañas, cada una en su carpeta, y cerrar varias pide confirmación.</li>
+        </ul>
+        <div class="cmd"><span class="pr">&gt;</span><code><span class="cm">/marca-terminal</span></code><button aria-label="Copiar: /marca-terminal" type="button" data-copy="/marca-terminal">Copiar</button></div>
+      </div>
+    </details>
   </section>
 
   <section aria-labelledby="inst">
@@ -1008,7 +1022,7 @@
 
   <section aria-labelledby="cmds">
     <h2 id="cmds">Qué se instala</h2>
-    <p class="sec-sub">Todo lo que trae la 3.17: 12 comandos, 24 skills, 6 agentes y 8 scripts en 10 hooks. Toda escritura externa se confirma antes.</p>
+    <p class="sec-sub">Todo lo que trae la 4.5: 13 comandos, 24 skills, 6 agentes y 8 scripts en 10 hooks. Toda escritura externa se confirma antes.</p>
 
     <h3 class="sub">Comandos</h3>
     <div class="ref">
@@ -1021,7 +1035,8 @@
       <div class="row"><code>/quien</code><span>Quién sabe de qué y quién está libre</span></div>
       <div class="row"><code>/status-celula</code><span>Tablero del equipo con Gantt</span></div>
       <div class="row"><code>/exigencia</code><span>Dial: fácil · normal · estricto · cuartel (el máximo)</span></div>
-      <div class="row"><code>/os-setup</code><span>Siembra el estado y la configuración</span></div>
+      <div class="row"><code>/os-setup</code><span>Siembra el estado, la configuración y tu marca</span></div>
+      <div class="row"><code>/marca-terminal</code><span>Viste tu terminal con una de tus marcas</span></div>
       <div class="row"><code>/os-on</code><span>Reactiva el OS en todas tus sesiones</span></div>
       <div class="row"><code>/os-off</code><span>Pausa el OS (con doble confirmación)</span></div>
     </div>
@@ -1098,6 +1113,16 @@
   <section aria-labelledby="novedades">
     <h2 id="novedades">Novedades</h2>
     <p class="sec-sub">Lo último de cada versión.</p>
+    <div class="chlog">
+      <h3>4.4 – 4.5 <span class="ver">tus marcas y tu terminal</span></h3>
+      <ul>
+        <li><b>Marcas transversales</b>: pestaña ⚙ Config · Marcas con ámbito laboral o personal, logo, colores y una predeterminada por ámbito; todo lo que se genera te pregunta qué marca usar. <a href="#marcas">Ver cómo funciona</a>.</li>
+        <li><b>Marca de tu organización con código de acceso</b>: viaja cifrada en el plugin y se abre con el código que te den; sin código, 5 paletas de referencia para crear la tuya.</li>
+        <li><b>Tu terminal con tu marca</b>: Windows Terminal, Claude Code, PowerShell y CMD con los colores y el logo de la marca que elijas, con previsualización y un interruptor para apagarlo.</li>
+        <li><b>Las pestañas no se pierden</b>: al reabrir Windows Terminal vuelven tus pestañas, cada una en su carpeta.</li>
+        <li><b>Base de datos: Claude no conecta</b>; deja un plan y lo corre un ejecutor según los permisos de la consola, con diálogo de impacto, transacción y rollback. Las contraseñas pasan al almacén de credenciales del sistema.</li>
+      </ul>
+    </div>
     <div class="chlog">
       <h3>4.1 – 4.3 <span class="ver">entregas y permisos</span></h3>
       <ul>
@@ -1208,7 +1233,7 @@
 </main>
 
   <footer class="foot">
-    <div class="repo">📦 <a href="https://github.com/Jhonatan0911/personal-os-plugin">github.com/Jhonatan0911/personal-os-plugin</a> · v4.3.1 · MIT</div>
+    <div class="repo">📦 <a href="https://github.com/Jhonatan0911/personal-os-plugin">github.com/Jhonatan0911/personal-os-plugin</a> · v4.5.0 · MIT</div>
     <div class="priv"><span>🔒</span><div><b>Tu estado es tuyo.</b> El plugin solo reparte comportamiento (núcleo, hooks, skills, comandos y agentes) y <b>no trae datos de nadie</b>: las plantillas usan ejemplos ficticios. Tu carpeta de estado —notas, bitácora, timesheet y las vistas que genera, tablero y consola— es privada y local: nunca se comparte ni se sube.</div></div>
   </footer>
 

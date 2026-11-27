@@ -137,6 +137,7 @@ timesheet, la planeación de sprint y los recordatorios de Windows.
 | `/timesheet` | Arma el timesheet desde las líneas `TS` y lo exporta; con un perfil de organización, en el libro semanal de la plantilla corporativa y con horas extra por corte (nunca lo envía) |
 | `/exigencia` | Ve o cambia el dial: fácil · normal · estricto · cuartel |
 | `/os-setup` | Configuración inicial (idempotente: nunca pisa nada) |
+| `/marca-terminal` | Viste tu terminal con una de tus marcas (⚙ Config · Marcas y · Terminal) |
 | `/os-on` · `/os-off` | Reactiva / pausa el OS en todas tus sesiones (pausa con doble confirmación) |
 
 Skills que se activan por lo que pides: `brief-diario`, `planear-sprint` («planeemos el sprint de…»),
@@ -211,7 +212,7 @@ personal-os-plugin/
     │                                   os-buscar, verificar-ausencia, exigencia, os-setup,
     │                                   personas-*, build-consola, status-celula, handoff, reminders/
     ├── commands/                     ← /os-setup /os-on /os-off /brief /tablero /vigia /buscar
-    │                                   /exigencia /consola /quien /status-celula /timesheet
+    │                                   /exigencia /consola /quien /status-celula /timesheet /marca-terminal
     ├── skills/                       ← brief-diario, planear-sprint, timesheet, checkpoint, retomar…
     ├── agents/                       ← brief-jira, brief-outlook, brief-teams, redactor-correos,
     │                                   revisor-estimacion
