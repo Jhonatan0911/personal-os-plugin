@@ -1,5 +1,12 @@
 # Changelog
 
+## 4.5.0 · Tema de la terminal según la marca activa
+
+- **La terminal se viste con la marca, desde la configuración.** `<stateDir>/config/marca/terminal.json` guarda una o varias marcas (colores, logo para marca de agua, ícono) y cuál está activa. `scripts/marca-terminal.js` lo aplica todo: sin `--aplicar` muestra el plan; `--iniciar` crea el archivo desde la plantilla; `--marca <id>` aplica otra. Comando `/marca-terminal`.
+- **Windows Terminal:** esquema y tema «Marca <nombre>» (barra de pestañas en el color principal, pestaña activa clara), ícono y marca de agua en todos los perfiles. Las imágenes se copian con un sufijo por contenido, porque Windows Terminal guarda en caché la imagen por ruta y no mostraba los cambios.
+- **Claude Code:** un mod (`plantillas/marca-terminal-mod/`) que se copia a `~/.claude/marca-terminal/mod/` y se carga en toda sesión por `CLAUDE_CODE_PLUGIN_DIRS`. Pinta la línea de estado en el color principal y en negrita con una franja de la marca, pone una barra vertical en las respuestas, quita el fondo gris de los mensajes del usuario (barra gris y negrita) y escribe la marca sobre la bienvenida. Los colores van en `hooks/marca.ts`, que el script genera: la plantilla no lleva colores propios.
+- **PowerShell y CMD:** prompt con el bloque de la marca, la carpeta y la rama de git. En `$PROFILE` va entre marcadores y en ASCII (PowerShell 5.1 lee sin BOM como ANSI); el resto del perfil no se toca. CMD usa la variable de usuario `PROMPT`.
+- Respaldo `.respaldo-AAAA-MM-DD` de cada archivo que toca, una vez por día.
 ## 4.4.0 · Permisos de base de datos por acción: el ejecutor corre lo que la consola deja
 
 - **Las seis acciones tienen tres modos.** En ⚙ Config · Bases de datos, leer, crear, actualizar, borrar, estructura y ejecutar se pueden dejar bloqueadas, en «me pregunta» o en automático, por conexión. Una escritura sin modo guardado queda bloqueada. Reemplaza lo de la 4.3.x, donde las escrituras quedaban fijas en «Claude entrega el script».
